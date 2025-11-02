@@ -72,7 +72,17 @@ const QuizForSomeoneElse = () => {
 
       if (error) throw error;
 
-      navigate('/shop/quiz/results', { state: { recommendations: data.recommendations } });
+      // Normalize the data structure to match QuizResults expectations
+      const normalizedRecommendations = data.recommendations?.map((rec: any) => ({
+        ...rec,
+        prices: rec.prices || {
+          '10ml': rec.sizes?.find((s: any) => s.size === '10ml')?.price || 499,
+          '30ml': rec.sizes?.find((s: any) => s.size === '30ml')?.price || 899,
+          '50ml': rec.sizes?.find((s: any) => s.size === '50ml')?.price || 1299,
+        }
+      })) || [];
+
+      navigate('/shop/quiz/results', { state: { recommendations: normalizedRecommendations } });
     } catch (error) {
       console.error('Error:', error);
       toast({
