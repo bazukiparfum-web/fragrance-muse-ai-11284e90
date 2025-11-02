@@ -47,16 +47,17 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        luxury: {
+          black: "hsl(var(--luxury-black))",
+          white: "hsl(var(--luxury-white))",
+          gold: "hsl(var(--luxury-gold))",
+          "gold-light": "hsl(var(--luxury-gold-light))",
+          "gold-dark": "hsl(var(--luxury-gold-dark))",
         },
+      },
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        serif: ['Georgia', 'Times New Roman', 'serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
