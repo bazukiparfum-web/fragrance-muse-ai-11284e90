@@ -47,6 +47,99 @@ export type Database = {
         }
         Relationships: []
       }
+      formulation_rules: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          rule_name: string
+          rule_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          actions: Json
+          conditions: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name: string
+          rule_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name?: string
+          rule_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      fragrance_notes: {
+        Row: {
+          age_ranges: Json | null
+          category: string
+          climates: Json | null
+          cost_per_ml: number
+          created_at: string | null
+          description: string | null
+          family: string
+          id: string
+          intensity: number
+          is_active: boolean | null
+          longevity: number
+          name: string
+          occasions: Json | null
+          personality_matches: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          age_ranges?: Json | null
+          category: string
+          climates?: Json | null
+          cost_per_ml?: number
+          created_at?: string | null
+          description?: string | null
+          family: string
+          id?: string
+          intensity: number
+          is_active?: boolean | null
+          longevity: number
+          name: string
+          occasions?: Json | null
+          personality_matches?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          age_ranges?: Json | null
+          category?: string
+          climates?: Json | null
+          cost_per_ml?: number
+          created_at?: string | null
+          description?: string | null
+          family?: string
+          id?: string
+          intensity?: number
+          is_active?: boolean | null
+          longevity?: number
+          name?: string
+          occasions?: Json | null
+          personality_matches?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -154,26 +247,89 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_questions: {
+        Row: {
+          created_at: string | null
+          helper_text: string | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          max_value: number | null
+          min_value: number | null
+          options: Json | null
+          order_index: number
+          question_key: string
+          question_text: string
+          question_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          helper_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          max_value?: number | null
+          min_value?: number | null
+          options?: Json | null
+          order_index: number
+          question_key: string
+          question_text: string
+          question_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          helper_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          max_value?: number | null
+          min_value?: number | null
+          options?: Json | null
+          order_index?: number
+          question_key?: string
+          question_text?: string
+          question_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       saved_scents: {
         Row: {
           created_at: string | null
           formula: Json
+          formulation_notes: string | null
           id: string
+          intensity: number | null
+          longevity: number | null
           name: string
+          quiz_answers: Json | null
+          total_cost: number | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           formula: Json
+          formulation_notes?: string | null
           id?: string
+          intensity?: number | null
+          longevity?: number | null
           name: string
+          quiz_answers?: Json | null
+          total_cost?: number | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           formula?: Json
+          formulation_notes?: string | null
           id?: string
+          intensity?: number | null
+          longevity?: number | null
           name?: string
+          quiz_answers?: Json | null
+          total_cost?: number | null
           user_id?: string
         }
         Relationships: []
@@ -211,15 +367,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -346,6 +529,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
