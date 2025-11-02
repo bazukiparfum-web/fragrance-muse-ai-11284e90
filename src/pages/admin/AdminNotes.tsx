@@ -96,17 +96,39 @@ const AdminNotes = () => {
     const lines = csvText.split('\n').filter(line => line.trim());
     if (lines.length < 2) throw new Error('CSV must have headers and at least one data row');
     
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    // Parse CSV considering quoted values with commas
+    const parseCSVLine = (line: string) => {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+    
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
     const notes = [];
     
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      const values = parseCSVLine(lines[i]);
       const note: any = {};
       
       headers.forEach((header, index) => {
         const value = values[index];
         
-        switch(header.toLowerCase()) {
+        switch(header) {
           case 'name':
             note.name = value;
             break;
@@ -122,19 +144,17 @@ const AdminNotes = () => {
           case 'longevity':
             note.longevity = parseInt(value) || 5;
             break;
-          case 'personality matches':
           case 'personality_matches':
-            note.personality_matches = value ? value.split(';').map(s => s.trim()) : [];
+            note.personality_matches = value ? value.split(',').map(s => s.trim()) : [];
             break;
           case 'occasions':
-            note.occasions = value ? value.split(';').map(s => s.trim()) : [];
+            note.occasions = value ? value.split(',').map(s => s.trim()) : [];
             break;
           case 'climates':
-            note.climates = value ? value.split(';').map(s => s.trim()) : [];
+            note.climates = value ? value.split(',').map(s => s.trim()) : [];
             break;
-          case 'age ranges':
           case 'age_ranges':
-            note.age_ranges = value ? value.split(';').map(s => s.trim()) : [];
+            note.age_ranges = value ? value.split(',').map(s => s.trim()) : [];
             break;
           case 'description':
             note.description = value;
@@ -184,8 +204,32 @@ const AdminNotes = () => {
           throw new Error('Invalid file format. Expected an array of notes.');
         }
 
+        // Refresh session to get latest token
+        const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+        
+        if (sessionError || !session?.access_token) {
+          console.error('Session refresh error:', sessionError);
+          // Try getting existing session as fallback
+          const { data: fallbackData } = await supabase.auth.getSession();
+          if (!fallbackData?.session?.access_token) {
+            throw new Error('No active session. Please log out and log back in.');
+          }
+        }
+
+        const validSession = session || (await supabase.auth.getSession()).data.session;
+        if (!validSession) {
+          throw new Error('Unable to verify session');
+        }
+
+        console.log('Invoking function with', notesData.length, 'notes');
+
+        // Call the edge function with explicit headers
         const { data, error } = await supabase.functions.invoke('admin-upload-notes', {
-          body: { notes: notesData }
+          body: { notes: notesData },
+          headers: {
+            Authorization: `Bearer ${validSession.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
+          }
         });
 
         if (error) throw error;
