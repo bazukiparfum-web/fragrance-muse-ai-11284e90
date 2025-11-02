@@ -24,7 +24,7 @@ const Hero = () => {
             Answer a few questions. Receive 3 unique fragrances. Fall in love with your signature scent.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button variant="luxury" size="xl">
+            <Button variant="luxury" size="xl" onClick={() => window.location.href = '/shop/quiz'}>
               Find Your Scent
             </Button>
             <Button variant="luxury-outline" size="xl">

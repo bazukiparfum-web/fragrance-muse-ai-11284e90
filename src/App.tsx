@@ -4,11 +4,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
+import { QuizProvider } from "@/contexts/QuizContext";
 import Index from "./pages/Index";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
 import Auth from "./pages/Auth";
+import QuizLanding from "./pages/QuizLanding";
+import QuizForYourself from "./pages/QuizForYourself";
+import QuizForSomeoneElse from "./pages/QuizForSomeoneElse";
+import QuizResults from "./pages/QuizResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -16,21 +21,27 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <CartProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/shop/cart" element={<Cart />} />
-            <Route path="/shop/checkout" element={<Checkout />} />
-            <Route path="/shop/account" element={<Account />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </CartProvider>
+      <QuizProvider>
+        <CartProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/shop/cart" element={<Cart />} />
+              <Route path="/shop/checkout" element={<Checkout />} />
+              <Route path="/shop/account" element={<Account />} />
+              <Route path="/shop/quiz" element={<QuizLanding />} />
+              <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
+              <Route path="/shop/quiz/for-someone-else" element={<QuizForSomeoneElse />} />
+              <Route path="/shop/quiz/results" element={<QuizResults />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </CartProvider>
+      </QuizProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
