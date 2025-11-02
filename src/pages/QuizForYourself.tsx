@@ -51,7 +51,7 @@ const QuizForYourself = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('quiz-recommendations', {
+      const { data, error } = await supabase.functions.invoke('create-custom-scent', {
         body: { answers }
       });
 

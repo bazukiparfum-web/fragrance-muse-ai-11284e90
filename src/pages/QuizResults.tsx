@@ -12,13 +12,15 @@ interface Recommendation {
   name: string;
   story: string;
   matchScore: number;
-  notes: {
-    top: string[];
-    heart: string[];
-    base: string[];
+  formula: {
+    top: Array<{ note: string; percentage: number; intensity: number; cost: number }>;
+    heart: Array<{ note: string; percentage: number; intensity: number; cost: number }>;
+    base: Array<{ note: string; percentage: number; intensity: number; cost: number }>;
   };
   intensity: number;
   longevity: number;
+  totalCost: string;
+  formulationNotes?: string;
   prices: {
     '10ml': number;
     '30ml': number;
@@ -75,7 +77,7 @@ const QuizResults = () => {
               </h1>
             </div>
             <p className="text-lg text-muted-foreground">
-              AI has crafted these unique fragrances just for you
+              Custom-crafted fragrances based on your preferences
             </p>
           </div>
 
@@ -96,9 +98,9 @@ const QuizResults = () => {
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Top Notes</h4>
                       <div className="flex flex-wrap gap-2">
-                        {scent.notes.top.map((note) => (
-                          <span key={note} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                            {note}
+                        {scent.formula.top.map((item) => (
+                          <span key={item.note} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
+                            {item.note} ({item.percentage}%)
                           </span>
                         ))}
                       </div>
@@ -107,9 +109,9 @@ const QuizResults = () => {
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Heart Notes</h4>
                       <div className="flex flex-wrap gap-2">
-                        {scent.notes.heart.map((note) => (
-                          <span key={note} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                            {note}
+                        {scent.formula.heart.map((item) => (
+                          <span key={item.note} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
+                            {item.note} ({item.percentage}%)
                           </span>
                         ))}
                       </div>
@@ -118,13 +120,19 @@ const QuizResults = () => {
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Base Notes</h4>
                       <div className="flex flex-wrap gap-2">
-                        {scent.notes.base.map((note) => (
-                          <span key={note} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                            {note}
+                        {scent.formula.base.map((item) => (
+                          <span key={item.note} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
+                            {item.note} ({item.percentage}%)
                           </span>
                         ))}
                       </div>
                     </div>
+
+                    {scent.formulationNotes && (
+                      <div className="text-xs text-muted-foreground italic pt-2 border-t">
+                        {scent.formulationNotes}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-6">

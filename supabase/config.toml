@@ -2,3 +2,18 @@ project_id = "pcwfrmgcycbddqhkqgfx"
 
 [functions.quiz-recommendations]
 verify_jwt = true
+
+[functions.create-custom-scent]
+verify_jwt = true
+
+[functions.get-quiz-questions]
+verify_jwt = false
+
+[functions.admin-upload-notes]
+verify_jwt = true
+
+[functions.admin-manage-rules]
+verify_jwt = true
+
+[functions.admin-manage-questions]
+verify_jwt = true
