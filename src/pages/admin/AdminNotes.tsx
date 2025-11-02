@@ -184,16 +184,8 @@ const AdminNotes = () => {
           throw new Error('Invalid file format. Expected an array of notes.');
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          throw new Error('No active session');
-        }
-
         const { data, error } = await supabase.functions.invoke('admin-upload-notes', {
-          body: { notes: notesData },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
+          body: { notes: notesData }
         });
 
         if (error) throw error;
