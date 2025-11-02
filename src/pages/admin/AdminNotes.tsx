@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Upload, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown, ChevronUp, Search, Download, Copy, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
 
 const AdminNotes = () => {
   const navigate = useNavigate();
@@ -35,6 +37,13 @@ const AdminNotes = () => {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+  
+  // Inline editing state
+  const [editingCell, setEditingCell] = useState<{ noteId: string; field: string } | null>(null);
+  const [editValue, setEditValue] = useState<any>(null);
+  
+  // Bulk operations state
+  const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     checkAdminAccess();
@@ -163,6 +172,282 @@ const AdminNotes = () => {
   const uniqueCategories = Array.from(new Set(notes.map(n => n.category)));
   const uniqueFamilies = Array.from(new Set(notes.map(n => n.family)));
 
+  // Export functions
+  const exportAsJSON = () => {
+    const dataToExport = filteredAndSortedNotes.map(note => ({
+      name: note.name,
+      category: note.category,
+      family: note.family,
+      intensity: note.intensity,
+      longevity: note.longevity,
+      personality_matches: note.personality_matches,
+      occasions: note.occasions,
+      climates: note.climates,
+      age_ranges: note.age_ranges,
+      description: note.description,
+      is_active: note.is_active
+    }));
+
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `fragrance-notes-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Export successful',
+      description: `Exported ${dataToExport.length} notes as JSON`
+    });
+  };
+
+  const exportAsCSV = () => {
+    const headers = [
+      'Name', 'Category', 'Family', 'Intensity', 'Longevity',
+      'Personality Matches', 'Occasions', 'Climates', 'Age Ranges',
+      'Description', 'Status'
+    ];
+
+    const rows = filteredAndSortedNotes.map(note => [
+      note.name,
+      note.category,
+      note.family,
+      note.intensity,
+      note.longevity,
+      note.personality_matches?.join('; ') || '',
+      note.occasions?.join('; ') || '',
+      note.climates?.join('; ') || '',
+      note.age_ranges?.join('; ') || '',
+      `"${note.description?.replace(/"/g, '""') || ''}"`,
+      note.is_active ? 'Active' : 'Inactive'
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `fragrance-notes-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Export successful',
+      description: `Exported ${rows.length} notes as CSV`
+    });
+  };
+
+  // Inline editing
+  const handleCellEdit = async (noteId: string, field: string, value: any) => {
+    try {
+      const { error } = await supabase
+        .from('fragrance_notes')
+        .update({ [field]: value, updated_at: new Date().toISOString() })
+        .eq('id', noteId);
+
+      if (error) throw error;
+
+      setNotes(notes.map(n => n.id === noteId ? { ...n, [field]: value } : n));
+
+      toast({
+        title: 'Updated successfully',
+        description: `${field} has been updated`
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Update failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setEditingCell(null);
+      setEditValue(null);
+    }
+  };
+
+  // Clone note
+  const handleCloneNote = async (note: any) => {
+    try {
+      const clonedNote = {
+        name: `${note.name} (Copy)`,
+        category: note.category,
+        family: note.family,
+        intensity: note.intensity,
+        longevity: note.longevity,
+        personality_matches: note.personality_matches,
+        occasions: note.occasions,
+        climates: note.climates,
+        age_ranges: note.age_ranges,
+        description: note.description,
+        is_active: false
+      };
+
+      const { data, error } = await supabase
+        .from('fragrance_notes')
+        .insert([clonedNote])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setNotes([...notes, data]);
+      setExpandedRow(data.id);
+
+      toast({
+        title: 'Note cloned successfully',
+        description: `Created "${data.name}". You can edit it now.`
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Clone failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Delete note
+  const handleDeleteNote = async (noteId: string) => {
+    if (!confirm('Are you sure you want to delete this note?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('fragrance_notes')
+        .delete()
+        .eq('id', noteId);
+
+      if (error) throw error;
+
+      setNotes(notes.filter(n => n.id !== noteId));
+      if (selectedNotes.has(noteId)) {
+        const newSelection = new Set(selectedNotes);
+        newSelection.delete(noteId);
+        setSelectedNotes(newSelection);
+      }
+
+      toast({
+        title: 'Note deleted',
+        description: 'Note has been removed successfully'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Delete failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Bulk operations
+  const handleSelectAll = () => {
+    if (selectedNotes.size === paginatedNotes.length && paginatedNotes.length > 0) {
+      setSelectedNotes(new Set());
+    } else {
+      setSelectedNotes(new Set(paginatedNotes.map(n => n.id)));
+    }
+  };
+
+  const toggleNoteSelection = (noteId: string) => {
+    const newSelection = new Set(selectedNotes);
+    if (newSelection.has(noteId)) {
+      newSelection.delete(noteId);
+    } else {
+      newSelection.add(noteId);
+    }
+    setSelectedNotes(newSelection);
+  };
+
+  const handleBulkCategoryChange = async (newCategory: string) => {
+    try {
+      const noteIds = Array.from(selectedNotes);
+
+      const { error } = await supabase
+        .from('fragrance_notes')
+        .update({ category: newCategory, updated_at: new Date().toISOString() })
+        .in('id', noteIds);
+
+      if (error) throw error;
+
+      setNotes(notes.map(n => selectedNotes.has(n.id) ? { ...n, category: newCategory } : n));
+
+      toast({
+        title: 'Bulk update successful',
+        description: `Updated ${selectedNotes.size} note(s) to ${newCategory}`
+      });
+
+      setSelectedNotes(new Set());
+    } catch (error: any) {
+      toast({
+        title: 'Bulk update failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleBulkFamilyChange = async (newFamily: string) => {
+    try {
+      const noteIds = Array.from(selectedNotes);
+
+      const { error } = await supabase
+        .from('fragrance_notes')
+        .update({ family: newFamily, updated_at: new Date().toISOString() })
+        .in('id', noteIds);
+
+      if (error) throw error;
+
+      setNotes(notes.map(n => selectedNotes.has(n.id) ? { ...n, family: newFamily } : n));
+
+      toast({
+        title: 'Bulk update successful',
+        description: `Updated ${selectedNotes.size} note(s) to ${newFamily} family`
+      });
+
+      setSelectedNotes(new Set());
+    } catch (error: any) {
+      toast({
+        title: 'Bulk update failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleBulkStatusToggle = async () => {
+    try {
+      const noteIds = Array.from(selectedNotes);
+      const anyActive = notes.some(n => selectedNotes.has(n.id) && n.is_active);
+      const newStatus = !anyActive;
+
+      const { error } = await supabase
+        .from('fragrance_notes')
+        .update({ is_active: newStatus, updated_at: new Date().toISOString() })
+        .in('id', noteIds);
+
+      if (error) throw error;
+
+      setNotes(notes.map(n => selectedNotes.has(n.id) ? { ...n, is_active: newStatus } : n));
+
+      toast({
+        title: 'Bulk update successful',
+        description: `${newStatus ? 'Activated' : 'Deactivated'} ${selectedNotes.size} note(s)`
+      });
+
+      setSelectedNotes(new Set());
+    } catch (error: any) {
+      toast({
+        title: 'Bulk update failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (isAdmin === null) {
     return (
       <div className="min-h-screen bg-background">
@@ -192,7 +477,7 @@ const AdminNotes = () => {
       
       <section className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <Button variant="outline" onClick={() => navigate('/admin')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -200,7 +485,23 @@ const AdminNotes = () => {
               </Button>
               <h1 className="font-serif text-4xl font-bold heading-luxury">Fragrance Notes</h1>
             </div>
-            <div>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={exportAsJSON}>
+                    Export as JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportAsCSV}>
+                    Export as CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Label htmlFor="file-upload" className="cursor-pointer">
                 <Button disabled={loading} asChild>
                   <span>
@@ -289,6 +590,56 @@ const AdminNotes = () => {
             </div>
           </Card>
 
+          {/* Bulk Actions Toolbar */}
+          {selectedNotes.size > 0 && (
+            <Card className="p-4 mb-4 bg-primary/5 border-primary/20">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="font-semibold">
+                  {selectedNotes.size} note(s) selected
+                </span>
+
+                <Select onValueChange={handleBulkCategoryChange}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Change Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="top">Top</SelectItem>
+                    <SelectItem value="heart">Heart</SelectItem>
+                    <SelectItem value="base">Base</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select onValueChange={handleBulkFamilyChange}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Change Family" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {uniqueFamilies.map(family => (
+                      <SelectItem key={family} value={family}>{family}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkStatusToggle}
+                >
+                  Toggle Active/Inactive
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedNotes(new Set())}
+                  className="ml-auto"
+                >
+                  Clear Selection
+                </Button>
+              </div>
+            </Card>
+          )}
+
           {/* Table */}
           <Card className="p-6">
             <div className="mb-4 flex justify-between items-center">
@@ -305,6 +656,12 @@ const AdminNotes = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={selectedNotes.size === paginatedNotes.length && paginatedNotes.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
                       <div className="flex items-center gap-2">
                         Name
@@ -340,42 +697,172 @@ const AdminNotes = () => {
                     </TableHead>
                     <TableHead>Personality</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-[120px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedNotes.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         No notes found
                       </TableCell>
                     </TableRow>
                   ) : (
                     paginatedNotes.map((note) => (
                       <>
-                        <TableRow 
+                         <TableRow 
                           key={note.id}
-                          className="cursor-pointer"
+                          className="cursor-pointer hover:bg-muted/50"
                           onClick={() => setExpandedRow(expandedRow === note.id ? null : note.id)}
                         >
-                          <TableCell className="font-medium">{note.name}</TableCell>
-                          <TableCell>
-                            <Badge variant={getCategoryColor(note.category)}>
-                              {note.category}
-                            </Badge>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedNotes.has(note.id)}
+                              onCheckedChange={() => toggleNoteSelection(note.id)}
+                            />
                           </TableCell>
-                          <TableCell className="capitalize">{note.family}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Progress value={note.intensity * 10} className="w-16 h-2" />
-                              <span className="text-xs text-muted-foreground min-w-[2rem]">{note.intensity}/10</span>
-                            </div>
+                          <TableCell 
+                            className="font-medium"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCell({ noteId: note.id, field: 'name' });
+                              setEditValue(note.name);
+                            }}
+                          >
+                            {editingCell?.noteId === note.id && editingCell?.field === 'name' ? (
+                              <Input
+                                autoFocus
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={() => handleCellEdit(note.id, 'name', editValue)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleCellEdit(note.id, 'name', editValue);
+                                  if (e.key === 'Escape') setEditingCell(null);
+                                }}
+                                className="h-8"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <span className="hover:bg-accent/50 px-2 py-1 rounded inline-block">
+                                {note.name}
+                              </span>
+                            )}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Progress value={note.longevity * 10} className="w-16 h-2" />
-                              <span className="text-xs text-muted-foreground min-w-[2rem]">{note.longevity}/10</span>
-                            </div>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            {editingCell?.noteId === note.id && editingCell?.field === 'category' ? (
+                              <Select 
+                                value={editValue} 
+                                onValueChange={(value) => handleCellEdit(note.id, 'category', value)}
+                              >
+                                <SelectTrigger className="h-8 w-[100px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="top">Top</SelectItem>
+                                  <SelectItem value="heart">Heart</SelectItem>
+                                  <SelectItem value="base">Base</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Badge 
+                                variant={getCategoryColor(note.category)}
+                                className="cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingCell({ noteId: note.id, field: 'category' });
+                                  setEditValue(note.category);
+                                }}
+                              >
+                                {note.category}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell 
+                            className="capitalize"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCell({ noteId: note.id, field: 'family' });
+                              setEditValue(note.family);
+                            }}
+                          >
+                            {editingCell?.noteId === note.id && editingCell?.field === 'family' ? (
+                              <Input
+                                autoFocus
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onBlur={() => handleCellEdit(note.id, 'family', editValue)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleCellEdit(note.id, 'family', editValue);
+                                  if (e.key === 'Escape') setEditingCell(null);
+                                }}
+                                className="h-8"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <span className="hover:bg-accent/50 px-2 py-1 rounded inline-block">
+                                {note.family}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCell({ noteId: note.id, field: 'intensity' });
+                              setEditValue(note.intensity);
+                            }}
+                          >
+                            {editingCell?.noteId === note.id && editingCell?.field === 'intensity' ? (
+                              <Input
+                                autoFocus
+                                type="number"
+                                min="1"
+                                max="10"
+                                value={editValue}
+                                onChange={(e) => setEditValue(parseInt(e.target.value))}
+                                onBlur={() => handleCellEdit(note.id, 'intensity', editValue)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleCellEdit(note.id, 'intensity', editValue);
+                                  if (e.key === 'Escape') setEditingCell(null);
+                                }}
+                                className="h-8 w-20"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2 hover:bg-accent/50 px-2 py-1 rounded">
+                                <Progress value={note.intensity * 10} className="w-16 h-2" />
+                                <span className="text-xs text-muted-foreground min-w-[2rem]">{note.intensity}/10</span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCell({ noteId: note.id, field: 'longevity' });
+                              setEditValue(note.longevity);
+                            }}
+                          >
+                            {editingCell?.noteId === note.id && editingCell?.field === 'longevity' ? (
+                              <Input
+                                autoFocus
+                                type="number"
+                                min="1"
+                                max="10"
+                                value={editValue}
+                                onChange={(e) => setEditValue(parseInt(e.target.value))}
+                                onBlur={() => handleCellEdit(note.id, 'longevity', editValue)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleCellEdit(note.id, 'longevity', editValue);
+                                  if (e.key === 'Escape') setEditingCell(null);
+                                }}
+                                className="h-8 w-20"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2 hover:bg-accent/50 px-2 py-1 rounded">
+                                <Progress value={note.longevity * 10} className="w-16 h-2" />
+                                <span className="text-xs text-muted-foreground min-w-[2rem]">{note.longevity}/10</span>
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
@@ -394,29 +881,64 @@ const AdminNotes = () => {
                               {note.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedRow(expandedRow === note.id ? null : note.id);
-                              }}
-                            >
-                              {expandedRow === note.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                            </Button>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCloneNote(note)}
+                                title="Clone note"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteNote(note.id)}
+                                title="Delete note"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setExpandedRow(expandedRow === note.id ? null : note.id)}
+                                title="Toggle details"
+                              >
+                                {expandedRow === note.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                         
                         {expandedRow === note.id && (
                           <TableRow>
-                            <TableCell colSpan={8} className="bg-muted/50 p-6">
+                            <TableCell colSpan={9} className="bg-muted/50 p-6">
                               <div className="space-y-4">
                                 <div>
                                   <h4 className="font-semibold mb-2">Description</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {note.description || 'No description available'}
-                                  </p>
+                                  {editingCell?.noteId === note.id && editingCell?.field === 'description' ? (
+                                    <Textarea
+                                      autoFocus
+                                      value={editValue}
+                                      onChange={(e) => setEditValue(e.target.value)}
+                                      onBlur={() => handleCellEdit(note.id, 'description', editValue)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Escape') setEditingCell(null);
+                                      }}
+                                      className="min-h-[100px]"
+                                    />
+                                  ) : (
+                                    <p 
+                                      className="text-sm text-muted-foreground cursor-pointer hover:bg-accent/50 p-2 rounded"
+                                      onClick={() => {
+                                        setEditingCell({ noteId: note.id, field: 'description' });
+                                        setEditValue(note.description);
+                                      }}
+                                    >
+                                      {note.description || 'No description available (click to edit)'}
+                                    </p>
+                                  )}
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
