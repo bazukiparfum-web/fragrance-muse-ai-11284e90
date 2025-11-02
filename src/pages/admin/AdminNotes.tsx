@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const AdminNotes = () => {
   const navigate = useNavigate();
@@ -90,6 +92,74 @@ const AdminNotes = () => {
     setNotes(data || []);
   };
 
+  const parseCSV = (csvText: string) => {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    if (lines.length < 2) throw new Error('CSV must have headers and at least one data row');
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const notes = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      const note: any = {};
+      
+      headers.forEach((header, index) => {
+        const value = values[index];
+        
+        switch(header.toLowerCase()) {
+          case 'name':
+            note.name = value;
+            break;
+          case 'category':
+            note.category = value.toLowerCase();
+            break;
+          case 'family':
+            note.family = value;
+            break;
+          case 'intensity':
+            note.intensity = parseInt(value) || 5;
+            break;
+          case 'longevity':
+            note.longevity = parseInt(value) || 5;
+            break;
+          case 'personality matches':
+          case 'personality_matches':
+            note.personality_matches = value ? value.split(';').map(s => s.trim()) : [];
+            break;
+          case 'occasions':
+            note.occasions = value ? value.split(';').map(s => s.trim()) : [];
+            break;
+          case 'climates':
+            note.climates = value ? value.split(';').map(s => s.trim()) : [];
+            break;
+          case 'age ranges':
+          case 'age_ranges':
+            note.age_ranges = value ? value.split(';').map(s => s.trim()) : [];
+            break;
+          case 'description':
+            note.description = value;
+            break;
+          case 'status':
+          case 'is_active':
+            note.is_active = value.toLowerCase() === 'active' || value === 'true';
+            break;
+        }
+      });
+      
+      note.intensity = note.intensity || 5;
+      note.longevity = note.longevity || 5;
+      note.personality_matches = note.personality_matches || [];
+      note.occasions = note.occasions || [];
+      note.climates = note.climates || [];
+      note.age_ranges = note.age_ranges || [];
+      note.is_active = note.is_active !== false;
+      
+      notes.push(note);
+    }
+    
+    return notes;
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -100,7 +170,19 @@ const AdminNotes = () => {
     reader.onload = async (e) => {
       try {
         const content = e.target?.result as string;
-        const notesData = JSON.parse(content);
+        let notesData;
+        
+        if (file.name.endsWith('.json')) {
+          notesData = JSON.parse(content);
+        } else if (file.name.endsWith('.csv')) {
+          notesData = parseCSV(content);
+        } else {
+          throw new Error('Unsupported file format. Please upload JSON or CSV.');
+        }
+
+        if (!Array.isArray(notesData)) {
+          throw new Error('Invalid file format. Expected an array of notes.');
+        }
 
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
@@ -130,6 +212,7 @@ const AdminNotes = () => {
         });
       } finally {
         setLoading(false);
+        event.target.value = '';
       }
     };
 
@@ -514,14 +597,14 @@ const AdminNotes = () => {
                 <Button disabled={loading} asChild>
                   <span>
                     <Upload className="h-4 w-4 mr-2" />
-                    {loading ? 'Uploading...' : 'Upload JSON'}
+                    {loading ? 'Uploading...' : 'Upload JSON/CSV'}
                   </span>
                 </Button>
               </Label>
               <Input
                 id="file-upload"
                 type="file"
-                accept=".json"
+                accept=".json,.csv"
                 onChange={handleFileUpload}
                 className="hidden"
               />
@@ -529,8 +612,19 @@ const AdminNotes = () => {
           </div>
 
           <Card className="p-6 mb-6 bg-accent/5">
-            <h3 className="font-semibold mb-2">JSON Format Example</h3>
-            <pre className="text-xs bg-background p-4 rounded overflow-x-auto">
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full mb-4">
+                <h3 className="font-semibold">Upload Format Examples</h3>
+                <ChevronDown className="h-4 w-4" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <Tabs defaultValue="json">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="json">JSON Format</TabsTrigger>
+                    <TabsTrigger value="csv">CSV Format</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="json">
+                    <pre className="text-xs bg-background p-4 rounded overflow-x-auto">
 {`[
   {
     "name": "Rose Absolute",
@@ -542,10 +636,25 @@ const AdminNotes = () => {
     "occasions": ["Evening", "Office"],
     "climates": ["Moderate", "Cool"],
     "age_ranges": ["26-35", "36-45"],
-    "description": "Classic floral note"
+    "description": "Classic floral note",
+    "is_active": true
   }
 ]`}
-            </pre>
+                    </pre>
+                  </TabsContent>
+                  <TabsContent value="csv">
+                    <pre className="text-xs bg-background p-4 rounded overflow-x-auto">
+{`Name,Category,Family,Intensity,Longevity,Personality Matches,Occasions,Climates,Age Ranges,Description,Status
+Rose Absolute,heart,floral,8,7,Elegant;Calm,Evening;Office,Moderate;Cool,26-35;36-45,Classic floral note,active
+Sandalwood,base,woody,9,9,Bold,Evening,Warm,36-45,Warm woody base note,active`}
+                    </pre>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Note: Use semicolons (;) to separate multiple values in array fields
+                    </p>
+                  </TabsContent>
+                </Tabs>
+              </CollapsibleContent>
+            </Collapsible>
           </Card>
 
           {/* Filters & Search */}
