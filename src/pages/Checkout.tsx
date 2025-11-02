@@ -11,6 +11,17 @@ import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
+import { z } from 'zod';
+
+const shippingSchema = z.object({
+  email: z.string().trim().email('Invalid email address').max(255, 'Email must be less than 255 characters'),
+  fullName: z.string().trim().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
+  phone: z.string().regex(/^\d{10}$/, 'Phone must be exactly 10 digits'),
+  address: z.string().trim().min(1, 'Address is required').max(500, 'Address must be less than 500 characters'),
+  city: z.string().min(1, 'City is required'),
+  postalCode: z.string().regex(/^\d{6}$/, 'Postal code must be exactly 6 digits'),
+  deliveryType: z.enum(['standard', 'express']),
+});
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -40,21 +51,14 @@ const Checkout = () => {
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate phone (10 digits)
-    if (!/^\d{10}$/.test(formData.phone)) {
-      toast({
-        title: "Invalid phone number",
-        description: "Please enter a 10-digit phone number",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Comprehensive validation using Zod
+    const validation = shippingSchema.safeParse(formData);
     
-    // Validate postal code (6 digits)
-    if (!/^\d{6}$/.test(formData.postalCode)) {
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
       toast({
-        title: "Invalid postal code",
-        description: "Please enter a 6-digit postal code",
+        title: "Validation Error",
+        description: firstError.message,
         variant: "destructive",
       });
       return;

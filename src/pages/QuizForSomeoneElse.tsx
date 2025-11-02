@@ -39,6 +39,18 @@ const QuizForSomeoneElse = () => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
+      // Check authentication before calling the quiz endpoint
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to get personalized recommendations",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('quiz-recommendations', {
         body: { answers, isGift: true }
       });
