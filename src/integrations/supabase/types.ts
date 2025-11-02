@@ -14,7 +14,203 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cart_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          price: number
+          product_image: string
+          product_name: string
+          quantity: number
+          size: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          price: number
+          product_image: string
+          product_name: string
+          quantity?: number
+          size: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          price?: number
+          product_image?: string
+          product_name?: string
+          quantity?: number
+          size?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string
+          price: number
+          product_image: string
+          product_name: string
+          quantity: number
+          size: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id: string
+          price: number
+          product_image: string
+          product_name: string
+          quantity: number
+          size: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          price?: number
+          product_image?: string
+          product_name?: string
+          quantity?: number
+          size?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          delivery_fee: number
+          delivery_type: string
+          estimated_delivery: string | null
+          id: string
+          order_number: string
+          shipping_address: Json
+          status: string
+          subtotal: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_fee?: number
+          delivery_type: string
+          estimated_delivery?: string | null
+          id?: string
+          order_number: string
+          shipping_address: Json
+          status?: string
+          subtotal: number
+          total: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          delivery_fee?: number
+          delivery_type?: string
+          estimated_delivery?: string | null
+          id?: string
+          order_number?: string
+          shipping_address?: Json
+          status?: string
+          subtotal?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      saved_scents: {
+        Row: {
+          created_at: string | null
+          formula: Json
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          formula: Json
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          formula?: Json
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string | null
+          frequency: string
+          id: string
+          next_delivery: string
+          price: number
+          product_name: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          frequency: string
+          id?: string
+          next_delivery: string
+          price: number
+          product_name: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          frequency?: string
+          id?: string
+          next_delivery?: string
+          price?: number
+          product_name?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
