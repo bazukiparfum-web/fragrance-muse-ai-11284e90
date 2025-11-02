@@ -165,7 +165,6 @@ const AdminNotes = () => {
     "family": "floral",
     "intensity": 8,
     "longevity": 7,
-    "cost_per_ml": 15.50,
     "personality_matches": ["Elegant", "Calm"],
     "occasions": ["Evening", "Office"],
     "climates": ["Moderate", "Cool"],
@@ -188,9 +187,6 @@ const AdminNotes = () => {
                     <p className="text-sm text-muted-foreground">
                       {note.category} • {note.family} • Intensity: {note.intensity}/10
                     </p>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    ₹{note.cost_per_ml}/ml
                   </div>
                 </div>
               ))}

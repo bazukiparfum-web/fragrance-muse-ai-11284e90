@@ -91,7 +91,6 @@ export type Database = {
           age_ranges: Json | null
           category: string
           climates: Json | null
-          cost_per_ml: number
           created_at: string | null
           description: string | null
           family: string
@@ -108,7 +107,6 @@ export type Database = {
           age_ranges?: Json | null
           category: string
           climates?: Json | null
-          cost_per_ml?: number
           created_at?: string | null
           description?: string | null
           family: string
@@ -125,7 +123,6 @@ export type Database = {
           age_ranges?: Json | null
           category?: string
           climates?: Json | null
-          cost_per_ml?: number
           created_at?: string | null
           description?: string | null
           family?: string
@@ -305,7 +302,6 @@ export type Database = {
           longevity: number | null
           name: string
           quiz_answers: Json | null
-          total_cost: number | null
           user_id: string
         }
         Insert: {
@@ -317,7 +313,6 @@ export type Database = {
           longevity?: number | null
           name: string
           quiz_answers?: Json | null
-          total_cost?: number | null
           user_id: string
         }
         Update: {
@@ -329,7 +324,6 @@ export type Database = {
           longevity?: number | null
           name?: string
           quiz_answers?: Json | null
-          total_cost?: number | null
           user_id?: string
         }
         Relationships: []

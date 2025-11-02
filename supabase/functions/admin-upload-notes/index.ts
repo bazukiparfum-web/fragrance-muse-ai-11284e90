@@ -86,7 +86,6 @@ serve(async (req) => {
             family: note.family,
             intensity: note.intensity || 5,
             longevity: note.longevity || 5,
-            cost_per_ml: note.cost_per_ml || 0,
             personality_matches: note.personality_matches || [],
             occasions: note.occasions || [],
             climates: note.climates || [],
@@ -101,12 +100,11 @@ serve(async (req) => {
             const { error: updateError } = await supabase
               .from('fragrance_notes')
               .update({
-                category: note.category,
-                family: note.family,
-                intensity: note.intensity || 5,
-                longevity: note.longevity || 5,
-                cost_per_ml: note.cost_per_ml || 0,
-                personality_matches: note.personality_matches || [],
+              category: note.category,
+              family: note.family,
+              intensity: note.intensity || 5,
+              longevity: note.longevity || 5,
+              personality_matches: note.personality_matches || [],
                 occasions: note.occasions || [],
                 climates: note.climates || [],
                 age_ranges: note.age_ranges || [],

@@ -25,7 +25,6 @@ interface Note {
   family: string;
   intensity: number;
   longevity: number;
-  cost_per_ml: number;
   personality_matches: string[];
   occasions: string[];
   climates: string[];
@@ -114,8 +113,7 @@ function selectNotes(
       selected.push({
         note: note.name,
         percentage,
-        intensity: note.intensity,
-        cost: note.cost_per_ml
+        intensity: note.intensity
       });
       remainingPercentage -= percentage;
     }
@@ -130,8 +128,7 @@ function selectNotes(
     selected.push({
       note: note.name,
       percentage,
-      intensity: note.intensity,
-      cost: note.cost_per_ml
+      intensity: note.intensity
     });
     remainingPercentage -= percentage;
   }
@@ -238,7 +235,6 @@ serve(async (req) => {
       const baseNotes = selectNotes(scoredNotes, 'base', proportions.base, requiredNotes, avoidNotes);
 
       const allNotes = [...topNotes, ...heartNotes, ...baseNotes];
-      const totalCost = allNotes.reduce((sum, n) => sum + (n.cost * n.percentage / 100), 0);
       const avgIntensity = Math.round(allNotes.reduce((sum, n) => sum + n.intensity, 0) / allNotes.length);
       const avgLongevity = Math.round(scoredNotes.filter(n => 
         allNotes.find(an => an.note === n.name)
@@ -267,13 +263,7 @@ serve(async (req) => {
         matchScore: Math.min(99, Math.max(85, matchScore)),
         intensity: avgIntensity,
         longevity: avgLongevity,
-        totalCost: totalCost.toFixed(2),
-        prices: {
-          '10ml': Math.round(totalCost * 10 * 1.5),
-          '30ml': Math.round(totalCost * 30 * 1.3),
-          '50ml': Math.round(totalCost * 50 * 1.2)
-        },
-        formulationNotes: applicableRules.length > 0 
+        formulationNotes: applicableRules.length > 0
           ? `Applied ${applicableRules.length} formulation rule(s): ${applicableRules.map(r => r.rule_name).join(', ')}`
           : 'Default formulation'
       });
