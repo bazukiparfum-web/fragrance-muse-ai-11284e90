@@ -33,7 +33,95 @@ const QuizResults = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toast } = useToast();
-  const recommendations: Recommendation[] = location.state?.recommendations || [];
+  
+  const defaultRecommendations: Recommendation[] = [
+    {
+      id: 'default-1',
+      name: 'Signature Essence',
+      story: 'A versatile fragrance suitable for any occasion. This balanced composition adapts beautifully to your unique chemistry.',
+      matchScore: 75,
+      formula: {
+        top: [
+          { note: 'Bergamot', percentage: 15, intensity: 6, cost: 12 },
+          { note: 'Lemon', percentage: 10, intensity: 7, cost: 10 }
+        ],
+        heart: [
+          { note: 'Jasmine', percentage: 25, intensity: 6, cost: 20 },
+          { note: 'Rose', percentage: 15, intensity: 5, cost: 18 }
+        ],
+        base: [
+          { note: 'Sandalwood', percentage: 30, intensity: 7, cost: 25 },
+          { note: 'Vanilla', percentage: 5, intensity: 5, cost: 15 }
+        ]
+      },
+      intensity: 6,
+      longevity: 7,
+      totalCost: '100',
+      prices: {
+        '10ml': 499,
+        '30ml': 899,
+        '50ml': 1299
+      }
+    },
+    {
+      id: 'default-2',
+      name: 'Timeless Harmony',
+      story: 'An elegant blend that captures sophistication and warmth in perfect balance.',
+      matchScore: 72,
+      formula: {
+        top: [
+          { note: 'Grapefruit', percentage: 12, intensity: 7, cost: 11 },
+          { note: 'Mint', percentage: 8, intensity: 6, cost: 9 }
+        ],
+        heart: [
+          { note: 'Lavender', percentage: 20, intensity: 6, cost: 18 },
+          { note: 'Geranium', percentage: 15, intensity: 5, cost: 16 }
+        ],
+        base: [
+          { note: 'Cedarwood', percentage: 25, intensity: 7, cost: 22 },
+          { note: 'Amber', percentage: 20, intensity: 6, cost: 24 }
+        ]
+      },
+      intensity: 5,
+      longevity: 8,
+      totalCost: '100',
+      prices: {
+        '10ml': 499,
+        '30ml': 899,
+        '50ml': 1299
+      }
+    },
+    {
+      id: 'default-3',
+      name: 'Modern Classic',
+      story: 'A contemporary interpretation of timeless elegance, perfect for those who appreciate refined simplicity.',
+      matchScore: 70,
+      formula: {
+        top: [
+          { note: 'Orange', percentage: 10, intensity: 6, cost: 10 },
+          { note: 'Pink Pepper', percentage: 8, intensity: 7, cost: 14 }
+        ],
+        heart: [
+          { note: 'Iris', percentage: 22, intensity: 6, cost: 26 },
+          { note: 'Ylang Ylang', percentage: 12, intensity: 5, cost: 20 }
+        ],
+        base: [
+          { note: 'Patchouli', percentage: 28, intensity: 8, cost: 24 },
+          { note: 'Tonka Bean', percentage: 20, intensity: 6, cost: 22 }
+        ]
+      },
+      intensity: 6,
+      longevity: 7,
+      totalCost: '116',
+      prices: {
+        '10ml': 499,
+        '30ml': 899,
+        '50ml': 1299
+      }
+    }
+  ];
+  
+  const recommendations: Recommendation[] = location.state?.recommendations || defaultRecommendations;
 
   const handleAddToCart = (scent: Recommendation, size: string) => {
     const price = scent.prices[size as keyof typeof scent.prices];
@@ -50,18 +138,6 @@ const QuizResults = () => {
     });
   };
 
-  if (recommendations.length === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-20 text-center">
-          <h1 className="font-serif text-4xl font-bold mb-4">No recommendations found</h1>
-          <Button onClick={() => navigate('/shop/quiz')}>Take Quiz Again</Button>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">

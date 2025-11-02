@@ -22,6 +22,21 @@ const QuizForSomeoneElse = () => {
 
   const progress = (currentStep / totalSteps) * 100;
 
+  const isStepComplete = (step: number): boolean => {
+    switch (step) {
+      case 1: return !!answers.recipientGender;
+      case 2: return !!answers.ageRange;
+      case 3: return !!answers.personality;
+      case 4: return !!answers.scentFamily;
+      case 5: return answers.intensity !== undefined;
+      case 6: return !!answers.longevity;
+      case 7: return !!answers.occasion;
+      case 8: return !!answers.climate;
+      case 9: return !!answers.dreamWord && answers.dreamWord.trim().length > 0;
+      default: return true;
+    }
+  };
+
   const handleNext = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
@@ -278,7 +293,7 @@ const QuizForSomeoneElse = () => {
             <Button
               onClick={handleNext}
               size="lg"
-              disabled={isLoading}
+              disabled={isLoading || !isStepComplete(currentStep)}
             >
               {isLoading ? 'Generating...' : currentStep === totalSteps ? 'Get Recommendations' : 'Next'}
               {!isLoading && currentStep < totalSteps && <ArrowRight className="ml-2 h-4 w-4" />}

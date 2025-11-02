@@ -204,32 +204,11 @@ const AdminNotes = () => {
           throw new Error('Invalid file format. Expected an array of notes.');
         }
 
-        // Refresh session to get latest token
-        const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
-        
-        if (sessionError || !session?.access_token) {
-          console.error('Session refresh error:', sessionError);
-          // Try getting existing session as fallback
-          const { data: fallbackData } = await supabase.auth.getSession();
-          if (!fallbackData?.session?.access_token) {
-            throw new Error('No active session. Please log out and log back in.');
-          }
-        }
+        console.log('Uploading', notesData.length, 'notes');
 
-        const validSession = session || (await supabase.auth.getSession()).data.session;
-        if (!validSession) {
-          throw new Error('Unable to verify session');
-        }
-
-        console.log('Invoking function with', notesData.length, 'notes');
-
-        // Call the edge function with explicit headers
+        // Call the edge function - let Supabase client handle authentication
         const { data, error } = await supabase.functions.invoke('admin-upload-notes', {
-          body: { notes: notesData },
-          headers: {
-            Authorization: `Bearer ${validSession.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
-          }
+          body: { notes: notesData }
         });
 
         if (error) throw error;
