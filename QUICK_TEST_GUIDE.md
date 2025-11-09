@@ -76,7 +76,27 @@ On the detail page (/shop/account/scents/[id]):
 7. Copy both the link and the code
 ```
 
-### Step 6: Test Referral in Checkout
+### Step 6: Tweak the Formula
+```
+On the detail page (/shop/account/scents/[id]):
+
+1. Click the "Tweak Formula" button
+2. Dialog opens: "Name your scent"
+3. Enter new name: "Mystic Rose v2"
+4. Click "Next"
+5. Adjust ingredients:
+   - Move sliders to change percentages
+   - Click lock icon to prevent changes
+   - Click trash to remove ingredients (min 1 required)
+   - Watch visualizer update in real-time
+6. Click "Level to 100%" to normalize formula
+7. Click "Save Fragrance"
+8. ✓ New fragrance saved with unique code (USERA-002)
+9. ✓ Redirected to new fragrance detail page
+10. ✓ New unique visual representation generated
+```
+
+### Step 7: Test Referral in Checkout
 ```
 1. Add any item to cart
 2. Go to checkout
@@ -137,6 +157,15 @@ On the detail page (/shop/account/scents/[id]):
 - You cannot use your own referral code
 - Test with a different user (incognito window)
 - Check if code expired (default: 90 days)
+
+### Issue 6: "Tweak formula button doesn't work"
+**Cause:** Not on the detail page of a saved fragrance.
+
+**Fix:**
+1. Go to Account → My Scents tab
+2. Click on a saved fragrance card
+3. You should see "Tweak Formula" button next to "Share"
+4. If button still doesn't work, check browser console for errors
 
 ---
 
@@ -201,10 +230,17 @@ On the detail page (/shop/account/scents/[id]):
    ↓ Enter name "Mystic Rose"
    ↓ Click "Save Fragrance"
    
-6. Scent Detail (/shop/account/scents/[id]) ← SHARE BUTTON IS HERE!
+6. Scent Detail (/shop/account/scents/[id]) ← SHARE & TWEAK BUTTONS HERE!
    ↓ Click "Share"
    ↓ Click "Generate Share Link"
    ↓ Copy referral code
+   
+   OR
+   
+   ↓ Click "Tweak Formula"
+   ↓ Enter new name
+   ↓ Adjust percentages with sliders
+   ↓ Click "Save Fragrance"
    
 7. My Scents (/shop/account?tab=scents) ← SEE ALL SAVED FRAGRANCES
    
@@ -228,6 +264,11 @@ On the detail page (/shop/account/scents/[id]):
 | Apply discount button | ✅ Working | Checkout.tsx line 206 |
 | Referrals dashboard | ✅ Working | Account.tsx line 462-637 |
 | Referrer reward processing | ✅ Working | process-referral-reward edge function |
+| Tweak formula | ✅ Working | FormulaTweakDialog.tsx |
+| Formula slider adjustments | ✅ Working | FormulaTweakDialog.tsx |
+| Lock/remove ingredients | ✅ Working | FormulaTweakDialog.tsx |
+| Real-time visualizer | ✅ Working | FragranceVisualizer.tsx + fragranceColorMapper.ts |
+| Save tweaked fragrance | ✅ Working | FormulaTweakDialog.tsx line 98-144 |
 
 ---
 

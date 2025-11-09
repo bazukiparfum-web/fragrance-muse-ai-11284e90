@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { FragranceVisualizer } from "@/components/FragranceVisualizer";
 import { ShareFragranceDialog } from "@/components/ShareFragranceDialog";
+import { FormulaTweakDialog } from "@/components/FormulaTweakDialog";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { ArrowLeft, ShoppingCart, Wand2, Calendar, Share2 } from "lucide-react";
@@ -22,6 +23,7 @@ export default function ScentDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState('30ml');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [tweakDialogOpen, setTweakDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchScent();
@@ -69,22 +71,7 @@ export default function ScentDetail() {
   };
 
   const handleTweak = () => {
-    if (!scent?.quiz_answers) {
-      toast.error('Quiz data not available for this fragrance');
-      return;
-    }
-
-    const answers = scent.quiz_answers;
-    const isGiftQuiz = !!(answers.recipientGender || answers.recipientAge);
-
-    navigate(isGiftQuiz ? '/shop/quiz/for-someone-else' : '/shop/quiz/for-yourself', {
-      state: {
-        prefillAnswers: answers,
-        tweakMode: true,
-        originalFragranceId: scent.id,
-        originalFragranceName: scent.name
-      }
-    });
+    setTweakDialogOpen(true);
   };
 
   const handleShareCreated = (shareToken: string, referralCode: string) => {
@@ -293,6 +280,12 @@ export default function ScentDetail() {
         shareToken={scent.share_token}
         shareCount={scent.share_count}
         onShareCreated={handleShareCreated}
+      />
+
+      <FormulaTweakDialog
+        open={tweakDialogOpen}
+        onOpenChange={setTweakDialogOpen}
+        originalScent={scent}
       />
 
       <Footer />
