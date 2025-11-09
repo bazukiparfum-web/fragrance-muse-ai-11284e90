@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/Header';
@@ -8,6 +8,9 @@ import { ShoppingCart, Sparkles, Save } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { SaveScentDialog } from '@/components/SaveScentDialog';
+import { QuizAnalytics } from '@/components/QuizAnalytics';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuiz } from '@/contexts/QuizContext';
 
 interface Recommendation {
   id: string;
@@ -35,8 +38,27 @@ const QuizResults = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { answers } = useQuiz();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [selectedScent, setSelectedScent] = useState<Recommendation | null>(null);
+
+  useEffect(() => {
+    saveQuizResponse();
+  }, []);
+
+  const saveQuizResponse = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      await supabase.from('quiz_responses').insert([{
+        user_id: user?.id || null,
+        answers: answers as any,
+        completed: true
+      }]);
+    } catch (error) {
+      console.error('Error saving quiz response:', error);
+    }
+  };
   
   const defaultRecommendations: Recommendation[] = [
     {
@@ -308,6 +330,11 @@ const QuizResults = () => {
               Add Discovery Set to Cart
             </Button>
           </Card>
+
+          {/* Analytics Section */}
+          <div className="mt-12">
+            <QuizAnalytics userAnswers={answers} />
+          </div>
         </div>
       </section>
 

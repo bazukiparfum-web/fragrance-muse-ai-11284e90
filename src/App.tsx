@@ -18,6 +18,7 @@ import ScentDetail from "./pages/ScentDetail";
 import SharedFragrance from "./pages/SharedFragrance";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminNotes from "./pages/admin/AdminNotes";
+import AdminQuestions from "./pages/admin/AdminQuestions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,7 +44,9 @@ const App = () => (
               <Route path="/shop/quiz/for-someone-else" element={<QuizForSomeoneElse />} />
               <Route path="/shop/quiz/results" element={<QuizResults />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/notes" element={<AdminNotes />} />
+              <Route path="/admin/questions" element={<AdminQuestions />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -9,6 +9,9 @@ verify_jwt = true
 [functions.get-quiz-questions]
 verify_jwt = false
 
+[functions.get-quiz-analytics]
+verify_jwt = false
+
 [functions.admin-upload-notes]
 verify_jwt = true
 

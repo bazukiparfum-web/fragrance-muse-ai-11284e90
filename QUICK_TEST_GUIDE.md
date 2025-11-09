@@ -113,6 +113,54 @@ On the detail page (/shop/account/scents/[id]):
 5. ✓ Total should reduce by ₹100
 ```
 
+### Step 8: Admin Question Management (Admin Only)
+```
+1. Ensure your user has admin role in user_roles table:
+   INSERT INTO user_roles (user_id, role) 
+   VALUES ('your-user-id', 'admin');
+2. Go to: http://localhost:8080/admin/dashboard
+3. Click on "Quiz Questions" card
+4. On the Admin Questions page:
+   - Click "Add Question" to create new question
+   - Use up/down arrows to reorder questions
+   - Toggle questions active/inactive with switch
+   - Click edit icon to modify questions
+   - Click delete icon to remove questions
+5. Test different question types:
+   - Radio buttons
+   - Slider
+   - Text input
+   - Color picker
+   - City search
+   - Personality sliders
+6. ✓ Changes reflect immediately in quiz
+```
+
+### Step 9: View Analytics & Comparisons
+```
+After completing the quiz (multiple users for better data):
+
+1. On Quiz Results page, scroll down
+2. You'll see "How You Compare" section
+3. Explore three tabs:
+   
+   📊 Personality Tab:
+   - Radar chart showing your traits vs. average
+   - Compare across 8 personality dimensions
+   
+   🎨 Colors Tab:
+   - Pie chart of popular color preferences
+   - See color distribution among all users
+   
+   👥 Demographics Tab:
+   - Bar charts for age ranges
+   - Gender identity distribution
+   - Growing up settings breakdown
+
+4. ✓ Charts update with each new quiz completion
+5. ✓ Your data highlighted vs. community averages
+```
+
 ---
 
 ## 🐛 Common Issues & Fixes
@@ -172,6 +220,27 @@ On the detail page (/shop/account/scents/[id]):
 2. Click on a saved fragrance card
 3. You should see "Tweak Formula" button next to "Share"
 4. If button still doesn't work, check browser console for errors
+
+### Issue 7: "Analytics not showing"
+**Cause:** No quiz responses in database yet.
+
+**Fix:**
+1. Complete the quiz at least once
+2. Refresh the results page
+3. For better visualizations, complete quiz as multiple users
+4. Check if `quiz_responses` table has data
+
+### Issue 8: "Can't access admin page"
+**Cause:** User doesn't have admin role.
+
+**Fix:**
+1. In Supabase SQL editor, run:
+   ```sql
+   INSERT INTO user_roles (user_id, role) 
+   VALUES ('your-user-id', 'admin');
+   ```
+2. Replace 'your-user-id' with actual user ID from auth.users
+3. Refresh the page and try again
 
 ---
 
@@ -252,6 +321,10 @@ On the detail page (/shop/account/scents/[id]):
 7. My Scents (/shop/account?tab=scents) ← SEE ALL SAVED FRAGRANCES
    
 8. Referrals Tab (/shop/account?tab=referrals) ← SEE REFERRAL STATS
+
+9. Analytics (/shop/quiz/results - bottom section) ← COMPARE WITH OTHERS
+
+10. Admin Dashboard (/admin/dashboard) ← MANAGE QUESTIONS (admin only)
 ```
 
 ---
@@ -282,6 +355,14 @@ On the detail page (/shop/account/scents/[id]):
 | Lock/remove ingredients | ✅ Working | FormulaTweakDialog.tsx |
 | Real-time visualizer | ✅ Working | FragranceVisualizer.tsx + fragranceColorMapper.ts |
 | Save tweaked fragrance | ✅ Working | FormulaTweakDialog.tsx line 98-144 |
+| Admin question management | ✅ Working | AdminQuestions.tsx |
+| Question CRUD operations | ✅ Working | admin-manage-questions edge function |
+| Question reordering | ✅ Working | AdminQuestions.tsx |
+| Quiz analytics comparison | ✅ Working | QuizAnalytics.tsx |
+| Personality radar chart | ✅ Working | QuizAnalytics.tsx |
+| Color preference pie chart | ✅ Working | QuizAnalytics.tsx |
+| Demographics bar charts | ✅ Working | QuizAnalytics.tsx |
+| Quiz response tracking | ✅ Working | quiz_responses table |
 
 ---
 
@@ -309,6 +390,28 @@ ORDER BY created_at DESC;
 ### 4. Check referrals:
 ```sql
 SELECT * FROM referrals ORDER BY created_at DESC;
+```
+
+### 5. Check quiz responses for analytics:
+```sql
+SELECT id, user_id, answers, created_at 
+FROM quiz_responses 
+ORDER BY created_at DESC;
+```
+
+### 6. Check quiz questions:
+```sql
+SELECT question_text, question_type, question_key, order_index, is_active
+FROM quiz_questions 
+ORDER BY order_index;
+```
+
+### 7. Verify admin role:
+```sql
+SELECT ur.*, u.email 
+FROM user_roles ur
+JOIN auth.users u ON ur.user_id = u.id
+WHERE role = 'admin';
 ```
 
 ---

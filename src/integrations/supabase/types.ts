@@ -309,6 +309,33 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_responses: {
+        Row: {
+          answers: Json
+          completed: boolean | null
+          created_at: string
+          id: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          answers: Json
+          completed?: boolean | null
+          created_at?: string
+          id?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Update: {
+          answers?: Json
+          completed?: boolean | null
+          created_at?: string
+          id?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       referral_rewards: {
         Row: {
           completed_at: string | null
