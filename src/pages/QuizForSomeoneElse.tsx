@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ColorPicker } from '@/components/quiz/ColorPicker';
 import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
-import { useQuizProgress } from '@/hooks/useQuizProgress';
 
 const QuizForSomeoneElse = () => {
   const navigate = useNavigate();
@@ -32,12 +31,48 @@ const QuizForSomeoneElse = () => {
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const totalSteps = questions.length || 1;
-  
-  const { loadProgress, saveProgress, deleteProgress } = useQuizProgress({ 
-    quizType: 'someone_special', 
-    currentStep, 
-    answers 
-  });
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastSavedRef = useRef<string>('');
+
+  // Auto-save progress
+  useEffect(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      if (Object.keys(answers).length > 0) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          const currentState = JSON.stringify({ currentStep, answers });
+          if (currentState === lastSavedRef.current) return;
+
+          await supabase
+            .from('quiz_progress')
+            .upsert({
+              user_id: user.id,
+              quiz_type: 'someone_special',
+              current_step: currentStep,
+              answers: answers as any,
+            }, {
+              onConflict: 'user_id,quiz_type'
+            });
+
+          lastSavedRef.current = currentState;
+        } catch (error) {
+          console.error('Error auto-saving:', error);
+        }
+      }
+    }, 1000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [answers, currentStep]);
 
   useEffect(() => {
     loadQuestions();
@@ -55,10 +90,23 @@ const QuizForSomeoneElse = () => {
   }, [location.state, setAllAnswers]);
 
   const checkForSavedProgress = async () => {
-    const progress = await loadProgress();
-    if (progress && Object.keys(progress.answers).length > 0) {
-      setSavedProgress(progress);
-      setShowResumeDialog(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('quiz_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('quiz_type', 'someone_special')
+        .maybeSingle();
+
+      if (data && Object.keys(data.answers || {}).length > 0) {
+        setSavedProgress(data);
+        setShowResumeDialog(true);
+      }
+    } catch (error) {
+      console.error('Error loading progress:', error);
     }
   };
 
@@ -75,7 +123,19 @@ const QuizForSomeoneElse = () => {
   };
 
   const handleStartFresh = async () => {
-    await deleteProgress();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('quiz_progress')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('quiz_type', 'someone_special');
+      }
+    } catch (error) {
+      console.error('Error deleting progress:', error);
+    }
+    
     resetAnswers();
     setCurrentStep(1);
     setShowResumeDialog(false);
@@ -204,7 +264,18 @@ const QuizForSomeoneElse = () => {
       if (error) throw error;
 
       // Delete saved progress after successful submission
-      await deleteProgress();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('quiz_progress')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('quiz_type', 'someone_special');
+        }
+      } catch (deleteError) {
+        console.error('Error deleting progress:', deleteError);
+      }
 
       const normalizedRecommendations = data.recommendations?.map((rec: any) => ({
         ...rec,
