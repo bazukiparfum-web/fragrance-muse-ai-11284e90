@@ -19,6 +19,7 @@ import SharedFragrance from "./pages/SharedFragrance";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminNotes from "./pages/admin/AdminNotes";
 import AdminQuestions from "./pages/admin/AdminQuestions";
+import AdminRules from "./pages/admin/AdminRules";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/notes" element={<AdminNotes />} />
               <Route path="/admin/questions" element={<AdminQuestions />} />
+              <Route path="/admin/rules" element={<AdminRules />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
