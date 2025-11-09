@@ -261,6 +261,36 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_progress: {
+        Row: {
+          answers: Json
+          created_at: string
+          current_step: number
+          id: string
+          last_updated: string
+          quiz_type: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          current_step?: number
+          id?: string
+          last_updated?: string
+          quiz_type: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          current_step?: number
+          id?: string
+          last_updated?: string
+          quiz_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       quiz_questions: {
         Row: {
           created_at: string | null

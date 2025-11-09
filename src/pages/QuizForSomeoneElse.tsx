@@ -7,14 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import Header from '@/components/Header';
-import { ArrowLeft, ArrowRight, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, X, Save } from 'lucide-react';
 import { useQuiz } from '@/contexts/QuizContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ColorPicker } from '@/components/quiz/ColorPicker';
 import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
+import { useQuizProgress } from '@/hooks/useQuizProgress';
 
 const QuizForSomeoneElse = () => {
   const navigate = useNavigate();
@@ -27,10 +29,15 @@ const QuizForSomeoneElse = () => {
   const [originalFragranceName, setOriginalFragranceName] = useState('');
   const [questions, setQuestions] = useState<any[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const [savedProgress, setSavedProgress] = useState<any>(null);
   const totalSteps = questions.length || 1;
+  
+  const { loadProgress, saveProgress, deleteProgress } = useQuizProgress('someone_special', currentStep, answers);
 
   useEffect(() => {
     loadQuestions();
+    checkForSavedProgress();
     
     const locationState = location.state as any;
     if (locationState?.prefillAnswers) {
@@ -42,6 +49,37 @@ const QuizForSomeoneElse = () => {
       }
     }
   }, [location.state, setAllAnswers]);
+
+  const checkForSavedProgress = async () => {
+    const progress = await loadProgress();
+    if (progress && Object.keys(progress.answers).length > 0) {
+      setSavedProgress(progress);
+      setShowResumeDialog(true);
+    }
+  };
+
+  const handleResumeProgress = () => {
+    if (savedProgress) {
+      setAllAnswers(savedProgress.answers);
+      setCurrentStep(savedProgress.current_step);
+      setShowResumeDialog(false);
+      toast({
+        title: "Progress Restored",
+        description: "Continuing from where you left off.",
+      });
+    }
+  };
+
+  const handleStartFresh = async () => {
+    await deleteProgress();
+    resetAnswers();
+    setCurrentStep(1);
+    setShowResumeDialog(false);
+    toast({
+      title: "Starting Fresh",
+      description: "Previous progress cleared.",
+    });
+  };
 
   const loadQuestions = async () => {
     try {
@@ -160,6 +198,9 @@ const QuizForSomeoneElse = () => {
       });
 
       if (error) throw error;
+
+      // Delete saved progress after successful submission
+      await deleteProgress();
 
       const normalizedRecommendations = data.recommendations?.map((rec: any) => ({
         ...rec,
@@ -377,6 +418,33 @@ const QuizForSomeoneElse = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
+      <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resume Your Gift Quiz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              We found a saved gift quiz in progress from{' '}
+              {savedProgress?.last_updated && 
+                new Date(savedProgress.last_updated).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit'
+                })
+              }. Would you like to continue where you left off or start fresh?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleStartFresh}>
+              Start Fresh
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleResumeProgress}>
+              Resume Quiz
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           {isTweakMode && (
@@ -405,9 +473,15 @@ const QuizForSomeoneElse = () => {
           )}
           
           <div className="mb-8">
-            <div className="flex justify-between text-sm text-muted-foreground mb-2">
+            <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
               <span>Step {currentStep} of {totalSteps}</span>
-              <span>{Math.round(progress)}%</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs opacity-70 flex items-center gap-1">
+                  <Save className="w-3 h-3" />
+                  Auto-saving
+                </span>
+                <span>{Math.round(progress)}%</span>
+              </div>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
