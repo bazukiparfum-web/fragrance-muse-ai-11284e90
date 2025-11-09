@@ -297,34 +297,46 @@ export type Database = {
           created_at: string | null
           formula: Json
           formulation_notes: string | null
+          fragrance_code: string | null
           id: string
           intensity: number | null
           longevity: number | null
+          match_score: number | null
           name: string
+          prices: Json | null
           quiz_answers: Json | null
           user_id: string
+          visual_data: Json | null
         }
         Insert: {
           created_at?: string | null
           formula: Json
           formulation_notes?: string | null
+          fragrance_code?: string | null
           id?: string
           intensity?: number | null
           longevity?: number | null
+          match_score?: number | null
           name: string
+          prices?: Json | null
           quiz_answers?: Json | null
           user_id: string
+          visual_data?: Json | null
         }
         Update: {
           created_at?: string | null
           formula?: Json
           formulation_notes?: string | null
+          fragrance_code?: string | null
           id?: string
           intensity?: number | null
           longevity?: number | null
+          match_score?: number | null
           name?: string
+          prices?: Json | null
           quiz_answers?: Json | null
           user_id?: string
+          visual_data?: Json | null
         }
         Relationships: []
       }

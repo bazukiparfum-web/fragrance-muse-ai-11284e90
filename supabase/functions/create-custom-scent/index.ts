@@ -251,15 +251,26 @@ serve(async (req) => {
         }, 0)
       );
 
+      // Create complete formula array for database storage
+      const formulaArray = [
+        ...topNotes.map(n => ({ ...n, category: 'top', family: scoredNotes.find(sn => sn.name === n.note)?.family || 'unknown' })),
+        ...heartNotes.map(n => ({ ...n, category: 'heart', family: scoredNotes.find(sn => sn.name === n.note)?.family || 'unknown' })),
+        ...baseNotes.map(n => ({ ...n, category: 'base', family: scoredNotes.find(sn => sn.name === n.note)?.family || 'unknown' }))
+      ];
+
+      // Pricing structure
+      const prices = {
+        '10ml': 499,
+        '30ml': 899,
+        '50ml': 1299
+      };
+
       recommendations.push({
         id: `custom_${String(i + 1).padStart(3, '0')}`,
         name,
         story,
-        formula: {
-          top: topNotes,
-          heart: heartNotes,
-          base: baseNotes
-        },
+        formula: formulaArray, // Flat array with all notes
+        prices, // Add pricing
         matchScore: Math.min(99, Math.max(85, matchScore)),
         intensity: avgIntensity,
         longevity: avgLongevity,

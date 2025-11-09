@@ -1,11 +1,13 @@
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ShoppingCart, Sparkles } from 'lucide-react';
+import { ShoppingCart, Sparkles, Save } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { SaveScentDialog } from '@/components/SaveScentDialog';
 
 interface Recommendation {
   id: string;
@@ -33,6 +35,8 @@ const QuizResults = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [selectedScent, setSelectedScent] = useState<Recommendation | null>(null);
   
   const defaultRecommendations: Recommendation[] = [
     {
@@ -123,6 +127,17 @@ const QuizResults = () => {
   
   const recommendations: Recommendation[] = location.state?.recommendations || defaultRecommendations;
 
+  // Helper to get notes by category (supports both old and new formula formats)
+  const getNotesByCategory = (formula: any, category: 'top' | 'heart' | 'base') => {
+    if (Array.isArray(formula)) {
+      // New format: flat array with category field
+      return formula.filter((n: any) => n.category === category);
+    } else {
+      // Old format: nested object with top/heart/base
+      return formula[category] || [];
+    }
+  };
+
   const handleAddToCart = (scent: Recommendation, size: string) => {
     const price = scent.prices[size as keyof typeof scent.prices];
     addToCart({
@@ -136,6 +151,11 @@ const QuizResults = () => {
       title: "Added to cart",
       description: `${scent.name} (${size}) added to your cart`
     });
+  };
+
+  const handleSaveScent = (scent: Recommendation) => {
+    setSelectedScent(scent);
+    setSaveDialogOpen(true);
   };
 
 
@@ -174,9 +194,9 @@ const QuizResults = () => {
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Top Notes</h4>
                       <div className="flex flex-wrap gap-2">
-                        {scent.formula.top.map((item) => (
-                          <span key={item.note} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                            {item.note} ({item.percentage}%)
+                        {getNotesByCategory(scent.formula, 'top').map((item: any) => (
+                          <span key={item.note || item.name} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
+                            {item.note || item.name} ({item.percentage}%)
                           </span>
                         ))}
                       </div>
@@ -185,9 +205,9 @@ const QuizResults = () => {
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Heart Notes</h4>
                       <div className="flex flex-wrap gap-2">
-                        {scent.formula.heart.map((item) => (
-                          <span key={item.note} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                            {item.note} ({item.percentage}%)
+                        {getNotesByCategory(scent.formula, 'heart').map((item: any) => (
+                          <span key={item.note || item.name} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
+                            {item.note || item.name} ({item.percentage}%)
                           </span>
                         ))}
                       </div>
@@ -196,9 +216,9 @@ const QuizResults = () => {
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Base Notes</h4>
                       <div className="flex flex-wrap gap-2">
-                        {scent.formula.base.map((item) => (
-                          <span key={item.note} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                            {item.note} ({item.percentage}%)
+                        {getNotesByCategory(scent.formula, 'base').map((item: any) => (
+                          <span key={item.note || item.name} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
+                            {item.note || item.name} ({item.percentage}%)
                           </span>
                         ))}
                       </div>
@@ -249,6 +269,14 @@ const QuizResults = () => {
 
                   <div className="flex gap-2 mt-6">
                     <Button
+                      onClick={() => handleSaveScent(scent)}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Save
+                    </Button>
+                    <Button
                       onClick={() => handleAddToCart(scent, '30ml')}
                       className="flex-1"
                     >
@@ -284,6 +312,14 @@ const QuizResults = () => {
       </section>
 
       <Footer />
+
+      {selectedScent && (
+        <SaveScentDialog
+          open={saveDialogOpen}
+          onOpenChange={setSaveDialogOpen}
+          recommendation={selectedScent}
+        />
+      )}
     </div>
   );
 };
