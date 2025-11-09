@@ -22,18 +22,19 @@ serve(async (req) => {
       );
     }
 
-    console.log('Creating Supabase client for auth verification...');
-    console.log('Auth header present:', !!authHeader);
+    // Extract JWT token from Authorization header (format: "Bearer <token>")
+    const token = authHeader.replace('Bearer ', '');
+    console.log('Token extracted, length:', token.length);
     
-    // Create client with anon key for auth verification
+    // Create client with anon key
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { 
-        global: { 
+      {
+        global: {
           headers: { Authorization: authHeader }
         },
-        auth: { 
+        auth: {
           persistSession: false,
           detectSessionInUrl: false,
           autoRefreshToken: false
@@ -41,12 +42,12 @@ serve(async (req) => {
       }
     );
 
-    // Verify user is authenticated
-    console.log('Verifying user authentication...');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    // Verify user by passing the token directly
+    console.log('Verifying user with JWT token...');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     
     if (authError) {
-      console.error('Auth error:', authError.message, authError);
+      console.error('Auth error:', authError.message);
       return new Response(
         JSON.stringify({ error: 'Unauthorized', details: authError.message }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -90,7 +91,7 @@ serve(async (req) => {
 
     console.log('Admin role verified');
 
-    // Use the same client for database operations (already has proper auth context)
+    // Use the same client for database operations
     const supabase = supabaseClient;
 
     const { operation, question } = await req.json();
