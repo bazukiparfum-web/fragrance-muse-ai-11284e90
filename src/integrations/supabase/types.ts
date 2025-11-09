@@ -275,6 +275,7 @@ export type Database = {
           question_key: string
           question_text: string
           question_type: string
+          quiz_type: string
           updated_at: string | null
         }
         Insert: {
@@ -290,6 +291,7 @@ export type Database = {
           question_key: string
           question_text: string
           question_type: string
+          quiz_type?: string
           updated_at?: string | null
         }
         Update: {
@@ -305,6 +307,7 @@ export type Database = {
           question_key?: string
           question_text?: string
           question_type?: string
+          quiz_type?: string
           updated_at?: string | null
         }
         Relationships: []
