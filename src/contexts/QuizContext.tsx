@@ -20,6 +20,9 @@ export interface QuizAnswers {
   dreamWord?: string;
   recipientGender?: string;
   recipientAge?: string;
+  
+  // For someone special
+  friendName?: string;
 }
 
 interface QuizContextType {

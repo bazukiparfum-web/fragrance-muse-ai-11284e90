@@ -45,7 +45,9 @@ const QuizForYourself = () => {
 
   const loadQuestions = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('get-quiz-questions');
+      const { data, error } = await supabase.functions.invoke('get-quiz-questions', {
+        body: { quizType: 'myself' }
+      });
       
       if (error) throw error;
       
@@ -136,6 +138,21 @@ const QuizForYourself = () => {
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSkip = () => {
+    const question = questions[currentStep - 1];
+    if (question) {
+      // Clear the answer for this question
+      const answerKey = question.answer_key as keyof typeof answers;
+      updateAnswer(answerKey, undefined as any);
+    }
+    // Move to next step
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      handleSubmit();
     }
   };
 
@@ -425,6 +442,15 @@ const QuizForYourself = () => {
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
+            </Button>
+
+            <Button
+              onClick={handleSkip}
+              variant="ghost"
+              size="lg"
+              disabled={isLoading}
+            >
+              Skip
             </Button>
 
             <Button
