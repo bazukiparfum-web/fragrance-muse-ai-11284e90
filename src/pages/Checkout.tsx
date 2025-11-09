@@ -105,7 +105,7 @@ const Checkout = () => {
       // Find the referral
       const { data: referral } = await supabase
         .from('referrals')
-        .select('id, referrer_id')
+        .select('id, referrer_id, expires_at, uses_count, max_uses')
         .eq('referral_code', code.toUpperCase())
         .single();
 
@@ -123,6 +123,26 @@ const Checkout = () => {
         toast({
           title: "Invalid code",
           description: "You cannot use your own referral code",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check expiry
+      if (referral.expires_at && new Date(referral.expires_at) < new Date()) {
+        toast({
+          title: "Code expired",
+          description: "This referral code has expired",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check max uses
+      if (referral.uses_count >= referral.max_uses) {
+        toast({
+          title: "Code limit reached",
+          description: "This referral code has reached maximum uses",
           variant: "destructive",
         });
         return;
@@ -285,6 +305,22 @@ const Checkout = () => {
 
       // Clear cart
       await clearCart();
+
+      // Process referral reward if applicable
+      if (appliedDiscount && appliedDiscount.rewardId) {
+        try {
+          await supabase.functions.invoke('process-referral-reward', {
+            body: {
+              orderId: order.id,
+              userId: user.id,
+              referralRewardId: appliedDiscount.rewardId,
+            },
+          });
+        } catch (error) {
+          console.error('Error processing referral reward:', error);
+          // Don't block order completion
+        }
+      }
 
       setOrderId(orderNumber);
       setStep(3);
