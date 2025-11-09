@@ -183,9 +183,12 @@ export type Database = {
           created_at: string | null
           delivery_fee: number
           delivery_type: string
+          discount_applied: number | null
+          discount_code: string | null
           estimated_delivery: string | null
           id: string
           order_number: string
+          referral_reward_id: string | null
           shipping_address: Json
           status: string
           subtotal: number
@@ -196,9 +199,12 @@ export type Database = {
           created_at?: string | null
           delivery_fee?: number
           delivery_type: string
+          discount_applied?: number | null
+          discount_code?: string | null
           estimated_delivery?: string | null
           id?: string
           order_number: string
+          referral_reward_id?: string | null
           shipping_address: Json
           status?: string
           subtotal: number
@@ -209,16 +215,27 @@ export type Database = {
           created_at?: string | null
           delivery_fee?: number
           delivery_type?: string
+          discount_applied?: number | null
+          discount_code?: string | null
           estimated_delivery?: string | null
           id?: string
           order_number?: string
+          referral_reward_id?: string | null
           shipping_address?: Json
           status?: string
           subtotal?: number
           total?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_referral_reward_id_fkey"
+            columns: ["referral_reward_id"]
+            isOneToOne: false
+            referencedRelation: "referral_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -292,6 +309,110 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_rewards: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          referee_discount_amount: number | null
+          referee_discount_used: boolean | null
+          referee_email: string | null
+          referee_id: string | null
+          referee_order_id: string | null
+          referral_id: string
+          referrer_discount_amount: number | null
+          referrer_discount_used: boolean | null
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          referee_discount_amount?: number | null
+          referee_discount_used?: boolean | null
+          referee_email?: string | null
+          referee_id?: string | null
+          referee_order_id?: string | null
+          referral_id: string
+          referrer_discount_amount?: number | null
+          referrer_discount_used?: boolean | null
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          referee_discount_amount?: number | null
+          referee_discount_used?: boolean | null
+          referee_email?: string | null
+          referee_id?: string | null
+          referee_order_id?: string | null
+          referral_id?: string
+          referrer_discount_amount?: number | null
+          referrer_discount_used?: boolean | null
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_rewards_referee_order_id_fkey"
+            columns: ["referee_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_rewards_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          fragrance_id: string | null
+          id: string
+          max_uses: number | null
+          referral_code: string
+          referrer_id: string
+          uses_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          fragrance_id?: string | null
+          id?: string
+          max_uses?: number | null
+          referral_code: string
+          referrer_id: string
+          uses_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          fragrance_id?: string | null
+          id?: string
+          max_uses?: number | null
+          referral_code?: string
+          referrer_id?: string
+          uses_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_fragrance_id_fkey"
+            columns: ["fragrance_id"]
+            isOneToOne: false
+            referencedRelation: "saved_scents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_scents: {
         Row: {
           created_at: string | null
@@ -300,11 +421,15 @@ export type Database = {
           fragrance_code: string | null
           id: string
           intensity: number | null
+          is_public: boolean | null
+          last_shared_at: string | null
           longevity: number | null
           match_score: number | null
           name: string
           prices: Json | null
           quiz_answers: Json | null
+          share_count: number | null
+          share_token: string | null
           user_id: string
           visual_data: Json | null
         }
@@ -315,11 +440,15 @@ export type Database = {
           fragrance_code?: string | null
           id?: string
           intensity?: number | null
+          is_public?: boolean | null
+          last_shared_at?: string | null
           longevity?: number | null
           match_score?: number | null
           name: string
           prices?: Json | null
           quiz_answers?: Json | null
+          share_count?: number | null
+          share_token?: string | null
           user_id: string
           visual_data?: Json | null
         }
@@ -330,11 +459,15 @@ export type Database = {
           fragrance_code?: string | null
           id?: string
           intensity?: number | null
+          is_public?: boolean | null
+          last_shared_at?: string | null
           longevity?: number | null
           match_score?: number | null
           name?: string
           prices?: Json | null
           quiz_answers?: Json | null
+          share_count?: number | null
+          share_token?: string | null
           user_id?: string
           visual_data?: Json | null
         }

@@ -8,9 +8,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { FragranceVisualizer } from "@/components/FragranceVisualizer";
+import { ShareFragranceDialog } from "@/components/ShareFragranceDialog";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
-import { ArrowLeft, ShoppingCart, Wand2, Calendar } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Wand2, Calendar, Share2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ScentDetail() {
@@ -20,6 +21,7 @@ export default function ScentDetail() {
   const [scent, setScent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState('30ml');
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchScent();
@@ -67,8 +69,30 @@ export default function ScentDetail() {
   };
 
   const handleTweak = () => {
-    // Navigate to quiz with pre-filled answers from quiz_answers
-    toast.info('Tweak functionality coming soon');
+    if (!scent?.quiz_answers) {
+      toast.error('Quiz data not available for this fragrance');
+      return;
+    }
+
+    const answers = scent.quiz_answers;
+    const isGiftQuiz = !!(answers.recipientGender || answers.recipientAge);
+
+    navigate(isGiftQuiz ? '/shop/quiz/for-someone-else' : '/shop/quiz/for-yourself', {
+      state: {
+        prefillAnswers: answers,
+        tweakMode: true,
+        originalFragranceId: scent.id,
+        originalFragranceName: scent.name
+      }
+    });
+  };
+
+  const handleShareCreated = (shareToken: string, referralCode: string) => {
+    setScent((prev: any) => ({
+      ...prev,
+      share_token: shareToken,
+      share_count: (prev.share_count || 0) + 1,
+    }));
   };
 
   if (isLoading) {
@@ -252,9 +276,24 @@ export default function ScentDetail() {
               <Wand2 className="mr-2 h-4 w-4" />
               Tweak Formula
             </Button>
+
+            <Button onClick={() => setShareDialogOpen(true)} variant="secondary" size="lg" className="md:w-auto w-full">
+              <Share2 className="mr-2 h-4 w-4" />
+              Share
+            </Button>
           </div>
         </Card>
       </main>
+
+      <ShareFragranceDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        fragranceId={scent.id}
+        fragranceName={scent.name}
+        shareToken={scent.share_token}
+        shareCount={scent.share_count}
+        onShareCreated={handleShareCreated}
+      />
 
       <Footer />
     </div>

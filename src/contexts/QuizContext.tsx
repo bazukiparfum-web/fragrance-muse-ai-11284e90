@@ -17,6 +17,8 @@ interface QuizContextType {
   answers: QuizAnswers;
   updateAnswer: (key: keyof QuizAnswers, value: any) => void;
   resetAnswers: () => void;
+  setAllAnswers: (newAnswers: QuizAnswers) => void;
+  mergeAnswers: (partialAnswers: Partial<QuizAnswers>) => void;
   isForGift: boolean;
   setIsForGift: (value: boolean) => void;
 }
@@ -36,8 +38,24 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
     setIsForGift(false);
   };
 
+  const setAllAnswers = (newAnswers: QuizAnswers) => {
+    setAnswers(newAnswers);
+  };
+
+  const mergeAnswers = (partialAnswers: Partial<QuizAnswers>) => {
+    setAnswers(prev => ({ ...prev, ...partialAnswers }));
+  };
+
   return (
-    <QuizContext.Provider value={{ answers, updateAnswer, resetAnswers, isForGift, setIsForGift }}>
+    <QuizContext.Provider value={{ 
+      answers, 
+      updateAnswer, 
+      resetAnswers, 
+      setAllAnswers,
+      mergeAnswers,
+      isForGift, 
+      setIsForGift 
+    }}>
       {children}
     </QuizContext.Provider>
   );

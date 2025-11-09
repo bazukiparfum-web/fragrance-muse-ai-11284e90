@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -7,18 +7,34 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import Header from '@/components/Header';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { useQuiz } from '@/contexts/QuizContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const QuizForYourself = () => {
   const navigate = useNavigate();
-  const { answers, updateAnswer } = useQuiz();
+  const location = useLocation();
+  const { answers, updateAnswer, setAllAnswers, resetAnswers } = useQuiz();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTweakMode, setIsTweakMode] = useState(false);
+  const [originalFragranceName, setOriginalFragranceName] = useState('');
   const totalSteps = 8;
+
+  useEffect(() => {
+    const locationState = location.state as any;
+    if (locationState?.prefillAnswers) {
+      setAllAnswers(locationState.prefillAnswers);
+      
+      if (locationState.tweakMode) {
+        setIsTweakMode(true);
+        setOriginalFragranceName(locationState.originalFragranceName || '');
+      }
+    }
+  }, [location.state, setAllAnswers]);
 
   const progress = (currentStep / totalSteps) * 100;
 
@@ -261,6 +277,31 @@ const QuizForYourself = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
+          {isTweakMode && (
+            <Alert className="mb-6 bg-primary/10 border-primary/30">
+              <AlertDescription className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <span>✨</span>
+                  <span>Tweaking: <strong>{originalFragranceName}</strong></span>
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (confirm('Start fresh? This will clear all answers.')) {
+                      resetAnswers();
+                      setIsTweakMode(false);
+                      setOriginalFragranceName('');
+                    }
+                  }}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Start Fresh
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="mb-8">
             <div className="flex justify-between text-sm text-muted-foreground mb-2">
               <span>Step {currentStep} of {totalSteps}</span>
