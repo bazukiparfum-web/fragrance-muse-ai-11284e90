@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, Tag, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,14 @@ const Checkout = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [orderId, setOrderId] = useState('');
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState<{
+    amount: number;
+    code: string;
+    rewardId: string;
+  } | null>(null);
+  const [validatingCode, setValidatingCode] = useState(false);
+  const [availableRewards, setAvailableRewards] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -41,8 +49,143 @@ const Checkout = () => {
   });
 
   const subtotal: number = cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+  const discount: number = appliedDiscount?.amount || 0;
   const deliveryFee: number = formData.deliveryType === 'express' ? 199 : 0;
-  const total: number = subtotal + deliveryFee;
+  const total: number = Math.max(0, subtotal - discount + deliveryFee);
+
+  useEffect(() => {
+    fetchAvailableRewards();
+  }, []);
+
+  const fetchAvailableRewards = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: rewards } = await supabase
+        .from('referral_rewards')
+        .select('*, referrals(referral_code)')
+        .or(`referrer_id.eq.${user.id},referee_id.eq.${user.id}`)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (rewards) {
+        // Filter to get unused discounts
+        const available = rewards.filter(r => {
+          if (r.referrer_id === user.id && !r.referrer_discount_used && r.referrer_discount_amount > 0) {
+            return true;
+          }
+          if (r.referee_id === user.id && !r.referee_discount_used && r.referee_discount_amount > 0) {
+            return true;
+          }
+          return false;
+        });
+        setAvailableRewards(available);
+      }
+    } catch (error) {
+      console.error('Error fetching rewards:', error);
+    }
+  };
+
+  const validateReferralCode = async (code: string) => {
+    if (!code.trim()) return;
+    
+    setValidatingCode(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Please log in",
+          description: "You need to be logged in to use a referral code",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Find the referral
+      const { data: referral } = await supabase
+        .from('referrals')
+        .select('id, referrer_id')
+        .eq('referral_code', code.toUpperCase())
+        .single();
+
+      if (!referral) {
+        toast({
+          title: "Invalid code",
+          description: "This referral code doesn't exist",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if user is trying to use their own code
+      if (referral.referrer_id === user.id) {
+        toast({
+          title: "Invalid code",
+          description: "You cannot use your own referral code",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Find the reward
+      const { data: reward } = await supabase
+        .from('referral_rewards')
+        .select('*')
+        .eq('referral_id', referral.id)
+        .eq('referee_id', user.id)
+        .eq('status', 'completed')
+        .eq('referee_discount_used', false)
+        .single();
+
+      if (reward) {
+        setAppliedDiscount({
+          amount: reward.referee_discount_amount,
+          code: code.toUpperCase(),
+          rewardId: reward.id,
+        });
+        toast({
+          title: "Discount applied!",
+          description: `₹${reward.referee_discount_amount} off your order`,
+        });
+      } else {
+        toast({
+          title: "Code not valid",
+          description: "This code has already been used or is not available for your account",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error validating code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to validate code",
+        variant: "destructive",
+      });
+    } finally {
+      setValidatingCode(false);
+    }
+  };
+
+  const applyAvailableReward = async (reward: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) return;
+
+    const isReferrer = reward.referrer_id === user.id;
+    const amount = isReferrer ? reward.referrer_discount_amount : reward.referee_discount_amount;
+    
+    setAppliedDiscount({
+      amount,
+      code: reward.referrals?.referral_code || 'REWARD',
+      rewardId: reward.id,
+    });
+    
+    toast({
+      title: "Discount applied!",
+      description: `₹${amount} referral reward applied`,
+    });
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -91,6 +234,9 @@ const Checkout = () => {
           order_number: orderNumber,
           subtotal,
           delivery_fee: deliveryFee,
+          discount_applied: discount,
+          discount_code: appliedDiscount?.code || null,
+          referral_reward_id: appliedDiscount?.rewardId || null,
           total,
           delivery_type: formData.deliveryType,
           shipping_address: {
@@ -124,6 +270,18 @@ const Checkout = () => {
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
+
+      // Mark discount as used
+      if (appliedDiscount) {
+        const updateData = user.id === (availableRewards.find(r => r.id === appliedDiscount.rewardId)?.referrer_id)
+          ? { referrer_discount_used: true }
+          : { referee_discount_used: true };
+
+        await supabase
+          .from('referral_rewards')
+          .update(updateData)
+          .eq('id', appliedDiscount.rewardId);
+      }
 
       // Clear cart
       await clearCart();
@@ -267,29 +425,101 @@ const Checkout = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <Label>Delivery Type</Label>
-                    <RadioGroup value={formData.deliveryType} onValueChange={(value) => handleInputChange('deliveryType', value)}>
-                      <div className="flex items-center space-x-2 border rounded-lg p-4">
-                        <RadioGroupItem value="standard" id="standard" />
-                        <Label htmlFor="standard" className="flex-1 cursor-pointer">
-                          <div className="font-semibold">Standard Delivery (5-7 days)</div>
-                          <div className="text-sm text-accent">FREE</div>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 border rounded-lg p-4">
-                        <RadioGroupItem value="express" id="express" />
-                        <Label htmlFor="express" className="flex-1 cursor-pointer">
-                          <div className="font-semibold">Express Delivery (2-3 days)</div>
-                          <div className="text-sm text-muted-foreground">₹199</div>
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
+                   <div>
+                     <Label>Delivery Type</Label>
+                     <RadioGroup value={formData.deliveryType} onValueChange={(value) => handleInputChange('deliveryType', value)}>
+                       <div className="flex items-center space-x-2 border rounded-lg p-4">
+                         <RadioGroupItem value="standard" id="standard" />
+                         <Label htmlFor="standard" className="flex-1 cursor-pointer">
+                           <div className="font-semibold">Standard Delivery (5-7 days)</div>
+                           <div className="text-sm text-accent">FREE</div>
+                         </Label>
+                       </div>
+                       <div className="flex items-center space-x-2 border rounded-lg p-4">
+                         <RadioGroupItem value="express" id="express" />
+                         <Label htmlFor="express" className="flex-1 cursor-pointer">
+                           <div className="font-semibold">Express Delivery (2-3 days)</div>
+                           <div className="text-sm text-muted-foreground">₹199</div>
+                         </Label>
+                       </div>
+                     </RadioGroup>
+                   </div>
 
-                  <Button type="submit" className="w-full" size="lg">
-                    Continue to Payment
-                  </Button>
+                   {/* Available Rewards */}
+                   {availableRewards.length > 0 && !appliedDiscount && (
+                     <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
+                       <div className="flex items-center gap-2 mb-3">
+                         <Gift className="h-5 w-5 text-accent" />
+                         <span className="font-semibold">You have referral rewards!</span>
+                       </div>
+                       <div className="space-y-2">
+                         {availableRewards.slice(0, 2).map((reward, idx) => {
+                           const isReferrer = reward.referrer_id;
+                           const amount = isReferrer ? reward.referrer_discount_amount : reward.referee_discount_amount;
+                           return (
+                             <Button
+                               key={idx}
+                               variant="outline"
+                               size="sm"
+                               className="w-full justify-between"
+                               onClick={() => applyAvailableReward(reward)}
+                             >
+                               <span>₹{amount} Referral Discount</span>
+                               <span className="text-accent text-xs">Apply</span>
+                             </Button>
+                           );
+                         })}
+                       </div>
+                     </div>
+                   )}
+
+                   {/* Discount Code Input */}
+                   <div>
+                     <Label htmlFor="discountCode">Referral Code (Optional)</Label>
+                     <div className="flex gap-2">
+                       <div className="relative flex-1">
+                         <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input
+                           id="discountCode"
+                           placeholder="Enter referral code"
+                           value={discountCode}
+                           onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                           disabled={!!appliedDiscount}
+                           className="pl-10"
+                         />
+                       </div>
+                       <Button
+                         type="button"
+                         variant="outline"
+                         onClick={() => validateReferralCode(discountCode)}
+                         disabled={!discountCode || validatingCode || !!appliedDiscount}
+                       >
+                         {validatingCode ? 'Checking...' : 'Apply'}
+                       </Button>
+                     </div>
+                     {appliedDiscount && (
+                       <div className="mt-2 flex items-center gap-2 text-sm text-accent">
+                         <Check className="h-4 w-4" />
+                         <span>₹{appliedDiscount.amount} discount applied!</span>
+                         <Button
+                           type="button"
+                           variant="ghost"
+                           size="sm"
+                           className="ml-auto h-6 text-xs"
+                           onClick={() => {
+                             setAppliedDiscount(null);
+                             setDiscountCode('');
+                           }}
+                         >
+                           Remove
+                         </Button>
+                       </div>
+                     )}
+                   </div>
+
+                   <Button type="submit" className="w-full" size="lg">
+                     Continue to Payment
+                   </Button>
                 </form>
               </Card>
             )}
@@ -300,23 +530,29 @@ const Checkout = () => {
                 <h1 className="font-serif text-3xl mb-6">Payment</h1>
                 
                 <div className="space-y-6">
-                  <div className="bg-secondary/50 p-6 rounded-lg">
-                    <h3 className="font-semibold mb-2">Order Summary</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>₹{subtotal.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Delivery</span>
-                        <span>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee.toFixed(2)}`}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold text-base pt-2 border-t">
-                        <span>Total</span>
-                        <span>₹{total.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </div>
+                   <div className="bg-secondary/50 p-6 rounded-lg">
+                     <h3 className="font-semibold mb-2">Order Summary</h3>
+                     <div className="space-y-2 text-sm">
+                       <div className="flex justify-between">
+                         <span>Subtotal</span>
+                         <span>₹{subtotal.toFixed(2)}</span>
+                       </div>
+                       {discount > 0 && (
+                         <div className="flex justify-between text-accent">
+                           <span>Referral Discount</span>
+                           <span>-₹{discount.toFixed(2)}</span>
+                         </div>
+                       )}
+                       <div className="flex justify-between">
+                         <span>Delivery</span>
+                         <span>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee.toFixed(2)}`}</span>
+                       </div>
+                       <div className="flex justify-between font-semibold text-base pt-2 border-t">
+                         <span>Total</span>
+                         <span>₹{total.toFixed(2)}</span>
+                       </div>
+                     </div>
+                   </div>
 
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                     <p className="text-muted-foreground mb-2">Razorpay Payment Gateway</p>

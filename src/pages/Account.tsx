@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { User, Package, Heart, Settings, LogOut, ShoppingBag } from 'lucide-react';
+import { User, Package, Heart, Settings, LogOut, ShoppingBag, Gift, Share2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,6 +52,10 @@ const Account = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [savedScents, setSavedScents] = useState<SavedScent[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [referrals, setReferrals] = useState<any[]>([]);
+  const [referralRewards, setReferralRewards] = useState<any[]>([]);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,15 +70,21 @@ const Account = () => {
         return;
       }
 
-      const [ordersData, scentsData, subsData] = await Promise.all([
+      setCurrentUserId(user.id);
+
+      const [ordersData, scentsData, subsData, referralsData, rewardsData] = await Promise.all([
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('saved_scents').select('*').eq('user_id', user.id),
         supabase.from('subscriptions').select('*').eq('user_id', user.id),
+        supabase.from('referrals').select('*, saved_scents(name)').eq('referrer_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('referral_rewards').select('*, referrals(referral_code)').or(`referrer_id.eq.${user.id},referee_id.eq.${user.id}`).order('created_at', { ascending: false }),
       ]);
 
       if (ordersData.data) setOrders(ordersData.data);
       if (scentsData.data) setSavedScents(scentsData.data);
       if (subsData.data) setSubscriptions(subsData.data);
+      if (referralsData.data) setReferrals(referralsData.data);
+      if (rewardsData.data) setReferralRewards(rewardsData.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -94,6 +104,29 @@ const Account = () => {
       month: 'short',
       year: 'numeric',
     });
+  };
+
+  const copyReferralLink = (code: string) => {
+    const link = `${window.location.origin}/auth?ref=${code}`;
+    navigator.clipboard.writeText(link);
+    setCopiedCode(code);
+    toast({ title: "Link copied!", description: "Share with friends to earn rewards" });
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const getReferralStats = () => {
+    if (!currentUserId) return { totalInvited: 0, friendsOrdered: 0, totalEarned: 0, availableBalance: 0 };
+    
+    const totalInvited = referralRewards.filter(r => r.referrer_id === currentUserId).length;
+    const friendsOrdered = referralRewards.filter(r => r.status === 'completed' && r.referrer_id === currentUserId).length;
+    const totalEarned = referralRewards
+      .filter(r => r.referrer_id === currentUserId && r.status === 'completed')
+      .reduce((sum, r) => sum + (r.referrer_discount_amount || 0), 0);
+    const availableBalance = referralRewards
+      .filter(r => r.referrer_id === currentUserId && r.status === 'completed' && !r.referrer_discount_used)
+      .reduce((sum, r) => sum + (r.referrer_discount_amount || 0), 0);
+
+    return { totalInvited, friendsOrdered, totalEarned, availableBalance };
   };
 
   const handleReorder = (scent: SavedScent) => {
@@ -163,6 +196,14 @@ const Account = () => {
                 <Button
                   variant="ghost"
                   className="w-full justify-start"
+                  onClick={() => navigate('/shop/account?tab=referrals')}
+                >
+                  <Gift className="mr-2 h-4 w-4" />
+                  Referrals
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
                   onClick={() => navigate('/shop/account?tab=settings')}
                 >
                   <Settings className="mr-2 h-4 w-4" />
@@ -187,6 +228,7 @@ const Account = () => {
                   <TabsTrigger value="scents">My Scents</TabsTrigger>
                   <TabsTrigger value="orders">Orders</TabsTrigger>
                   <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+                  <TabsTrigger value="referrals">Referrals</TabsTrigger>
                   <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
 
@@ -411,6 +453,166 @@ const Account = () => {
                         ))}
                       </div>
                     )}
+                  </Card>
+                </TabsContent>
+
+                {/* Referrals Tab */}
+                <TabsContent value="referrals" className="space-y-6">
+                  <Card className="p-6">
+                    <h1 className="font-serif text-3xl mb-6">Referrals & Rewards</h1>
+
+                    {/* Stats Cards */}
+                    <div className="grid md:grid-cols-4 gap-4 mb-8">
+                      <Card className="p-4 bg-accent/5">
+                        <div className="text-2xl font-bold mb-1">{getReferralStats().totalInvited}</div>
+                        <div className="text-sm text-muted-foreground">Friends Invited</div>
+                      </Card>
+                      <Card className="p-4 bg-accent/5">
+                        <div className="text-2xl font-bold mb-1">{getReferralStats().friendsOrdered}</div>
+                        <div className="text-sm text-muted-foreground">Friends Ordered</div>
+                      </Card>
+                      <Card className="p-4 bg-accent/5">
+                        <div className="text-2xl font-bold mb-1">₹{getReferralStats().totalEarned}</div>
+                        <div className="text-sm text-muted-foreground">Total Earned</div>
+                      </Card>
+                      <Card className="p-4 bg-accent/10 border-accent">
+                        <div className="text-2xl font-bold mb-1 text-accent">₹{getReferralStats().availableBalance}</div>
+                        <div className="text-sm text-muted-foreground">Available Balance</div>
+                      </Card>
+                    </div>
+
+                    {/* How It Works */}
+                    <Card className="p-6 mb-8 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
+                      <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <Gift className="h-5 w-5 text-accent" />
+                        How Referrals Work
+                      </h3>
+                      <div className="grid md:grid-cols-3 gap-4 text-sm">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 font-bold text-accent">1</div>
+                          <div>
+                            <p className="font-semibold mb-1">Share Your Fragrance</p>
+                            <p className="text-muted-foreground">Create and share your custom fragrance with friends</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 font-bold text-accent">2</div>
+                          <div>
+                            <p className="font-semibold mb-1">Friend Orders</p>
+                            <p className="text-muted-foreground">Your friend signs up and places their first order</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 font-bold text-accent">3</div>
+                          <div>
+                            <p className="font-semibold mb-1">Both Get ₹100</p>
+                            <p className="text-muted-foreground">You and your friend each receive ₹100 off</p>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Active Referral Links */}
+                    {referrals.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="font-semibold text-lg mb-4">Your Referral Links</h3>
+                        <div className="space-y-3">
+                          {referrals.map((ref) => (
+                            <Card key={ref.id} className="p-4">
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-semibold">{ref.referral_code}</span>
+                                    {ref.saved_scents?.name && (
+                                      <span className="text-sm text-muted-foreground">
+                                        • {ref.saved_scents.name}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {ref.uses_count} / {ref.max_uses} uses • 
+                                    Expires {formatDate(ref.expires_at)}
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyReferralLink(ref.referral_code)}
+                                  className="gap-2"
+                                >
+                                  {copiedCode === ref.referral_code ? (
+                                    <>
+                                      <Check className="h-4 w-4" />
+                                      Copied!
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="h-4 w-4" />
+                                      Copy Link
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Discount History */}
+                    <div>
+                      <h3 className="font-semibold text-lg mb-4">Discount History</h3>
+                      {referralRewards.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-8">
+                          No referral rewards yet. Share your fragrances to earn rewards!
+                        </p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Code</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {referralRewards.map((reward) => {
+                              const isReferrer = reward.referrer_id === currentUserId;
+                              const amount = isReferrer ? reward.referrer_discount_amount : reward.referee_discount_amount;
+                              const isUsed = isReferrer ? reward.referrer_discount_used : reward.referee_discount_used;
+                              
+                              return (
+                                <TableRow key={reward.id}>
+                                  <TableCell>{formatDate(reward.created_at)}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">
+                                      {isReferrer ? 'Referrer Reward' : 'Referee Reward'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="font-mono text-sm">
+                                    {reward.referrals?.referral_code || '-'}
+                                  </TableCell>
+                                  <TableCell className="font-semibold">₹{amount}</TableCell>
+                                  <TableCell>
+                                    {reward.status === 'completed' ? (
+                                      isUsed ? (
+                                        <Badge variant="secondary">Used</Badge>
+                                      ) : (
+                                        <Badge className="bg-accent">Available</Badge>
+                                      )
+                                    ) : (
+                                      <Badge variant="outline">{reward.status}</Badge>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </div>
                   </Card>
                 </TabsContent>
 
