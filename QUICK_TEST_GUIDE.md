@@ -23,19 +23,25 @@ Based on your testing scenario, the features ARE implemented but you need to fol
 5. ✓ Should auto-login and redirect to home
 ```
 
-### Step 2: Take the Quiz (IMPORTANT: Complete ALL steps)
+### Step 2: Take the Quiz (IMPORTANT: Complete ALL 14 steps)
 ```
 1. Go to: http://localhost:8080/shop/quiz/landing
 2. Click "For Myself"
-3. Complete ALL 8 steps:
-   ✓ Step 1: Age Range → Select any
-   ✓ Step 2: Personality → Select any
-   ✓ Step 3: Scent Family → Select any
-   ✓ Step 4: Intensity → Move slider
-   ✓ Step 5: Longevity → Select any
-   ✓ Step 6: Occasion → Select any
-   ✓ Step 7: Climate → Select any
-   ✓ Step 8: Dream Word → Type "Mystic"
+3. Complete ALL 14 steps:
+   ✓ Step 1: Setting → Select where you grew up (City/Small town/etc.)
+   ✓ Step 2: Current City → Search and type your city name
+   ✓ Step 3: Gender → Select gender identification
+   ✓ Step 4: Color → Click on the color wheel to select hue, adjust saturation slider
+   ✓ Step 5: Personality Traits (Set 1) → Move sliders for talkative, reserved, quiet, shy
+   ✓ Step 6: Personality Traits (Set 2) → Move sliders for rude, quarrels, forgiving, trusting
+   ✓ Step 7: Age Range → Select any
+   ✓ Step 8: Personality → Select Calm/Energetic/Elegant/Bold
+   ✓ Step 9: Scent Family → Select any
+   ✓ Step 10: Intensity → Move slider
+   ✓ Step 11: Longevity → Select any
+   ✓ Step 12: Occasion → Select any
+   ✓ Step 13: Climate → Select any
+   ✓ Step 14: Dream Word → Type "Mystic"
 4. Click "Get Recommendations" (NOT just "Next")
 5. ✓ Wait for page to load → You'll see 3 fragrance cards
 ```
@@ -222,7 +228,8 @@ On the detail page (/shop/account/scents/[id]):
    ↓ Click "For Myself"
    
 4. Quiz For Yourself (/shop/quiz/for-yourself)
-   ↓ Complete all 8 steps
+   ↓ Complete all 14 steps (new dynamic questions!)
+   ↓ Answer setting, city, gender, color, personality traits, etc.
    ↓ Click "Get Recommendations"
    
 5. Quiz Results (/shop/quiz/results) ← SAVE BUTTON IS HERE!
@@ -253,6 +260,12 @@ On the detail page (/shop/account/scents/[id]):
 
 | Feature | Status | Location |
 |---------|--------|----------|
+| Dynamic quiz questions (14 total) | ✅ Working | QuizForYourself.tsx |
+| Setting question (radio) | ✅ Working | QuizForYourself.tsx |
+| City search input | ✅ Working | CitySearch.tsx |
+| Gender identification | ✅ Working | QuizForYourself.tsx |
+| Color picker (hue + saturation) | ✅ Working | ColorPicker.tsx |
+| Personality trait sliders | ✅ Working | PersonalitySliders.tsx |
 | Save fragrance from quiz | ✅ Working | QuizResults.tsx line 270-278 |
 | Unique fragrance codes | ✅ Working | fragranceCodeGenerator.ts |
 | My Scents page | ✅ Working | Account.tsx line 282-376 |

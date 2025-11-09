@@ -12,6 +12,9 @@ import { useQuiz } from '@/contexts/QuizContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ColorPicker } from '@/components/quiz/ColorPicker';
+import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
+import { CitySearch } from '@/components/quiz/CitySearch';
 
 const QuizForYourself = () => {
   const navigate = useNavigate();
@@ -22,9 +25,13 @@ const QuizForYourself = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTweakMode, setIsTweakMode] = useState(false);
   const [originalFragranceName, setOriginalFragranceName] = useState('');
-  const totalSteps = 8;
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
+  const totalSteps = questions.length || 14; // Dynamic based on questions from DB
 
   useEffect(() => {
+    loadQuestions();
+    
     const locationState = location.state as any;
     if (locationState?.prefillAnswers) {
       setAllAnswers(locationState.prefillAnswers);
@@ -36,19 +43,85 @@ const QuizForYourself = () => {
     }
   }, [location.state, setAllAnswers]);
 
+  const loadQuestions = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-quiz-questions');
+      
+      if (error) throw error;
+      
+      // If no questions in DB, use default hardcoded questions
+      if (!data?.questions || data.questions.length === 0) {
+        setQuestions(getDefaultQuestions());
+      } else {
+        setQuestions(data.questions);
+      }
+    } catch (error) {
+      console.error('Error loading questions:', error);
+      setQuestions(getDefaultQuestions());
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
+  const getDefaultQuestions = () => [
+    { id: 1, question_type: 'radio', question_text: 'In what setting did you grow up?', options: ['City', 'Small town', 'Countryside', 'Suburbs', 'Various', 'Metropolis'], answer_key: 'setting' },
+    { id: 2, question_type: 'city_search', question_text: 'What city do you currently live in?', answer_key: 'currentCity' },
+    { id: 3, question_type: 'radio', question_text: 'Which gender do you identify with?', options: ['Woman', 'Man', 'Transgender', 'Non-binary/non-conforming', 'Prefer not to respond'], answer_key: 'gender' },
+    { id: 4, question_type: 'color_picker', question_text: 'Which color represents you the best?', answer_key: 'color' },
+    { id: 5, question_type: 'personality_sliders', question_text: 'I see myself as someone who...', traits: [
+      { id: 'talkative', label: 'Is talkative' },
+      { id: 'reserved', label: 'Is reserved' },
+      { id: 'quiet', label: 'Tends to be quiet' },
+      { id: 'shy', label: 'Is sometimes shy, inhibited' }
+    ], answer_key: 'personalityTraits1' },
+    { id: 6, question_type: 'personality_sliders', question_text: 'I see myself as someone who...', traits: [
+      { id: 'rude', label: 'Is sometimes rude to others' },
+      { id: 'quarrels', label: 'Starts quarrels with others' },
+      { id: 'forgiving', label: 'Has a forgiving nature' },
+      { id: 'trusting', label: 'Is generally trusting' }
+    ], answer_key: 'personalityTraits2' },
+    { id: 7, question_type: 'radio', question_text: "What's your age range?", options: ['18-25', '26-35', '36-45', '46+'], answer_key: 'ageRange' },
+    { id: 8, question_type: 'radio', question_text: 'How would you describe your personality?', options: ['Calm', 'Energetic', 'Elegant', 'Bold'], answer_key: 'personality' },
+    { id: 9, question_type: 'scent_family', question_text: 'Which scent family appeals to you most?', answer_key: 'scentFamily' },
+    { id: 10, question_type: 'slider', question_text: 'Preferred scent intensity?', min: 1, max: 10, answer_key: 'intensity' },
+    { id: 11, question_type: 'radio', question_text: 'How long should it last?', options: [
+      { value: 'Short', desc: '2-4 hours' },
+      { value: 'All-day', desc: '6-8 hours' },
+      { value: 'Long-lasting', desc: '12+ hours' }
+    ], answer_key: 'longevity' },
+    { id: 12, question_type: 'occasion', question_text: 'Primary occasion for wearing?', options: ['Daily', 'Office', 'Evening', 'Sport', 'Travel'], answer_key: 'occasion' },
+    { id: 13, question_type: 'radio', question_text: "What's your climate?", options: ['Hot/Humid', 'Warm', 'Moderate', 'Cool'], answer_key: 'climate' },
+    { id: 14, question_type: 'text', question_text: 'Describe your dream scent in one word', placeholder: 'e.g., Mysterious, Fresh, Romantic...', answer_key: 'dreamWord' }
+  ];
+
   const progress = (currentStep / totalSteps) * 100;
 
   const isStepComplete = (step: number): boolean => {
-    switch (step) {
-      case 1: return !!answers.ageRange;
-      case 2: return !!answers.personality;
-      case 3: return !!answers.scentFamily;
-      case 4: return answers.intensity !== undefined;
-      case 5: return !!answers.longevity;
-      case 6: return !!answers.occasion;
-      case 7: return !!answers.climate;
-      case 8: return !!answers.dreamWord && answers.dreamWord.trim().length > 0;
-      default: return true;
+    if (questions.length === 0) return false;
+    
+    const question = questions[step - 1];
+    if (!question) return false;
+    
+    const answerKey = question.answer_key;
+    const answer = (answers as any)[answerKey];
+    
+    switch (question.question_type) {
+      case 'radio':
+      case 'city_search':
+      case 'scent_family':
+      case 'occasion':
+        return !!answer;
+      case 'slider':
+        return answer !== undefined;
+      case 'color_picker':
+        return answers.colorHue !== undefined && answers.colorSaturation !== undefined;
+      case 'personality_sliders':
+        const traits = question.traits || [];
+        return traits.every((t: any) => answers.personalityTraits?.[t.id] !== undefined);
+      case 'text':
+        return !!answer && answer.trim().length > 0;
+      default:
+        return true;
     }
   };
 
@@ -111,41 +184,90 @@ const QuizForYourself = () => {
   };
 
   const renderStep = () => {
-    switch (currentStep) {
-      case 1:
+    if (questions.length === 0) return <div className="text-center py-8">Loading questions...</div>;
+    
+    const question = questions[currentStep - 1];
+    if (!question) return null;
+
+    const answerKey = question.answer_key as keyof typeof answers;
+    const currentAnswer = answers[answerKey];
+
+    switch (question.question_type) {
+      case 'radio':
         return (
           <div className="space-y-6">
-            <h2 className="font-serif text-3xl font-bold heading-luxury">What's your age range?</h2>
-            <RadioGroup value={answers.ageRange} onValueChange={(val) => updateAnswer('ageRange', val)}>
-              {['18-25', '26-35', '36-45', '46+'].map((age) => (
-                <div key={age} className="flex items-center space-x-3 p-4 rounded-lg border-2 border-border hover:border-accent transition-colors cursor-pointer">
-                  <RadioGroupItem value={age} id={age} />
-                  <Label htmlFor={age} className="text-lg cursor-pointer flex-1">{age}</Label>
-                </div>
-              ))}
+            <h2 className="font-serif text-3xl font-bold heading-luxury">{question.question_text}</h2>
+            <p className="text-sm text-muted-foreground">Pick one</p>
+            <RadioGroup 
+              value={currentAnswer as string} 
+              onValueChange={(val) => updateAnswer(answerKey, val)}
+            >
+              {question.options?.map((option: any) => {
+                const value = typeof option === 'string' ? option : option.value;
+                const desc = typeof option === 'object' ? option.desc : null;
+                
+                return (
+                  <div 
+                    key={value} 
+                    className="flex items-center space-x-3 p-4 rounded-lg border-2 border-border hover:border-accent transition-colors cursor-pointer"
+                  >
+                    <RadioGroupItem value={value} id={value} />
+                    <Label htmlFor={value} className="cursor-pointer flex-1">
+                      <div className="text-lg font-semibold">{value}</div>
+                      {desc && <div className="text-sm text-muted-foreground">{desc}</div>}
+                    </Label>
+                  </div>
+                );
+              })}
             </RadioGroup>
           </div>
         );
 
-      case 2:
+      case 'city_search':
         return (
           <div className="space-y-6">
-            <h2 className="font-serif text-3xl font-bold heading-luxury">How would you describe your personality?</h2>
-            <RadioGroup value={answers.personality} onValueChange={(val) => updateAnswer('personality', val)}>
-              {['Calm', 'Energetic', 'Elegant', 'Bold'].map((personality) => (
-                <div key={personality} className="flex items-center space-x-3 p-4 rounded-lg border-2 border-border hover:border-accent transition-colors cursor-pointer">
-                  <RadioGroupItem value={personality} id={personality} />
-                  <Label htmlFor={personality} className="text-lg cursor-pointer flex-1">{personality}</Label>
-                </div>
-              ))}
-            </RadioGroup>
+            <h2 className="font-serif text-3xl font-bold heading-luxury">{question.question_text}</h2>
+            <CitySearch
+              value={currentAnswer as string || ''}
+              onChange={(val) => updateAnswer(answerKey, val)}
+            />
           </div>
         );
 
-      case 3:
+      case 'color_picker':
         return (
           <div className="space-y-6">
-            <h2 className="font-serif text-3xl font-bold heading-luxury">Which scent family appeals to you most?</h2>
+            <h2 className="font-serif text-3xl font-bold heading-luxury">{question.question_text}</h2>
+            <ColorPicker
+              hue={answers.colorHue || 0}
+              saturation={answers.colorSaturation || 100}
+              onHueChange={(val) => updateAnswer('colorHue', val)}
+              onSaturationChange={(val) => updateAnswer('colorSaturation', val)}
+            />
+          </div>
+        );
+
+      case 'personality_sliders':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-serif text-3xl font-bold heading-luxury">{question.question_text}</h2>
+            <PersonalitySliders
+              traits={question.traits || []}
+              values={answers.personalityTraits || {}}
+              onChange={(traitId, value) => {
+                updateAnswer('personalityTraits', {
+                  ...(answers.personalityTraits || {}),
+                  [traitId]: value
+                });
+              }}
+            />
+          </div>
+        );
+
+      case 'scent_family':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-serif text-3xl font-bold heading-luxury">{question.question_text}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
                 { value: 'Floral', emoji: '🌸' },
@@ -156,9 +278,9 @@ const QuizForYourself = () => {
               ].map((scent) => (
                 <button
                   key={scent.value}
-                  onClick={() => updateAnswer('scentFamily', scent.value)}
+                  onClick={() => updateAnswer(answerKey, scent.value)}
                   className={`p-6 rounded-lg border-2 transition-all hover-lift ${
-                    answers.scentFamily === scent.value
+                    currentAnswer === scent.value
                       ? 'border-accent bg-accent/10'
                       : 'border-border bg-card'
                   }`}
@@ -171,61 +293,17 @@ const QuizForYourself = () => {
           </div>
         );
 
-      case 4:
+      case 'occasion':
         return (
           <div className="space-y-6">
-            <h2 className="font-serif text-3xl font-bold heading-luxury">Preferred scent intensity?</h2>
-            <div className="pt-4">
-              <Slider
-                value={[answers.intensity || 5]}
-                onValueChange={(val) => updateAnswer('intensity', val[0])}
-                min={1}
-                max={10}
-                step={1}
-                className="mb-4"
-              />
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Subtle (1)</span>
-                <span className="text-lg font-semibold text-foreground">{answers.intensity || 5}</span>
-                <span>Bold (10)</span>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-6">
-            <h2 className="font-serif text-3xl font-bold heading-luxury">How long should it last?</h2>
-            <RadioGroup value={answers.longevity} onValueChange={(val) => updateAnswer('longevity', val)}>
-              {[
-                { value: 'Short', desc: '2-4 hours' },
-                { value: 'All-day', desc: '6-8 hours' },
-                { value: 'Long-lasting', desc: '12+ hours' }
-              ].map((option) => (
-                <div key={option.value} className="flex items-center space-x-3 p-4 rounded-lg border-2 border-border hover:border-accent transition-colors cursor-pointer">
-                  <RadioGroupItem value={option.value} id={option.value} />
-                  <Label htmlFor={option.value} className="cursor-pointer flex-1">
-                    <div className="text-lg font-semibold">{option.value}</div>
-                    <div className="text-sm text-muted-foreground">{option.desc}</div>
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
-        );
-
-      case 6:
-        return (
-          <div className="space-y-6">
-            <h2 className="font-serif text-3xl font-bold heading-luxury">Primary occasion for wearing?</h2>
+            <h2 className="font-serif text-3xl font-bold heading-luxury">{question.question_text}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {['Daily', 'Office', 'Evening', 'Sport', 'Travel'].map((occasion) => (
+              {(question.options || []).map((occasion: string) => (
                 <button
                   key={occasion}
-                  onClick={() => updateAnswer('occasion', occasion)}
+                  onClick={() => updateAnswer(answerKey, occasion)}
                   className={`p-6 rounded-lg border-2 transition-all hover-lift ${
-                    answers.occasion === occasion
+                    currentAnswer === occasion
                       ? 'border-accent bg-accent/10'
                       : 'border-border bg-card'
                   }`}
@@ -237,39 +315,63 @@ const QuizForYourself = () => {
           </div>
         );
 
-      case 7:
+      case 'slider':
         return (
           <div className="space-y-6">
-            <h2 className="font-serif text-3xl font-bold heading-luxury">What's your climate?</h2>
-            <RadioGroup value={answers.climate} onValueChange={(val) => updateAnswer('climate', val)}>
-              {['Hot/Humid', 'Warm', 'Moderate', 'Cool'].map((climate) => (
-                <div key={climate} className="flex items-center space-x-3 p-4 rounded-lg border-2 border-border hover:border-accent transition-colors cursor-pointer">
-                  <RadioGroupItem value={climate} id={climate} />
-                  <Label htmlFor={climate} className="text-lg cursor-pointer flex-1">{climate}</Label>
-                </div>
-              ))}
-            </RadioGroup>
+            <h2 className="font-serif text-3xl font-bold heading-luxury">{question.question_text}</h2>
+            <div className="pt-4">
+              <Slider
+                value={[currentAnswer as number || question.min || 5]}
+                onValueChange={(val) => updateAnswer(answerKey, val[0])}
+                min={question.min || 1}
+                max={question.max || 10}
+                step={1}
+                className="mb-4"
+              />
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Subtle ({question.min || 1})</span>
+                <span className="text-lg font-semibold text-foreground">{currentAnswer as number || question.min || 5}</span>
+                <span>Bold ({question.max || 10})</span>
+              </div>
+            </div>
           </div>
         );
 
-      case 8:
+      case 'text':
         return (
           <div className="space-y-6">
-            <h2 className="font-serif text-3xl font-bold heading-luxury">Describe your dream scent in one word</h2>
+            <h2 className="font-serif text-3xl font-bold heading-luxury">{question.question_text}</h2>
             <Input
               type="text"
-              placeholder="e.g., Mysterious, Fresh, Romantic..."
-              value={answers.dreamWord || ''}
-              onChange={(e) => updateAnswer('dreamWord', e.target.value)}
+              placeholder={question.placeholder || ''}
+              value={currentAnswer as string || ''}
+              onChange={(e) => updateAnswer(answerKey, e.target.value)}
               className="text-lg p-6"
             />
           </div>
         );
 
       default:
-        return null;
+        return (
+          <div className="text-center py-8 text-muted-foreground">
+            Question type not supported: {question.question_type}
+          </div>
+        );
     }
   };
+
+  if (loadingQuestions) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto text-center py-12">
+            <div className="animate-pulse text-muted-foreground">Loading quiz...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

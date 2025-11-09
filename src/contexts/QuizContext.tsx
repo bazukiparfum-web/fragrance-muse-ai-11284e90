@@ -1,6 +1,15 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface QuizAnswers {
+  // New dynamic questions
+  setting?: string;
+  currentCity?: string;
+  gender?: string;
+  colorHue?: number;
+  colorSaturation?: number;
+  personalityTraits?: Record<string, number>;
+  
+  // Existing questions
   ageRange?: string;
   personality?: string;
   scentFamily?: string;
