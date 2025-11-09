@@ -6,6 +6,10 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/contexts/CartContext';
@@ -57,6 +61,17 @@ const Account = () => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Profile states
+  const [profile, setProfile] = useState<any>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newsletter, setNewsletter] = useState(false);
+  const [specialOffers, setSpecialOffers] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -72,12 +87,13 @@ const Account = () => {
 
       setCurrentUserId(user.id);
 
-      const [ordersData, scentsData, subsData, referralsData, rewardsData] = await Promise.all([
+      const [ordersData, scentsData, subsData, referralsData, rewardsData, profileData] = await Promise.all([
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('saved_scents').select('*').eq('user_id', user.id),
         supabase.from('subscriptions').select('*').eq('user_id', user.id),
         supabase.from('referrals').select('*, saved_scents(name)').eq('referrer_id', user.id).order('created_at', { ascending: false }),
         supabase.from('referral_rewards').select('*, referrals(referral_code)').or(`referrer_id.eq.${user.id},referee_id.eq.${user.id}`).order('created_at', { ascending: false }),
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
       ]);
 
       if (ordersData.data) setOrders(ordersData.data);
@@ -85,6 +101,11 @@ const Account = () => {
       if (subsData.data) setSubscriptions(subsData.data);
       if (referralsData.data) setReferrals(referralsData.data);
       if (rewardsData.data) setReferralRewards(rewardsData.data);
+      if (profileData.data) {
+        setProfile(profileData.data);
+        setEditName(profileData.data.full_name || '');
+        setEditPhone(profileData.data.phone || '');
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -150,6 +171,62 @@ const Account = () => {
       title: "Added to cart",
       description: `${scent.name} (${defaultSize}) added to your cart`
     });
+  };
+
+  const handleEditDetails = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editName,
+          phone: editPhone,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, full_name: editName, phone: editPhone });
+      setShowEditDialog(false);
+      toast({ title: "Profile updated successfully" });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({ title: "Failed to update profile", variant: "destructive" });
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Passwords don't match", variant: "destructive" });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      setShowPasswordDialog(false);
+      setNewPassword('');
+      setConfirmPassword('');
+      toast({ title: "Password changed successfully" });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast({ title: "Failed to change password", variant: "destructive" });
+    }
+  };
+
+  const handleSavePreferences = () => {
+    toast({ title: "Preferences saved successfully" });
   };
 
   return (
@@ -618,10 +695,91 @@ const Account = () => {
 
                 {/* Settings Tab */}
                 <TabsContent value="settings" className="space-y-6">
+                  {/* Profile Details */}
                   <Card className="p-6">
-                    <h1 className="font-serif text-3xl mb-6">Settings</h1>
-                    <p className="text-muted-foreground">
-                      Account settings coming soon...
+                    <h2 className="text-xl font-semibold mb-6">Profile details</h2>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Name</Label>
+                        <p className="text-foreground">{profile?.full_name || 'Not set'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Email</Label>
+                        <p className="text-foreground">{profile?.email}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Phone number</Label>
+                        <p className="text-foreground">{profile?.phone || 'Not set'}</p>
+                      </div>
+                      <div className="flex gap-3 pt-4">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setShowPasswordDialog(true)}
+                        >
+                          Change password
+                        </Button>
+                        <Button 
+                          onClick={() => setShowEditDialog(true)}
+                        >
+                          Edit details
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Remaining Tokens */}
+                  <Card className="p-6">
+                    <h2 className="text-xl font-semibold mb-6">Your remaining tokens:</h2>
+                    <div className="space-y-3">
+                      <div className="text-4xl font-bold">0 <span className="text-lg font-normal text-muted-foreground">tokens</span></div>
+                      <p className="text-sm text-muted-foreground">
+                        tokens <span className="text-destructive">0</span> Review tokens: <span className="text-destructive">0</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        These can be spend on 5ml scents. Your remaining tokens will be deducted <span className="text-destructive">automatically</span> in the basket during check out.
+                      </p>
+                    </div>
+                  </Card>
+
+                  {/* Email Subscriptions */}
+                  <Card className="p-6">
+                    <h2 className="text-xl font-semibold mb-6">Your email subscription(s):</h2>
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground mb-4">I'd like to receive:</p>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="newsletter"
+                          checked={newsletter}
+                          onCheckedChange={(checked) => setNewsletter(checked as boolean)}
+                        />
+                        <Label htmlFor="newsletter" className="text-sm font-normal cursor-pointer">
+                          Newsletter
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="offers"
+                          checked={specialOffers}
+                          onCheckedChange={(checked) => setSpecialOffers(checked as boolean)}
+                        />
+                        <Label htmlFor="offers" className="text-sm font-normal cursor-pointer">
+                          Special offers
+                        </Label>
+                      </div>
+                      <div className="flex justify-end pt-4">
+                        <Button onClick={handleSavePreferences}>
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Delete Account */}
+                  <Card className="p-6">
+                    <h2 className="text-xl font-semibold mb-4">Delete your account:</h2>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Your scents will be gone from our data for eternity. You can request to delete your account by{' '}
+                      <a href="#" className="text-primary hover:underline">contacting us</a>.
                     </p>
                   </Card>
                 </TabsContent>
@@ -630,6 +788,84 @@ const Account = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Details Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Profile Details</DialogTitle>
+            <DialogDescription>
+              Update your profile information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Your full name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                placeholder="Your phone number"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditDetails}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter your new password below
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleChangePassword}>Change Password</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
