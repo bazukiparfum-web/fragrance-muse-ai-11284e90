@@ -33,7 +33,11 @@ const QuizForSomeoneElse = () => {
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const totalSteps = questions.length || 1;
   
-  const { loadProgress, saveProgress, deleteProgress } = useQuizProgress('someone_special', currentStep, answers);
+  const { loadProgress, saveProgress, deleteProgress } = useQuizProgress({ 
+    quizType: 'someone_special', 
+    currentStep, 
+    answers 
+  });
 
   useEffect(() => {
     loadQuestions();

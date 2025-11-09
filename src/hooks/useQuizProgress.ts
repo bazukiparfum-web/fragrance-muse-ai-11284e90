@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { QuizAnswers } from '@/contexts/QuizContext';
+import type { QuizAnswers } from '@/contexts/QuizContext';
 
 interface QuizProgress {
   id: string;
@@ -11,11 +11,13 @@ interface QuizProgress {
   last_updated: string;
 }
 
-export const useQuizProgress = (
-  quizType: 'myself' | 'someone_special',
-  currentStep: number,
-  answers: QuizAnswers
-) => {
+interface UseQuizProgressProps {
+  quizType: 'myself' | 'someone_special';
+  currentStep: number;
+  answers: QuizAnswers;
+}
+
+export const useQuizProgress = ({ quizType, currentStep, answers }: UseQuizProgressProps) => {
   const { toast } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
@@ -84,12 +86,14 @@ export const useQuizProgress = (
       }
     } catch (error) {
       console.error('Error saving quiz progress:', error);
-      toast({
-        title: "Save Failed",
-        description: "Could not save your progress. Please try again.",
-        variant: "destructive",
-        duration: 3000,
-      });
+      if (force) {
+        toast({
+          title: "Save Failed",
+          description: "Could not save your progress. Please try again.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
     }
   }, [quizType, currentStep, answers, toast]);
 

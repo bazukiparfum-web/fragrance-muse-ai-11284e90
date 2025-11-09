@@ -33,7 +33,11 @@ const QuizForYourself = () => {
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const totalSteps = questions.length || 14; // Dynamic based on questions from DB
   
-  const { loadProgress, saveProgress, deleteProgress } = useQuizProgress('myself', currentStep, answers);
+  const { loadProgress, saveProgress, deleteProgress } = useQuizProgress({ 
+    quizType: 'myself', 
+    currentStep, 
+    answers 
+  });
 
   useEffect(() => {
     loadQuestions();
