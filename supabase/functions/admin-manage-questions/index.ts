@@ -15,21 +15,28 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header provided');
       return new Response(
         JSON.stringify({ error: 'Authentication required' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('Creating Supabase client for auth verification...');
+    
     // Create client with anon key for auth verification
-    const supabaseAuth = createClient(
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      { 
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false }
+      }
     );
 
-    // Verify user is admin
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    // Verify user is authenticated
+    console.log('Verifying user authentication...');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     if (authError || !user) {
       console.error('Auth error:', authError);
       return new Response(
@@ -38,7 +45,11 @@ serve(async (req) => {
       );
     }
 
-    const { data: roleData, error: roleError } = await supabaseAuth
+    console.log('User authenticated:', user.id);
+
+    // Verify user is admin
+    console.log('Checking admin role...');
+    const { data: roleData, error: roleError } = await supabaseClient
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -53,11 +64,10 @@ serve(async (req) => {
       );
     }
 
-    // Create service role client for database operations
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    console.log('Admin role verified');
+
+    // Use the same client for database operations (already has proper auth context)
+    const supabase = supabaseClient;
 
     const { operation, question } = await req.json();
 
