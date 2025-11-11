@@ -1,19 +1,7 @@
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-perfume.jpg";
-import { useEffect, useState } from "react";
 
 const Hero = () => {
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -21,8 +9,7 @@ const Hero = () => {
         <img
           src={heroImage}
           alt="Luxury perfume lifestyle"
-          className="w-full h-full object-cover transition-transform duration-75 ease-out"
-          style={{ transform: `translateY(${scrollY * 0.5}px)` }}
+          className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
       </div>
