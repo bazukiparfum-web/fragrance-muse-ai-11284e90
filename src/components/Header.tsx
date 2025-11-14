@@ -1,13 +1,12 @@
-import { ShoppingCart, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '@/contexts/CartContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { CartDrawer } from './CartDrawer';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { cartCount } = useCart();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -50,19 +49,7 @@ const Header = () => {
             <User className="h-5 w-5" />
           </Button>
           
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/shop/cart')}
-            className="relative"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-accent text-accent-foreground text-xs flex items-center justify-center font-semibold">
-                {cartCount}
-              </span>
-            )}
-          </Button>
+          <CartDrawer />
         </div>
       </div>
     </header>

@@ -190,6 +190,9 @@ export type Database = {
           order_number: string
           referral_reward_id: string | null
           shipping_address: Json
+          shopify_checkout_url: string | null
+          shopify_order_id: string | null
+          shopify_order_number: string | null
           status: string
           subtotal: number
           total: number
@@ -206,6 +209,9 @@ export type Database = {
           order_number: string
           referral_reward_id?: string | null
           shipping_address: Json
+          shopify_checkout_url?: string | null
+          shopify_order_id?: string | null
+          shopify_order_number?: string | null
           status?: string
           subtotal: number
           total: number
@@ -222,6 +228,9 @@ export type Database = {
           order_number?: string
           referral_reward_id?: string | null
           shipping_address?: Json
+          shopify_checkout_url?: string | null
+          shopify_order_id?: string | null
+          shopify_order_number?: string | null
           status?: string
           subtotal?: number
           total?: number
@@ -490,6 +499,8 @@ export type Database = {
           quiz_answers: Json | null
           share_count: number | null
           share_token: string | null
+          shopify_product_id: string | null
+          shopify_variant_id: string | null
           user_id: string
           visual_data: Json | null
         }
@@ -509,6 +520,8 @@ export type Database = {
           quiz_answers?: Json | null
           share_count?: number | null
           share_token?: string | null
+          shopify_product_id?: string | null
+          shopify_variant_id?: string | null
           user_id: string
           visual_data?: Json | null
         }
@@ -528,10 +541,47 @@ export type Database = {
           quiz_answers?: Json | null
           share_count?: number | null
           share_token?: string | null
+          shopify_product_id?: string | null
+          shopify_variant_id?: string | null
           user_id?: string
           visual_data?: Json | null
         }
         Relationships: []
+      }
+      shopify_product_mappings: {
+        Row: {
+          created_at: string | null
+          id: string
+          saved_scent_id: string | null
+          shopify_product_id: string
+          shopify_variant_id: string
+          size: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          saved_scent_id?: string | null
+          shopify_product_id: string
+          shopify_variant_id: string
+          size: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          saved_scent_id?: string | null
+          shopify_product_id?: string
+          shopify_variant_id?: string
+          size?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopify_product_mappings_saved_scent_id_fkey"
+            columns: ["saved_scent_id"]
+            isOneToOne: false
+            referencedRelation: "saved_scents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
