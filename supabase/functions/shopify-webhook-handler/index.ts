@@ -71,45 +71,95 @@ function verifyWebhook(body: string, hmacHeader: string | null): boolean {
 async function handleOrderCreated(supabaseClient: any, orderData: any) {
   console.log('Handling order created:', orderData.id);
 
-  // Extract customer email to find user
+  // Validate customer email
   const customerEmail = orderData.customer?.email;
   if (!customerEmail) {
-    console.error('No customer email found');
+    console.error('❌ No customer email found in order:', orderData.id);
     return;
   }
 
-  // Find user by email
-  const { data: profile } = await supabaseClient
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(customerEmail)) {
+    console.error('❌ Invalid email format:', customerEmail);
+    return;
+  }
+
+  console.log('📧 Processing order for email:', customerEmail);
+
+  // Find or create user profile
+  let profile = null;
+  const { data: existingProfile, error: profileFetchError } = await supabaseClient
     .from('profiles')
     .select('id')
     .eq('email', customerEmail)
     .single();
 
-  if (!profile) {
-    console.log('User not found for email:', customerEmail);
+  if (profileFetchError && profileFetchError.code !== 'PGRST116') {
+    console.error('❌ Error fetching profile:', profileFetchError);
     return;
   }
 
+  if (existingProfile) {
+    profile = existingProfile;
+    console.log('✅ Found existing profile:', profile.id);
+  } else {
+    // Auto-create profile for new customer
+    console.log('🆕 Creating new profile for:', customerEmail);
+    const { data: newProfile, error: createError } = await supabaseClient
+      .from('profiles')
+      .insert({
+        email: customerEmail,
+        full_name: orderData.customer?.first_name && orderData.customer?.last_name 
+          ? `${orderData.customer.first_name} ${orderData.customer.last_name}`
+          : orderData.customer?.first_name || null,
+        phone: orderData.customer?.phone || null
+      })
+      .select('id')
+      .single();
+
+    if (createError) {
+      console.error('❌ Failed to create profile:', createError);
+      return;
+    }
+
+    profile = newProfile;
+    console.log('✅ Profile created successfully:', profile.id);
+  }
+
   // Check if order already exists
-  const { data: existingOrder } = await supabaseClient
+  const { data: existingOrder, error: orderCheckError } = await supabaseClient
     .from('orders')
     .select('id')
     .eq('shopify_order_id', orderData.id.toString())
     .single();
 
-  if (existingOrder) {
-    console.log('Order already exists:', orderData.id);
+  if (orderCheckError && orderCheckError.code !== 'PGRST116') {
+    console.error('❌ Error checking for existing order:', orderCheckError);
     return;
   }
 
-  // Calculate totals
+  if (existingOrder) {
+    console.log('⚠️ Order already exists:', orderData.id);
+    return;
+  }
+
+  // Calculate totals with validation
   const subtotal = parseFloat(orderData.subtotal_price || '0');
   const shippingCost = parseFloat(orderData.total_shipping_price_set?.shop_money?.amount || '0');
   const total = parseFloat(orderData.total_price || '0');
   const discount = parseFloat(orderData.total_discounts || '0');
 
+  console.log('💰 Order totals:', { subtotal, shippingCost, total, discount });
+
+  // Validate shipping address
+  const shippingAddress = orderData.shipping_address || {};
+  if (!shippingAddress.address1 && !shippingAddress.city) {
+    console.warn('⚠️ Incomplete shipping address for order:', orderData.id);
+  }
+
   // Create order
-  const { error: orderError } = await supabaseClient
+  const { data: newOrder, error: orderError } = await supabaseClient
     .from('orders')
     .insert({
       user_id: profile.id,
@@ -123,41 +173,69 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
       total,
       discount_applied: Math.round(discount * 100),
       delivery_type: 'standard',
-      shipping_address: orderData.shipping_address || {},
+      shipping_address: shippingAddress,
       estimated_delivery: null,
-    });
+    })
+    .select('id')
+    .single();
 
   if (orderError) {
-    console.error('Error creating order:', orderError);
+    console.error('❌ Failed to create order:', orderError);
+    console.error('Order data:', JSON.stringify({
+      user_id: profile.id,
+      order_number: `SH-${orderData.order_number}`,
+      shopify_order_id: orderData.id.toString(),
+    }));
     return;
   }
 
-  console.log('Order created successfully:', orderData.id);
+  console.log('✅ Order created successfully:', orderData.id, 'DB ID:', newOrder.id);
 
   // Create order items
+  console.log('📦 Creating order items, count:', orderData.line_items?.length || 0);
+  let itemsCreated = 0;
+  
   for (const item of orderData.line_items || []) {
-    await supabaseClient
+    const { error: itemError } = await supabaseClient
       .from('order_items')
       .insert({
-        order_id: orderData.id.toString(),
-        product_name: item.name,
-        product_image: item.product?.image?.src || '',
+        order_id: newOrder.id,
+        product_name: item.name || 'Unknown Product',
+        product_image: item.product?.image?.src || item.image?.src || '',
         size: item.variant_title || 'Standard',
-        quantity: item.quantity,
-        price: parseFloat(item.price),
+        quantity: item.quantity || 1,
+        price: parseFloat(item.price || '0'),
       });
+
+    if (itemError) {
+      console.error('❌ Failed to create order item:', itemError, 'Item:', item.name);
+    } else {
+      itemsCreated++;
+    }
   }
+
+  console.log(`✅ Created ${itemsCreated} of ${orderData.line_items?.length || 0} order items`);
 }
 
 async function handleOrderPaid(supabaseClient: any, orderData: any) {
-  console.log('Handling order paid:', orderData.id);
+  console.log('💳 Handling order paid:', orderData.id);
 
-  const { error } = await supabaseClient
+  const { data: updatedOrder, error } = await supabaseClient
     .from('orders')
     .update({ status: 'paid' })
-    .eq('shopify_order_id', orderData.id.toString());
+    .eq('shopify_order_id', orderData.id.toString())
+    .select('id')
+    .single();
 
   if (error) {
-    console.error('Error updating order status:', error);
+    console.error('❌ Failed to update order status:', error);
+    return;
   }
+
+  if (!updatedOrder) {
+    console.warn('⚠️ Order not found for payment update:', orderData.id);
+    return;
+  }
+
+  console.log('✅ Order status updated to paid:', updatedOrder.id);
 }
