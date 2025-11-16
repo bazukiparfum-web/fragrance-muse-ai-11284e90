@@ -11,16 +11,17 @@ import { FragranceVisualizer } from "@/components/FragranceVisualizer";
 import { ShareFragranceDialog } from "@/components/ShareFragranceDialog";
 import { FormulaTweakDialog } from "@/components/FormulaTweakDialog";
 import { toast } from "sonner";
-import { useCart } from "@/contexts/CartContext";
-import { ArrowLeft, ShoppingCart, Wand2, Calendar, Share2 } from "lucide-react";
+import { useCartStore } from "@/stores/cartStore";
+import { ArrowLeft, ShoppingCart, Wand2, Calendar, Share2, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ScentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addItem } = useCartStore();
   const [scent, setScent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [selectedSize, setSelectedSize] = useState('30ml');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [tweakDialogOpen, setTweakDialogOpen] = useState(false);
@@ -55,19 +56,82 @@ export default function ScentDetail() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!scent || !scent.prices) return;
 
-    const price = scent.prices[selectedSize] || 0;
-    addToCart({
-      product_name: scent.name,
-      product_image: '/placeholder.svg',
-      size: selectedSize,
-      quantity: 1,
-      price: price / 100,
-    });
+    setIsAddingToCart(true);
+    try {
+      // Create or fetch Shopify product for this scent
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to add items to cart');
+        navigate('/auth');
+        return;
+      }
 
-    toast.success(`Added ${scent.name} (${selectedSize}) to cart!`);
+      const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
+        body: { scentId: scent.id },
+      });
+
+      if (error) throw error;
+
+      // Find the variant for the selected size
+      const variant = data.variantIds.find((v: any) => v.size === selectedSize);
+      if (!variant) {
+        throw new Error('Variant not found');
+      }
+
+      // Add to cart using Shopify variant ID
+      addItem({
+        product: {
+          node: {
+            id: data.productId,
+            title: scent.name,
+            description: scent.formulation_notes || '',
+            handle: `custom-${scent.fragrance_code}`,
+            priceRange: {
+              minVariantPrice: {
+                amount: (scent.prices[selectedSize] / 100).toString(),
+                currencyCode: 'INR',
+              },
+            },
+            images: {
+              edges: [],
+            },
+            variants: {
+              edges: data.variantIds.map((v: any) => ({
+                node: {
+                  id: v.id,
+                  title: v.size,
+                  price: {
+                    amount: v.price,
+                    currencyCode: 'INR',
+                  },
+                  availableForSale: true,
+                  selectedOptions: [{ name: 'Size', value: v.size }],
+                },
+              })),
+            },
+            options: [{ name: 'Size', values: ['10ml', '30ml', '50ml'] }],
+          },
+        },
+        variantId: variant.id,
+        variantTitle: selectedSize,
+        price: {
+          amount: variant.price,
+          currencyCode: 'INR',
+        },
+        quantity: 1,
+        selectedOptions: [{ name: 'Size', value: selectedSize }],
+      });
+
+      toast.success(`Added ${scent.name} (${selectedSize}) to cart!`);
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart. Please try again.');
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const handleTweak = () => {
@@ -254,9 +318,23 @@ export default function ScentDetail() {
               </Select>
             </div>
 
-            <Button onClick={handleAddToCart} size="lg" className="md:w-auto w-full">
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              Add to Cart
+            <Button 
+              onClick={handleAddToCart} 
+              size="lg" 
+              className="md:w-auto w-full"
+              disabled={isAddingToCart}
+            >
+              {isAddingToCart ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Product...
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Order This Scent
+                </>
+              )}
             </Button>
 
             <Button onClick={handleTweak} variant="outline" size="lg" className="md:w-auto w-full">
