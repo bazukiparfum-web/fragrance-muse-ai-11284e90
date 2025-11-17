@@ -34,14 +34,18 @@ const QuizForSomeoneElse = () => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
 
-  // Auto-save progress
+  // Auto-save progress - only save if user has meaningful progress
   useEffect(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
-      if (Object.keys(answers).length > 0) {
+      // Only save if user has answered at least one question AND is past step 1
+      const hasAnswers = Object.keys(answers).length > 0;
+      const hasProgress = currentStep > 1 || hasAnswers;
+      
+      if (hasProgress && hasAnswers) {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
@@ -101,9 +105,15 @@ const QuizForSomeoneElse = () => {
         .eq('quiz_type', 'someone_special')
         .maybeSingle();
 
-      if (data && Object.keys(data.answers || {}).length > 0) {
-        setSavedProgress(data);
-        setShowResumeDialog(true);
+      // Only show resume dialog if user has meaningful progress (past step 1 OR has multiple answers)
+      if (data) {
+        const hasAnswers = Object.keys(data.answers || {}).length > 0;
+        const hasMeaningfulProgress = data.current_step > 1 || Object.keys(data.answers || {}).length >= 2;
+        
+        if (hasAnswers && hasMeaningfulProgress) {
+          setSavedProgress(data);
+          setShowResumeDialog(true);
+        }
       }
     } catch (error) {
       console.error('Error loading progress:', error);
