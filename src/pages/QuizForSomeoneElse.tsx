@@ -57,7 +57,7 @@ const QuizForSomeoneElse = () => {
             .from('quiz_progress')
             .upsert({
               user_id: user.id,
-              quiz_type: 'someone_special',
+              quiz_type: 'gift',
               current_step: currentStep,
               answers: answers as any,
             }, {
@@ -102,7 +102,7 @@ const QuizForSomeoneElse = () => {
         .from('quiz_progress')
         .select('*')
         .eq('user_id', user.id)
-        .eq('quiz_type', 'someone_special')
+        .eq('quiz_type', 'gift')
         .maybeSingle();
 
       // Only show resume dialog if user has meaningful progress (past step 1 OR has multiple answers)
@@ -140,7 +140,7 @@ const QuizForSomeoneElse = () => {
           .from('quiz_progress')
           .delete()
           .eq('user_id', user.id)
-          .eq('quiz_type', 'someone_special');
+          .eq('quiz_type', 'gift');
       }
     } catch (error) {
       console.error('Error deleting progress:', error);
@@ -158,7 +158,7 @@ const QuizForSomeoneElse = () => {
   const loadQuestions = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('get-quiz-questions', {
-        body: { quizType: 'someone_special' }
+        body: { quizType: 'gift' }
       });
       
       if (error) throw error;
@@ -281,7 +281,7 @@ const QuizForSomeoneElse = () => {
             .from('quiz_progress')
             .delete()
             .eq('user_id', user.id)
-            .eq('quiz_type', 'someone_special');
+            .eq('quiz_type', 'gift');
         }
       } catch (deleteError) {
         console.error('Error deleting progress:', deleteError);
