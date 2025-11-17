@@ -43,7 +43,7 @@ const QuizLanding = () => {
           .from('quiz_progress')
           .delete()
           .eq('user_id', user.id)
-          .eq('quiz_type', 'someone_else');
+          .eq('quiz_type', 'gift');
       }
     } catch (error) {
       console.error('Error clearing progress:', error);
