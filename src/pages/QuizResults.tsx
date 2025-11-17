@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ShoppingCart, Sparkles, Save } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { ShoppingCart, Sparkles, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SaveScentDialog } from '@/components/SaveScentDialog';
 import { QuizAnalytics } from '@/components/QuizAnalytics';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuiz } from '@/contexts/QuizContext';
+import { useCartStore } from '@/stores/cartStore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface Recommendation {
   id: string;
@@ -36,11 +38,12 @@ interface Recommendation {
 const QuizResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
-  const { toast } = useToast();
   const { answers } = useQuiz();
+  const { addItem } = useCartStore();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [selectedScent, setSelectedScent] = useState<Recommendation | null>(null);
+  const [selectedSize, setSelectedSize] = useState<{[key: string]: string}>({});
+  const [addingToCart, setAddingToCart] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
     saveQuizResponse();
@@ -160,19 +163,111 @@ const QuizResults = () => {
     }
   };
 
-  const handleAddToCart = (scent: Recommendation, size: string) => {
-    const price = scent.prices[size as keyof typeof scent.prices];
-    addToCart({
-      product_name: scent.name,
-      size,
-      price,
-      quantity: 1,
-      product_image: '/placeholder.svg'
-    });
-    toast({
-      title: "Added to cart",
-      description: `${scent.name} (${size}) added to your cart`
-    });
+  const handleAddToCart = async (scent: Recommendation) => {
+    const size = selectedSize[scent.id] || '30ml';
+    setAddingToCart(prev => ({ ...prev, [scent.id]: true }));
+    
+    try {
+      // First, check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to add items to cart');
+        navigate('/auth');
+        return;
+      }
+
+      // Save the scent if not already saved
+      let scentId = scent.id;
+      if (scent.id.startsWith('default-')) {
+        const { data: savedScent, error: saveError } = await supabase
+          .from('saved_scents')
+          .insert([{
+            user_id: session.user.id,
+            name: scent.name,
+            formula: scent.formula,
+            match_score: scent.matchScore,
+            intensity: scent.intensity,
+            longevity: scent.longevity,
+            prices: scent.prices,
+            formulation_notes: scent.formulationNotes,
+            quiz_answers: answers,
+          }])
+          .select()
+          .single();
+
+        if (saveError) throw saveError;
+        scentId = savedScent.id;
+      }
+
+      // Create Shopify product from scent
+      const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
+        body: { scentId },
+      });
+
+      if (error) throw error;
+
+      // Find the variant for the selected size
+      const variant = data.variantIds.find((v: any) => v.size === size);
+      if (!variant) {
+        throw new Error('Variant not found');
+      }
+
+      // Add to cart
+      addItem({
+        product: {
+          node: {
+            id: data.productId,
+            title: scent.name,
+            description: scent.formulationNotes || scent.story,
+            handle: `custom-scent-${scentId}`,
+            priceRange: {
+              minVariantPrice: {
+                amount: variant.price,
+                currencyCode: 'INR',
+              },
+            },
+            images: {
+              edges: [{
+                node: {
+                  url: '/custom-scent-default.jpg',
+                  altText: scent.name
+                }
+              }],
+            },
+            variants: {
+              edges: data.variantIds.map((v: any) => ({
+                node: {
+                  id: v.id,
+                  title: v.size,
+                  price: {
+                    amount: v.price,
+                    currencyCode: 'INR',
+                  },
+                  availableForSale: true,
+                  selectedOptions: [{ name: 'Size', value: v.size }],
+                },
+              })),
+            },
+            options: [{ name: 'Size', values: data.variantIds.map((v: any) => v.size) }],
+          },
+        },
+        variantId: variant.id,
+        variantTitle: variant.size,
+        price: {
+          amount: variant.price,
+          currencyCode: 'INR',
+        },
+        quantity: 1,
+        selectedOptions: [{ name: 'Size', value: variant.size }],
+      });
+
+      toast.success(`Added ${scent.name} (${size}) to cart!`);
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart. Please try again.');
+    } finally {
+      setAddingToCart(prev => ({ ...prev, [scent.id]: false }));
+    }
   };
 
   const handleSaveScent = (scent: Recommendation) => {
@@ -274,7 +369,7 @@ const QuizResults = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 mb-4">
                     <div className="flex justify-between items-center text-sm">
                       <span>10ml</span>
                       <span className="font-semibold">₹{scent.prices['10ml']}</span>
@@ -289,7 +384,23 @@ const QuizResults = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-6">
+                  <div className="mb-4">
+                    <Select
+                      value={selectedSize[scent.id] || '30ml'}
+                      onValueChange={(value) => setSelectedSize(prev => ({ ...prev, [scent.id]: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10ml">10ml - ₹{scent.prices['10ml']}</SelectItem>
+                        <SelectItem value="30ml">30ml - ₹{scent.prices['30ml']}</SelectItem>
+                        <SelectItem value="50ml">50ml - ₹{scent.prices['50ml']}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex gap-2">
                     <Button
                       onClick={() => handleSaveScent(scent)}
                       variant="outline"
@@ -299,11 +410,21 @@ const QuizResults = () => {
                       Save
                     </Button>
                     <Button
-                      onClick={() => handleAddToCart(scent, '30ml')}
+                      onClick={() => handleAddToCart(scent)}
                       className="flex-1"
+                      disabled={addingToCart[scent.id]}
                     >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Add 30ml
+                      {addingToCart[scent.id] ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Add to Cart
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
