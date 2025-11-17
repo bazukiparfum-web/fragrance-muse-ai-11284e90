@@ -12,9 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useCartStore } from '@/stores/cartStore';
 import { FragranceVisualizer } from '@/components/FragranceVisualizer';
+import { CartMigrationBanner } from '@/components/CartMigrationBanner';
 import Header from '@/components/Header';
 import { toast } from 'sonner';
 
@@ -41,6 +41,7 @@ interface SavedScent {
   intensity?: number;
   longevity?: number;
   prices?: any;
+  formulation_notes?: string;
 }
 
 interface Subscription {
@@ -123,7 +124,7 @@ const Account = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast({ title: "Logged out successfully" });
+    toast.success('Logged out successfully');
     navigate('/');
   };
 
@@ -139,7 +140,7 @@ const Account = () => {
     const link = `${window.location.origin}/auth?ref=${code}`;
     navigator.clipboard.writeText(link);
     setCopiedCode(code);
-    toast({ title: "Link copied!", description: "Share with friends to earn rewards" });
+    toast.success('Link copied! Share with friends to earn rewards');
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
@@ -158,27 +159,87 @@ const Account = () => {
     return { totalInvited, friendsOrdered, totalEarned, availableBalance };
   };
 
-  const handleReorder = (scent: SavedScent) => {
+  const handleReorder = async (scent: SavedScent) => {
     if (!scent.prices) {
-      toast({ title: "Unable to reorder", description: "Pricing information not available" });
+      toast.error('Unable to reorder - pricing information not available');
       return;
     }
     
-    const defaultSize = '30ml';
-    const price = scent.prices[defaultSize] || 0;
-    
-    addToCart({
-      product_name: scent.name,
-      product_image: '/placeholder.svg',
-      size: defaultSize,
-      quantity: 1,
-      price: price / 100,
-    });
-    
-    toast({
-      title: "Added to cart",
-      description: `${scent.name} (${defaultSize}) added to your cart`
-    });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to add items to cart');
+        navigate('/auth');
+        return;
+      }
+
+      // Create Shopify product from saved scent
+      const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
+        body: { scentId: scent.id },
+      });
+
+      if (error) throw error;
+
+      const defaultSize = '30ml';
+      const variant = data.variantIds.find((v: any) => v.size === defaultSize);
+      if (!variant) {
+        throw new Error('Variant not found');
+      }
+
+      // Add to Shopify cart
+      addItem({
+        product: {
+          node: {
+            id: data.productId,
+            title: scent.name,
+            description: scent.formulation_notes || '',
+            handle: `custom-scent-${scent.fragrance_code || scent.id}`,
+            priceRange: {
+              minVariantPrice: {
+                amount: variant.price,
+                currencyCode: 'INR',
+              },
+            },
+            images: {
+              edges: [{
+                node: {
+                  url: '/custom-scent-default.jpg',
+                  altText: scent.name
+                }
+              }],
+            },
+            variants: {
+              edges: data.variantIds.map((v: any) => ({
+                node: {
+                  id: v.id,
+                  title: v.size,
+                  price: {
+                    amount: v.price,
+                    currencyCode: 'INR',
+                  },
+                  availableForSale: true,
+                  selectedOptions: [{ name: 'Size', value: v.size }],
+                },
+              })),
+            },
+            options: [{ name: 'Size', values: data.variantIds.map((v: any) => v.size) }],
+          },
+        },
+        variantId: variant.id,
+        variantTitle: variant.size,
+        price: {
+          amount: variant.price,
+          currencyCode: 'INR',
+        },
+        quantity: 1,
+        selectedOptions: [{ name: 'Size', value: variant.size }],
+      });
+
+      toast.success(`Added ${scent.name} (${defaultSize}) to cart!`);
+    } catch (error: any) {
+      console.error('Error reordering:', error);
+      toast.error('Failed to add to cart. Please try again.');
+    }
   };
 
   const handleEditDetails = async () => {
@@ -198,21 +259,21 @@ const Account = () => {
 
       setProfile({ ...profile, full_name: editName, phone: editPhone });
       setShowEditDialog(false);
-      toast({ title: "Profile updated successfully" });
+      toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast({ title: "Failed to update profile", variant: "destructive" });
+      toast.error('Failed to update profile');
     }
   };
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast({ title: "Passwords don't match", variant: "destructive" });
+      toast.error("Passwords don't match");
       return;
     }
 
     if (newPassword.length < 6) {
-      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
@@ -226,15 +287,15 @@ const Account = () => {
       setShowPasswordDialog(false);
       setNewPassword('');
       setConfirmPassword('');
-      toast({ title: "Password changed successfully" });
+      toast.success('Password changed successfully');
     } catch (error) {
       console.error('Error changing password:', error);
-      toast({ title: "Failed to change password", variant: "destructive" });
+      toast.error('Failed to change password');
     }
   };
 
   const handleSavePreferences = () => {
-    toast({ title: "Preferences saved successfully" });
+    toast.success('Preferences saved successfully');
   };
 
   return (
@@ -242,6 +303,7 @@ const Account = () => {
       <Header />
       <div className="min-h-screen pt-24 pb-12 bg-secondary/30">
         <div className="container mx-auto px-4">
+          <CartMigrationBanner />
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Sidebar */}
             <Card className="p-6 h-fit sticky top-24">
