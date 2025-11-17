@@ -4,20 +4,51 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Gift, User, Clock } from 'lucide-react';
 import { useQuiz } from '@/contexts/QuizContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const QuizLanding = () => {
   const navigate = useNavigate();
   const { setIsForGift, resetAnswers } = useQuiz();
 
-  const handleForMyself = () => {
+  const handleForMyself = async () => {
     resetAnswers();
     setIsForGift(false);
+    
+    // Clear any stale quiz progress when starting fresh from landing page
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('quiz_progress')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('quiz_type', 'myself');
+      }
+    } catch (error) {
+      console.error('Error clearing progress:', error);
+    }
+    
     navigate('/shop/quiz/for-yourself');
   };
 
-  const handleForSomeone = () => {
+  const handleForSomeone = async () => {
     resetAnswers();
     setIsForGift(true);
+    
+    // Clear any stale quiz progress when starting fresh from landing page
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('quiz_progress')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('quiz_type', 'someone_else');
+      }
+    } catch (error) {
+      console.error('Error clearing progress:', error);
+    }
+    
     navigate('/shop/quiz/for-someone-else');
   };
 
