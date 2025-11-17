@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { User, Package, Heart, Settings, LogOut, ShoppingBag, Gift, Share2, Copy, Check } from 'lucide-react';
+import { User, Package, Heart, Settings, LogOut, ShoppingBag, Gift, Share2, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,11 +10,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useCart } from '@/contexts/CartContext';
+import { useCartStore } from '@/stores/cartStore';
 import { FragranceVisualizer } from '@/components/FragranceVisualizer';
 import Header from '@/components/Header';
+import { toast } from 'sonner';
 
 interface Order {
   id: string;
@@ -22,6 +24,10 @@ interface Order {
   created_at: string;
   status: string;
   total: number;
+  shopify_order_number?: string;
+  shopify_checkout_url?: string;
+  delivery_type: string;
+  estimated_delivery?: string;
 }
 
 interface SavedScent {
@@ -50,8 +56,10 @@ const Account = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'dashboard';
-  const { toast } = useToast();
-  const { addToCart } = useCart();
+  const { addItem } = useCartStore();
+  const [showMigrationAlert, setShowMigrationAlert] = useState(false);
+  const [oldCartItems, setOldCartItems] = useState<any[]>([]);
+  const [migratingCart, setMigratingCart] = useState(false);
   
   const [orders, setOrders] = useState<Order[]>([]);
   const [savedScents, setSavedScents] = useState<SavedScent[]>([]);

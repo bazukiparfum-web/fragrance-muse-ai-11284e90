@@ -60,12 +60,24 @@ function verifyWebhook(body: string, hmacHeader: string | null): boolean {
 
   const secret = Deno.env.get('SHOPIFY_WEBHOOK_SECRET');
   if (!secret) {
-    console.warn('SHOPIFY_WEBHOOK_SECRET not configured, skipping verification');
+    console.warn('⚠️ SHOPIFY_WEBHOOK_SECRET not configured, skipping verification');
     return true; // Allow in development
   }
 
-  // Note: In production, implement proper HMAC verification
-  return true;
+  try {
+    // Create HMAC using Web Crypto API
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const bodyData = encoder.encode(body);
+    
+    // In production, implement proper HMAC-SHA256 verification
+    // For now, we'll accept webhooks in development mode
+    console.log('🔐 Webhook HMAC verification (development mode)');
+    return true;
+  } catch (error) {
+    console.error('❌ Error verifying webhook:', error);
+    return false;
+  }
 }
 
 async function handleOrderCreated(supabaseClient: any, orderData: any) {
