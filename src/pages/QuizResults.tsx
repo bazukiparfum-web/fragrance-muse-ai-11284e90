@@ -184,13 +184,13 @@ const QuizResults = () => {
           .insert([{
             user_id: session.user.id,
             name: scent.name,
-            formula: scent.formula,
+            formula: scent.formula as any,
             match_score: scent.matchScore,
             intensity: scent.intensity,
             longevity: scent.longevity,
-            prices: scent.prices,
+            prices: scent.prices as any,
             formulation_notes: scent.formulationNotes,
-            quiz_answers: answers,
+            quiz_answers: answers as any,
           }])
           .select()
           .single();
