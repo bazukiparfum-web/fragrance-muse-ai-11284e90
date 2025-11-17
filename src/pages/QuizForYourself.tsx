@@ -181,19 +181,19 @@ const QuizForYourself = () => {
     { id: 1, question_type: 'radio', question_text: 'In what setting did you grow up?', options: ['City', 'Small town', 'Countryside', 'Suburbs', 'Various', 'Metropolis'], answer_key: 'setting' },
     { id: 2, question_type: 'city_search', question_text: 'What city do you currently live in?', answer_key: 'currentCity' },
     { id: 3, question_type: 'radio', question_text: 'Which gender do you identify with?', options: ['Woman', 'Man', 'Transgender', 'Non-binary/non-conforming', 'Prefer not to respond'], answer_key: 'gender' },
-    { id: 4, question_type: 'color_picker', question_text: 'Which color represents you the best?', answer_key: 'color' },
+    { id: 4, question_type: 'color_picker', question_text: 'Which color represents you the best?', answer_key: 'colorHue' },
     { id: 5, question_type: 'personality_sliders', question_text: 'I see myself as someone who...', traits: [
       { id: 'talkative', label: 'Is talkative' },
       { id: 'reserved', label: 'Is reserved' },
       { id: 'quiet', label: 'Tends to be quiet' },
       { id: 'shy', label: 'Is sometimes shy, inhibited' }
-    ], answer_key: 'personalityTraits1' },
+    ], answer_key: 'personalityTraits' },
     { id: 6, question_type: 'personality_sliders', question_text: 'I see myself as someone who...', traits: [
       { id: 'rude', label: 'Is sometimes rude to others' },
       { id: 'quarrels', label: 'Starts quarrels with others' },
       { id: 'forgiving', label: 'Has a forgiving nature' },
       { id: 'trusting', label: 'Is generally trusting' }
-    ], answer_key: 'personalityTraits2' },
+    ], answer_key: 'personalityTraits' },
     { id: 7, question_type: 'radio', question_text: "What's your age range?", options: ['18-25', '26-35', '36-45', '46+'], answer_key: 'ageRange' },
     { id: 8, question_type: 'radio', question_text: 'How would you describe your personality?', options: ['Calm', 'Energetic', 'Elegant', 'Bold'], answer_key: 'personality' },
     { id: 9, question_type: 'scent_family', question_text: 'Which scent family appeals to you most?', answer_key: 'scentFamily' },
