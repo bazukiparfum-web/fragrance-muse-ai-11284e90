@@ -132,6 +132,8 @@ Deno.serve(async (req) => {
 
 async function createShopifyProduct(scent: SavedScent) {
   const SHOPIFY_ACCESS_TOKEN = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+  const DEFAULT_IMAGE_URL = Deno.env.get('DEFAULT_PRODUCT_IMAGE_URL') || 
+    'https://pcwfrmgcycbddqhkqgfx.supabase.co/storage/v1/object/public/product-images/custom-scent-default.jpg';
   
   const prices = scent.prices || {
     '10ml': 999,
@@ -147,6 +149,12 @@ async function createShopifyProduct(scent: SavedScent) {
       vendor: 'BAZUKI',
       product_type: 'Custom Perfume',
       tags: ['custom', 'quiz-generated', 'personalized'],
+      images: [
+        {
+          src: DEFAULT_IMAGE_URL,
+          alt: `${scent.name} - Custom Perfume`,
+        },
+      ],
       variants: [
         {
           option1: '10ml',
