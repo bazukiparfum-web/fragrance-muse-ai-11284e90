@@ -30,6 +30,7 @@ const QuizForYourself = () => {
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [savedProgress, setSavedProgress] = useState<any>(null);
+  const [hasCheckedProgress, setHasCheckedProgress] = useState(false);
   const totalSteps = questions.length || 14; // Dynamic based on questions from DB
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
@@ -94,6 +95,9 @@ const QuizForYourself = () => {
   }, [location.state, setAllAnswers]);
 
   const checkForSavedProgress = async () => {
+    // Only check once per session
+    if (hasCheckedProgress) return;
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -105,18 +109,16 @@ const QuizForYourself = () => {
         .eq('quiz_type', 'myself')
         .maybeSingle();
 
-      // Only show resume dialog if user has meaningful progress (past step 1 OR has multiple answers)
-      if (data) {
-        const hasAnswers = Object.keys(data.answers || {}).length > 0;
-        const hasMeaningfulProgress = data.current_step > 1 || Object.keys(data.answers || {}).length >= 2;
-        
-        if (hasAnswers && hasMeaningfulProgress) {
-          setSavedProgress(data);
-          setShowResumeDialog(true);
-        }
+      setHasCheckedProgress(true);
+
+      // Only show resume dialog if user has meaningful progress
+      if (data && data.current_step > 1) {
+        setSavedProgress(data);
+        setShowResumeDialog(true);
       }
     } catch (error) {
       console.error('Error loading progress:', error);
+      setHasCheckedProgress(true);
     }
   };
 
