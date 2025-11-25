@@ -18,16 +18,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Get quiz type from query params (default to 'myself')
-    const url = new URL(req.url);
-    const quizType = url.searchParams.get('quizType') || 'myself';
-
-    // Filter questions based on quiz type
+    // Get all active questions (no filtering by quiz type - same questions for both flows)
     const { data, error } = await supabase
       .from('quiz_questions')
       .select('*')
       .eq('is_active', true)
-      .in('quiz_type', ['both', quizType])
       .order('order_index');
 
     if (error) {
