@@ -160,7 +160,8 @@ const QuizForYourself = () => {
   const loadQuestions = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('get-quiz-questions', {
-        body: { quizType: 'myself' }
+        body: { quizType: 'myself' },
+        method: 'POST'
       });
       
       if (error) throw error;
