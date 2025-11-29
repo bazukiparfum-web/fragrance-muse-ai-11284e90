@@ -213,6 +213,9 @@ const QuizResults = () => {
       console.log('Calling create-shopify-product-from-scent with scentId:', scentId);
       const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
         body: { scentId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {

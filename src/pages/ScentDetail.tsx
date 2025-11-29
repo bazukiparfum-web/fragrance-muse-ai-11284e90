@@ -81,6 +81,9 @@ export default function ScentDetail() {
 
       const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
         body: { scentId: scent.id },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {
