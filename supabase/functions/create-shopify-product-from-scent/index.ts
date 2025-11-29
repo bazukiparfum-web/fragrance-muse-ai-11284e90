@@ -70,10 +70,11 @@ Deno.serve(async (req) => {
     // Check if product already exists
     if (scent.shopify_product_id) {
       console.log('Product already exists:', scent.shopify_product_id);
+      const variantIds = await getVariantIds(scent.shopify_product_id);
       return new Response(
         JSON.stringify({
-          productId: scent.shopify_product_id,
-          variantIds: await getVariantIds(scent.shopify_product_id),
+          productId: `gid://shopify/Product/${scent.shopify_product_id}`,
+          variantIds,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -111,9 +112,9 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        productId: shopifyProduct.id,
+        productId: `gid://shopify/Product/${shopifyProduct.id}`,
         variantIds: shopifyProduct.variants.map((v: any) => ({
-          id: v.id,
+          id: `gid://shopify/ProductVariant/${v.id}`,
           size: v.option1,
           price: v.price,
         })),
@@ -244,7 +245,7 @@ async function getVariantIds(productId: string) {
 
   const data = await response.json();
   return data.product.variants.map((v: any) => ({
-    id: v.id,
+    id: `gid://shopify/ProductVariant/${v.id}`,
     size: v.option1,
     price: v.price,
   }));
