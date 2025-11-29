@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
 
     const { scentId } = await req.json();
     console.log('Creating Shopify product for scent:', scentId);
+    console.log('Looking for scent with user_id:', user.id);
 
     // Fetch the saved scent
     const { data: scent, error: scentError } = await supabaseClient
@@ -85,15 +86,25 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('id', scentId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (scentError || !scent) {
-      console.error('Error fetching scent:', scentError);
+    if (scentError) {
+      console.error('Database error fetching scent:', scentError);
       return new Response(
-        JSON.stringify({ error: 'Scent not found' }),
+        JSON.stringify({ error: 'Database error: ' + scentError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!scent) {
+      console.error('Scent not found. scentId:', scentId, 'user_id:', user.id);
+      return new Response(
+        JSON.stringify({ error: 'Scent not found. Please make sure the scent is saved first.' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Successfully fetched scent:', scent.name);
 
     // Check if product already exists
     if (scent.shopify_product_id) {
