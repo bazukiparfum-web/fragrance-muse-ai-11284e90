@@ -62,18 +62,33 @@ export default function ScentDetail() {
     setIsAddingToCart(true);
     try {
       // Create or fetch Shopify product for this scent
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        toast.error('Authentication error. Please sign in again.');
+        navigate('/auth');
+        return;
+      }
+      
       if (!session) {
         toast.error('Please sign in to add items to cart');
         navigate('/auth');
         return;
       }
 
+      console.log('Creating Shopify product for scent:', scent.id);
+
       const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
         body: { scentId: scent.id },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      console.log('Shopify product created:', data);
 
       // Find the variant for the selected size
       const variant = data.variantIds.find((v: any) => v.size === selectedSize);

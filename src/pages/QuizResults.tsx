@@ -169,12 +169,22 @@ const QuizResults = () => {
     
     try {
       // First, check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        toast.error('Authentication error. Please sign in again.');
+        navigate('/auth');
+        return;
+      }
+      
       if (!session) {
         toast.error('Please sign in to add items to cart');
         navigate('/auth');
         return;
       }
+
+      console.log('User session valid, proceeding with add to cart');
 
       // Save the scent if not already saved
       let scentId = scent.id;
@@ -200,11 +210,17 @@ const QuizResults = () => {
       }
 
       // Create Shopify product from scent
+      console.log('Calling create-shopify-product-from-scent with scentId:', scentId);
       const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
         body: { scentId },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+      
+      console.log('Shopify product created successfully:', data);
 
       // Find the variant for the selected size
       const variant = data.variantIds.find((v: any) => v.size === size);
