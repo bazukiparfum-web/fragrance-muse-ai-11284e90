@@ -35,6 +35,7 @@ const QuizForSomeoneElse = () => {
   const totalSteps = questions.length || 1;
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
+  const questionsLoadedRef = useRef(false);
 
   // Auto-save progress - only save if user has meaningful progress
   useEffect(() => {
@@ -80,10 +81,23 @@ const QuizForSomeoneElse = () => {
     };
   }, [answers, currentStep]);
 
+  // Load questions only once on mount
   useEffect(() => {
-    loadQuestions();
-    checkForSavedProgress();
-    
+    if (!questionsLoadedRef.current) {
+      loadQuestions();
+      questionsLoadedRef.current = true;
+    }
+  }, []);
+
+  // Check for saved progress only once
+  useEffect(() => {
+    if (!hasCheckedProgress) {
+      checkForSavedProgress();
+    }
+  }, [hasCheckedProgress]);
+
+  // Handle prefilled answers from location state
+  useEffect(() => {
     const locationState = location.state as any;
     if (locationState?.prefillAnswers) {
       setAllAnswers(locationState.prefillAnswers);
