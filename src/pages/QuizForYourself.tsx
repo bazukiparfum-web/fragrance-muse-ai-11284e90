@@ -236,7 +236,7 @@ const QuizForYourself = () => {
         const traits = question.traits || [];
         return traits.every((t: any) => answers.personalityTraits?.[t.id] !== undefined);
       case 'text':
-        return !!answer && answer.trim().length > 0;
+        return !!answer && typeof answer === 'string' && answer.trim().length > 0;
       default:
         return true;
     }
