@@ -18,8 +18,22 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Get quiz type from body
-    const { quizType = 'myself' } = await req.json();
+    // Get quiz type from body or default to 'myself'
+    let quizType = 'myself';
+    
+    try {
+      // Try to parse body if it exists
+      const contentType = req.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
+        const body = await req.json();
+        quizType = body.quizType || 'myself';
+      }
+    } catch (jsonError) {
+      // If JSON parsing fails, just use default
+      console.log('Failed to parse JSON body, using default quizType:', jsonError);
+    }
+
+    console.log('Fetching questions for quiz type:', quizType);
 
     // Get questions for the specific quiz type
     const { data, error } = await supabase
@@ -30,14 +44,17 @@ serve(async (req) => {
       .order('order_index');
 
     if (error) {
+      console.error('Database error:', error);
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('Successfully fetched', data?.length || 0, 'questions');
+
     return new Response(
-      JSON.stringify({ questions: data }),
+      JSON.stringify({ questions: data || [] }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
