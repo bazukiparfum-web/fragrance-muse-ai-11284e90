@@ -163,6 +163,12 @@ const QuizResults = () => {
     }
   };
 
+  // Helper function to check if a string is a valid UUID
+  const isValidUUID = (id: string) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  };
+
   const handleAddToCart = async (scent: Recommendation) => {
     const size = selectedSize[scent.id] || '30ml';
     setAddingToCart(prev => ({ ...prev, [scent.id]: true }));
@@ -186,11 +192,11 @@ const QuizResults = () => {
 
       console.log('User session valid, proceeding with add to cart');
 
-      // Save the scent if not already saved
+      // Save the scent if not already saved (not a UUID means it's not in database yet)
       let scentId = scent.id;
-      console.log('Initial scent ID:', scentId, 'Is default?', scent.id.startsWith('default-'));
+      console.log('Initial scent ID:', scentId, 'Is valid UUID?', isValidUUID(scent.id));
       
-      if (scent.id.startsWith('default-')) {
+      if (!isValidUUID(scent.id)) {
         console.log('Saving new scent to database...');
         const { data: savedScent, error: saveError } = await supabase
           .from('saved_scents')
