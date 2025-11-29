@@ -28,6 +28,7 @@ const QuizForYourself = () => {
   const [originalFragranceName, setOriginalFragranceName] = useState('');
   const [questions, setQuestions] = useState<any[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
+  const [questionsError, setQuestionsError] = useState(false);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const [hasCheckedProgress, setHasCheckedProgress] = useState(false);
@@ -158,6 +159,9 @@ const QuizForYourself = () => {
   };
 
   const loadQuestions = async () => {
+    setLoadingQuestions(true);
+    setQuestionsError(false);
+    
     try {
       const { data, error } = await supabase.functions.invoke('get-quiz-questions', {
         body: { quizType: 'myself' },
@@ -174,6 +178,7 @@ const QuizForYourself = () => {
       }
     } catch (error) {
       console.error('Error loading questions:', error);
+      setQuestionsError(true);
       setQuestions(getDefaultQuestions());
     } finally {
       setLoadingQuestions(false);
@@ -513,6 +518,26 @@ const QuizForYourself = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-2xl mx-auto text-center py-12">
             <div className="animate-pulse text-muted-foreground">Loading quiz...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (questionsError && questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[60vh]">
+          <div className="max-w-md text-center space-y-4">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-serif font-bold">Unable to Load Quiz</h2>
+            <p className="text-muted-foreground">
+              We're having trouble loading the quiz questions. This might be due to a temporary network issue.
+            </p>
+            <Button onClick={loadQuestions} size="lg" className="mt-6">
+              Try Again
+            </Button>
           </div>
         </div>
       </div>
