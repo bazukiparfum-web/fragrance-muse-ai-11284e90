@@ -39,18 +39,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create Supabase client with user's auth context
-    const supabaseClient = createClient(
+    // Create Supabase client with service role key for auth verification
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
-        global: {
-          headers: { Authorization: authHeader },
-        },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
       }
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Verify the JWT token and get user
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    
     if (userError || !user) {
       console.error('Authentication error:', userError);
       return new Response(
@@ -60,6 +64,17 @@ Deno.serve(async (req) => {
     }
 
     console.log('User authenticated:', user.id);
+
+    // Create client for user-scoped operations
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
 
     const { scentId } = await req.json();
     console.log('Creating Shopify product for scent:', scentId);
