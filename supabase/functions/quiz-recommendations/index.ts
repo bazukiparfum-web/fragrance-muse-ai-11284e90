@@ -143,9 +143,9 @@ Make each scent distinctly different from the others.`;
 
     const aiRecommendations = JSON.parse(functionCall.arguments);
 
-    // Add pricing and IDs to recommendations
+    // Add pricing and IDs to recommendations (use default- prefix for consistency)
     const recommendations = aiRecommendations.recommendations.map((rec: any, index: number) => ({
-      id: `blend_${String(index + 1).padStart(3, '0')}`,
+      id: `default-${index + 1}`,
       ...rec,
       prices: {
         '10ml': 499,
