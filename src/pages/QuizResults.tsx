@@ -188,7 +188,10 @@ const QuizResults = () => {
 
       // Save the scent if not already saved
       let scentId = scent.id;
+      console.log('Initial scent ID:', scentId, 'Is default?', scent.id.startsWith('default-'));
+      
       if (scent.id.startsWith('default-')) {
+        console.log('Saving new scent to database...');
         const { data: savedScent, error: saveError } = await supabase
           .from('saved_scents')
           .insert([{
@@ -205,8 +208,15 @@ const QuizResults = () => {
           .select()
           .single();
 
-        if (saveError) throw saveError;
+        if (saveError) {
+          console.error('Error saving scent:', saveError);
+          throw saveError;
+        }
+        
+        console.log('Scent saved successfully with ID:', savedScent.id);
         scentId = savedScent.id;
+      } else {
+        console.log('Using existing scent ID:', scentId);
       }
 
       // Create Shopify product from scent
