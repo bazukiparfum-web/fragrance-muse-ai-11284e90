@@ -43,6 +43,7 @@ const QuizResults = () => {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [selectedScent, setSelectedScent] = useState<Recommendation | null>(null);
   const [selectedSize, setSelectedSize] = useState<{[key: string]: string}>({});
+  const [addingDiscoverySet, setAddingDiscoverySet] = useState(false);
   const [addingToCart, setAddingToCart] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
@@ -310,6 +311,69 @@ const QuizResults = () => {
     setSaveDialogOpen(true);
   };
 
+  const handleAddDiscoverySet = async () => {
+    setAddingDiscoverySet(true);
+    try {
+      // Discovery Set product from Shopify
+      const discoverySetProduct = {
+        node: {
+          id: 'gid://shopify/Product/9146587775196',
+          title: 'Discovery Set',
+          description: 'Explore our signature collection with 3 x 10ml samples',
+          handle: 'discovery-set',
+          priceRange: {
+            minVariantPrice: {
+              amount: '2499.0',
+              currencyCode: 'INR',
+            },
+          },
+          images: {
+            edges: [{
+              node: {
+                url: '/custom-scent-default.jpg',
+                altText: 'Discovery Set'
+              }
+            }],
+          },
+          variants: {
+            edges: [{
+              node: {
+                id: 'gid://shopify/ProductVariant/47200402669788',
+                title: 'Default Title',
+                price: {
+                  amount: '2499.0',
+                  currencyCode: 'INR',
+                },
+                availableForSale: true,
+                selectedOptions: [{ name: 'Title', value: 'Default Title' }],
+              },
+            }],
+          },
+          options: [{ name: 'Title', values: ['Default Title'] }],
+        },
+      };
+
+      addItem({
+        product: discoverySetProduct,
+        variantId: 'gid://shopify/ProductVariant/47200402669788',
+        variantTitle: 'Default Title',
+        price: {
+          amount: '2499.0',
+          currencyCode: 'INR',
+        },
+        quantity: 1,
+        selectedOptions: [{ name: 'Title', value: 'Default Title' }],
+      });
+
+      toast.success('Added Discovery Set to cart!');
+    } catch (error) {
+      console.error('Error adding discovery set:', error);
+      toast.error('Failed to add Discovery Set. Please try again.');
+    } finally {
+      setAddingDiscoverySet(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -481,9 +545,23 @@ const QuizResults = () => {
                 Save ₹198
               </span>
             </div>
-            <Button size="lg" className="bg-accent hover:bg-accent/90">
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Add Discovery Set to Cart
+            <Button 
+              size="lg" 
+              className="bg-accent hover:bg-accent/90"
+              onClick={handleAddDiscoverySet}
+              disabled={addingDiscoverySet}
+            >
+              {addingDiscoverySet ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Add Discovery Set to Cart
+                </>
+              )}
             </Button>
           </Card>
 
