@@ -29,7 +29,6 @@ interface Recommendation {
   totalCost: string;
   formulationNotes?: string;
   prices: {
-    '10ml': number;
     '30ml': number;
     '50ml': number;
   };
@@ -88,9 +87,8 @@ const QuizResults = () => {
       longevity: 7,
       totalCost: '100',
       prices: {
-        '10ml': 499,
-        '30ml': 899,
-        '50ml': 1299
+        '30ml': 700,
+        '50ml': 1099
       }
     },
     {
@@ -116,9 +114,8 @@ const QuizResults = () => {
       longevity: 8,
       totalCost: '100',
       prices: {
-        '10ml': 499,
-        '30ml': 899,
-        '50ml': 1299
+        '30ml': 700,
+        '50ml': 1099
       }
     },
     {
@@ -144,9 +141,8 @@ const QuizResults = () => {
       longevity: 7,
       totalCost: '116',
       prices: {
-        '10ml': 499,
-        '30ml': 899,
-        '50ml': 1299
+        '30ml': 700,
+        '50ml': 1099
       }
     }
   ];
@@ -314,16 +310,16 @@ const QuizResults = () => {
   const handleAddDiscoverySet = async () => {
     setAddingDiscoverySet(true);
     try {
-      // Discovery Set product from Shopify
+      // Discovery Set product from Shopify - 3 × 30ml bottles at ₹1,500
       const discoverySetProduct = {
         node: {
           id: 'gid://shopify/Product/9146587775196',
-          title: 'Discovery Set',
-          description: 'Explore our signature collection with 3 x 10ml samples',
-          handle: 'discovery-set',
+          title: '30ml Discovery Set',
+          description: 'Get all 3 custom fragrances in full-size 30ml bottles',
+          handle: 'discovery-set-30ml',
           priceRange: {
             minVariantPrice: {
-              amount: '2499.0',
+              amount: '1500.0',
               currencyCode: 'INR',
             },
           },
@@ -331,7 +327,7 @@ const QuizResults = () => {
             edges: [{
               node: {
                 url: '/custom-scent-default.jpg',
-                altText: 'Discovery Set'
+                altText: '30ml Discovery Set'
               }
             }],
           },
@@ -339,33 +335,33 @@ const QuizResults = () => {
             edges: [{
               node: {
                 id: 'gid://shopify/ProductVariant/47200402669788',
-                title: 'Default Title',
+                title: '3 × 30ml Bottles',
                 price: {
-                  amount: '2499.0',
+                  amount: '1500.0',
                   currencyCode: 'INR',
                 },
                 availableForSale: true,
-                selectedOptions: [{ name: 'Title', value: 'Default Title' }],
+                selectedOptions: [{ name: 'Title', value: '3 × 30ml Bottles' }],
               },
             }],
           },
-          options: [{ name: 'Title', values: ['Default Title'] }],
+          options: [{ name: 'Title', values: ['3 × 30ml Bottles'] }],
         },
       };
 
       addItem({
         product: discoverySetProduct,
         variantId: 'gid://shopify/ProductVariant/47200402669788',
-        variantTitle: 'Default Title',
+        variantTitle: '3 × 30ml Bottles',
         price: {
-          amount: '2499.0',
+          amount: '1500.0',
           currencyCode: 'INR',
         },
         quantity: 1,
-        selectedOptions: [{ name: 'Title', value: 'Default Title' }],
+        selectedOptions: [{ name: 'Title', value: '3 × 30ml Bottles' }],
       });
 
-      toast.success('Added Discovery Set to cart!');
+      toast.success('Added 30ml Discovery Set to cart!');
     } catch (error) {
       console.error('Error adding discovery set:', error);
       toast.error('Failed to add Discovery Set. Please try again.');
@@ -470,10 +466,6 @@ const QuizResults = () => {
 
                   <div className="space-y-3 mb-4">
                     <div className="flex justify-between items-center text-sm">
-                      <span>10ml</span>
-                      <span className="font-semibold">₹{scent.prices['10ml']}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
                       <span>30ml</span>
                       <span className="font-semibold">₹{scent.prices['30ml']}</span>
                     </div>
@@ -492,7 +484,6 @@ const QuizResults = () => {
                         <SelectValue placeholder="Select size" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="10ml">10ml - ₹{scent.prices['10ml']}</SelectItem>
                         <SelectItem value="30ml">30ml - ₹{scent.prices['30ml']}</SelectItem>
                         <SelectItem value="50ml">50ml - ₹{scent.prices['50ml']}</SelectItem>
                       </SelectContent>
@@ -533,16 +524,19 @@ const QuizResults = () => {
 
           <Card className="p-8 text-center bg-accent/5 border-accent/20">
             <h3 className="font-serif text-2xl font-bold mb-4 heading-luxury">
-              Get All 3 as Discovery Set
+              Get All 3 as 30ml Discovery Set
             </h3>
-            <p className="text-muted-foreground mb-6">
-              Try all three recommendations in 10ml sizes at a special price
+            <p className="text-muted-foreground mb-4">
+              Get all three custom fragrances in full-size 30ml bottles at an exclusive price
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Worth ₹2,100 if bought separately
             </p>
             <div className="flex items-center justify-center gap-4 mb-6">
-              <span className="text-2xl font-bold">₹1,299</span>
-              <span className="text-muted-foreground line-through">₹1,497</span>
+              <span className="text-3xl font-bold text-accent">₹1,500</span>
+              <span className="text-xl text-muted-foreground line-through">₹2,000</span>
               <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-semibold">
-                Save ₹198
+                Save ₹500 (25% OFF)
               </span>
             </div>
             <Button 
@@ -559,7 +553,7 @@ const QuizResults = () => {
               ) : (
                 <>
                   <ShoppingCart className="mr-2 h-5 w-5" />
-                  Add Discovery Set to Cart
+                  Add 30ml Discovery Set to Cart
                 </>
               )}
             </Button>
