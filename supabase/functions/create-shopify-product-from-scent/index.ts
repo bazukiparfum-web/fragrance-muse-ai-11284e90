@@ -17,7 +17,6 @@ interface SavedScent {
   intensity: number;
   longevity: number;
   prices?: {
-    '10ml': number;
     '30ml': number;
     '50ml': number;
   };
@@ -176,9 +175,8 @@ async function createShopifyProduct(scent: SavedScent) {
     'https://pcwfrmgcycbddqhkqgfx.supabase.co/storage/v1/object/public/product-images/custom-scent-default.jpg';
   
   const prices = scent.prices || {
-    '10ml': 999,
-    '30ml': 2999,
-    '50ml': 4999,
+    '30ml': 700,
+    '50ml': 1099,
   };
 
   const product = {
@@ -197,20 +195,14 @@ async function createShopifyProduct(scent: SavedScent) {
       ],
       variants: [
         {
-          option1: '10ml',
-          price: (prices['10ml'] / 100).toFixed(2),
-          sku: `${scent.fragrance_code}-10ML`,
-          inventory_management: null,
-        },
-        {
           option1: '30ml',
-          price: (prices['30ml'] / 100).toFixed(2),
+          price: prices['30ml'].toFixed(2),
           sku: `${scent.fragrance_code}-30ML`,
           inventory_management: null,
         },
         {
           option1: '50ml',
-          price: (prices['50ml'] / 100).toFixed(2),
+          price: prices['50ml'].toFixed(2),
           sku: `${scent.fragrance_code}-50ML`,
           inventory_management: null,
         },
@@ -218,7 +210,7 @@ async function createShopifyProduct(scent: SavedScent) {
       options: [
         {
           name: 'Size',
-          values: ['10ml', '30ml', '50ml'],
+          values: ['30ml', '50ml'],
         },
       ],
       metafields: [
