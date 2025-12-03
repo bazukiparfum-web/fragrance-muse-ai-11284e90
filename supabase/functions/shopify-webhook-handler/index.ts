@@ -232,6 +232,7 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
 async function handleOrderPaid(supabaseClient: any, orderData: any) {
   console.log('💳 Handling order paid:', orderData.id);
 
+  // Update order status
   const { data: updatedOrder, error } = await supabaseClient
     .from('orders')
     .update({ status: 'paid' })
@@ -250,4 +251,100 @@ async function handleOrderPaid(supabaseClient: any, orderData: any) {
   }
 
   console.log('✅ Order status updated to paid:', updatedOrder.id);
+
+  // Add custom scent items to production queue
+  await addToProductionQueue(supabaseClient, updatedOrder.id, orderData);
+}
+
+async function addToProductionQueue(supabaseClient: any, orderId: string, orderData: any) {
+  console.log('🏭 Checking for custom scents to add to production queue');
+
+  for (const item of orderData.line_items || []) {
+    // Check if this is a custom scent product (identified by SKU pattern or product properties)
+    const isCustomScent = item.sku?.startsWith('CUSTOM-') || 
+                          item.name?.toLowerCase().includes('custom signature scent') ||
+                          item.properties?.some((p: any) => p.name === 'fragrance_code');
+
+    if (!isCustomScent) {
+      console.log('⏭️ Skipping non-custom item:', item.name);
+      continue;
+    }
+
+    console.log('🎨 Processing custom scent item:', item.name);
+
+    // Extract fragrance code from properties or metafields
+    let fragranceCode = item.properties?.find((p: any) => p.name === 'fragrance_code')?.value;
+    let savedScentId = item.properties?.find((p: any) => p.name === 'saved_scent_id')?.value;
+
+    // Try to find saved scent by fragrance code if no direct ID
+    if (fragranceCode && !savedScentId) {
+      const { data: scent } = await supabaseClient
+        .from('saved_scents')
+        .select('id, formula, fragrance_code')
+        .eq('fragrance_code', fragranceCode)
+        .single();
+
+      if (scent) {
+        savedScentId = scent.id;
+      }
+    }
+
+    // Fetch saved scent data if we have an ID
+    let formula = null;
+    if (savedScentId) {
+      const { data: scent, error: scentError } = await supabaseClient
+        .from('saved_scents')
+        .select('formula, fragrance_code')
+        .eq('id', savedScentId)
+        .single();
+
+      if (scentError) {
+        console.error('❌ Error fetching saved scent:', scentError);
+      } else if (scent) {
+        formula = scent.formula;
+        fragranceCode = fragranceCode || scent.fragrance_code;
+      }
+    }
+
+    // If still no formula, try to extract from item properties
+    if (!formula) {
+      const formulaProperty = item.properties?.find((p: any) => p.name === 'formula');
+      if (formulaProperty?.value) {
+        try {
+          formula = JSON.parse(formulaProperty.value);
+        } catch (e) {
+          console.error('❌ Failed to parse formula from properties');
+        }
+      }
+    }
+
+    if (!formula || !fragranceCode) {
+      console.error('❌ Missing formula or fragrance code for custom scent:', item.name);
+      continue;
+    }
+
+    // Determine size from variant title
+    const size = item.variant_title || '30ml';
+
+    // Add to production queue
+    const { data: queueItem, error: queueError } = await supabaseClient
+      .from('production_queue')
+      .insert({
+        order_id: orderId,
+        saved_scent_id: savedScentId || null,
+        fragrance_code: fragranceCode,
+        formula: formula,
+        size: size,
+        quantity: item.quantity || 1,
+        status: 'pending'
+      })
+      .select('id')
+      .single();
+
+    if (queueError) {
+      console.error('❌ Failed to add to production queue:', queueError);
+    } else {
+      console.log('✅ Added to production queue:', queueItem.id, 'Code:', fragranceCode);
+    }
+  }
 }
