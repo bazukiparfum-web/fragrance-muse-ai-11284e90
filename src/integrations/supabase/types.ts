@@ -246,6 +246,66 @@ export type Database = {
           },
         ]
       }
+      production_queue: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          formula: Json
+          fragrance_code: string
+          id: string
+          machine_notes: string | null
+          order_id: string | null
+          quantity: number
+          saved_scent_id: string | null
+          size: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          formula: Json
+          fragrance_code: string
+          id?: string
+          machine_notes?: string | null
+          order_id?: string | null
+          quantity?: number
+          saved_scent_id?: string | null
+          size: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          formula?: Json
+          fragrance_code?: string
+          id?: string
+          machine_notes?: string | null
+          order_id?: string | null
+          quantity?: number
+          saved_scent_id?: string | null
+          size?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_queue_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_queue_saved_scent_id_fkey"
+            columns: ["saved_scent_id"]
+            isOneToOne: false
+            referencedRelation: "saved_scents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
