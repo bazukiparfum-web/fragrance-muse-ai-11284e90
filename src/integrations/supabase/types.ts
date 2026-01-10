@@ -137,6 +137,98 @@ export type Database = {
         }
         Relationships: []
       }
+      ingredient_mappings: {
+        Row: {
+          created_at: string | null
+          density: number | null
+          id: string
+          ingredient_code: string
+          is_active: boolean | null
+          ml_per_second: number | null
+          note_name: string
+          pump_id: string | null
+          stock_level: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          density?: number | null
+          id?: string
+          ingredient_code: string
+          is_active?: boolean | null
+          ml_per_second?: number | null
+          note_name: string
+          pump_id?: string | null
+          stock_level?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          density?: number | null
+          id?: string
+          ingredient_code?: string
+          is_active?: boolean | null
+          ml_per_second?: number | null
+          note_name?: string
+          pump_id?: string | null
+          stock_level?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      machine_formulas: {
+        Row: {
+          created_at: string | null
+          formula_name: string
+          fragrance_code: string
+          id: string
+          ingredients_formula: Json | null
+          is_active: boolean | null
+          notes_formula: Json
+          pump_instructions: Json | null
+          saved_scent_id: string | null
+          total_volume_ml: number | null
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          formula_name: string
+          fragrance_code: string
+          id?: string
+          ingredients_formula?: Json | null
+          is_active?: boolean | null
+          notes_formula: Json
+          pump_instructions?: Json | null
+          saved_scent_id?: string | null
+          total_volume_ml?: number | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          formula_name?: string
+          fragrance_code?: string
+          id?: string
+          ingredients_formula?: Json | null
+          is_active?: boolean | null
+          notes_formula?: Json
+          pump_instructions?: Json | null
+          saved_scent_id?: string | null
+          total_volume_ml?: number | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_formulas_saved_scent_id_fkey"
+            columns: ["saved_scent_id"]
+            isOneToOne: false
+            referencedRelation: "saved_scents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -702,6 +794,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_machine_formula: {
+        Args: {
+          p_formula_name: string
+          p_fragrance_code: string
+          p_notes_formula: Json
+          p_saved_scent_id: string
+          p_total_volume_ml?: number
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
