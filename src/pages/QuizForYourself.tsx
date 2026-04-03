@@ -33,7 +33,7 @@ const QuizForYourself = () => {
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const [hasCheckedProgress, setHasCheckedProgress] = useState(false);
   const totalSteps = questions.length || 14; // Dynamic based on questions from DB
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastSavedRef = useRef<string>('');
   const questionsLoadedRef = useRef(false);
 
