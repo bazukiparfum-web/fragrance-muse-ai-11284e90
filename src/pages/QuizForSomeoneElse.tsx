@@ -33,7 +33,7 @@ const QuizForSomeoneElse = () => {
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const [hasCheckedProgress, setHasCheckedProgress] = useState(false);
   const totalSteps = questions.length || 1;
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastSavedRef = useRef<string>('');
   const questionsLoadedRef = useRef(false);
 
