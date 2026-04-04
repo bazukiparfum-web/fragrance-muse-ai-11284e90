@@ -50,12 +50,24 @@ const Header = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <button 
-          onClick={() => navigate('/')}
-          className="font-serif text-2xl font-semibold text-foreground hover:text-accent transition-colors"
-        >
-          BAZUKI
-        </button>
+        <div className="flex items-center gap-2">
+          {!isHomePage && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="text-foreground hover:text-accent"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
+          <button 
+            onClick={() => navigate('/')}
+            className="font-serif text-2xl font-semibold text-foreground hover:text-accent transition-colors"
+          >
+            BAZUKI
+          </button>
+        </div>
         
         <div className="flex items-center gap-2">
           {isAdmin && (
