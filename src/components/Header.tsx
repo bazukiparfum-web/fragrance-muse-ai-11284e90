@@ -8,14 +8,30 @@ import { CartDrawer } from './CartDrawer';
 const Header = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    const checkAuth = async (userId: string | undefined) => {
+      setIsAuthenticated(!!userId);
+      if (userId) {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+          .maybeSingle();
+        setIsAdmin(!!data);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
+      checkAuth(session?.user?.id);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
+      checkAuth(session?.user?.id);
     });
 
     return () => subscription.unsubscribe();
