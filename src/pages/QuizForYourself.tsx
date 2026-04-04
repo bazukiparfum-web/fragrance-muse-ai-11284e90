@@ -627,7 +627,12 @@ const QuizForYourself = () => {
                 <span>{Math.round(progress)}%</span>
               </div>
             </div>
-            <Progress value={progress} className="h-2" />
+            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
 
           <div className="bg-card rounded-lg p-8 shadow-sm border border-border mb-6">
