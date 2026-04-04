@@ -7,8 +7,10 @@ import { CartDrawer } from './CartDrawer';
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const isHomePage = location.pathname === '/';
 
   useEffect(() => {
     const checkAuth = async (userId: string | undefined) => {
