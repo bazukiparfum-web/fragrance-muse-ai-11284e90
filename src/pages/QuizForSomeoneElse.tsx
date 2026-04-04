@@ -599,18 +599,23 @@ const QuizForSomeoneElse = () => {
             </Alert>
           )}
           
-          <div className="mb-8">
-            <div className="flex justify-between items-center text-sm text-muted-foreground mb-2">
-              <span>Step {currentStep} of {totalSteps}</span>
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-foreground">Question {currentStep} of {totalSteps}</span>
               <div className="flex items-center gap-3">
-                <span className="text-xs opacity-70 flex items-center gap-1">
+                <span className="text-xs text-muted-foreground opacity-70 flex items-center gap-1">
                   <Save className="w-3 h-3" />
                   Auto-saving
                 </span>
-                <span>{Math.round(progress)}%</span>
+                <span className="text-sm font-medium text-foreground">{Math.round(progress)}%</span>
               </div>
             </div>
-            <Progress value={progress} className="h-2" />
+            <div className="w-full h-3 bg-secondary rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
 
           <div className="bg-card rounded-lg p-8 shadow-sm border border-border mb-6">
