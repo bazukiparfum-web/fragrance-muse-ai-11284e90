@@ -1,6 +1,6 @@
-import { User, Shield } from 'lucide-react';
+import { User, Shield, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CartDrawer } from './CartDrawer';
