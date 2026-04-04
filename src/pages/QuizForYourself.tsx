@@ -634,35 +634,39 @@ const QuizForYourself = () => {
             {renderStep()}
           </div>
 
-          <div className="flex justify-between gap-4">
-            <Button
-              onClick={handleBack}
-              variant="outline"
-              size="lg"
-              disabled={currentStep === 1}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
+          <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-50">
+            <div className="max-w-2xl mx-auto flex justify-between gap-4">
+              <Button
+                onClick={handleBack}
+                variant="outline"
+                size="lg"
+                disabled={currentStep === 1}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
 
-            <Button
-              onClick={handleSkip}
-              variant="ghost"
-              size="lg"
-              disabled={isLoading}
-            >
-              Skip
-            </Button>
+              <Button
+                onClick={handleSkip}
+                variant="ghost"
+                size="lg"
+                disabled={isLoading}
+              >
+                Skip
+              </Button>
 
-            <Button
-              onClick={handleNext}
-              size="lg"
-              disabled={isLoading || !isStepComplete(currentStep)}
-            >
-              {isLoading ? 'Generating...' : currentStep === totalSteps ? 'Get Recommendations' : 'Next'}
-              {!isLoading && currentStep < totalSteps && <ArrowRight className="ml-2 h-4 w-4" />}
-            </Button>
+              <Button
+                onClick={handleNext}
+                size="lg"
+                disabled={isLoading || !isStepComplete(currentStep)}
+              >
+                {isLoading ? 'Generating...' : currentStep === totalSteps ? 'Get Recommendations' : 'Next'}
+                {!isLoading && currentStep < totalSteps && <ArrowRight className="ml-2 h-4 w-4" />}
+              </Button>
+            </div>
           </div>
+          {/* Spacer for fixed bottom bar */}
+          <div className="h-20" />
         </div>
       </div>
     </div>
