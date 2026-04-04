@@ -1,4 +1,4 @@
-import { User } from 'lucide-react';
+import { User, Shield } from 'lucide-react';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
