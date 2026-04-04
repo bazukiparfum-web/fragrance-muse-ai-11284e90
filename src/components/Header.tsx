@@ -55,7 +55,18 @@ const Header = () => {
           BAZUKI
         </button>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/admin')}
+              className="relative text-muted-foreground hover:text-accent"
+              title="Admin Dashboard"
+            >
+              <Shield className="h-5 w-5" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
