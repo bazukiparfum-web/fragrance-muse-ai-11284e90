@@ -1,4 +1,4 @@
-import { User } from 'lucide-react';
+import { User, Shield } from 'lucide-react';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -8,14 +8,30 @@ import { CartDrawer } from './CartDrawer';
 const Header = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    const checkAuth = async (userId: string | undefined) => {
+      setIsAuthenticated(!!userId);
+      if (userId) {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+          .maybeSingle();
+        setIsAdmin(!!data);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
+      checkAuth(session?.user?.id);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
+      checkAuth(session?.user?.id);
     });
 
     return () => subscription.unsubscribe();
@@ -39,7 +55,18 @@ const Header = () => {
           BAZUKI
         </button>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/admin')}
+              className="relative text-muted-foreground hover:text-accent"
+              title="Admin Dashboard"
+            >
+              <Shield className="h-5 w-5" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
