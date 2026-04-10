@@ -34,7 +34,37 @@ serve(async (req) => {
     }
 
     const { answers, isGift = false } = await req.json();
-    console.log('Quiz answers received:', answers);
+    console.log('Quiz answers received (keys):', Object.keys(answers || {}));
+
+    // Input validation and sanitization
+    const sanitize = (val: unknown, maxLen = 50): string => {
+      if (val === null || val === undefined) return 'Not specified';
+      const s = String(val).slice(0, maxLen).replace(/[<>{}\\]/g, '').trim();
+      return s || 'Not specified';
+    };
+    const sanitizeNum = (val: unknown, min: number, max: number, fallback: number): number => {
+      const n = Number(val);
+      return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : fallback;
+    };
+
+    const validAgeRanges = ['18-25', '26-35', '36-45', '46+'];
+    const validOccasions = ['Daily', 'Evening', 'Sport', 'Office', 'Special'];
+    const validClimates = ['Hot/Humid', 'Warm', 'Moderate', 'Cool', 'Cold'];
+    const validPersonalities = ['Elegant', 'Bold', 'Calm', 'Energetic', 'Mysterious', 'Romantic'];
+    const validScentFamilies = ['floral', 'woody', 'fresh', 'oriental', 'gourmand', 'spicy', 'citrus', 'fruity'];
+    const validGenders = ['Male', 'Female', 'Non-binary', 'Someone special'];
+
+    const safeAnswers = {
+      ageRange: validAgeRanges.includes(String(answers?.ageRange)) ? String(answers.ageRange) : 'Not specified',
+      personality: validPersonalities.includes(String(answers?.personality)) ? String(answers.personality) : 'Not specified',
+      scentFamily: validScentFamilies.includes(String(answers?.scentFamily)) ? String(answers.scentFamily) : 'Not specified',
+      intensity: sanitizeNum(answers?.intensity, 1, 10, 5),
+      longevity: sanitize(answers?.longevity, 20),
+      occasion: validOccasions.includes(String(answers?.occasion)) ? String(answers.occasion) : 'Not specified',
+      climate: validClimates.includes(String(answers?.climate)) ? String(answers.climate) : 'Not specified',
+      dreamWord: sanitize(answers?.dreamWord, 50),
+      recipientGender: validGenders.includes(String(answers?.recipientGender)) ? String(answers.recipientGender) : 'Someone special',
+    };
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -45,15 +75,15 @@ serve(async (req) => {
     const prompt = `You are an expert perfumer AI. Based on the following preferences, create 3 unique perfume recommendations.
 
 User Profile:
-- Age Range: ${answers.ageRange || 'Not specified'}
-- Personality: ${answers.personality || 'Not specified'}
-- Preferred Scent Family: ${answers.scentFamily || 'Not specified'}
-- Intensity Preference: ${answers.intensity || 5}/10
-- Longevity: ${answers.longevity || 'Not specified'}
-- Primary Occasion: ${answers.occasion || 'Not specified'}
-- Climate: ${answers.climate || 'Not specified'}
-- Dream Scent Word: ${answers.dreamWord || 'Not specified'}
-${isGift ? `- Gift for: ${answers.recipientGender || 'Someone special'}` : ''}
+- Age Range: ${safeAnswers.ageRange}
+- Personality: ${safeAnswers.personality}
+- Preferred Scent Family: ${safeAnswers.scentFamily}
+- Intensity Preference: ${safeAnswers.intensity}/10
+- Longevity: ${safeAnswers.longevity}
+- Primary Occasion: ${safeAnswers.occasion}
+- Climate: ${safeAnswers.climate}
+- Dream Scent Word: ${safeAnswers.dreamWord}
+${isGift ? `- Gift for: ${safeAnswers.recipientGender}` : ''}
 
 For each of the 3 recommendations, provide:
 1. A unique, evocative name (2-3 words)
