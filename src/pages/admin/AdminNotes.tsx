@@ -22,6 +22,30 @@ const AdminNotes = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(true);
+  const [notes, setNotes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Filter & Search State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [familyFilter, setFamilyFilter] = useState<string>('all');
+  const [activeOnly, setActiveOnly] = useState(true);
+  
+  // Sorting State
+  const [sortColumn, setSortColumn] = useState<string>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // UI State
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  
+  // Inline editing state
+  const [editingCell, setEditingCell] = useState<{ noteId: string; field: string } | null>(null);
+  const [editValue, setEditValue] = useState<any>(null);
+  
+  // Bulk operations state
+  const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadNotes();
