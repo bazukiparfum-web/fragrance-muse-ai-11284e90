@@ -8,57 +8,6 @@ import { Database, Layers, HelpCircle, Beaker } from 'lucide-react';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  const checkAdminAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    if (!roleData) {
-      setIsAdmin(false);
-      return;
-    }
-
-    setIsAdmin(true);
-  };
-
-  if (isAdmin === null) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-20 text-center">
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-20 text-center">
-          <h1 className="font-serif text-4xl font-bold mb-4">Access Denied</h1>
-          <p className="text-muted-foreground mb-6">You need admin access to view this page.</p>
-          <Button onClick={() => navigate('/')}>Go Home</Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">

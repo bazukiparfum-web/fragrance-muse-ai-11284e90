@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const AdminNotes = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(true);
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -48,31 +48,8 @@ const AdminNotes = () => {
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  const checkAdminAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    if (!roleData) {
-      setIsAdmin(false);
-      return;
-    }
-
-    setIsAdmin(true);
     loadNotes();
-  };
+  }, []);
 
   const loadNotes = async () => {
     const { data, error } = await supabase
