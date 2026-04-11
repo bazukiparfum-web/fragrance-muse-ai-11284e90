@@ -1,13 +1,13 @@
 project_id = "pcwfrmgcycbddqhkqgfx"
 
 [functions.quiz-recommendations]
-verify_jwt = true
+verify_jwt = false
 
 [functions.create-custom-scent]
-verify_jwt = true
+verify_jwt = false
 
 [functions.create-shopify-product-from-scent]
-verify_jwt = true
+verify_jwt = false
 
 [functions.shopify-webhook-handler]
 verify_jwt = false
