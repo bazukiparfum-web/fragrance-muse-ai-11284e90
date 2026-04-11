@@ -9,7 +9,8 @@ import Index from "./pages/Index";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
-import Auth from "./pages/Auth";
+// Auth page disabled for testing
+// import Auth from "./pages/Auth";
 import QuizLanding from "./pages/QuizLanding";
 import QuizForYourself from "./pages/QuizForYourself";
 import QuizForSomeoneElse from "./pages/QuizForSomeoneElse";
@@ -35,7 +36,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
+              {/* Auth route disabled for testing */}
               <Route path="/shop/cart" element={<Cart />} />
               <Route path="/shop/checkout" element={<Checkout />} />
               <Route path="/shop/account" element={<Account />} />

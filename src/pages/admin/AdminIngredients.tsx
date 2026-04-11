@@ -46,31 +46,9 @@ const AdminIngredients = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  const checkAdminAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    if (!roleData) {
-      setIsAdmin(false);
-      return;
-    }
-
     setIsAdmin(true);
     loadIngredients();
-  };
+  }, []);
 
   const loadIngredients = async () => {
     setLoading(true);

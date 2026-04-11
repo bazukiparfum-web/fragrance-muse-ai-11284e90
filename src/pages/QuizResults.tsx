@@ -171,23 +171,7 @@ const QuizResults = () => {
     setAddingToCart(prev => ({ ...prev, [scent.id]: true }));
     
     try {
-      // First, check if user is authenticated
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        toast.error('Authentication error. Please sign in again.');
-        navigate('/auth');
-        return;
-      }
-      
-      if (!session) {
-        toast.error('Please sign in to add items to cart');
-        navigate('/auth');
-        return;
-      }
-
-      console.log('User session valid, proceeding with add to cart');
+      console.log('Proceeding with add to cart');
 
       // Save the scent if not already saved (not a UUID means it's not in database yet)
       let scentId = scent.id;

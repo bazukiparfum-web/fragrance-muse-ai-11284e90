@@ -166,28 +166,10 @@ const Account = () => {
     }
     
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        toast.error('Authentication error. Please sign in again.');
-        navigate('/auth');
-        return;
-      }
-      
-      if (!session) {
-        toast.error('Please sign in to add items to cart');
-        navigate('/auth');
-        return;
-      }
-
       console.log('Creating Shopify product for scent:', scent.id);
 
       const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
         body: { scentId: scent.id },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
       });
 
       if (error) {

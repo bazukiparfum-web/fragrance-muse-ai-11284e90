@@ -57,31 +57,9 @@ const AdminRules = () => {
   });
 
   useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  const checkAdminAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    if (!roleData) {
-      setIsAdmin(false);
-      return;
-    }
-
     setIsAdmin(true);
     loadRules();
-  };
+  }, []);
 
   const loadRules = async () => {
     setLoading(true);

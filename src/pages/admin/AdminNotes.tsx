@@ -21,58 +21,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const AdminNotes = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [notes, setNotes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  // Filter & Search State
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [familyFilter, setFamilyFilter] = useState<string>('all');
-  const [activeOnly, setActiveOnly] = useState(true);
-  
-  // Sorting State
-  const [sortColumn, setSortColumn] = useState<string>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  
-  // UI State
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
-  
-  // Inline editing state
-  const [editingCell, setEditingCell] = useState<{ noteId: string; field: string } | null>(null);
-  const [editValue, setEditValue] = useState<any>(null);
-  
-  // Bulk operations state
-  const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(true);
 
   useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  const checkAdminAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    if (!roleData) {
-      setIsAdmin(false);
-      return;
-    }
-
-    setIsAdmin(true);
     loadNotes();
-  };
+  }, []);
 
   const loadNotes = async () => {
     const { data, error } = await supabase
