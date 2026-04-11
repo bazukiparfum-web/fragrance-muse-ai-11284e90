@@ -182,7 +182,7 @@ const QuizResults = () => {
         const { data: savedScent, error: saveError } = await supabase
           .from('saved_scents')
           .insert([{
-            user_id: session.user.id,
+            user_id: 'anonymous-test-user',
             name: scent.name,
             formula: scent.formula as any,
             match_score: scent.matchScore,
@@ -210,9 +210,6 @@ const QuizResults = () => {
       console.log('Calling create-shopify-product-from-scent with scentId:', scentId);
       const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
         body: { scentId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
       });
 
       if (error) {
