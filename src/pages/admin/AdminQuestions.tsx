@@ -116,21 +116,28 @@ const AdminQuestions = () => {
         helper_text: formData.helper_text || null
       };
 
-      let error;
+      let result;
       if (editingQuestion) {
-        const result = await supabase
+        result = await supabase
           .from('quiz_questions')
           .update(questionData)
           .eq('id', editingQuestion.id);
-        error = result.error;
       } else {
-        const result = await supabase
+        result = await supabase
           .from('quiz_questions')
           .insert(questionData);
-        error = result.error;
       }
 
-      if (error) throw error;
+      console.log('Save result:', JSON.stringify(result));
+
+      if (result.error) {
+        toast({
+          title: 'Error',
+          description: `Failed to save question: ${result.error.message || result.error.details || JSON.stringify(result.error)}`,
+          variant: 'destructive'
+        });
+        return;
+      }
 
       toast({
         title: 'Success',
@@ -140,11 +147,11 @@ const AdminQuestions = () => {
       setDialogOpen(false);
       resetForm();
       loadQuestions();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving question:', error);
       toast({
         title: 'Error',
-        description: `Failed to save question: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        description: `Failed to save question: ${error?.message || JSON.stringify(error)}`,
         variant: 'destructive'
       });
     }
