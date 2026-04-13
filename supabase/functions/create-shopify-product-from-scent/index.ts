@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SHOPIFY_STORE_DOMAIN = 'fragrance-muse-ai-vq4z1.myshopify.com';
+const SHOPIFY_STORE_DOMAIN = 'jg651i-6z.myshopify.com';
 const SHOPIFY_API_VERSION = '2025-07';
 
 interface SavedScent {
