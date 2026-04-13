@@ -129,7 +129,7 @@ const ProductShowcase = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [scentsResult, products] = await Promise.all([
+      const [scentsResult, products] = await Promise.allSettled([
           supabase
             .from("saved_scents")
             .select("id, name, formulation_notes, match_score, intensity, longevity, visual_data, fragrance_code, creator_tag, created_at")
@@ -138,9 +138,12 @@ const ProductShowcase = () => {
           fetchShopifyProducts(),
         ]);
 
-        if (scentsResult.error) throw scentsResult.error;
-        setScents((scentsResult.data || []) as PublicScent[]);
-        setShopifyProducts(products);
+        if (scentsResult.status === 'fulfilled' && !scentsResult.value.error) {
+          setScents((scentsResult.value.data || []) as PublicScent[]);
+        }
+        if (products.status === 'fulfilled') {
+          setShopifyProducts(products.value);
+        }
       } catch (err) {
         console.error("Failed to load showcase:", err);
       } finally {
