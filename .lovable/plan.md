@@ -1,41 +1,61 @@
 
 
-## Plan: Admin Scent Tagging + Collection Search & Filters
+## Plan: Connect New Shopify Store + Create Dummy Products
 
-### 1. New Admin Page: Scent Tag Manager (`src/pages/admin/AdminScents.tsx`)
+### What's Happening
 
-A new admin page at `/admin/scents` that:
-- Fetches all public scents (`is_public = true`) from `saved_scents`
-- Displays them in a table with columns: Name, Creator, Current Tag, Actions
-- Each row has a dropdown (Select component) to set `creator_tag` to `influencer`, `celebrity`, or clear it (community/null)
-- Updates happen inline via `supabase.update()` on the `saved_scents` table
-- Search input to filter scents by name
+Your Shopify store has been reconnected with a new domain (`jg651i-6z.myshopify.com`). The store currently has **no products**, and the codebase still references the old store domain and token. We need to:
 
-### 2. Admin Dashboard Update (`src/pages/admin/AdminDashboard.tsx`)
+1. Update the Shopify credentials in code
+2. Create sample fragrance products in Shopify
+3. Upgrade the cart store to use real-time Shopify cart sync (per best practices)
+4. Add a cart sync hook
 
-- Add a 5th card "Scent Tags" with a Tag/Award icon linking to `/admin/scents`
-- Add the route in `App.tsx`
+---
 
-### 3. Collection Page Search & Filters (`src/pages/Collection.tsx`)
+### Step 1: Update Shopify Credentials (`src/lib/shopify.ts`)
 
-Add a filter bar below the page header with:
-- **Search input**: Filter scents by name (client-side filtering on already-fetched data)
-- **Category filter**: Dropdown to show All / Influencer Picks / Celebrity Scents / Community
-- **Intensity filter**: Slider or dropdown for Low (1-3) / Medium (4-6) / High (7-10)
-- **Sort by**: Newest / Oldest / Highest Match Score
+Update the store domain and storefront token:
+- `SHOPIFY_STORE_PERMANENT_DOMAIN` → `jg651i-6z.myshopify.com`
+- `SHOPIFY_STOREFRONT_TOKEN` → `95b86894e26ad7e37bd04e955084497e`
 
-Filtering is done client-side since the dataset is small. The filtered results still render into the existing section layout, but when a filter is active, all matching scents show in a single grid instead of separated sections.
+Add missing cart mutation queries (cartLinesAdd, cartLinesUpdate, cartLinesRemove, cart query) and helper functions for real-time cart management.
+
+### Step 2: Create Dummy Products in Shopify
+
+Use the `shopify--create_product` tool to create 4-5 sample fragrance products:
+
+1. **Midnight Velvet** — Dark, warm evening scent (₹700 / 30ml, ₹1099 / 50ml)
+2. **Citrus Bloom** — Fresh citrus daytime fragrance (₹700 / 30ml, ₹1099 / 50ml)
+3. **Ocean Breeze** — Aquatic cool scent (₹700 / 30ml, ₹1099 / 50ml)
+4. **Rose Garden** — Classic floral (₹700 / 30ml, ₹1099 / 50ml)
+5. **Discovery Set** — Sampler of top 5 scents (₹499 single size)
+
+### Step 3: Upgrade Cart Store (`src/stores/cartStore.ts`)
+
+Rewrite to follow the Shopify best-practice pattern:
+- Cart created on first item add via Storefront API
+- Line items tracked with Shopify `lineId`
+- Real-time add/update/remove via Storefront API mutations
+- "Cart not found" auto-recovery
+- Persistent state (items, cartId, checkoutUrl)
+
+### Step 4: Add Cart Sync Hook (`src/hooks/useCartSync.ts`)
+
+New hook that syncs cart state when user returns from checkout or switches tabs. Wire it into `App.tsx`.
+
+### Step 5: Update Edge Function Domain
+
+Update `supabase/functions/create-shopify-product-from-scent/index.ts` to use the new store domain.
 
 ### Files to Create/Edit
 
 | File | Action |
 |------|--------|
-| `src/pages/admin/AdminScents.tsx` | Create -- table of public scents with tag dropdown |
-| `src/pages/admin/AdminDashboard.tsx` | Edit -- add Scent Tags card |
-| `src/App.tsx` | Edit -- add `/admin/scents` route |
-| `src/pages/Collection.tsx` | Edit -- add search bar, category/intensity/sort filters |
-
-### No Database Changes Needed
-
-The `creator_tag` column and RLS policies already exist. Admins can already update `saved_scents` via the existing admin RLS policy.
+| `src/lib/shopify.ts` | Edit — update domain, token, add cart mutations |
+| `src/stores/cartStore.ts` | Rewrite — real-time Shopify cart sync |
+| `src/hooks/useCartSync.ts` | Create — cart sync on tab visibility |
+| `src/App.tsx` | Edit — add useCartSync hook |
+| `supabase/functions/create-shopify-product-from-scent/index.ts` | Edit — update domain |
+| Shopify (via tools) | Create 5 products |
 
