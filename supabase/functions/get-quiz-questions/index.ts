@@ -36,11 +36,14 @@ serve(async (req) => {
     console.log('Fetching questions for quiz type:', quizType);
 
     // Get questions for the specific quiz type
+    // Map 'gift' to include both 'gift' and 'both' types
+    const quizTypes = ['both', quizType];
+    
     const { data, error } = await supabase
       .from('quiz_questions')
       .select('*')
       .eq('is_active', true)
-      .in('quiz_type', ['both', quizType])
+      .in('quiz_type', quizTypes)
       .order('order_index');
 
     if (error) {
