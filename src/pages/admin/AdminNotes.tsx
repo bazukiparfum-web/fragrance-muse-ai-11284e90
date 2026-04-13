@@ -51,22 +51,25 @@ const AdminNotes = () => {
     loadNotes();
   }, []);
 
-  const loadNotes = async () => {
-    const { data, error } = await supabase
-      .from('fragrance_notes')
-      .select('*')
-      .order('name');
+  const invokeNotes = async (operation: string, payload: any = {}) => {
+    const { data, error } = await supabase.functions.invoke('admin-manage-notes', {
+      body: { operation, ...payload }
+    });
+    if (error) throw error;
+    return data;
+  };
 
-    if (error) {
+  const loadNotes = async () => {
+    try {
+      const data = await invokeNotes('list');
+      setNotes(data.notes || []);
+    } catch (error: any) {
       toast({
         title: 'Error loading notes',
         description: error.message,
         variant: 'destructive'
       });
-      return;
     }
-
-    setNotes(data || []);
   };
 
   const parseCSV = (csvText: string) => {
@@ -328,12 +331,7 @@ const AdminNotes = () => {
   // Inline editing
   const handleCellEdit = async (noteId: string, field: string, value: any) => {
     try {
-      const { error } = await supabase
-        .from('fragrance_notes')
-        .update({ [field]: value, updated_at: new Date().toISOString() })
-        .eq('id', noteId);
-
-      if (error) throw error;
+      await invokeNotes('update', { note: { id: noteId, [field]: value } });
 
       setNotes(notes.map(n => n.id === noteId ? { ...n, [field]: value } : n));
 
@@ -370,16 +368,10 @@ const AdminNotes = () => {
         is_active: false
       };
 
-      const { data, error } = await supabase
-        .from('fragrance_notes')
-        .insert([clonedNote])
-        .select()
-        .single();
+      const result = await invokeNotes('create', { note: clonedNote });
 
-      if (error) throw error;
-
-      setNotes([...notes, data]);
-      setExpandedRow(data.id);
+      setNotes([...notes, result.note]);
+      setExpandedRow(result.note.id);
 
       toast({
         title: 'Note cloned successfully',
@@ -399,12 +391,7 @@ const AdminNotes = () => {
     if (!confirm('Are you sure you want to delete this note?')) return;
     
     try {
-      const { error } = await supabase
-        .from('fragrance_notes')
-        .delete()
-        .eq('id', noteId);
-
-      if (error) throw error;
+      await invokeNotes('delete', { note: { id: noteId } });
 
       setNotes(notes.filter(n => n.id !== noteId));
       if (selectedNotes.has(noteId)) {
@@ -449,12 +436,7 @@ const AdminNotes = () => {
     try {
       const noteIds = Array.from(selectedNotes);
 
-      const { error } = await supabase
-        .from('fragrance_notes')
-        .update({ category: newCategory, updated_at: new Date().toISOString() })
-        .in('id', noteIds);
-
-      if (error) throw error;
+      await invokeNotes('update_bulk', { noteIds, updates: { category: newCategory } });
 
       setNotes(notes.map(n => selectedNotes.has(n.id) ? { ...n, category: newCategory } : n));
 
@@ -477,12 +459,7 @@ const AdminNotes = () => {
     try {
       const noteIds = Array.from(selectedNotes);
 
-      const { error } = await supabase
-        .from('fragrance_notes')
-        .update({ family: newFamily, updated_at: new Date().toISOString() })
-        .in('id', noteIds);
-
-      if (error) throw error;
+      await invokeNotes('update_bulk', { noteIds, updates: { family: newFamily } });
 
       setNotes(notes.map(n => selectedNotes.has(n.id) ? { ...n, family: newFamily } : n));
 
@@ -507,12 +484,7 @@ const AdminNotes = () => {
       const anyActive = notes.some(n => selectedNotes.has(n.id) && n.is_active);
       const newStatus = !anyActive;
 
-      const { error } = await supabase
-        .from('fragrance_notes')
-        .update({ is_active: newStatus, updated_at: new Date().toISOString() })
-        .in('id', noteIds);
-
-      if (error) throw error;
+      await invokeNotes('update_bulk', { noteIds, updates: { is_active: newStatus } });
 
       setNotes(notes.map(n => selectedNotes.has(n.id) ? { ...n, is_active: newStatus } : n));
 
