@@ -229,9 +229,10 @@ const QuizForSomeoneElse = () => {
     switch (question.question_type) {
       case 'radio':
       case 'city_search':
-      case 'scent_family':
       case 'occasion':
         return !!answer;
+      case 'scent_family':
+        return Array.isArray(answer) ? answer.length > 0 : !!answer;
       case 'slider':
         return answer !== undefined;
       case 'color_picker':
@@ -398,23 +399,32 @@ const QuizForSomeoneElse = () => {
         );
 
       case 'scent_family':
+        const selectedFamilies = Array.isArray(currentAnswer) ? currentAnswer as string[] : currentAnswer ? [currentAnswer as string] : [];
+        const toggleFamily = (value: string) => {
+          const updated = selectedFamilies.includes(value)
+            ? selectedFamilies.filter(f => f !== value)
+            : [...selectedFamilies, value];
+          updateAnswer(answerKey, updated as any);
+        };
         return (
           <div className="space-y-6">
             <h2 className="font-serif text-3xl font-bold heading-luxury">{question.question_text}</h2>
-            {question.helper_text && <p className="text-sm text-muted-foreground">{question.helper_text}</p>}
+            <p className="text-sm text-muted-foreground">Select one or more</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
                 { value: 'Floral', emoji: '🌸' },
                 { value: 'Woody', emoji: '🌲' },
                 { value: 'Fresh', emoji: '🌊' },
                 { value: 'Oriental', emoji: '🌟' },
-                { value: 'Gourmand', emoji: '🍰' }
+                { value: 'Gourmand', emoji: '🍰' },
+                { value: 'Spicy', emoji: '🌶️' },
+                { value: 'Herbal/Green', emoji: '🌿' }
               ].map((scent) => (
                 <button
                   key={scent.value}
-                  onClick={() => updateAnswer(answerKey, scent.value)}
+                  onClick={() => toggleFamily(scent.value)}
                   className={`p-6 rounded-lg border-2 transition-all hover-lift ${
-                    currentAnswer === scent.value
+                    selectedFamilies.includes(scent.value)
                       ? 'border-accent bg-accent/10'
                       : 'border-border bg-card'
                   }`}

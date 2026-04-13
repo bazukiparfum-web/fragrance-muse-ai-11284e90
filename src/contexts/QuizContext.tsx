@@ -12,7 +12,7 @@ export interface QuizAnswers {
   // Existing questions
   ageRange?: string;
   personality?: string;
-  scentFamily?: string;
+  scentFamily?: string[];
   intensity?: number;
   longevity?: string;
   occasion?: string;

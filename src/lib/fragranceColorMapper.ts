@@ -20,6 +20,7 @@ export const familyColors: ColorMapping = {
   green: 'hsl(142, 71%, 45%)', // Lime green
   leather: 'hsl(30, 47%, 25%)', // Dark brown
   gourmand: 'hsl(0, 0%, 50%)', // Gray
+  'herbal/green': 'hsl(120, 60%, 40%)', // Herbal green
 };
 
 // Default color for unknown families
