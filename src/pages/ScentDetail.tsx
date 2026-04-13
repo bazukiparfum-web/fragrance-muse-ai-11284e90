@@ -12,7 +12,7 @@ import { ShareFragranceDialog } from "@/components/ShareFragranceDialog";
 import { FormulaTweakDialog } from "@/components/FormulaTweakDialog";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
-import { ArrowLeft, ShoppingCart, Wand2, Calendar, Share2, Loader2 } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Wand2, Calendar, Share2, Loader2, Globe, GlobeLock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ScentDetail() {
@@ -129,6 +129,22 @@ export default function ScentDetail() {
 
   const handleTweak = () => {
     setTweakDialogOpen(true);
+  };
+
+  const handleTogglePublish = async () => {
+    const newValue = !scent.is_public;
+    const { error } = await supabase
+      .from('saved_scents')
+      .update({ is_public: newValue })
+      .eq('id', scent.id);
+
+    if (error) {
+      toast.error('Failed to update publish status');
+      return;
+    }
+
+    setScent((prev: any) => ({ ...prev, is_public: newValue }));
+    toast.success(newValue ? 'Published to collection!' : 'Removed from collection');
   };
 
   const handleShareCreated = (shareToken: string, referralCode: string) => {
@@ -338,6 +354,20 @@ export default function ScentDetail() {
             <Button onClick={() => setShareDialogOpen(true)} variant="secondary" size="lg" className="md:w-auto w-full">
               <Share2 className="mr-2 h-4 w-4" />
               Share
+            </Button>
+
+            <Button onClick={handleTogglePublish} variant={scent.is_public ? "destructive" : "default"} size="lg" className="md:w-auto w-full">
+              {scent.is_public ? (
+                <>
+                  <GlobeLock className="mr-2 h-4 w-4" />
+                  Unpublish
+                </>
+              ) : (
+                <>
+                  <Globe className="mr-2 h-4 w-4" />
+                  Publish to Collection
+                </>
+              )}
             </Button>
           </div>
         </Card>

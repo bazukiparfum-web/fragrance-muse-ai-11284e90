@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ShoppingCart, Sparkles, Save, Loader2 } from 'lucide-react';
+import { ShoppingCart, Sparkles, Save, Loader2, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SaveScentDialog } from '@/components/SaveScentDialog';
 import { QuizAnalytics } from '@/components/QuizAnalytics';
@@ -475,24 +475,24 @@ const QuizResults = () => {
                     <Button
                       onClick={() => handleSaveScent(scent)}
                       variant="outline"
-                      className="flex-1"
+                      size="sm"
                     >
-                      <Save className="mr-2 h-4 w-4" />
+                      <Save className="mr-1 h-4 w-4" />
                       Save
                     </Button>
                     <Button
                       onClick={() => handleAddToCart(scent)}
-                      className="flex-1"
+                      size="sm"
                       disabled={addingToCart[scent.id]}
                     >
                       {addingToCart[scent.id] ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                           Adding...
                         </>
                       ) : (
                         <>
-                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          <ShoppingCart className="mr-1 h-4 w-4" />
                           Add to Cart
                         </>
                       )}

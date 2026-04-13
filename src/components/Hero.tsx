@@ -27,7 +27,7 @@ const Hero = () => {
             <Button variant="luxury" size="xl" onClick={() => window.location.href = '/shop/quiz'}>
               Find Your Scent
             </Button>
-            <Button variant="luxury-outline" size="xl">
+            <Button variant="luxury-outline" size="xl" onClick={() => window.location.href = '/collection'}>
               Explore Collection
             </Button>
           </div>
