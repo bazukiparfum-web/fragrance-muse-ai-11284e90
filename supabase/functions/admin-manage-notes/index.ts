@@ -17,61 +17,65 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { operation, rule } = await req.json();
+    const { operation, note, noteIds, updates } = await req.json();
 
     if (operation === 'list') {
       const { data, error } = await supabase
-        .from('formulation_rules')
+        .from('fragrance_notes')
         .select('*')
-        .order('priority', { ascending: false });
+        .order('name');
 
       if (error) throw error;
-      return new Response(JSON.stringify({ success: true, rules: data }), {
+      return new Response(JSON.stringify({ success: true, notes: data }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     if (operation === 'create') {
       const { data, error } = await supabase
-        .from('formulation_rules')
-        .insert({
-          rule_name: rule.rule_name,
-          rule_type: rule.rule_type,
-          conditions: rule.conditions,
-          actions: rule.actions,
-          priority: rule.priority || 0,
-          is_active: rule.is_active !== false,
-          description: rule.description || ''
-        })
+        .from('fragrance_notes')
+        .insert(note)
         .select()
         .single();
 
       if (error) throw error;
-      return new Response(JSON.stringify({ success: true, rule: data }), {
+      return new Response(JSON.stringify({ success: true, note: data }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     if (operation === 'update') {
-      const { id, ...updates } = rule;
+      const { id, ...fields } = note;
       const { data, error } = await supabase
-        .from('formulation_rules')
-        .update(updates)
+        .from('fragrance_notes')
+        .update({ ...fields, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      return new Response(JSON.stringify({ success: true, rule: data }), {
+      return new Response(JSON.stringify({ success: true, note: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (operation === 'update_bulk') {
+      const { error } = await supabase
+        .from('fragrance_notes')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .in('id', noteIds);
+
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     if (operation === 'delete') {
       const { error } = await supabase
-        .from('formulation_rules')
+        .from('fragrance_notes')
         .delete()
-        .eq('id', rule.id);
+        .eq('id', note.id);
 
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), {
