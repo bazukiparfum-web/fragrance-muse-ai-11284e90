@@ -54,46 +54,24 @@ const AdminQuestions = () => {
     loadQuestions();
   }, []);
 
+  const invokeAdmin = async (operation: string, question?: any) => {
+    const { data, error } = await supabase.functions.invoke('admin-manage-questions', {
+      body: { operation, question }
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  };
+
   const loadQuestions = async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const { data, error } = await supabase
-        .from('quiz_questions')
-        .select('*')
-        .order('order_index');
-
-      if (error) throw error;
-      setQuestions(data || []);
-    } catch (directQueryError) {
-      console.error('Direct question load failed, falling back to edge functions:', directQueryError);
-
-      try {
-        const [myselfResponse, giftResponse] = await Promise.all([
-          supabase.functions.invoke('get-quiz-questions', {
-            body: { quizType: 'myself' },
-            method: 'POST'
-          }),
-          supabase.functions.invoke('get-quiz-questions', {
-            body: { quizType: 'gift' },
-            method: 'POST'
-          })
-        ]);
-
-        if (myselfResponse.error) throw myselfResponse.error;
-        if (giftResponse.error) throw giftResponse.error;
-
-        const mergedQuestions = [...(myselfResponse.data?.questions || []), ...(giftResponse.data?.questions || [])];
-        const uniqueQuestions = Array.from(
-          new Map(mergedQuestions.map((question: Question) => [question.id, question])).values()
-        ).sort((a, b) => a.order_index - b.order_index);
-
-        setQuestions(uniqueQuestions);
-      } catch (fallbackError: any) {
-        console.error('Error loading questions:', fallbackError);
-        const errorMsg = fallbackError?.message || 'Could not connect to the database. Please check your connection and try again.';
-        setLoadError(errorMsg);
-      }
+      const data = await invokeAdmin('list');
+      setQuestions(data.questions || []);
+    } catch (err: any) {
+      console.error('Error loading questions:', err);
+      setLoadError(err?.message || 'Could not load questions. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -116,27 +94,10 @@ const AdminQuestions = () => {
         helper_text: formData.helper_text || null
       };
 
-      let result;
       if (editingQuestion) {
-        result = await supabase
-          .from('quiz_questions')
-          .update(questionData)
-          .eq('id', editingQuestion.id);
+        await invokeAdmin('update', { id: editingQuestion.id, ...questionData });
       } else {
-        result = await supabase
-          .from('quiz_questions')
-          .insert(questionData);
-      }
-
-      console.log('Save result:', JSON.stringify(result));
-
-      if (result.error) {
-        toast({
-          title: 'Error',
-          description: `Failed to save question: ${result.error.message || result.error.details || JSON.stringify(result.error)}`,
-          variant: 'destructive'
-        });
-        return;
+        await invokeAdmin('create', questionData);
       }
 
       toast({
@@ -151,7 +112,7 @@ const AdminQuestions = () => {
       console.error('Error saving question:', error);
       toast({
         title: 'Error',
-        description: `Failed to save question: ${error?.message || JSON.stringify(error)}`,
+        description: `Failed to save question: ${error?.message || 'Unknown error'}`,
         variant: 'destructive'
       });
     }
@@ -161,24 +122,14 @@ const AdminQuestions = () => {
     if (!confirm('Are you sure you want to delete this question?')) return;
 
     try {
-      const { error } = await supabase
-        .from('quiz_questions')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Question deleted successfully'
-      });
-
+      await invokeAdmin('delete', { id });
+      toast({ title: 'Success', description: 'Question deleted successfully' });
       loadQuestions();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting question:', error);
       toast({
         title: 'Error',
-        description: `Failed to delete question: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        description: `Failed to delete question: ${error?.message || 'Unknown error'}`,
         variant: 'destructive'
       });
     }
@@ -194,43 +145,24 @@ const AdminQuestions = () => {
 
     try {
       await Promise.all([
-        supabase.from('quiz_questions').update({ order_index: index }).eq('id', newQuestions[index].id),
-        supabase.from('quiz_questions').update({ order_index: swapIndex }).eq('id', newQuestions[swapIndex].id)
+        invokeAdmin('update', { id: newQuestions[index].id, order_index: index }),
+        invokeAdmin('update', { id: newQuestions[swapIndex].id, order_index: swapIndex })
       ]);
-
       loadQuestions();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error reordering questions:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to reorder questions',
-        variant: 'destructive'
-      });
+      toast({ title: 'Error', description: 'Failed to reorder questions', variant: 'destructive' });
     }
   };
 
   const handleToggleActive = async (question: Question) => {
     try {
-      const { error } = await supabase
-        .from('quiz_questions')
-        .update({ is_active: !question.is_active })
-        .eq('id', question.id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: `Question ${!question.is_active ? 'activated' : 'deactivated'}`
-      });
-
+      await invokeAdmin('update', { id: question.id, is_active: !question.is_active });
+      toast({ title: 'Success', description: `Question ${!question.is_active ? 'activated' : 'deactivated'}` });
       loadQuestions();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling question:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to toggle question',
-        variant: 'destructive'
-      });
+      toast({ title: 'Error', description: 'Failed to toggle question', variant: 'destructive' });
     }
   };
 
