@@ -637,6 +637,7 @@ export type Database = {
       saved_scents: {
         Row: {
           created_at: string | null
+          creator_tag: string | null
           formula: Json
           formulation_notes: string | null
           fragrance_code: string | null
@@ -658,6 +659,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          creator_tag?: string | null
           formula: Json
           formulation_notes?: string | null
           fragrance_code?: string | null
@@ -679,6 +681,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          creator_tag?: string | null
           formula?: Json
           formulation_notes?: string | null
           fragrance_code?: string | null
