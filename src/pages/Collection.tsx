@@ -83,6 +83,7 @@ export default function Collection() {
   const [scents, setScents] = useState<PublicScent[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPublicScents();
