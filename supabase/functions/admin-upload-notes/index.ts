@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
@@ -13,71 +12,24 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create client with anon key for user verification
-    const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create service role client for admin operations
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify user has admin role
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    if (!roleData) {
-      return new Response(
-        JSON.stringify({ error: 'Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const { notes } = await req.json();
     console.log(`Uploading ${notes.length} fragrance notes`);
 
-    const results = {
-      inserted: 0,
-      updated: 0,
-      failed: 0,
-      errors: [] as string[]
-    };
+    const results = { inserted: 0, updated: 0, failed: 0, errors: [] as string[] };
 
     for (const note of notes) {
       try {
-        // Validate required fields
         if (!note.name || !note.category || !note.family) {
           results.failed++;
           results.errors.push(`Note missing required fields: ${JSON.stringify(note)}`);
           continue;
         }
 
-        // Try insert, if conflict then update
         const { error: insertError } = await supabase
           .from('fragrance_notes')
           .insert({
@@ -95,16 +47,15 @@ serve(async (req) => {
           });
 
         if (insertError) {
-          if (insertError.code === '23505') { // Unique constraint violation
-            // Update existing note
+          if (insertError.code === '23505') {
             const { error: updateError } = await supabase
               .from('fragrance_notes')
               .update({
-              category: note.category,
-              family: note.family,
-              intensity: note.intensity || 5,
-              longevity: note.longevity || 5,
-              personality_matches: note.personality_matches || [],
+                category: note.category,
+                family: note.family,
+                intensity: note.intensity || 5,
+                longevity: note.longevity || 5,
+                personality_matches: note.personality_matches || [],
                 occasions: note.occasions || [],
                 climates: note.climates || [],
                 age_ranges: note.age_ranges || [],
@@ -132,25 +83,12 @@ serve(async (req) => {
       }
     }
 
-    console.log('Upload results:', results);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        ...results
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ success: true, ...results }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   } catch (error) {
-    console.error('Error in admin-upload-notes:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 });

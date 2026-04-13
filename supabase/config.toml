@@ -19,12 +19,18 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.admin-upload-notes]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-manage-rules]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-manage-questions]
+verify_jwt = false
+
+[functions.admin-manage-notes]
+verify_jwt = false
+
+[functions.admin-manage-scents]
 verify_jwt = false
 
 [functions.create-referral-discount]
