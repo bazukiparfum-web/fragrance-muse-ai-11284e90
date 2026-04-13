@@ -1,69 +1,102 @@
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
-import { fetchShopifyProducts, ShopifyProduct } from "@/lib/shopify";
-import { useCartStore } from "@/stores/cartStore";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { FragranceVisualizer } from "@/components/FragranceVisualizer";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Loader2, Star, Crown, Users, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+interface PublicScent {
+  id: string;
+  name: string;
+  formulation_notes: string | null;
+  match_score: number | null;
+  intensity: number | null;
+  longevity: number | null;
+  visual_data: any;
+  fragrance_code: string | null;
+  creator_tag: string | null;
+  created_at: string | null;
+}
+
+function getWeeklyIndex(length: number): number {
+  if (length === 0) return 0;
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  return Math.floor(Date.now() / weekMs) % length;
+}
+
+function ScentCard({ scent, onClick }: { scent: PublicScent; onClick: () => void }) {
+  return (
+    <Card
+      className="overflow-hidden hover-lift cursor-pointer transition-all duration-300 hover:shadow-lg"
+      onClick={onClick}
+    >
+      <div className="p-5">
+        <div className="flex items-center justify-center mb-3">
+          {scent.visual_data && (
+            <FragranceVisualizer visualData={scent.visual_data} size="small" />
+          )}
+        </div>
+        <h3 className="font-serif text-lg font-bold text-center">{scent.name}</h3>
+        {scent.formulation_notes && (
+          <p className="text-xs text-muted-foreground text-center mt-1 line-clamp-2 italic">
+            {scent.formulation_notes}
+          </p>
+        )}
+        <div className="flex justify-center gap-2 mt-3">
+          {scent.match_score && (
+            <Badge variant="secondary" className="text-xs">{scent.match_score}% Match</Badge>
+          )}
+          {scent.creator_tag && (
+            <Badge variant="outline" className="text-xs capitalize">{scent.creator_tag}</Badge>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 const ProductShowcase = () => {
-  const [products, setProducts] = useState<ShopifyProduct[]>([]);
+  const [scents, setScents] = useState<PublicScent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<ShopifyProduct | null>(null);
-  const [selectedVariantId, setSelectedVariantId] = useState<string>('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const addItem = useCartStore(state => state.addItem);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const loadProducts = async () => {
+    const load = async () => {
       try {
-        const shopifyProducts = await fetchShopifyProducts();
-        setProducts(shopifyProducts);
-      } catch (error) {
-        console.error('Failed to load products:', error);
-        toast.error('Failed to load products');
+        const { data, error } = await supabase
+          .from("saved_scents")
+          .select("id, name, formulation_notes, match_score, intensity, longevity, visual_data, fragrance_code, creator_tag, created_at")
+          .eq("is_public", true)
+          .order("match_score", { ascending: false });
+
+        if (error) throw error;
+        setScents((data || []) as PublicScent[]);
+      } catch (err) {
+        console.error("Failed to load showcase:", err);
       } finally {
         setLoading(false);
       }
     };
-
-    loadProducts();
+    load();
   }, []);
-
-  const handleAddToCart = () => {
-    if (!selectedProduct || !selectedVariantId) return;
-
-    const variant = selectedProduct.node.variants.edges.find(
-      v => v.node.id === selectedVariantId
-    );
-
-    if (!variant) return;
-
-    addItem({
-      product: selectedProduct,
-      variantId: variant.node.id,
-      variantTitle: variant.node.title,
-      price: variant.node.price,
-      quantity: 1,
-      selectedOptions: variant.node.selectedOptions,
-    });
-
-    toast.success('Added to cart!');
-    setDialogOpen(false);
-    setSelectedVariantId('');
-    setSelectedProduct(null);
-  };
 
   if (loading) {
     return (
       <section className="py-20 md:py-32 bg-secondary">
-        <div className="container mx-auto px-4 flex justify-center items-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="container mx-auto px-4 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </section>
     );
   }
+
+  if (scents.length === 0) return null;
+
+  const featuredScent = scents[getWeeklyIndex(scents.length)];
+  const trendingPicks = scents.filter(s => s.creator_tag === 'influencer' || s.creator_tag === 'celebrity').slice(0, 4);
+  const communityFavs = scents.filter(s => !s.creator_tag).slice(0, 4);
 
   return (
     <section className="py-20 md:py-32 bg-secondary">
@@ -77,92 +110,88 @@ const ProductShowcase = () => {
           </p>
         </div>
 
-        {products.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No products found</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {products.map((product) => (
-                <div
-                  key={product.node.id}
-                  className="bg-card rounded-lg overflow-hidden shadow-md hover-lift cursor-pointer"
-                >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={product.node.images.edges[0]?.node.url || '/placeholder.svg'}
-                      alt={product.node.title}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-serif text-2xl font-semibold">{product.node.title}</h3>
-                      <span className="text-accent font-semibold">
-                        ₹{parseFloat(product.node.priceRange.minVariantPrice.amount).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-sm mb-4 line-clamp-2">{product.node.description}</p>
-                    
-                    <Dialog 
-                      open={dialogOpen && selectedProduct?.node.id === product.node.id} 
-                      onOpenChange={(open) => {
-                        setDialogOpen(open);
-                        if (open) setSelectedProduct(product);
-                        else {
-                          setSelectedProduct(null);
-                          setSelectedVariantId('');
-                        }
-                      }}
-                    >
-                      <DialogTrigger asChild>
-                        <Button className="w-full">
-                          Add to Cart
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>{product.node.title}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Select Size</label>
-                            <Select value={selectedVariantId} onValueChange={setSelectedVariantId}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Choose size" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {product.node.variants.edges.map((variant) => (
-                                  <SelectItem key={variant.node.id} value={variant.node.id}>
-                                    {variant.node.title} - ₹{parseFloat(variant.node.price.amount).toLocaleString()}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <Button 
-                            className="w-full" 
-                            onClick={handleAddToCart}
-                            disabled={!selectedVariantId}
-                          >
-                            Add to Cart
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+        {/* Fragrance of the Week */}
+        {featuredScent && (
+          <div className="mb-16">
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <Sparkles className="h-5 w-5 text-accent" />
+              <h3 className="font-serif text-2xl font-bold">Fragrance of the Week</h3>
+            </div>
+            <Card
+              className="max-w-2xl mx-auto overflow-hidden hover-lift cursor-pointer transition-all duration-300 hover:shadow-xl"
+              onClick={() => navigate(`/collection/${featuredScent.id}`)}
+            >
+              <div className="flex flex-col md:flex-row items-center p-8 gap-8">
+                <div className="flex-shrink-0">
+                  {featuredScent.visual_data && (
+                    <FragranceVisualizer visualData={featuredScent.visual_data} size="large" />
+                  )}
+                </div>
+                <div className="text-center md:text-left">
+                  <h3 className="font-serif text-3xl font-bold mb-2">{featuredScent.name}</h3>
+                  {featuredScent.formulation_notes && (
+                    <p className="text-muted-foreground italic mb-4">{featuredScent.formulation_notes}</p>
+                  )}
+                  <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                    {featuredScent.match_score && (
+                      <Badge variant="secondary">{featuredScent.match_score}% Match</Badge>
+                    )}
+                    {featuredScent.fragrance_code && (
+                      <Badge variant="outline">{featuredScent.fragrance_code}</Badge>
+                    )}
+                    {featuredScent.creator_tag && (
+                      <Badge className="capitalize">{featuredScent.creator_tag}</Badge>
+                    )}
                   </div>
                 </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Trending Picks (Influencer + Celebrity) */}
+        {trendingPicks.length > 0 && (
+          <div className="mb-16">
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <Star className="h-5 w-5 text-accent" />
+              <h3 className="font-serif text-2xl font-bold">Trending Picks</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {trendingPicks.map(scent => (
+                <ScentCard
+                  key={scent.id}
+                  scent={scent}
+                  onClick={() => navigate(`/collection/${scent.id}`)}
+                />
               ))}
             </div>
-
-            <div className="text-center">
-              <Button size="lg">
-                View Full Collection
-              </Button>
-            </div>
-          </>
+          </div>
         )}
+
+        {/* Community Favorites */}
+        {communityFavs.length > 0 && (
+          <div className="mb-12">
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <Users className="h-5 w-5 text-accent" />
+              <h3 className="font-serif text-2xl font-bold">Community Favorites</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {communityFavs.map(scent => (
+                <ScentCard
+                  key={scent.id}
+                  scent={scent}
+                  onClick={() => navigate(`/collection/${scent.id}`)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="text-center">
+          <Button size="lg" onClick={() => navigate("/collection")}>
+            View Full Collection
+          </Button>
+        </div>
       </div>
     </section>
   );
