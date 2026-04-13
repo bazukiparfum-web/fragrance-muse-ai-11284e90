@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Database, Layers, HelpCircle, Beaker } from 'lucide-react';
+import { Database, Layers, HelpCircle, Beaker, Tag } from 'lucide-react';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -68,6 +68,18 @@ const AdminDashboard = () => {
                 Customize quiz questions and options
               </p>
               <Button className="mt-4 w-full">Manage Questions</Button>
+            </Card>
+            <Card className="p-6 hover-lift cursor-pointer" onClick={() => navigate('/admin/scents')}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-accent/10 rounded-lg">
+                  <Tag className="h-6 w-6 text-accent" />
+                </div>
+                <h2 className="font-serif text-xl font-bold">Scent Tags</h2>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Tag scents as influencer or celebrity picks
+              </p>
+              <Button className="mt-4 w-full">Manage Tags</Button>
             </Card>
           </div>
 
