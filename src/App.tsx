@@ -27,39 +27,48 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AppInner = () => {
+  useCartSync();
+  return (
+    <>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Navigate to="/" replace />} />
+          <Route path="/shop/cart" element={<Cart />} />
+          <Route path="/shop/checkout" element={<Checkout />} />
+          <Route path="/shop/account" element={<Account />} />
+          <Route path="/shop/account/scents/:id" element={<ScentDetail />} />
+          <Route path="/collection" element={<Collection />} />
+          <Route path="/collection/:id" element={<ScentDetail />} />
+          <Route path="/shared/fragrance/:shareToken" element={<SharedFragrance />} />
+          <Route path="/shop/quiz" element={<QuizLanding />} />
+          <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
+          <Route path="/shop/quiz/for-someone-else" element={<QuizForSomeoneElse />} />
+          <Route path="/shop/quiz/results" element={<QuizResults />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/notes" element={<AdminNotes />} />
+          <Route path="/admin/questions" element={<AdminQuestions />} />
+          <Route path="/admin/rules" element={<AdminRules />} />
+          <Route path="/admin/ingredients" element={<AdminIngredients />} />
+          <Route path="/admin/scents" element={<AdminScents />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <QuizProvider>
         <CartProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Navigate to="/" replace />} />
-              <Route path="/shop/cart" element={<Cart />} />
-              <Route path="/shop/checkout" element={<Checkout />} />
-              <Route path="/shop/account" element={<Account />} />
-              <Route path="/shop/account/scents/:id" element={<ScentDetail />} />
-              <Route path="/collection" element={<Collection />} />
-              <Route path="/collection/:id" element={<ScentDetail />} />
-              <Route path="/shared/fragrance/:shareToken" element={<SharedFragrance />} />
-              <Route path="/shop/quiz" element={<QuizLanding />} />
-              <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
-              <Route path="/shop/quiz/for-someone-else" element={<QuizForSomeoneElse />} />
-              <Route path="/shop/quiz/results" element={<QuizResults />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/notes" element={<AdminNotes />} />
-              <Route path="/admin/questions" element={<AdminQuestions />} />
-              <Route path="/admin/rules" element={<AdminRules />} />
-              <Route path="/admin/ingredients" element={<AdminIngredients />} />
-              <Route path="/admin/scents" element={<AdminScents />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <AppInner />
         </CartProvider>
       </QuizProvider>
     </TooltipProvider>
