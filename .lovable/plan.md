@@ -1,50 +1,55 @@
 
 
-## Plan: Public Fragrance Collection with Influencer & Celebrity Sections
+## Plan: Seed Dummy Fragrances + Revamp Signature Collection as Featured Showcase
 
-### What We're Building
+### Concept
 
-1. **"Publish" feature on saved scents** — Users can toggle their fragrances as public from the ScentDetail page and QuizResults page (a "Publish to Collection" button).
+Instead of showing an empty Shopify product grid in the "Signature Collection" section on the homepage, we transform it into a dynamic showcase that pulls from the `saved_scents` database. It will display:
 
-2. **Collection page (`/collection`)** — A new page displaying all published fragrances, organized into sections:
-   - **All Published Fragrances** — Grid of community-created scents
-   - **Influencer Picks** — Featured section for influencer-tagged fragrances
-   - **Celebrity Scents** — Featured section for celebrity-tagged fragrances
+1. **Fragrance of the Week** -- A single highlighted fragrance that rotates based on the current week (deterministic pick from public scents)
+2. **Trending Picks** -- A curated row of 4 fragrances randomly selected from influencer/celebrity-tagged scents
+3. **Community Favorites** -- 4 community scents shown in a rotating selection
 
-3. **"Explore Collection" button** — Links to `/collection` from the Hero.
+The section still links to `/collection` via a "View Full Collection" button.
 
 ### Database Changes
 
-- **Migration**: Add `creator_tag` column to `saved_scents` table (`text`, nullable, values like `'influencer'`, `'celebrity'`, or `null` for regular users). This lets admins tag certain published scents.
-- **RLS**: The existing policy "Anyone can view public shared scents" (`is_public = true AND share_token IS NOT NULL`) already allows public viewing. We'll relax it slightly to allow viewing when `is_public = true` (without requiring `share_token`), so publishing doesn't depend on sharing.
+**Seed 8-10 dummy public fragrances** via a migration that inserts directly into `saved_scents` with:
+- Realistic fragrance names (e.g., "Midnight Oud", "Velvet Rose", "Citrus Bloom")
+- `is_public = true`
+- `creator_tag` set to `'influencer'` (4 scents), `'celebrity'` (3 scents), and `null` (3 community scents)
+- Proper `visual_data` with color palettes matching each fragrance theme
+- `formula` as valid JSON with top/heart/base notes
+- `formulation_notes` with evocative descriptions
+- `match_score`, `intensity`, `longevity` values
+- `fragrance_code` values
+- `user_id` set to a placeholder UUID (we'll use `gen_random_uuid()` and also seed a matching dummy profile)
+
+**Seed 1 dummy profile** for the dummy fragrances creator.
 
 ### File Changes
 
-1. **`supabase/migrations/` — new migration**
-   - Add `creator_tag text` column to `saved_scents`
-   - Update the public SELECT RLS policy to: `is_public = true` (remove `share_token IS NOT NULL` requirement)
+1. **`supabase/migrations/` -- new migration**
+   - Insert a dummy profile row
+   - Insert 10 dummy `saved_scents` rows with varied `creator_tag` values, visual data, and formulas
 
-2. **`src/pages/Collection.tsx` — new file**
-   - Fetches all `saved_scents` where `is_public = true`
-   - Renders three sections: Influencer Picks (filtered by `creator_tag = 'influencer'`), Celebrity Scents (`creator_tag = 'celebrity'`), and Community Collection (all others)
-   - Each card shows fragrance name, creator name (from profiles), match score, visual data, and a "View Details" link
+2. **`src/components/ProductShowcase.tsx` -- rewrite**
+   - Replace Shopify product fetch with a query to `saved_scents` where `is_public = true`
+   - Add three sub-sections:
+     - **Fragrance of the Week**: One featured scent card (large), picked deterministically by week number
+     - **Influencer and Celebrity Picks**: Row of tagged scents with badges
+     - **Community Favorites**: Row of community scents
+   - Each card reuses `FragranceVisualizer` for the visual orb
+   - "View Full Collection" button links to `/collection`
+   - Falls back gracefully if no public scents exist yet
 
-3. **`src/pages/ScentDetail.tsx` — edit**
-   - Add a "Publish to Collection" / "Unpublish" toggle button that sets `is_public = true/false`
-
-4. **`src/pages/QuizResults.tsx` — edit**
-   - After saving a scent, offer a "Publish" option
-
-5. **`src/components/Hero.tsx` — edit**
-   - Wire "Explore Collection" button to navigate to `/collection`
-
-6. **`src/App.tsx` — edit**
-   - Add route: `/collection` → `Collection`
+3. **`src/pages/Collection.tsx` -- minor update**
+   - Add a "Fragrance of the Week" highlighted card at the top (same deterministic logic)
 
 ### Technical Details
 
-- The Collection page queries `saved_scents` joined with `profiles` (for creator names) using the Supabase client
-- Influencer/Celebrity tags are managed by admins via the admin dashboard (future enhancement) or direct DB updates
-- The FragranceVisualizer component is reused on collection cards for visual appeal
-- No authentication required to view the collection page
+- Dummy scents use a single seeded profile with `full_name = 'Fragrance Muse'` to avoid orphan references
+- Week-based selection: `Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % scents.length` for deterministic weekly rotation
+- Visual data uses hand-crafted color arrays matching each fragrance's personality (warm ambers, cool blues, floral pinks, etc.)
+- No authentication needed to view any of this
 
