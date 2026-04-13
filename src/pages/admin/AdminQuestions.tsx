@@ -62,13 +62,38 @@ const AdminQuestions = () => {
 
       if (error) throw error;
       setQuestions(data || []);
-    } catch (error) {
-      console.error('Error loading questions:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load questions',
-        variant: 'destructive'
-      });
+    } catch (directQueryError) {
+      console.error('Direct question load failed, falling back to edge functions:', directQueryError);
+
+      try {
+        const [myselfResponse, giftResponse] = await Promise.all([
+          supabase.functions.invoke('get-quiz-questions', {
+            body: { quizType: 'myself' },
+            method: 'POST'
+          }),
+          supabase.functions.invoke('get-quiz-questions', {
+            body: { quizType: 'gift' },
+            method: 'POST'
+          })
+        ]);
+
+        if (myselfResponse.error) throw myselfResponse.error;
+        if (giftResponse.error) throw giftResponse.error;
+
+        const mergedQuestions = [...(myselfResponse.data?.questions || []), ...(giftResponse.data?.questions || [])];
+        const uniqueQuestions = Array.from(
+          new Map(mergedQuestions.map((question: Question) => [question.id, question])).values()
+        ).sort((a, b) => a.order_index - b.order_index);
+
+        setQuestions(uniqueQuestions);
+      } catch (fallbackError) {
+        console.error('Error loading questions:', fallbackError);
+        toast({
+          title: 'Error',
+          description: 'Failed to load questions',
+          variant: 'destructive'
+        });
+      }
     } finally {
       setLoading(false);
     }
