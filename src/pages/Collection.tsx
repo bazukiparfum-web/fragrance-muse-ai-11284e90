@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { FragranceVisualizer } from "@/components/FragranceVisualizer";
-import { Loader2, Star, Crown, Users } from "lucide-react";
+import { Loader2, Star, Crown, Users, Search, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface PublicScent {
@@ -42,18 +45,15 @@ function ScentCard({ scent, creatorName }: { scent: PublicScent; creatorName: st
             <FragranceVisualizer visualData={scent.visual_data} size="medium" />
           )}
         </div>
-
         <div className="text-center mb-3">
           <h3 className="font-serif text-xl font-bold">{scent.name}</h3>
           <p className="text-sm text-muted-foreground mt-1">by {creatorName}</p>
         </div>
-
         {scent.formulation_notes && (
           <p className="text-sm text-muted-foreground text-center mb-4 line-clamp-2 italic">
             {scent.formulation_notes}
           </p>
         )}
-
         <div className="flex justify-center gap-3">
           {scent.match_score && (
             <Badge variant="secondary">{scent.match_score}% Match</Badge>
@@ -85,6 +85,12 @@ export default function Collection() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [intensityRange, setIntensityRange] = useState([1, 10]);
+  const [sortBy, setSortBy] = useState("newest");
+
   useEffect(() => {
     fetchPublicScents();
   }, []);
@@ -102,7 +108,6 @@ export default function Collection() {
       const scentData = (data || []) as PublicScent[];
       setScents(scentData);
 
-      // Fetch creator profiles
       const userIds = [...new Set(scentData.map((s) => s.user_id))];
       if (userIds.length > 0) {
         const { data: profileData } = await supabase
@@ -111,9 +116,7 @@ export default function Collection() {
           .in("id", userIds);
 
         const profileMap: Record<string, Profile> = {};
-        (profileData || []).forEach((p: Profile) => {
-          profileMap[p.id] = p;
-        });
+        (profileData || []).forEach((p: Profile) => { profileMap[p.id] = p; });
         setProfiles(profileMap);
       }
     } catch (err) {
@@ -130,9 +133,35 @@ export default function Collection() {
     return "Anonymous";
   };
 
-  const influencerScents = scents.filter((s) => s.creator_tag === "influencer");
-  const celebrityScents = scents.filter((s) => s.creator_tag === "celebrity");
-  const communityScents = scents.filter((s) => !s.creator_tag);
+  const isFiltering = searchQuery || categoryFilter !== "all" || intensityRange[0] > 1 || intensityRange[1] < 10 || sortBy !== "newest";
+
+  const filteredScents = useMemo(() => {
+    let result = [...scents];
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((s) => s.name.toLowerCase().includes(q));
+    }
+
+    if (categoryFilter === "influencer") result = result.filter((s) => s.creator_tag === "influencer");
+    else if (categoryFilter === "celebrity") result = result.filter((s) => s.creator_tag === "celebrity");
+    else if (categoryFilter === "community") result = result.filter((s) => !s.creator_tag);
+
+    result = result.filter((s) => {
+      const i = s.intensity ?? 5;
+      return i >= intensityRange[0] && i <= intensityRange[1];
+    });
+
+    if (sortBy === "oldest") result.sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
+    else if (sortBy === "match") result.sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0));
+    // newest is default order
+
+    return result;
+  }, [scents, searchQuery, categoryFilter, intensityRange, sortBy]);
+
+  const influencerScents = filteredScents.filter((s) => s.creator_tag === "influencer");
+  const celebrityScents = filteredScents.filter((s) => s.creator_tag === "celebrity");
+  const communityScents = filteredScents.filter((s) => !s.creator_tag);
 
   if (isLoading) {
     return (
@@ -152,7 +181,7 @@ export default function Collection() {
       <Header />
 
       <main className="container mx-auto px-4 py-12">
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">
             Explore the Collection
           </h1>
@@ -161,8 +190,63 @@ export default function Collection() {
           </p>
         </div>
 
+        {/* Filter Bar */}
+        <Card className="p-4 mb-12">
+          <div className="flex items-center gap-2 mb-4">
+            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Filters</span>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="influencer">Influencer Picks</SelectItem>
+                <SelectItem value="celebrity">Celebrity Scents</SelectItem>
+                <SelectItem value="community">Community</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">
+                Intensity: {intensityRange[0]} – {intensityRange[1]}
+              </span>
+              <Slider
+                min={1}
+                max={10}
+                step={1}
+                value={intensityRange}
+                onValueChange={setIntensityRange}
+              />
+            </div>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="match">Highest Match</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
+
         {/* Fragrance of the Week */}
-        {scents.length > 0 && (() => {
+        {!isFiltering && scents.length > 0 && (() => {
           const weekMs = 7 * 24 * 60 * 60 * 1000;
           const featured = scents[Math.floor(Date.now() / weekMs) % scents.length];
           return (
@@ -198,57 +282,65 @@ export default function Collection() {
           );
         })()}
 
-        {/* Influencer Picks */}
-        {influencerScents.length > 0 && (
+        {/* When filtering, show single grid */}
+        {isFiltering ? (
           <section className="mb-16">
-            <SectionHeader
-              icon={Star}
-              title="Influencer Picks"
-              subtitle="Curated fragrances from top creators and tastemakers"
-            />
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {influencerScents.map((scent) => (
-                <ScentCard key={scent.id} scent={scent} creatorName={getCreatorName(scent.user_id)} />
-              ))}
-            </div>
+            <SectionHeader icon={Search} title="Search Results" subtitle={`${filteredScents.length} fragrance${filteredScents.length !== 1 ? 's' : ''} found`} />
+            {filteredScents.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredScents.map((scent) => (
+                  <ScentCard key={scent.id} scent={scent} creatorName={getCreatorName(scent.user_id)} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>No fragrances match your filters.</p>
+              </div>
+            )}
           </section>
-        )}
+        ) : (
+          <>
+            {/* Influencer Picks */}
+            {influencerScents.length > 0 && (
+              <section className="mb-16">
+                <SectionHeader icon={Star} title="Influencer Picks" subtitle="Curated fragrances from top creators and tastemakers" />
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {influencerScents.map((scent) => (
+                    <ScentCard key={scent.id} scent={scent} creatorName={getCreatorName(scent.user_id)} />
+                  ))}
+                </div>
+              </section>
+            )}
 
-        {/* Celebrity Scents */}
-        {celebrityScents.length > 0 && (
-          <section className="mb-16">
-            <SectionHeader
-              icon={Crown}
-              title="Celebrity Scents"
-              subtitle="Signature fragrances from renowned personalities"
-            />
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {celebrityScents.map((scent) => (
-                <ScentCard key={scent.id} scent={scent} creatorName={getCreatorName(scent.user_id)} />
-              ))}
-            </div>
-          </section>
-        )}
+            {/* Celebrity Scents */}
+            {celebrityScents.length > 0 && (
+              <section className="mb-16">
+                <SectionHeader icon={Crown} title="Celebrity Scents" subtitle="Signature fragrances from renowned personalities" />
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {celebrityScents.map((scent) => (
+                    <ScentCard key={scent.id} scent={scent} creatorName={getCreatorName(scent.user_id)} />
+                  ))}
+                </div>
+              </section>
+            )}
 
-        {/* Community Collection */}
-        <section className="mb-16">
-          <SectionHeader
-            icon={Users}
-            title="Community Collection"
-            subtitle="Fragrances published by our creative community"
-          />
-          {communityScents.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {communityScents.map((scent) => (
-                <ScentCard key={scent.id} scent={scent} creatorName={getCreatorName(scent.user_id)} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>No fragrances published yet. Be the first to share yours!</p>
-            </div>
-          )}
-        </section>
+            {/* Community Collection */}
+            <section className="mb-16">
+              <SectionHeader icon={Users} title="Community Collection" subtitle="Fragrances published by our creative community" />
+              {communityScents.length > 0 ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {communityScents.map((scent) => (
+                    <ScentCard key={scent.id} scent={scent} creatorName={getCreatorName(scent.user_id)} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>No fragrances published yet. Be the first to share yours!</p>
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </main>
 
       <Footer />
