@@ -83,6 +83,7 @@ export default function Collection() {
   const [scents, setScents] = useState<PublicScent[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPublicScents();
@@ -159,6 +160,43 @@ export default function Collection() {
             Discover unique fragrances created and published by our community, influencers, and celebrities.
           </p>
         </div>
+
+        {/* Fragrance of the Week */}
+        {scents.length > 0 && (() => {
+          const weekMs = 7 * 24 * 60 * 60 * 1000;
+          const featured = scents[Math.floor(Date.now() / weekMs) % scents.length];
+          return (
+            <section className="mb-16">
+              <SectionHeader icon={Star} title="Fragrance of the Week" subtitle="This week's spotlight pick from the collection" />
+              <Card
+                className="max-w-2xl mx-auto overflow-hidden hover-lift cursor-pointer transition-all duration-300 hover:shadow-xl"
+                onClick={() => navigate(`/collection/${featured.id}`)}
+              >
+                <div className="flex flex-col md:flex-row items-center p-8 gap-8">
+                  <div className="flex-shrink-0">
+                    {featured.visual_data && (
+                      <FragranceVisualizer visualData={featured.visual_data} size="large" />
+                    )}
+                  </div>
+                  <div className="text-center md:text-left">
+                    <h3 className="font-serif text-3xl font-bold mb-2">{featured.name}</h3>
+                    {featured.formulation_notes && (
+                      <p className="text-muted-foreground italic mb-4">{featured.formulation_notes}</p>
+                    )}
+                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                      {featured.match_score && (
+                        <Badge variant="secondary">{featured.match_score}% Match</Badge>
+                      )}
+                      {featured.fragrance_code && (
+                        <Badge variant="outline">{featured.fragrance_code}</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </section>
+          );
+        })()}
 
         {/* Influencer Picks */}
         {influencerScents.length > 0 && (
