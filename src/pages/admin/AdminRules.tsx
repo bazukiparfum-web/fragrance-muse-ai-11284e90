@@ -63,23 +63,21 @@ const AdminRules = () => {
 
   const loadRules = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('formulation_rules')
-      .select('*')
-      .order('priority', { ascending: false });
-
-    if (error) {
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-manage-rules', {
+        body: { operation: 'list' }
+      });
+      if (error) throw error;
+      setRules(data.rules || []);
+    } catch (error: any) {
       toast({
         title: 'Error loading rules',
         description: error.message,
         variant: 'destructive'
       });
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setRules(data || []);
-    setLoading(false);
   };
 
   const handleSaveRule = async () => {

@@ -37,28 +37,13 @@ export default function AdminScents() {
 
   const fetchScents = async () => {
     try {
-      const { data, error } = await supabase
-        .from('saved_scents')
-        .select('id, name, creator_tag, user_id, created_at, fragrance_code')
-        .eq('is_public', true)
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await supabase.functions.invoke('admin-manage-scents', {
+        body: { operation: 'list' }
+      });
       if (error) throw error;
 
-      const scentData = (data || []) as ScentRow[];
-      setScents(scentData);
-
-      const userIds = [...new Set(scentData.map((s) => s.user_id))];
-      if (userIds.length > 0) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', userIds);
-
-        const map: Record<string, Profile> = {};
-        (profileData || []).forEach((p: Profile) => { map[p.id] = p; });
-        setProfiles(map);
-      }
+      setScents((data.scents || []) as ScentRow[]);
+      setProfiles(data.profiles || {});
     } catch (err) {
       console.error('Error fetching scents:', err);
     } finally {
@@ -68,10 +53,9 @@ export default function AdminScents() {
 
   const updateTag = async (scentId: string, tag: string) => {
     const newTag = tag === 'community' ? null : tag;
-    const { error } = await supabase
-      .from('saved_scents')
-      .update({ creator_tag: newTag })
-      .eq('id', scentId);
+    const { error } = await supabase.functions.invoke('admin-manage-scents', {
+      body: { operation: 'update_tag', scent: { id: scentId, creator_tag: newTag } }
+    });
 
     if (error) {
       toast({ title: 'Error', description: 'Failed to update tag', variant: 'destructive' });

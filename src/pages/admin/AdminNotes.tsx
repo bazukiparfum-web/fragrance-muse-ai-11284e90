@@ -375,7 +375,7 @@ const AdminNotes = () => {
 
       toast({
         title: 'Note cloned successfully',
-        description: `Created "${data.name}". You can edit it now.`
+        description: `Created "${result.note.name}". You can edit it now.`
       });
     } catch (error: any) {
       toast({
