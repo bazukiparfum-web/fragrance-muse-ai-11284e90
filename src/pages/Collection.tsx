@@ -4,12 +4,16 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { FragranceVisualizer } from "@/components/FragranceVisualizer";
-import { Loader2, Star, Crown, Users, Search, SlidersHorizontal } from "lucide-react";
+import { Loader2, Star, Crown, Users, Search, SlidersHorizontal, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { fetchShopifyProducts, ShopifyProduct } from "@/lib/shopify";
+import { useCartStore } from "@/stores/cartStore";
+import { toast } from "sonner";
 
 interface PublicScent {
   id: string;
@@ -67,6 +71,79 @@ function ScentCard({ scent, creatorName }: { scent: PublicScent; creatorName: st
   );
 }
 
+function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
+  const addItem = useCartStore(state => state.addItem);
+  const isLoading = useCartStore(state => state.isLoading);
+  const node = product.node;
+  const image = node.images?.edges?.[0]?.node;
+  const price = node.priceRange.minVariantPrice;
+  const variants = node.variants?.edges || [];
+  const [selectedVariant, setSelectedVariant] = useState(variants[0]?.node);
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!selectedVariant) return;
+    await addItem({
+      product,
+      variantId: selectedVariant.id,
+      variantTitle: selectedVariant.title,
+      price: selectedVariant.price,
+      quantity: 1,
+      selectedOptions: selectedVariant.selectedOptions || [],
+    });
+    toast.success(`${node.title} added to cart`);
+  };
+
+  return (
+    <Card className="overflow-hidden hover-lift transition-all duration-300 hover:shadow-lg group">
+      <div className="aspect-square overflow-hidden bg-muted">
+        {image ? (
+          <img
+            src={image.url}
+            alt={image.altText || node.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-serif text-lg font-bold">{node.title}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{node.description}</p>
+
+        {/* Size selector */}
+        {variants.length > 1 && (
+          <div className="flex gap-2 mt-3">
+            {variants.map(v => (
+              <Button
+                key={v.node.id}
+                size="sm"
+                variant={selectedVariant?.id === v.node.id ? "default" : "outline"}
+                className="text-xs px-3"
+                onClick={(e) => { e.stopPropagation(); setSelectedVariant(v.node); }}
+              >
+                {v.node.title}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mt-3">
+          <span className="font-semibold text-lg">
+            ₹{parseFloat(selectedVariant?.price.amount || price.amount).toLocaleString()}
+          </span>
+          <Button size="sm" onClick={handleAddToCart} disabled={isLoading || !selectedVariant}>
+            Add to Cart
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function SectionHeader({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle: string }) {
   return (
     <div className="text-center mb-8">
@@ -81,6 +158,7 @@ function SectionHeader({ icon: Icon, title, subtitle }: { icon: any; title: stri
 
 export default function Collection() {
   const [scents, setScents] = useState<PublicScent[]>([]);
+  const [shopifyProducts, setShopifyProducts] = useState<ShopifyProduct[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -92,21 +170,25 @@ export default function Collection() {
   const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
-    fetchPublicScents();
+    fetchData();
   }, []);
 
-  const fetchPublicScents = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
-        .from("saved_scents")
-        .select("id, name, formulation_notes, match_score, intensity, longevity, visual_data, fragrance_code, creator_tag, created_at, user_id")
-        .eq("is_public", true)
-        .order("created_at", { ascending: false });
+      const [scentsResult, products] = await Promise.all([
+        supabase
+          .from("saved_scents")
+          .select("id, name, formulation_notes, match_score, intensity, longevity, visual_data, fragrance_code, creator_tag, created_at, user_id")
+          .eq("is_public", true)
+          .order("created_at", { ascending: false }),
+        fetchShopifyProducts(),
+      ]);
 
-      if (error) throw error;
+      if (scentsResult.error) throw scentsResult.error;
 
-      const scentData = (data || []) as PublicScent[];
+      const scentData = (scentsResult.data || []) as PublicScent[];
       setScents(scentData);
+      setShopifyProducts(products);
 
       const userIds = [...new Set(scentData.map((s) => s.user_id))];
       if (userIds.length > 0) {
@@ -120,7 +202,7 @@ export default function Collection() {
         setProfiles(profileMap);
       }
     } catch (err) {
-      console.error("Error fetching public scents:", err);
+      console.error("Error fetching collection:", err);
     } finally {
       setIsLoading(false);
     }
@@ -135,6 +217,13 @@ export default function Collection() {
 
   const isFiltering = searchQuery || categoryFilter !== "all" || intensityRange[0] > 1 || intensityRange[1] < 10 || sortBy !== "newest";
 
+  // Filter Shopify products by search query
+  const filteredShopifyProducts = useMemo(() => {
+    if (!searchQuery) return shopifyProducts;
+    const q = searchQuery.toLowerCase();
+    return shopifyProducts.filter(p => p.node.title.toLowerCase().includes(q) || p.node.description.toLowerCase().includes(q));
+  }, [shopifyProducts, searchQuery]);
+
   const filteredScents = useMemo(() => {
     let result = [...scents];
 
@@ -146,6 +235,7 @@ export default function Collection() {
     if (categoryFilter === "influencer") result = result.filter((s) => s.creator_tag === "influencer");
     else if (categoryFilter === "celebrity") result = result.filter((s) => s.creator_tag === "celebrity");
     else if (categoryFilter === "community") result = result.filter((s) => !s.creator_tag);
+    else if (categoryFilter === "shop") return []; // Show only Shopify products
 
     result = result.filter((s) => {
       const i = s.intensity ?? 5;
@@ -154,7 +244,6 @@ export default function Collection() {
 
     if (sortBy === "oldest") result.sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
     else if (sortBy === "match") result.sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0));
-    // newest is default order
 
     return result;
   }, [scents, searchQuery, categoryFilter, intensityRange, sortBy]);
@@ -162,6 +251,8 @@ export default function Collection() {
   const influencerScents = filteredScents.filter((s) => s.creator_tag === "influencer");
   const celebrityScents = filteredScents.filter((s) => s.creator_tag === "celebrity");
   const communityScents = filteredScents.filter((s) => !s.creator_tag);
+
+  const showShopify = categoryFilter === "all" || categoryFilter === "shop";
 
   if (isLoading) {
     return (
@@ -213,6 +304,7 @@ export default function Collection() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="shop">Shop Products</SelectItem>
                 <SelectItem value="influencer">Influencer Picks</SelectItem>
                 <SelectItem value="celebrity">Celebrity Scents</SelectItem>
                 <SelectItem value="community">Community</SelectItem>
@@ -282,8 +374,20 @@ export default function Collection() {
           );
         })()}
 
-        {/* When filtering, show single grid */}
-        {isFiltering ? (
+        {/* Shop Products */}
+        {showShopify && filteredShopifyProducts.length > 0 && (
+          <section className="mb-16">
+            <SectionHeader icon={ShoppingBag} title="Shop Our Collection" subtitle="Ready-to-order signature fragrances" />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredShopifyProducts.map(product => (
+                <ShopifyProductCard key={product.node.id} product={product} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* When filtering (except shop-only), show scent results */}
+        {isFiltering && categoryFilter !== "shop" ? (
           <section className="mb-16">
             <SectionHeader icon={Search} title="Search Results" subtitle={`${filteredScents.length} fragrance${filteredScents.length !== 1 ? 's' : ''} found`} />
             {filteredScents.length > 0 ? (
@@ -298,7 +402,7 @@ export default function Collection() {
               </div>
             )}
           </section>
-        ) : (
+        ) : !isFiltering && (
           <>
             {/* Influencer Picks */}
             {influencerScents.length > 0 && (
