@@ -4,8 +4,11 @@ import { FragranceVisualizer } from "@/components/FragranceVisualizer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Star, Crown, Users, Sparkles } from "lucide-react";
+import { Loader2, Star, Users, Sparkles, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { fetchShopifyProducts, ShopifyProduct } from "@/lib/shopify";
+import { useCartStore } from "@/stores/cartStore";
+import { toast } from "sonner";
 
 interface PublicScent {
   id: string;
@@ -57,22 +60,87 @@ function ScentCard({ scent, onClick }: { scent: PublicScent; onClick: () => void
   );
 }
 
+function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
+  const addItem = useCartStore(state => state.addItem);
+  const isLoading = useCartStore(state => state.isLoading);
+  const navigate = useNavigate();
+  const node = product.node;
+  const image = node.images?.edges?.[0]?.node;
+  const price = node.priceRange.minVariantPrice;
+  const firstVariant = node.variants?.edges?.[0]?.node;
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!firstVariant) return;
+    await addItem({
+      product,
+      variantId: firstVariant.id,
+      variantTitle: firstVariant.title,
+      price: firstVariant.price,
+      quantity: 1,
+      selectedOptions: firstVariant.selectedOptions || [],
+    });
+    toast.success(`${node.title} added to cart`);
+  };
+
+  return (
+    <Card
+      className="overflow-hidden hover-lift cursor-pointer transition-all duration-300 hover:shadow-lg group"
+      onClick={() => navigate(`/collection`)}
+    >
+      <div className="aspect-square overflow-hidden bg-muted">
+        {image ? (
+          <img
+            src={image.url}
+            alt={image.altText || node.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-serif text-lg font-bold">{node.title}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{node.description}</p>
+        <div className="flex items-center justify-between mt-3">
+          <span className="font-semibold text-lg">₹{parseFloat(price.amount).toLocaleString()}</span>
+          <Button
+            size="sm"
+            onClick={handleAddToCart}
+            disabled={isLoading || !firstVariant}
+          >
+            Add to Cart
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 const ProductShowcase = () => {
   const [scents, setScents] = useState<PublicScent[]>([]);
+  const [shopifyProducts, setShopifyProducts] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const load = async () => {
       try {
-        const { data, error } = await supabase
-          .from("saved_scents")
-          .select("id, name, formulation_notes, match_score, intensity, longevity, visual_data, fragrance_code, creator_tag, created_at")
-          .eq("is_public", true)
-          .order("match_score", { ascending: false });
+        const [scentsResult, products] = await Promise.all([
+          supabase
+            .from("saved_scents")
+            .select("id, name, formulation_notes, match_score, intensity, longevity, visual_data, fragrance_code, creator_tag, created_at")
+            .eq("is_public", true)
+            .order("match_score", { ascending: false }),
+          fetchShopifyProducts(),
+        ]);
 
-        if (error) throw error;
-        setScents((data || []) as PublicScent[]);
+        if (scentsResult.error) throw scentsResult.error;
+        setScents((scentsResult.data || []) as PublicScent[]);
+        setShopifyProducts(products);
       } catch (err) {
         console.error("Failed to load showcase:", err);
       } finally {
@@ -92,9 +160,10 @@ const ProductShowcase = () => {
     );
   }
 
-  if (scents.length === 0) return null;
+  const hasContent = scents.length > 0 || shopifyProducts.length > 0;
+  if (!hasContent) return null;
 
-  const featuredScent = scents[getWeeklyIndex(scents.length)];
+  const featuredScent = scents.length > 0 ? scents[getWeeklyIndex(scents.length)] : null;
   const trendingPicks = scents.filter(s => s.creator_tag === 'influencer' || s.creator_tag === 'celebrity').slice(0, 4);
   const communityFavs = scents.filter(s => !s.creator_tag).slice(0, 4);
 
@@ -109,6 +178,21 @@ const ProductShowcase = () => {
             Each fragrance tells a story. Discover yours.
           </p>
         </div>
+
+        {/* Shopify Products */}
+        {shopifyProducts.length > 0 && (
+          <div className="mb-16">
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <ShoppingBag className="h-5 w-5 text-accent" />
+              <h3 className="font-serif text-2xl font-bold">Shop Our Collection</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {shopifyProducts.map(product => (
+                <ShopifyProductCard key={product.node.id} product={product} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Fragrance of the Week */}
         {featuredScent && (
@@ -149,7 +233,7 @@ const ProductShowcase = () => {
           </div>
         )}
 
-        {/* Trending Picks (Influencer + Celebrity) */}
+        {/* Trending Picks */}
         {trendingPicks.length > 0 && (
           <div className="mb-16">
             <div className="flex items-center justify-center gap-2 mb-6">
@@ -158,11 +242,7 @@ const ProductShowcase = () => {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {trendingPicks.map(scent => (
-                <ScentCard
-                  key={scent.id}
-                  scent={scent}
-                  onClick={() => navigate(`/collection/${scent.id}`)}
-                />
+                <ScentCard key={scent.id} scent={scent} onClick={() => navigate(`/collection/${scent.id}`)} />
               ))}
             </div>
           </div>
@@ -177,11 +257,7 @@ const ProductShowcase = () => {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {communityFavs.map(scent => (
-                <ScentCard
-                  key={scent.id}
-                  scent={scent}
-                  onClick={() => navigate(`/collection/${scent.id}`)}
-                />
+                <ScentCard key={scent.id} scent={scent} onClick={() => navigate(`/collection/${scent.id}`)} />
               ))}
             </div>
           </div>
