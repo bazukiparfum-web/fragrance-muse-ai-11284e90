@@ -1,55 +1,41 @@
 
 
-## Plan: Seed Dummy Fragrances + Revamp Signature Collection as Featured Showcase
+## Plan: Admin Scent Tagging + Collection Search & Filters
 
-### Concept
+### 1. New Admin Page: Scent Tag Manager (`src/pages/admin/AdminScents.tsx`)
 
-Instead of showing an empty Shopify product grid in the "Signature Collection" section on the homepage, we transform it into a dynamic showcase that pulls from the `saved_scents` database. It will display:
+A new admin page at `/admin/scents` that:
+- Fetches all public scents (`is_public = true`) from `saved_scents`
+- Displays them in a table with columns: Name, Creator, Current Tag, Actions
+- Each row has a dropdown (Select component) to set `creator_tag` to `influencer`, `celebrity`, or clear it (community/null)
+- Updates happen inline via `supabase.update()` on the `saved_scents` table
+- Search input to filter scents by name
 
-1. **Fragrance of the Week** -- A single highlighted fragrance that rotates based on the current week (deterministic pick from public scents)
-2. **Trending Picks** -- A curated row of 4 fragrances randomly selected from influencer/celebrity-tagged scents
-3. **Community Favorites** -- 4 community scents shown in a rotating selection
+### 2. Admin Dashboard Update (`src/pages/admin/AdminDashboard.tsx`)
 
-The section still links to `/collection` via a "View Full Collection" button.
+- Add a 5th card "Scent Tags" with a Tag/Award icon linking to `/admin/scents`
+- Add the route in `App.tsx`
 
-### Database Changes
+### 3. Collection Page Search & Filters (`src/pages/Collection.tsx`)
 
-**Seed 8-10 dummy public fragrances** via a migration that inserts directly into `saved_scents` with:
-- Realistic fragrance names (e.g., "Midnight Oud", "Velvet Rose", "Citrus Bloom")
-- `is_public = true`
-- `creator_tag` set to `'influencer'` (4 scents), `'celebrity'` (3 scents), and `null` (3 community scents)
-- Proper `visual_data` with color palettes matching each fragrance theme
-- `formula` as valid JSON with top/heart/base notes
-- `formulation_notes` with evocative descriptions
-- `match_score`, `intensity`, `longevity` values
-- `fragrance_code` values
-- `user_id` set to a placeholder UUID (we'll use `gen_random_uuid()` and also seed a matching dummy profile)
+Add a filter bar below the page header with:
+- **Search input**: Filter scents by name (client-side filtering on already-fetched data)
+- **Category filter**: Dropdown to show All / Influencer Picks / Celebrity Scents / Community
+- **Intensity filter**: Slider or dropdown for Low (1-3) / Medium (4-6) / High (7-10)
+- **Sort by**: Newest / Oldest / Highest Match Score
 
-**Seed 1 dummy profile** for the dummy fragrances creator.
+Filtering is done client-side since the dataset is small. The filtered results still render into the existing section layout, but when a filter is active, all matching scents show in a single grid instead of separated sections.
 
-### File Changes
+### Files to Create/Edit
 
-1. **`supabase/migrations/` -- new migration**
-   - Insert a dummy profile row
-   - Insert 10 dummy `saved_scents` rows with varied `creator_tag` values, visual data, and formulas
+| File | Action |
+|------|--------|
+| `src/pages/admin/AdminScents.tsx` | Create -- table of public scents with tag dropdown |
+| `src/pages/admin/AdminDashboard.tsx` | Edit -- add Scent Tags card |
+| `src/App.tsx` | Edit -- add `/admin/scents` route |
+| `src/pages/Collection.tsx` | Edit -- add search bar, category/intensity/sort filters |
 
-2. **`src/components/ProductShowcase.tsx` -- rewrite**
-   - Replace Shopify product fetch with a query to `saved_scents` where `is_public = true`
-   - Add three sub-sections:
-     - **Fragrance of the Week**: One featured scent card (large), picked deterministically by week number
-     - **Influencer and Celebrity Picks**: Row of tagged scents with badges
-     - **Community Favorites**: Row of community scents
-   - Each card reuses `FragranceVisualizer` for the visual orb
-   - "View Full Collection" button links to `/collection`
-   - Falls back gracefully if no public scents exist yet
+### No Database Changes Needed
 
-3. **`src/pages/Collection.tsx` -- minor update**
-   - Add a "Fragrance of the Week" highlighted card at the top (same deterministic logic)
-
-### Technical Details
-
-- Dummy scents use a single seeded profile with `full_name = 'Fragrance Muse'` to avoid orphan references
-- Week-based selection: `Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % scents.length` for deterministic weekly rotation
-- Visual data uses hand-crafted color arrays matching each fragrance's personality (warm ambers, cool blues, floral pinks, etc.)
-- No authentication needed to view any of this
+The `creator_tag` column and RLS policies already exist. Admins can already update `saved_scents` via the existing admin RLS policy.
 
