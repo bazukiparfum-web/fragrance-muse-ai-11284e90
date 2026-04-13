@@ -15,6 +15,7 @@ import QuizForSomeoneElse from "./pages/QuizForSomeoneElse";
 import QuizResults from "./pages/QuizResults";
 import ScentDetail from "./pages/ScentDetail";
 import SharedFragrance from "./pages/SharedFragrance";
+import Collection from "./pages/Collection";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminNotes from "./pages/admin/AdminNotes";
 import AdminQuestions from "./pages/admin/AdminQuestions";
@@ -39,6 +40,8 @@ const App = () => (
               <Route path="/shop/checkout" element={<Checkout />} />
               <Route path="/shop/account" element={<Account />} />
               <Route path="/shop/account/scents/:id" element={<ScentDetail />} />
+              <Route path="/collection" element={<Collection />} />
+              <Route path="/collection/:id" element={<ScentDetail />} />
               <Route path="/shared/fragrance/:shareToken" element={<SharedFragrance />} />
               <Route path="/shop/quiz" element={<QuizLanding />} />
               <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
