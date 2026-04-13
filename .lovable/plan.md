@@ -1,44 +1,51 @@
 
 
-## Plan: Fix Admin Questions — List and CRUD via Edge Function
+## Plan: Route Admin Notes, Rules, and Scents Through Edge Functions
 
-### Root Cause
-
-The console logs show every Supabase call from the admin page fails with `TypeError: Failed to fetch` — both direct database queries (`supabase.from('quiz_questions')`) and the fallback edge function calls. However, the same edge function (`get-quiz-questions`) works on the quiz pages. The likely cause is that direct REST API calls are blocked or unreliable from the preview, while edge functions are accessible when properly configured.
-
-The database has all 16 questions (confirmed via server-side query). The problem is purely in how the admin page accesses them.
+### Problem
+The `/admin/notes`, `/admin/rules`, and `/admin/scents` pages all use direct `supabase.from(...)` calls which fail with "Failed to fetch" in the preview environment — the same issue that was fixed for `/admin/questions`.
 
 ### Solution
-
-Route **all** admin operations (list, create, update, delete) through the `admin-manage-questions` edge function, using the `SUPABASE_SERVICE_ROLE_KEY` server-side to bypass RLS entirely. Remove all authentication checks since we are in test mode.
+Apply the same pattern: route all database operations through edge functions using `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS.
 
 ### Changes
 
-**1. `supabase/config.toml`** — Set `verify_jwt = false` for `admin-manage-questions` so the edge function is callable without a JWT.
+**1. Create new edge function: `supabase/functions/admin-manage-notes/index.ts`**
+- Service role key, no auth checks
+- Operations: `list` (all notes), `create`, `update`, `update_bulk` (for bulk category/family/status changes), `delete`
 
-**2. `supabase/functions/admin-manage-questions/index.ts`** — Rewrite to:
+**2. Rewrite edge function: `supabase/functions/admin-manage-rules/index.ts`**
 - Remove all auth/admin-role checks
-- Use `SUPABASE_SERVICE_ROLE_KEY` instead of `SUPABASE_ANON_KEY` (bypasses all RLS)
-- Keep the existing operation handlers (list, create, update, delete)
-- The `list` operation returns all questions ordered by `order_index`
+- Use service role key (same pattern as admin-manage-questions)
+- Keep existing operations: `list`, `create`, `update`, `delete`
 
-**3. `src/pages/admin/AdminQuestions.tsx`** — Replace all direct `supabase.from('quiz_questions')` calls with `supabase.functions.invoke('admin-manage-questions', { body: { operation, question } })`:
-- `loadQuestions`: invoke with `operation: 'list'`
-- `handleSubmit`: invoke with `operation: 'create'` or `'update'`
-- `handleDelete`: invoke with `operation: 'delete'`
-- `handleReorder`: invoke with two `'update'` calls
-- `handleToggleActive`: invoke with `operation: 'update'`
+**3. Rewrite edge function: `supabase/functions/admin-upload-notes/index.ts`**
+- Remove all auth/admin-role checks
+- Use service role key
 
-### Why this works
+**4. Create new edge function: `supabase/functions/admin-manage-scents/index.ts`**
+- Service role key, no auth checks
+- Operations: `list` (public scents with profiles), `update_tag`
 
-- Edge functions run server-side with direct database access via service role key — no RLS, no auth needed
-- The quiz pages already prove that `supabase.functions.invoke()` works from the preview
-- All 16 questions will be returned (including inactive ones) since RLS is bypassed
-- CRUD operations will succeed because service role key has full access
+**5. Update `supabase/config.toml`**
+- Add `verify_jwt = false` for `admin-manage-notes` and `admin-manage-scents`
+- Ensure `admin-manage-rules` and `admin-upload-notes` have `verify_jwt = false`
 
-### Technical details
+**6. Update `src/pages/admin/AdminNotes.tsx`**
+- Replace all `supabase.from('fragrance_notes')` calls with `supabase.functions.invoke('admin-manage-notes', { body: { operation, ... } })`
+- Affects: `loadNotes`, `handleCellEdit`, `handleCloneNote`, `handleDeleteNote`, `handleBulkCategoryChange`, `handleBulkFamilyChange`, `handleBulkStatusToggle`
 
-- No database migration needed — RLS policies remain unchanged
-- The open INSERT/UPDATE/DELETE policies added earlier are harmless but no longer relied upon
-- Only two files change: the edge function and the admin page component
+**7. Update `src/pages/admin/AdminRules.tsx`**
+- Replace `supabase.from('formulation_rules')` in `loadRules` with edge function call
+- CRUD calls already use `admin-manage-rules` edge function — those stay the same
+
+**8. Update `src/pages/admin/AdminScents.tsx`**
+- Replace `supabase.from('saved_scents')` and `supabase.from('profiles')` calls with `supabase.functions.invoke('admin-manage-scents', ...)`
+- Affects: `fetchScents`, `updateTag`
+
+### Summary
+- 2 new edge functions created
+- 2 existing edge functions simplified (auth removed)
+- 3 admin page components updated to use edge functions exclusively
+- Config updated for JWT bypass
 
