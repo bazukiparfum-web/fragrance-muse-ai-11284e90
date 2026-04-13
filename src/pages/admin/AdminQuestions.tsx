@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Plus, Edit, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, ArrowUp, ArrowDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Question {
@@ -34,6 +34,7 @@ const AdminQuestions = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [formData, setFormData] = useState({
@@ -54,6 +55,8 @@ const AdminQuestions = () => {
   }, []);
 
   const loadQuestions = async () => {
+    setLoading(true);
+    setLoadError(null);
     try {
       const { data, error } = await supabase
         .from('quiz_questions')
@@ -86,13 +89,10 @@ const AdminQuestions = () => {
         ).sort((a, b) => a.order_index - b.order_index);
 
         setQuestions(uniqueQuestions);
-      } catch (fallbackError) {
+      } catch (fallbackError: any) {
         console.error('Error loading questions:', fallbackError);
-        toast({
-          title: 'Error',
-          description: 'Failed to load questions',
-          variant: 'destructive'
-        });
+        const errorMsg = fallbackError?.message || 'Could not connect to the database. Please check your connection and try again.';
+        setLoadError(errorMsg);
       }
     } finally {
       setLoading(false);
@@ -507,7 +507,19 @@ const AdminQuestions = () => {
               </TableBody>
             </Table>
 
-            {questions.length === 0 && (
+            {!loading && loadError && (
+              <div className="text-center py-12 space-y-4">
+                <AlertCircle className="h-10 w-10 text-destructive mx-auto" />
+                <p className="text-lg font-medium text-destructive">Failed to load questions</p>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">{loadError}</p>
+                <Button variant="outline" onClick={loadQuestions}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
+            )}
+
+            {!loading && !loadError && questions.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
                 No questions yet. Click "Add Question" to create one.
               </div>
