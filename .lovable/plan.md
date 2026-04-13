@@ -1,39 +1,40 @@
+## Plan: Make All 16 Questions Visible in /admin/questions
 
+### Problem
 
-## Plan: Make Scent Family a Multi-Select Question with Additional Options
+The admin questions page uses the `admin-manage-questions` edge function to list questions, which requires:
 
-### What changes
+1. An active auth session
+2. The user to have an admin role in `user_roles`
 
-1. **Update `QuizContext.tsx`** — Change `scentFamily` type from `string` to `string[]` (array for multi-select).
+If either check fails, the page silently shows "No questions yet" with no error feedback.
 
-2. **Update `QuizForYourself.tsx`**:
-   - Add "Spicy" (🌶️) and "Herbal/Green" (🌿) to the scent family list (total: 7 options).
-   - Change click behavior to toggle items in an array instead of single selection.
-   - Update validation: `scent_family` requires at least one selection (`Array.isArray(answer) && answer.length > 0`).
+### Solution
 
-3. **Update `QuizForSomeoneElse.tsx`** — Same multi-select logic and new options as above.
+Change the `loadQuestions` function in `AdminQuestions.tsx` to query the `quiz_questions` table directly using the Supabase client instead of going through the edge function. There is already an RLS policy ("Anyone can view active questions") that allows public SELECT on active questions. For the admin page, we should also show inactive questions, so we will query all questions using the authenticated client (which has the "Only admins can manage questions" ALL policy).
 
-4. **Update `fragranceColorMapper.ts`** — Add color mappings for "spicy" and "herbal" families (spicy already exists, add "herbal/green" mapping).
+As a fallback for non-admin or unauthenticated users, we will also try fetching just active questions.
 
-### Scent Family Options (updated)
+&nbsp;
 
-| Option | Emoji |
-|--------|-------|
-| Floral | 🌸 |
-| Woody | 🌲 |
-| Fresh | 🌊 |
-| Oriental | 🌟 |
-| Gourmand | 🍰 |
-| Spicy | 🌶️ |
-| Herbal/Green | 🌿 |
+### Changes
 
-### Multi-select behavior
-- Clicking a family toggles it on/off (highlighted border when selected).
-- Users can select multiple families.
-- Validation requires at least 1 selected.
-- The answer is stored as a string array (e.g., `["Woody", "Spicy"]`).
+**File: `src/pages/admin/AdminQuestions.tsx**`
+
+- Replace the `loadQuestions` function to query `quiz_questions` directly:
+  ```typescript
+  const { data, error } = await supabase
+    .from('quiz_questions')
+    .select('*')
+    .order('order_index');
+  ```
+- Add error handling that shows a toast if the query fails
+- Remove the session check that causes silent early return for listing (keep it for create/update/delete operations)
 
 ### Technical details
-- Files modified: `src/contexts/QuizContext.tsx`, `src/pages/QuizForYourself.tsx`, `src/pages/QuizForSomeoneElse.tsx`, `src/lib/fragranceColorMapper.ts`
-- No database migration needed — the existing `scent_family` question type remains the same; the multi-select behavior is handled in the frontend.
 
+- The direct query approach uses RLS policies already in place
+- For authenticated admins: the ALL policy grants full access
+- For unauthenticated users: the SELECT policy shows active questions only
+- Create/update/delete operations continue to use the edge function (admin-only)
+- No database changes needed
