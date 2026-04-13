@@ -103,10 +103,7 @@ const AdminQuestions = () => {
     e.preventDefault();
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const questionData = {
+      const questionData: any = {
         question_text: formData.question_text,
         question_type: formData.question_type,
         question_key: formData.question_key,
@@ -119,12 +116,19 @@ const AdminQuestions = () => {
         helper_text: formData.helper_text || null
       };
 
-      const { error } = await supabase.functions.invoke('admin-manage-questions', {
-        body: {
-          operation: editingQuestion ? 'update' : 'create',
-          question: editingQuestion ? { id: editingQuestion.id, ...questionData } : questionData
-        }
-      });
+      let error;
+      if (editingQuestion) {
+        const result = await supabase
+          .from('quiz_questions')
+          .update(questionData)
+          .eq('id', editingQuestion.id);
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('quiz_questions')
+          .insert(questionData);
+        error = result.error;
+      }
 
       if (error) throw error;
 
@@ -140,7 +144,7 @@ const AdminQuestions = () => {
       console.error('Error saving question:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save question',
+        description: `Failed to save question: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive'
       });
     }
@@ -150,15 +154,10 @@ const AdminQuestions = () => {
     if (!confirm('Are you sure you want to delete this question?')) return;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { error } = await supabase.functions.invoke('admin-manage-questions', {
-        body: {
-          operation: 'delete',
-          question: { id }
-        }
-      });
+      const { error } = await supabase
+        .from('quiz_questions')
+        .delete()
+        .eq('id', id);
 
       if (error) throw error;
 
@@ -172,7 +171,7 @@ const AdminQuestions = () => {
       console.error('Error deleting question:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete question',
+        description: `Failed to delete question: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive'
       });
     }
@@ -187,23 +186,9 @@ const AdminQuestions = () => {
     [newQuestions[index], newQuestions[swapIndex]] = [newQuestions[swapIndex], newQuestions[index]];
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      // Update order_index for both questions
       await Promise.all([
-        supabase.functions.invoke('admin-manage-questions', {
-          body: {
-            operation: 'update',
-            question: { id: newQuestions[index].id, order_index: index }
-          }
-        }),
-        supabase.functions.invoke('admin-manage-questions', {
-          body: {
-            operation: 'update',
-            question: { id: newQuestions[swapIndex].id, order_index: swapIndex }
-          }
-        })
+        supabase.from('quiz_questions').update({ order_index: index }).eq('id', newQuestions[index].id),
+        supabase.from('quiz_questions').update({ order_index: swapIndex }).eq('id', newQuestions[swapIndex].id)
       ]);
 
       loadQuestions();
@@ -219,15 +204,10 @@ const AdminQuestions = () => {
 
   const handleToggleActive = async (question: Question) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { error } = await supabase.functions.invoke('admin-manage-questions', {
-        body: {
-          operation: 'update',
-          question: { id: question.id, is_active: !question.is_active }
-        }
-      });
+      const { error } = await supabase
+        .from('quiz_questions')
+        .update({ is_active: !question.is_active })
+        .eq('id', question.id);
 
       if (error) throw error;
 
