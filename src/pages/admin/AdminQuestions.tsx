@@ -55,15 +55,13 @@ const AdminQuestions = () => {
 
   const loadQuestions = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data, error } = await supabase.functions.invoke('admin-manage-questions', {
-        body: { operation: 'list' }
-      });
+      const { data, error } = await supabase
+        .from('quiz_questions')
+        .select('*')
+        .order('order_index');
 
       if (error) throw error;
-      setQuestions(data.questions || []);
+      setQuestions(data || []);
     } catch (error) {
       console.error('Error loading questions:', error);
       toast({
