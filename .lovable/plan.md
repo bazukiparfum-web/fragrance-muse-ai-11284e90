@@ -1,24 +1,30 @@
 
 
-## Plan: Redeploy Admin Edge Functions
+## Plan: Add Consultation Request Form Dialog
 
-### Problem
-The `admin-manage-questions` edge function works perfectly when tested server-side (list returns all 16 questions, create/delete both succeed with status 200), but the browser gets `FunctionsFetchError: Failed to send a request to the Edge Function` with `TypeError: Failed to fetch`.
+### What
+When the user clicks "Request Consultation" in the BusinessAroma section, a dialog opens with a contact form matching the reference design — dark background, Name + Email side by side, Comment textarea, and a Submit button. Submissions are saved to a new `consultation_requests` database table.
 
-This means the latest function code (with updated CORS headers) has not been fully deployed to the edge runtime that the browser hits. The `curl_edge_functions` tool may route differently than the browser's `supabase.functions.invoke()`.
+### Changes
 
-### Solution
-Redeploy all admin edge functions to ensure the latest code is live:
+**1. Create database table `consultation_requests`**
+- Columns: `id` (uuid), `name` (text), `email` (text), `comment` (text), `created_at` (timestamptz)
+- RLS: Allow anonymous inserts (public-facing form), no select/update/delete for anon
 
-1. **Deploy `admin-manage-questions`**
-2. **Deploy `admin-manage-notes`**
-3. **Deploy `admin-manage-rules`**
-4. **Deploy `admin-manage-scents`**
-5. **Deploy `admin-upload-notes`**
-6. **Deploy `get-quiz-questions`**
+**2. Update `src/components/BusinessAroma.tsx`**
+- Add state to control dialog open/close
+- On "Request Consultation" click, open a Dialog
+- Dialog content: dark-themed form with:
+  - Heading: "How can we help you?"
+  - Subtext about submitting queries
+  - Name and Email inputs side by side
+  - Comment textarea below
+  - Submit button
+- On submit: validate inputs, insert into `consultation_requests` via Supabase client, show success toast, close dialog
 
-After deployment, verify from the browser that `/admin/questions` loads all 16 questions and that creating a question works.
-
-### No code changes needed
-The function code and CORS headers are already correct. This is purely a deployment sync issue.
+### Technical details
+- Uses existing `Dialog` component from `src/components/ui/dialog.tsx`
+- Uses `supabase.from('consultation_requests').insert(...)` for saving
+- Client-side validation with basic checks (non-empty name/email, valid email format)
+- Dark styling to match the reference screenshot's aesthetic
 
