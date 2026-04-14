@@ -28,6 +28,40 @@ const features = [
 ];
 
 const BusinessAroma = () => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim()) {
+      toast.error("Please fill in your name and email.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from("consultation_requests").insert({
+      name: name.trim(),
+      email: email.trim(),
+      comment: comment.trim() || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error("Failed to submit. Please try again.");
+      return;
+    }
+    toast.success("Your consultation request has been submitted!");
+    setName("");
+    setEmail("");
+    setComment("");
+    setDialogOpen(false);
+  };
+
   return (
     <section className="py-20 md:py-32">
       <div className="container mx-auto px-4">
@@ -71,12 +105,64 @@ const BusinessAroma = () => {
               ))}
             </div>
 
-            <Button variant="luxury" size="lg">
+            <Button variant="luxury" size="lg" onClick={() => setDialogOpen(true)}>
               Request Consultation
             </Button>
           </div>
         </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="bg-[hsl(var(--luxury-black))] border-luxury-gold/20 text-foreground sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">How can we help you?</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Submit your query and our team will get back to you shortly.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="consult-name">Name</Label>
+                <Input
+                  id="consult-name"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={100}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="consult-email">Email</Label>
+                <Input
+                  id="consult-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  maxLength={255}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="consult-comment">Comment</Label>
+              <Textarea
+                id="consult-comment"
+                placeholder="Tell us about your needs..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                maxLength={1000}
+                rows={4}
+              />
+            </div>
+            <Button type="submit" variant="luxury" className="w-full" disabled={submitting}>
+              {submitting ? "Submitting..." : "Submit"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
