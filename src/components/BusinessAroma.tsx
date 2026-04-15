@@ -143,50 +143,52 @@ const BusinessAroma = () => {
           <form onSubmit={handleSubmit} className="space-y-4 mt-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="consult-name">Name</Label>
+                <Label htmlFor="consult-name">Name <span className="text-destructive">*</span></Label>
                 <Input
                   id="consult-name"
                   placeholder="Your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={form.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
                   maxLength={100}
-                  required
                 />
+                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="consult-email">Email</Label>
+                <Label htmlFor="consult-email">Email <span className="text-destructive">*</span></Label>
                 <Input
                   id="consult-email"
                   type="email"
                   placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={form.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
                   maxLength={255}
-                  required
                 />
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="consult-phone">Mobile Number</Label>
+              <Label htmlFor="consult-phone">Contact Number <span className="text-destructive">*</span></Label>
               <Input
                 id="consult-phone"
                 type="tel"
                 placeholder="+1 (555) 000-0000"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={form.phone}
+                onChange={(e) => handleChange("phone", e.target.value)}
                 maxLength={20}
               />
+              {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="consult-comment">Comment</Label>
+              <Label htmlFor="consult-comment">Comment <span className="text-destructive">*</span></Label>
               <Textarea
                 id="consult-comment"
                 placeholder="Tell us about your needs..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                maxLength={1000}
+                value={form.comment}
+                onChange={(e) => handleChange("comment", e.target.value)}
+                maxLength={2000}
                 rows={4}
               />
+              {errors.comment && <p className="text-sm text-destructive">{errors.comment}</p>}
             </div>
             <Button type="submit" variant="luxury" className="w-full" disabled={submitting}>
               {submitting ? "Submitting..." : "Submit"}
