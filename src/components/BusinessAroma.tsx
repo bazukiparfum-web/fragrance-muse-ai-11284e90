@@ -46,7 +46,12 @@ const BusinessAroma = () => {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("consultation_requests").insert({
+    const publicClient = createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+    const { error } = await publicClient.from("consultation_requests").insert({
       name: name.trim(),
       email: email.trim(),
       phone: phone.trim() || null,
