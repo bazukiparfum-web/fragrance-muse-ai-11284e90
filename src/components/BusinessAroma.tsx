@@ -8,6 +8,14 @@ import businessImage from "@/assets/business-aroma.jpg";
 import { Sparkles, Building2, Users } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const consultationSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  email: z.string().trim().min(1, "Email is required").email("Please enter a valid email address").max(255, "Email must be less than 255 characters"),
+  phone: z.string().trim().min(1, "Contact number is required").max(20, "Contact number must be less than 20 characters"),
+  comment: z.string().trim().min(1, "Comment is required").max(2000, "Comment must be less than 2000 characters"),
+});
 
 const features = [
   {
@@ -29,20 +37,26 @@ const features = [
 
 const BusinessAroma = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [comment, setComment] = useState("");
+  const [form, setForm] = useState({ name: "", email: "", phone: "", comment: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const handleChange = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      toast.error("Please fill in your name and email.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Please enter a valid email address.");
+    setErrors({});
+    const result = consultationSchema.safeParse(form);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        const key = err.path[0] as string;
+        if (!fieldErrors[key]) fieldErrors[key] = err.message;
+      });
+      setErrors(fieldErrors);
       return;
     }
     setSubmitting(true);
@@ -52,10 +66,10 @@ const BusinessAroma = () => {
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
     const { error } = await publicClient.from("consultation_requests").insert({
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim() || null,
-      comment: comment.trim() || null,
+      name: result.data.name,
+      email: result.data.email,
+      phone: result.data.phone,
+      comment: result.data.comment,
     });
     setSubmitting(false);
     if (error) {
@@ -63,10 +77,8 @@ const BusinessAroma = () => {
       return;
     }
     toast.success("Thank you for connecting with us. Our sales person will get back to you.");
-    setName("");
-    setEmail("");
-    setPhone("");
-    setComment("");
+    setForm({ name: "", email: "", phone: "", comment: "" });
+    setErrors({});
     setDialogOpen(false);
   };
 
@@ -131,50 +143,52 @@ const BusinessAroma = () => {
           <form onSubmit={handleSubmit} className="space-y-4 mt-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="consult-name">Name</Label>
+                <Label htmlFor="consult-name">Name <span className="text-destructive">*</span></Label>
                 <Input
                   id="consult-name"
                   placeholder="Your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={form.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
                   maxLength={100}
-                  required
                 />
+                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="consult-email">Email</Label>
+                <Label htmlFor="consult-email">Email <span className="text-destructive">*</span></Label>
                 <Input
                   id="consult-email"
                   type="email"
                   placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={form.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
                   maxLength={255}
-                  required
                 />
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="consult-phone">Mobile Number</Label>
+              <Label htmlFor="consult-phone">Contact Number <span className="text-destructive">*</span></Label>
               <Input
                 id="consult-phone"
                 type="tel"
                 placeholder="+1 (555) 000-0000"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={form.phone}
+                onChange={(e) => handleChange("phone", e.target.value)}
                 maxLength={20}
               />
+              {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="consult-comment">Comment</Label>
+              <Label htmlFor="consult-comment">Comment <span className="text-destructive">*</span></Label>
               <Textarea
                 id="consult-comment"
                 placeholder="Tell us about your needs..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                maxLength={1000}
+                value={form.comment}
+                onChange={(e) => handleChange("comment", e.target.value)}
+                maxLength={2000}
                 rows={4}
               />
+              {errors.comment && <p className="text-sm text-destructive">{errors.comment}</p>}
             </div>
             <Button type="submit" variant="luxury" className="w-full" disabled={submitting}>
               {submitting ? "Submitting..." : "Submit"}
