@@ -31,6 +31,7 @@ const BusinessAroma = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,6 +49,7 @@ const BusinessAroma = () => {
     const { error } = await supabase.from("consultation_requests").insert({
       name: name.trim(),
       email: email.trim(),
+      phone: phone.trim() || null,
       comment: comment.trim() || null,
     });
     setSubmitting(false);
@@ -55,9 +57,10 @@ const BusinessAroma = () => {
       toast.error("Failed to submit. Please try again.");
       return;
     }
-    toast.success("Your consultation request has been submitted!");
+    toast.success("Thank you for connecting with us. Our sales person will get back to you.");
     setName("");
     setEmail("");
+    setPhone("");
     setComment("");
     setDialogOpen(false);
   };
@@ -145,6 +148,17 @@ const BusinessAroma = () => {
                   required
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="consult-phone">Mobile Number</Label>
+              <Input
+                id="consult-phone"
+                type="tel"
+                placeholder="+1 (555) 000-0000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                maxLength={20}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="consult-comment">Comment</Label>

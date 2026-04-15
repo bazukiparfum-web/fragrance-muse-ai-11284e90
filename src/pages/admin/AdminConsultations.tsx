@@ -80,6 +80,7 @@ const AdminConsultations = () => {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
                     <TableHead>Comment</TableHead>
                     <TableHead>Date</TableHead>
                   </TableRow>
@@ -97,6 +98,7 @@ const AdminConsultations = () => {
                           {req.email}
                         </a>
                       </TableCell>
+                      <TableCell>{(req as any).phone || '—'}</TableCell>
                       <TableCell className="max-w-xs truncate">{req.comment || '—'}</TableCell>
                       <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
                         {formatDate(req.created_at)}
