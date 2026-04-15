@@ -1,30 +1,18 @@
 
 
-## Plan: Add Consultation Request Form Dialog
+## Plan: Update Consultation Form
 
-### What
-When the user clicks "Request Consultation" in the BusinessAroma section, a dialog opens with a contact form matching the reference design — dark background, Name + Email side by side, Comment textarea, and a Submit button. Submissions are saved to a new `consultation_requests` database table.
+### Changes to `src/components/BusinessAroma.tsx`
 
-### Changes
+1. **Add mobile number field** — new `phone` state and input field placed below the Name/Email row
+2. **Add `phone` column to `consultation_requests` table** — nullable text column via migration
+3. **Update success message** — replace generic toast with: "Thank you for connecting with us. Our sales person will get back to you."
+4. **Include phone in the insert call** to save it to the database
 
-**1. Create database table `consultation_requests`**
-- Columns: `id` (uuid), `name` (text), `email` (text), `comment` (text), `created_at` (timestamptz)
-- RLS: Allow anonymous inserts (public-facing form), no select/update/delete for anon
+### Database migration
+```sql
+ALTER TABLE consultation_requests ADD COLUMN phone text;
+```
 
-**2. Update `src/components/BusinessAroma.tsx`**
-- Add state to control dialog open/close
-- On "Request Consultation" click, open a Dialog
-- Dialog content: dark-themed form with:
-  - Heading: "How can we help you?"
-  - Subtext about submitting queries
-  - Name and Email inputs side by side
-  - Comment textarea below
-  - Submit button
-- On submit: validate inputs, insert into `consultation_requests` via Supabase client, show success toast, close dialog
-
-### Technical details
-- Uses existing `Dialog` component from `src/components/ui/dialog.tsx`
-- Uses `supabase.from('consultation_requests').insert(...)` for saving
-- Client-side validation with basic checks (non-empty name/email, valid email format)
-- Dark styling to match the reference screenshot's aesthetic
+No RLS changes needed — existing insert policy already allows all columns.
 
