@@ -150,6 +150,16 @@ const BusinessAroma = () => {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="consult-phone">Mobile Number</Label>
+              <Input
+                id="consult-phone"
+                type="tel"
+                placeholder="+1 (555) 000-0000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                maxLength={20}
+              />
+            </div>
               <Label htmlFor="consult-comment">Comment</Label>
               <Textarea
                 id="consult-comment"
