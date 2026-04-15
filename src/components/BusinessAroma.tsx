@@ -57,9 +57,10 @@ const BusinessAroma = () => {
       toast.error("Failed to submit. Please try again.");
       return;
     }
-    toast.success("Your consultation request has been submitted!");
+    toast.success("Thank you for connecting with us. Our sales person will get back to you.");
     setName("");
     setEmail("");
+    setPhone("");
     setComment("");
     setDialogOpen(false);
   };
