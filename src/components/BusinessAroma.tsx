@@ -171,7 +171,7 @@ const BusinessAroma = () => {
               <Input
                 id="consult-phone"
                 type="tel"
-                placeholder="+1 (555) 000-0000"
+                placeholder="+91 (555) 000-0000"
                 value={form.phone}
                 onChange={(e) => handleChange("phone", e.target.value)}
                 maxLength={20}
