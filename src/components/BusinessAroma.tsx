@@ -49,6 +49,7 @@ const BusinessAroma = () => {
     const { error } = await supabase.from("consultation_requests").insert({
       name: name.trim(),
       email: email.trim(),
+      phone: phone.trim() || null,
       comment: comment.trim() || null,
     });
     setSubmitting(false);
