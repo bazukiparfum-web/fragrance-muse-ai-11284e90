@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import businessImage from "@/assets/business-aroma.jpg";
 import { Sparkles, Building2, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
 const features = [
@@ -46,7 +46,12 @@ const BusinessAroma = () => {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("consultation_requests").insert({
+    const publicClient = createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+    const { error } = await publicClient.from("consultation_requests").insert({
       name: name.trim(),
       email: email.trim(),
       phone: phone.trim() || null,
