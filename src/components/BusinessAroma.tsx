@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import businessImage from "@/assets/business-aroma.jpg";
 import { Sparkles, Building2, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
 const features = [
