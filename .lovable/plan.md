@@ -1,26 +1,30 @@
 
 
-## Plan: Fix Consultation Form Submission Blocked by Stale Auth Session
+## Plan: Add Zod Validation and Required Fields to Consultation Form
 
-### Problem
-The form code and database are both correct. The Supabase client has a stale/invalid auth session stored in localStorage. Before executing the `insert` call, the client tries to refresh this expired token, which fails with "Failed to fetch" — blocking the actual database request.
-
-### Fix
-In `src/components/BusinessAroma.tsx`, sign out any stale session before performing the anonymous insert. This clears the broken token so the insert can proceed with the anon key.
+Matching the Contact Keeper Pro project's form functionality: Zod schema validation, per-field inline error messages, and all fields required (including mobile number and comment).
 
 ### Changes
 
-**`src/components/BusinessAroma.tsx`** — Update `handleSubmit`:
-- Before the insert call, add `await supabase.auth.signOut()` wrapped in a try-catch to clear any lingering broken session
-- Alternatively (cleaner approach): create a separate unauthenticated Supabase client instance just for this public form submission, bypassing the session-aware global client entirely
+**`src/components/BusinessAroma.tsx`**
 
-The cleaner approach:
-- Import `createClient` from `@supabase/supabase-js`
-- Create a one-off client with `persistSession: false` and `autoRefreshToken: false`
-- Use that client for the consultation insert only
+1. **Add Zod validation schema** with required fields:
+   - `name` — required, max 100 chars
+   - `email` — required, valid email, max 255 chars
+   - `phone` — required, max 20 chars (renamed label to "Contact Number" to match reference)
+   - `comment` — required, max 2000 chars
 
-This ensures the public consultation form always works regardless of whether a user has a broken auth session.
+2. **Replace individual state variables** with a single `form` object state and an `errors` record state for per-field error display
+
+3. **Update `handleSubmit`**:
+   - Clear errors on each submit
+   - Run `schema.safeParse(form)` — if invalid, map errors to field names and display inline
+   - If valid, proceed with the existing `publicClient.insert()` logic
+
+4. **Add inline error messages** — red text below each field showing validation errors (e.g., `{errors.name && <p className="text-sm text-destructive">{errors.name}</p>}`)
+
+5. **Make all fields required** in the UI (remove optional `|| null` fallbacks)
 
 ### No database changes needed
-Table, columns, types, and RLS policies are all correct and working.
+The `consultation_requests` table already has nullable `phone` and `comment` columns, which will now always receive values since both are required by the form.
 
