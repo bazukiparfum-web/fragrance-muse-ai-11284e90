@@ -160,6 +160,7 @@ const BusinessAroma = () => {
                 maxLength={20}
               />
             </div>
+            <div className="space-y-2">
               <Label htmlFor="consult-comment">Comment</Label>
               <Textarea
                 id="consult-comment"
