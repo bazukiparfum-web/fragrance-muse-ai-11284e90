@@ -7,6 +7,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { QuizProvider } from "@/contexts/QuizContext";
 import { useCartSync } from "@/hooks/useCartSync";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
@@ -17,6 +18,7 @@ import QuizResults from "./pages/QuizResults";
 import ScentDetail from "./pages/ScentDetail";
 import SharedFragrance from "./pages/SharedFragrance";
 import Collection from "./pages/Collection";
+import ResetPassword from "./pages/ResetPassword";
 import AdminRoute from "./components/AdminRoute";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminNotes from "./pages/admin/AdminNotes";
@@ -38,7 +40,8 @@ const AppInner = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Navigate to="/" replace />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/shop/cart" element={<Cart />} />
           <Route path="/shop/checkout" element={<Checkout />} />
           <Route path="/shop/account" element={<Account />} />
