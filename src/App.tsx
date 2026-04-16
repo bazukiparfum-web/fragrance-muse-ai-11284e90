@@ -7,6 +7,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { QuizProvider } from "@/contexts/QuizContext";
 import { useCartSync } from "@/hooks/useCartSync";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
