@@ -14,8 +14,9 @@ const Header = () => {
 
   useEffect(() => {
     const check = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return setIsAdmin(false);
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+      if (!currentUser) return setIsAdmin(false);
       const { data } = await supabase
         .from('user_roles')
         .select('role')
