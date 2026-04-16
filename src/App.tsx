@@ -17,6 +17,7 @@ import QuizResults from "./pages/QuizResults";
 import ScentDetail from "./pages/ScentDetail";
 import SharedFragrance from "./pages/SharedFragrance";
 import Collection from "./pages/Collection";
+import AdminRoute from "./components/AdminRoute";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminNotes from "./pages/admin/AdminNotes";
 import AdminQuestions from "./pages/admin/AdminQuestions";
@@ -49,14 +50,14 @@ const AppInner = () => {
           <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
           <Route path="/shop/quiz/for-someone-else" element={<QuizForSomeoneElse />} />
           <Route path="/shop/quiz/results" element={<QuizResults />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/notes" element={<AdminNotes />} />
-          <Route path="/admin/questions" element={<AdminQuestions />} />
-          <Route path="/admin/rules" element={<AdminRules />} />
-          <Route path="/admin/ingredients" element={<AdminIngredients />} />
-          <Route path="/admin/scents" element={<AdminScents />} />
-          <Route path="/admin/consultations" element={<AdminConsultations />} />
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/notes" element={<AdminRoute><AdminNotes /></AdminRoute>} />
+          <Route path="/admin/questions" element={<AdminRoute><AdminQuestions /></AdminRoute>} />
+          <Route path="/admin/rules" element={<AdminRoute><AdminRules /></AdminRoute>} />
+          <Route path="/admin/ingredients" element={<AdminRoute><AdminIngredients /></AdminRoute>} />
+          <Route path="/admin/scents" element={<AdminRoute><AdminScents /></AdminRoute>} />
+          <Route path="/admin/consultations" element={<AdminRoute><AdminConsultations /></AdminRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
