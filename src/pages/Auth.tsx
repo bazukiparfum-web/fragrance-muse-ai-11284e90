@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import { ReferralBanner } from '@/components/ReferralBanner';
@@ -155,19 +156,15 @@ const Auth = () => {
     }
   };
 
-  const handleSocialSignIn = async (provider: 'google' | 'facebook' | 'apple') => {
+  const handleGoogleSignIn = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: `${window.location.origin}/`,
       });
-
-      if (error) throw error;
+      if (result?.error) throw result.error;
     } catch (error: any) {
       toast({
-        title: 'Error signing in',
+        title: 'Error signing in with Google',
         description: error.message,
         variant: 'destructive',
       });
