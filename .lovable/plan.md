@@ -1,40 +1,34 @@
 
 
-## Plan: Make All Footer Links Functional
+## Plan: Add Admin Authentication Guard
 
 ### Current State
-All footer links use `href="#"` (non-functional). The app has existing routes for collection, quiz, and a consultation dialog in the BusinessAroma section.
+- `user_roles` table exists with RLS and `has_role()` function
+- `modivishvam@live.com` already has the `admin` role assigned
+- All `/admin/*` routes are currently unprotected — anyone can access them
+- Auth page (`/auth`) exists with sign-in/sign-up functionality
 
-### Link Mapping
+### Changes
 
-**Social Media (external links, open in new tab):**
-- Instagram → `https://www.instagram.com/bazuki` (placeholder — update when real URL available)
-- Facebook → `https://www.facebook.com/bazuki` (placeholder — update when real URL available)
+**1. Create `src/components/AdminRoute.tsx`** — A route guard component that:
+- Checks if user is authenticated (redirects to `/auth` if not)
+- Queries `user_roles` table to verify the user has the `admin` role
+- Shows a loading spinner while checking
+- Shows an "Access Denied" message if authenticated but not admin
+- Renders children if authorized
 
-**Products section:**
-- Signature Collection → `/collection`
-- AI Fragrance Quiz → `/shop/quiz`
-- Gift Sets → `/collection` (filtered or scrolled — no dedicated page exists)
-- Sample Kits → `/collection`
+**2. Update `src/App.tsx`** — Wrap all `/admin/*` routes with `<AdminRoute>`:
+```
+<Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+<Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+...etc
+```
 
-**Business section:**
-- 360° Aroma Solutions → scroll to BusinessAroma section on homepage (`/#business`)
-- Custom Fragrances → scroll to BusinessAroma section (`/#business`)
-- Consultation → scroll to BusinessAroma section and auto-open the consultation dialog (`/#consultation`)
-- Case Studies → scroll to BusinessAroma section (`/#business`)
+**3. Update `src/components/Header.tsx`** — Conditionally show the Shield (admin) icon only when the logged-in user has the admin role, hiding it from regular users.
 
-**Implementation approach for scroll-to-section links:**
-- Add `id="business"` to the BusinessAroma section wrapper
-- For "Consultation", navigate to `/#consultation` — the Index page will detect this hash and programmatically open the consultation dialog
-- Lift the consultation dialog open state to Index or use a URL hash listener in BusinessAroma
-
-### Files Changed
-
-1. **`src/components/Footer.tsx`** — Replace all `href="#"` with real hrefs. Social links get `target="_blank" rel="noopener noreferrer"`. Internal links use anchor tags with app routes.
-
-2. **`src/components/BusinessAroma.tsx`** — Add `id="business"` to the section element. Add a `useEffect` that checks for `#consultation` hash on mount and opens the dialog automatically.
-
-3. **`src/pages/Index.tsx`** — No changes needed (hash scrolling is native browser behavior with element IDs).
-
-### No database changes needed.
+### Technical Details
+- Uses `supabase.auth.getUser()` for session check
+- Uses `supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin')` to verify admin status
+- Listens to `onAuthStateChange` so it reacts to login/logout
+- No database changes needed — roles table and data already exist
 
