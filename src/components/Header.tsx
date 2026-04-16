@@ -65,6 +65,16 @@ const Header = () => {
             </Button>
           )}
           
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(user ? '/account' : '/auth')}
+            className="relative text-muted-foreground hover:text-accent"
+            title={user ? 'My Account' : 'Sign In'}
+          >
+            {user ? <UserCheck className="h-5 w-5" /> : <User className="h-5 w-5" />}
+          </Button>
+
           <CartDrawer />
         </div>
       </div>
