@@ -1,30 +1,40 @@
 
 
-## Plan: Add Zod Validation and Required Fields to Consultation Form
+## Plan: Make All Footer Links Functional
 
-Matching the Contact Keeper Pro project's form functionality: Zod schema validation, per-field inline error messages, and all fields required (including mobile number and comment).
+### Current State
+All footer links use `href="#"` (non-functional). The app has existing routes for collection, quiz, and a consultation dialog in the BusinessAroma section.
 
-### Changes
+### Link Mapping
 
-**`src/components/BusinessAroma.tsx`**
+**Social Media (external links, open in new tab):**
+- Instagram → `https://www.instagram.com/bazuki` (placeholder — update when real URL available)
+- Facebook → `https://www.facebook.com/bazuki` (placeholder — update when real URL available)
 
-1. **Add Zod validation schema** with required fields:
-   - `name` — required, max 100 chars
-   - `email` — required, valid email, max 255 chars
-   - `phone` — required, max 20 chars (renamed label to "Contact Number" to match reference)
-   - `comment` — required, max 2000 chars
+**Products section:**
+- Signature Collection → `/collection`
+- AI Fragrance Quiz → `/shop/quiz`
+- Gift Sets → `/collection` (filtered or scrolled — no dedicated page exists)
+- Sample Kits → `/collection`
 
-2. **Replace individual state variables** with a single `form` object state and an `errors` record state for per-field error display
+**Business section:**
+- 360° Aroma Solutions → scroll to BusinessAroma section on homepage (`/#business`)
+- Custom Fragrances → scroll to BusinessAroma section (`/#business`)
+- Consultation → scroll to BusinessAroma section and auto-open the consultation dialog (`/#consultation`)
+- Case Studies → scroll to BusinessAroma section (`/#business`)
 
-3. **Update `handleSubmit`**:
-   - Clear errors on each submit
-   - Run `schema.safeParse(form)` — if invalid, map errors to field names and display inline
-   - If valid, proceed with the existing `publicClient.insert()` logic
+**Implementation approach for scroll-to-section links:**
+- Add `id="business"` to the BusinessAroma section wrapper
+- For "Consultation", navigate to `/#consultation` — the Index page will detect this hash and programmatically open the consultation dialog
+- Lift the consultation dialog open state to Index or use a URL hash listener in BusinessAroma
 
-4. **Add inline error messages** — red text below each field showing validation errors (e.g., `{errors.name && <p className="text-sm text-destructive">{errors.name}</p>}`)
+### Files Changed
 
-5. **Make all fields required** in the UI (remove optional `|| null` fallbacks)
+1. **`src/components/Footer.tsx`** — Replace all `href="#"` with real hrefs. Social links get `target="_blank" rel="noopener noreferrer"`. Internal links use anchor tags with app routes.
 
-### No database changes needed
-The `consultation_requests` table already has nullable `phone` and `comment` columns, which will now always receive values since both are required by the form.
+2. **`src/components/BusinessAroma.tsx`** — Add `id="business"` to the section element. Add a `useEffect` that checks for `#consultation` hash on mount and opens the dialog automatically.
+
+3. **`src/pages/Index.tsx`** — No changes needed (hash scrolling is native browser behavior with element IDs).
+
+### No database changes needed.
 
