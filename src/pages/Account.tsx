@@ -381,7 +381,7 @@ const Account = () => {
                 {/* Dashboard Tab */}
                 <TabsContent value="dashboard" className="space-y-6">
                   <Card className="p-6">
-                    <h1 className="font-serif text-3xl mb-4">Welcome Back!</h1>
+                    <h1 className="font-serif text-3xl mb-4">Welcome Back, {profile?.full_name || profile?.email || ''}!</h1>
                     <p className="text-muted-foreground">
                       Manage your orders, scents, and subscriptions from your dashboard.
                     </p>
