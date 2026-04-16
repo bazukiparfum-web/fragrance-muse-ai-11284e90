@@ -14,10 +14,10 @@ const Footer = () => {
               AI-crafted luxury fragrances and 360° aroma solutions for discerning individuals and businesses.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-luxury-gold transition-colors">
+              <a href="https://www.instagram.com/bazuki" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-luxury-gold transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-luxury-gold transition-colors">
+              <a href="https://www.facebook.com/bazuki" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-luxury-gold transition-colors">
                 <Facebook className="w-5 h-5" />
               </a>
             </div>
@@ -27,10 +27,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-lg mb-4 uppercase tracking-wider">Products</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-white/70 hover:text-luxury-gold transition-colors">Signature Collection</a></li>
-              <li><a href="#" className="text-white/70 hover:text-luxury-gold transition-colors">AI Fragrance Quiz</a></li>
-              <li><a href="#" className="text-white/70 hover:text-luxury-gold transition-colors">Gift Sets</a></li>
-              <li><a href="#" className="text-white/70 hover:text-luxury-gold transition-colors">Sample Kits</a></li>
+              <li><a href="/collection" className="text-white/70 hover:text-luxury-gold transition-colors">Signature Collection</a></li>
+              <li><a href="/shop/quiz" className="text-white/70 hover:text-luxury-gold transition-colors">AI Fragrance Quiz</a></li>
+              <li><a href="/collection" className="text-white/70 hover:text-luxury-gold transition-colors">Gift Sets</a></li>
+              <li><a href="/collection" className="text-white/70 hover:text-luxury-gold transition-colors">Sample Kits</a></li>
             </ul>
           </div>
 
@@ -38,10 +38,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-lg mb-4 uppercase tracking-wider">Business</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-white/70 hover:text-luxury-gold transition-colors">360° Aroma Solutions</a></li>
-              <li><a href="#" className="text-white/70 hover:text-luxury-gold transition-colors">Custom Fragrances</a></li>
-              <li><a href="#" className="text-white/70 hover:text-luxury-gold transition-colors">Consultation</a></li>
-              <li><a href="#" className="text-white/70 hover:text-luxury-gold transition-colors">Case Studies</a></li>
+              <li><a href="/#business" className="text-white/70 hover:text-luxury-gold transition-colors">360° Aroma Solutions</a></li>
+              <li><a href="/#business" className="text-white/70 hover:text-luxury-gold transition-colors">Custom Fragrances</a></li>
+              <li><a href="/#consultation" className="text-white/70 hover:text-luxury-gold transition-colors">Consultation</a></li>
+              <li><a href="/#business" className="text-white/70 hover:text-luxury-gold transition-colors">Case Studies</a></li>
             </ul>
           </div>
 

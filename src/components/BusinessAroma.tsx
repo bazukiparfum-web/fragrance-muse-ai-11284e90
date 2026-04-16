@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,13 @@ const BusinessAroma = () => {
   const [form, setForm] = useState({ name: "", email: "", phone: "", comment: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (window.location.hash === '#consultation') {
+      setDialogOpen(true);
+      history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -83,7 +90,7 @@ const BusinessAroma = () => {
   };
 
   return (
-    <section className="py-20 md:py-32">
+    <section id="business" className="py-20 md:py-32">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Image */}
