@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Shield, ArrowLeft } from 'lucide-react';
+import { Shield, ArrowLeft, User, UserCheck } from 'lucide-react';
 import { Button } from './ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { CartDrawer } from './CartDrawer';
@@ -10,15 +10,17 @@ const Header = () => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const check = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return setIsAdmin(false);
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+      if (!currentUser) return setIsAdmin(false);
       const { data } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', currentUser.id)
         .eq('role', 'admin')
         .maybeSingle();
       setIsAdmin(!!data);
@@ -63,6 +65,16 @@ const Header = () => {
             </Button>
           )}
           
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(user ? '/account' : '/auth')}
+            className="relative text-muted-foreground hover:text-accent"
+            title={user ? 'My Account' : 'Sign In'}
+          >
+            {user ? <UserCheck className="h-5 w-5" /> : <User className="h-5 w-5" />}
+          </Button>
+
           <CartDrawer />
         </div>
       </div>
