@@ -20,7 +20,7 @@ const Header = () => {
       const { data } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', currentUser.id)
         .eq('role', 'admin')
         .maybeSingle();
       setIsAdmin(!!data);
