@@ -1,34 +1,19 @@
 
 
-## Plan: Add Admin Authentication Guard
+## Plan: Add Sign In / Account Button to Header
 
-### Current State
-- `user_roles` table exists with RLS and `has_role()` function
-- `modivishvam@live.com` already has the `admin` role assigned
-- All `/admin/*` routes are currently unprotected — anyone can access them
-- Auth page (`/auth`) exists with sign-in/sign-up functionality
+### Change
 
-### Changes
+Update `src/components/Header.tsx` to:
 
-**1. Create `src/components/AdminRoute.tsx`** — A route guard component that:
-- Checks if user is authenticated (redirects to `/auth` if not)
-- Queries `user_roles` table to verify the user has the `admin` role
-- Shows a loading spinner while checking
-- Shows an "Access Denied" message if authenticated but not admin
-- Renders children if authorized
+1. **Track auth state** — add a `user` state variable alongside `isAdmin`, populated by the existing `onAuthStateChange` listener and `getUser()` call.
 
-**2. Update `src/App.tsx`** — Wrap all `/admin/*` routes with `<AdminRoute>`:
-```
-<Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-<Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-...etc
-```
+2. **Render a User/LogIn button** — between the admin Shield icon and the CartDrawer:
+   - **Logged out**: Show a `User` (lucide) icon button that navigates to `/auth`
+   - **Logged in**: Show a `UserCheck` (lucide) icon button that navigates to `/shop/account`
 
-**3. Update `src/components/Header.tsx`** — Conditionally show the Shield (admin) icon only when the logged-in user has the admin role, hiding it from regular users.
+### Files Modified
+- `src/components/Header.tsx` — add `User`/`UserCheck` imports from lucide-react, add `user` state, render conditional button.
 
-### Technical Details
-- Uses `supabase.auth.getUser()` for session check
-- Uses `supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin')` to verify admin status
-- Listens to `onAuthStateChange` so it reacts to login/logout
-- No database changes needed — roles table and data already exist
+No database or routing changes needed — `/auth` and `/shop/account` routes already exist.
 
