@@ -1,19 +1,17 @@
 
 
-## Plan: Add Sign In / Account Button to Header
+## Plan: Add Personalized Greeting to Account Dashboard
 
 ### Change
 
-Update `src/components/Header.tsx` to:
+Update line 384 in `src/pages/Account.tsx` to display the user's name or email:
 
-1. **Track auth state** — add a `user` state variable alongside `isAdmin`, populated by the existing `onAuthStateChange` listener and `getUser()` call.
+```
+Welcome Back, {profile?.full_name || profile?.email || ''}!
+```
 
-2. **Render a User/LogIn button** — between the admin Shield icon and the CartDrawer:
-   - **Logged out**: Show a `User` (lucide) icon button that navigates to `/auth`
-   - **Logged in**: Show a `UserCheck` (lucide) icon button that navigates to `/shop/account`
+This uses the `profile` state that's already fetched from the `profiles` table. It shows the full name if available, falls back to email, or shows nothing if profile hasn't loaded yet.
 
 ### Files Modified
-- `src/components/Header.tsx` — add `User`/`UserCheck` imports from lucide-react, add `user` state, render conditional button.
-
-No database or routing changes needed — `/auth` and `/shop/account` routes already exist.
+- `src/pages/Account.tsx` — one line change on line 384
 
