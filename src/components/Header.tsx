@@ -10,6 +10,7 @@ const Header = () => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const check = async () => {
