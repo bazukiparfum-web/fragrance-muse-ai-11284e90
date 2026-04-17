@@ -1,14 +1,25 @@
 
 
-## Plan: Remove Hero Background Image, Use White Background
+## Issue: Quiz radio options appear blank
 
-### Change
+### Root Cause
+`src/components/ui/label.tsx` line 7 has `text-primary-foreground` hardcoded into the base `labelVariants`:
 
-Update `src/components/Hero.tsx`:
-- Remove the `heroImage` import and the background image `<div>` block (lines 2, 8–16)
-- Change the section background to white (`bg-white`)
-- Remove the scroll indicator at the bottom (optional cleanup)
+```ts
+const labelVariants = cva("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-primary-foreground");
+```
 
-### Files Modified
-- `src/components/Hero.tsx` — remove image import, background div, set `bg-white`
+In light mode, `--primary-foreground` is white (`0 0% 100%`). The quiz cards have a white background → **white text on white = invisible**.
+
+This is a global regression affecting **every `<Label>` in the app** (forms, dialogs, auth page, admin pages, etc.) on any light surface.
+
+### Fix
+Restore the original shadcn Label variant by removing the `text-primary-foreground` color from the base classes. Labels should inherit text color from their parent, letting individual usages override when needed (e.g. the dialog memory rule that adds `text-primary-foreground` explicitly on dark dialogs).
+
+**File:** `src/components/ui/label.tsx`
+```ts
+const labelVariants = cva("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70");
+```
+
+That single change restores readable labels everywhere while preserving any explicit `text-primary-foreground` overrides used elsewhere.
 
