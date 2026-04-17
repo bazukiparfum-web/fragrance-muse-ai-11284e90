@@ -114,9 +114,14 @@ const Auth = () => {
       }
 
       toast({
-        title: 'Account created!',
-        description: 'You can now sign in with your credentials.',
+        title: 'Welcome to BAZUKI!',
+        description: 'Your account has been created.',
       });
+
+      // Auto-confirm is enabled, so a session is issued immediately — go home
+      if (data.session) {
+        navigate('/');
+      }
     } catch (error: any) {
       toast({
         title: 'Error signing up',
