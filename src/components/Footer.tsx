@@ -55,11 +55,11 @@ const Footer = () => {
               </li>
               <li className="flex gap-3 text-white/70">
                 <Phone className="w-5 h-5 flex-shrink-0" />
-                <span>+91 9876543210</span>
+                <a href="tel:+917990097922" className="hover:text-luxury-gold transition-colors">+91 79900 97922</a>
               </li>
               <li className="flex gap-3 text-white/70">
                 <Mail className="w-5 h-5 flex-shrink-0" />
-                <span>contact@bazuki.com</span>
+                <a href="mailto:business@bazuki360aroma.com" className="hover:text-luxury-gold transition-colors break-all">business@bazuki360aroma.com</a>
               </li>
             </ul>
           </div>
