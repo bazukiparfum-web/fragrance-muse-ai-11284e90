@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/components/Header';
 import { ArrowLeft, ArrowRight, X, Save } from 'lucide-react';
 import { useQuiz } from '@/contexts/QuizContext';
