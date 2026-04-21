@@ -18,6 +18,10 @@ import QuizResults from "./pages/QuizResults";
 import ScentDetail from "./pages/ScentDetail";
 import SharedFragrance from "./pages/SharedFragrance";
 import Collection from "./pages/Collection";
+import Business from "./pages/Business";
+import Privacy from "./pages/legal/Privacy";
+import Terms from "./pages/legal/Terms";
+import Shipping from "./pages/legal/Shipping";
 import ResetPassword from "./pages/ResetPassword";
 import AdminRoute from "./components/AdminRoute";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -46,6 +50,11 @@ const AppInner = () => {
           <Route path="/shop/checkout" element={<Checkout />} />
           <Route path="/shop/account" element={<Account />} />
           <Route path="/shop/account/scents/:id" element={<ScentDetail />} />
+          <Route path="/account" element={<Navigate to="/shop/account" replace />} />
+          <Route path="/business" element={<Business />} />
+          <Route path="/legal/privacy" element={<Privacy />} />
+          <Route path="/legal/terms" element={<Terms />} />
+          <Route path="/legal/shipping" element={<Shipping />} />
           <Route path="/collection" element={<Collection />} />
           <Route path="/collection/:id" element={<ScentDetail />} />
           <Route path="/shared/fragrance/:shareToken" element={<SharedFragrance />} />

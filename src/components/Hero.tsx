@@ -20,26 +20,25 @@ const Hero = () => {
       <div className="relative z-10 container mx-auto px-4 py-20">
         <div className="max-w-3xl">
           <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 leading-tight text-primary-foreground">
-            AI-Crafted Luxury in Every Breath
+            A Perfume Built Just for You. By AI.
           </h1>
-          <p className="text-lg md:text-xl mb-8 max-w-2xl leading-relaxed text-primary-foreground">
-            Answer a few questions. Receive 3 unique fragrances. Fall in love with your signature scent.
+          <p className="text-lg md:text-xl mb-4 max-w-2xl leading-relaxed text-primary-foreground/90">
+            Take a 2-minute quiz. Get 3 personalized fragrances, made-to-order in India and delivered in 7 days.
+          </p>
+          <p className="text-base md:text-lg mb-8 text-luxury-gold font-medium">
+            From ₹700 · Discovery Set (3 bottles) ₹1,500
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Button variant="luxury" size="xl" onClick={() => window.location.href = '/shop/quiz'}>
-              Find Your Scent
+              Take the 2-min Quiz
+            </Button>
+            <Button variant="luxury" size="xl" onClick={() => window.location.href = '/collection'}>
+              Try the Discovery Set — ₹1,500
             </Button>
             <Button variant="luxury-outline" size="xl" className="text-luxury-black" onClick={() => window.location.href = '/collection'}>
-              Explore Collection
+              Browse Signature Scents
             </Button>
           </div>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 animate-bounce">
-        <div className="w-6 h-10 border-2 border-white/50 rounded-full flex items-start justify-center p-2">
-          <div className="w-1 h-3 bg-white/50 rounded-full" />
         </div>
       </div>
     </section>

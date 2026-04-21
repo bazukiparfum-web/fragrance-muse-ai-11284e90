@@ -30,6 +30,12 @@ const Header = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const navLinks = [
+    { label: 'Quiz', path: '/shop/quiz' },
+    { label: 'Collection', path: '/collection' },
+    { label: 'For Business', path: '/business' },
+  ];
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -51,7 +57,19 @@ const Header = () => {
             BAZUKI
           </button>
         </div>
-        
+
+        <nav className="hidden md:flex items-center gap-6">
+          {navLinks.map((link) => (
+            <button
+              key={link.path}
+              onClick={() => navigate(link.path)}
+              className="text-sm font-medium text-foreground/80 hover:text-accent transition-colors"
+            >
+              {link.label}
+            </button>
+          ))}
+        </nav>
+
         <div className="flex items-center gap-2">
           {isAdmin && (
             <Button
@@ -68,7 +86,7 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(user ? '/account' : '/auth')}
+            onClick={() => navigate(user ? '/shop/account' : '/auth')}
             className="relative text-muted-foreground hover:text-accent"
             title={user ? 'My Account' : 'Sign In'}
           >

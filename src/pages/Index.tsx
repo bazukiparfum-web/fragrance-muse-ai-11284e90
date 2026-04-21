@@ -1,7 +1,6 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import ProductShowcase from "@/components/ProductShowcase";
-import BusinessAroma from "@/components/BusinessAroma";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -10,7 +9,6 @@ const Index = () => {
       <Header />
       <Hero />
       <ProductShowcase />
-      <BusinessAroma />
       <Footer />
     </div>
   );

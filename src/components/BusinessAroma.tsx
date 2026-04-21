@@ -140,7 +140,7 @@ const BusinessAroma = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-[hsl(var(--luxury-black))] border-luxury-gold/20 text-foreground sm:max-w-lg">
+        <DialogContent className="bg-[hsl(var(--luxury-black))] border-luxury-gold/20 text-white sm:max-w-lg [&_label]:text-white [&_input]:text-white [&_textarea]:text-white [&_input::placeholder]:text-white/50 [&_textarea::placeholder]:text-white/50">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl">How can we help you?</DialogTitle>
             <DialogDescription className="text-muted-foreground">
