@@ -38,10 +38,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-lg mb-4 uppercase tracking-wider">Business</h4>
             <ul className="space-y-3">
-              <li><a href="/#business" className="text-white/70 hover:text-luxury-gold transition-colors">360° Aroma Solutions</a></li>
-              <li><a href="/#business" className="text-white/70 hover:text-luxury-gold transition-colors">Custom Fragrances</a></li>
-              <li><a href="/#consultation" className="text-white/70 hover:text-luxury-gold transition-colors">Consultation</a></li>
-              <li><a href="/#business" className="text-white/70 hover:text-luxury-gold transition-colors">Case Studies</a></li>
+              <li><a href="/business" className="text-white/70 hover:text-luxury-gold transition-colors">360° Aroma Solutions</a></li>
+              <li><a href="/business" className="text-white/70 hover:text-luxury-gold transition-colors">Custom Fragrances</a></li>
+              <li><a href="/business#consultation" className="text-white/70 hover:text-luxury-gold transition-colors">Consultation</a></li>
+              <li><a href="/business" className="text-white/70 hover:text-luxury-gold transition-colors">Case Studies</a></li>
             </ul>
           </div>
 
@@ -71,9 +71,9 @@ const Footer = () => {
               © {currentYear} Bazuki Perfumes. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <a href="#" className="text-white/50 hover:text-luxury-gold transition-colors">Privacy Policy</a>
-              <a href="#" className="text-white/50 hover:text-luxury-gold transition-colors">Terms of Service</a>
-              <a href="#" className="text-white/50 hover:text-luxury-gold transition-colors">Shipping Policy</a>
+              <a href="/legal/privacy" className="text-white/50 hover:text-luxury-gold transition-colors">Privacy Policy</a>
+              <a href="/legal/terms" className="text-white/50 hover:text-luxury-gold transition-colors">Terms of Service</a>
+              <a href="/legal/shipping" className="text-white/50 hover:text-luxury-gold transition-colors">Shipping Policy</a>
             </div>
           </div>
         </div>
