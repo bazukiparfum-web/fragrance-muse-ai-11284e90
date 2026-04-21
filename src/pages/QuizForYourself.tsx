@@ -530,8 +530,35 @@ const QuizForYourself = () => {
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto text-center py-12">
-            <div className="animate-pulse text-muted-foreground">Loading quiz...</div>
+          <div className="max-w-2xl mx-auto">
+            {/* Progress bar skeleton */}
+            <div className="mb-8">
+              <Skeleton className="h-3 w-full rounded-full" />
+              <div className="flex justify-between mt-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            </div>
+
+            {/* Question title skeleton */}
+            <div className="mb-6">
+              <Skeleton className="h-10 w-3/4 mb-2" />
+              <Skeleton className="h-6 w-1/2" />
+            </div>
+
+            {/* Answer options skeleton */}
+            <div className="space-y-4 mb-8">
+              <Skeleton className="h-20 w-full rounded-lg" />
+              <Skeleton className="h-20 w-full rounded-lg" />
+              <Skeleton className="h-20 w-full rounded-lg" />
+              <Skeleton className="h-20 w-full rounded-lg" />
+            </div>
+
+            {/* Navigation buttons skeleton */}
+            <div className="flex justify-between pt-4 border-t">
+              <Skeleton className="h-12 w-28 rounded-lg" />
+              <Skeleton className="h-12 w-28 rounded-lg" />
+            </div>
           </div>
         </div>
       </div>
