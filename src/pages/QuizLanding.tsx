@@ -10,46 +10,32 @@ const QuizLanding = () => {
   const navigate = useNavigate();
   const { setIsForGift, resetAnswers } = useQuiz();
 
-  const handleForMyself = async () => {
-    resetAnswers();
-    setIsForGift(false);
-    
-    // Clear any stale quiz progress when starting fresh from landing page
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
+  const clearProgressInBackground = (quizType: 'myself' | 'gift') => {
+    // Fire-and-forget so navigation isn't blocked on auth/network round-trips
+    supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) return;
+        return supabase
           .from('quiz_progress')
           .delete()
           .eq('user_id', user.id)
-          .eq('quiz_type', 'myself');
-      }
-    } catch (error) {
-      console.error('Error clearing progress:', error);
-    }
-    
-    navigate('/shop/quiz/for-yourself');
+          .eq('quiz_type', quizType);
+      })
+      .catch((error) => console.error('Error clearing progress:', error));
   };
 
-  const handleForSomeone = async () => {
+  const handleForMyself = () => {
+    resetAnswers();
+    setIsForGift(false);
+    navigate('/shop/quiz/for-yourself');
+    clearProgressInBackground('myself');
+  };
+
+  const handleForSomeone = () => {
     resetAnswers();
     setIsForGift(true);
-    
-    // Clear any stale quiz progress when starting fresh from landing page
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from('quiz_progress')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('quiz_type', 'gift');
-      }
-    } catch (error) {
-      console.error('Error clearing progress:', error);
-    }
-    
     navigate('/shop/quiz/for-someone-else');
+    clearProgressInBackground('gift');
   };
 
   return (
