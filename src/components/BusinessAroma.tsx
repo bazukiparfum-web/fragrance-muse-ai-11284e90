@@ -35,7 +35,11 @@ const features = [
   },
 ];
 
-const BusinessAroma = () => {
+interface BusinessAromaProps {
+  showHero?: boolean;
+}
+
+const BusinessAroma = ({ showHero = true }: BusinessAromaProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", comment: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -106,17 +110,21 @@ const BusinessAroma = () => {
 
           {/* Content */}
           <div className="order-1 lg:order-2">
-            <div className="inline-block px-4 py-2 bg-luxury-gold/10 rounded-full mb-6">
-              <span className="text-luxury-gold font-semibold uppercase tracking-wider text-sm">
-                For Businesses
-              </span>
-            </div>
-            <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">
-              Bazuki 360° Aroma
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              Transform your space with our premium scent marketing solutions. From luxury hotels to corporate offices, create an unforgettable sensory experience.
-            </p>
+            {showHero && (
+              <>
+                <div className="inline-block px-4 py-2 bg-luxury-gold/10 rounded-full mb-6">
+                  <span className="text-luxury-gold font-semibold uppercase tracking-wider text-sm">
+                    For Businesses
+                  </span>
+                </div>
+                <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">
+                  Bazuki 360° Aroma
+                </h2>
+                <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                  Transform your space with our premium scent marketing solutions. From luxury hotels to corporate offices, create an unforgettable sensory experience.
+                </p>
+              </>
+            )}
 
             <div className="space-y-6 mb-10">
               {features.map((feature, index) => (

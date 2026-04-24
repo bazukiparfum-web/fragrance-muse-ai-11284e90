@@ -22,7 +22,7 @@ const Business = () => {
             </p>
           </div>
         </section>
-        <BusinessAroma />
+        <BusinessAroma showHero={false} />
       </div>
       <Footer />
     </div>
