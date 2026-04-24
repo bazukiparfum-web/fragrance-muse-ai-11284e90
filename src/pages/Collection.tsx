@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { FragranceVisualizer } from "@/components/FragranceVisualizer";
 import { Loader2, Star, Crown, Users, Search, SlidersHorizontal, ShoppingBag } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { fetchShopifyProducts, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
@@ -163,6 +163,8 @@ export default function Collection() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams();
+
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -172,6 +174,20 @@ export default function Collection() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Pre-fill search from ?product= query (from homepage product card clicks)
+  useEffect(() => {
+    const product = searchParams.get("product");
+    if (product && shopifyProducts.length > 0) {
+      const match = shopifyProducts.find(
+        (p) => p.node.handle === product || p.node.id.endsWith(product)
+      );
+      if (match) {
+        setSearchQuery(match.node.title);
+        setCategoryFilter("shop");
+      }
+    }
+  }, [searchParams, shopifyProducts]);
 
   const fetchData = async () => {
     try {

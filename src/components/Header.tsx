@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Shield, ArrowLeft, User, UserCheck } from 'lucide-react';
+import { Shield, ArrowLeft, User, UserCheck, Menu } from 'lucide-react';
 import { Button } from './ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { CartDrawer } from './CartDrawer';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from './ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 
 const Header = () => {
@@ -11,6 +12,7 @@ const Header = () => {
   const isHomePage = location.pathname === '/';
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const check = async () => {
@@ -35,6 +37,11 @@ const Header = () => {
     { label: 'Collection', path: '/collection' },
     { label: 'For Business', path: '/business' },
   ];
+
+  const handleMobileNav = (path: string) => {
+    setMobileOpen(false);
+    navigate(path);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -87,13 +94,60 @@ const Header = () => {
             variant="ghost"
             size="icon"
             onClick={() => navigate(user ? '/shop/account' : '/auth')}
-            className="relative text-muted-foreground hover:text-accent"
+            className="relative text-muted-foreground hover:text-accent hidden sm:inline-flex"
             title={user ? 'My Account' : 'Sign In'}
           >
             {user ? <UserCheck className="h-5 w-5" /> : <User className="h-5 w-5" />}
           </Button>
 
           <CartDrawer />
+
+          {/* Mobile hamburger */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden text-foreground hover:text-accent"
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetHeader>
+                <SheetTitle className="font-serif text-2xl text-left">BAZUKI</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-1 mt-6">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.path}
+                    onClick={() => handleMobileNav(link.path)}
+                    className="text-left text-base font-medium py-3 px-3 rounded-md text-foreground hover:bg-accent/10 hover:text-accent transition-colors"
+                  >
+                    {link.label}
+                  </button>
+                ))}
+                <div className="border-t border-border my-2" />
+                <button
+                  onClick={() => handleMobileNav(user ? '/shop/account' : '/auth')}
+                  className="text-left text-base font-medium py-3 px-3 rounded-md text-foreground hover:bg-accent/10 hover:text-accent transition-colors flex items-center gap-2"
+                >
+                  {user ? <UserCheck className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                  {user ? 'My Account' : 'Sign In'}
+                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => handleMobileNav('/admin')}
+                    className="text-left text-base font-medium py-3 px-3 rounded-md text-foreground hover:bg-accent/10 hover:text-accent transition-colors flex items-center gap-2"
+                  >
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </button>
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
