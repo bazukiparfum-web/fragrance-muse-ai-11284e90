@@ -53,3 +53,15 @@ verify_jwt = false
 
 [functions.quiz-share-meta]
 verify_jwt = false
+
+[functions.admin-list-orders]
+verify_jwt = false
+
+[functions.admin-manage-users]
+verify_jwt = false
+
+[functions.admin-manage-production]
+verify_jwt = false
+
+[functions.admin-simulate-order]
+verify_jwt = false

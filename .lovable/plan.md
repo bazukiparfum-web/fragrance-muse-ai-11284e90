@@ -1,68 +1,74 @@
-## Implementation Plan — Approved Features
+# Admin Console Overhaul
 
-I'll implement the following 5 features in this order:
+## 1. Shared Admin Shell
+- Create `src/components/admin/AdminSidebar.tsx` (shadcn `Sidebar`, `collapsible="icon"`, NavLink active styles).
+- Create `src/components/admin/AdminLayout.tsx` wrapping children with `SidebarProvider`, persistent `SidebarTrigger` in topbar, breadcrumb header.
+- Refactor `src/App.tsx` to nest all `/admin/*` routes inside one `<AdminRoute><AdminLayout/></AdminRoute>` parent using `<Outlet/>`.
+- Sidebar groups: **Overview** (Dashboard), **Catalog** (Notes, Ingredients, Rules, Scents, Questions), **Operations** (Orders, Production Queue, Consultations, Reviews), **Access** (Users & Roles), **Tools** (Manual Testing).
 
-### 1. Dedicated Product Detail Page (PDP)
-- Create `src/pages/ProductDetail.tsx` for full Shopify product display
-- Add `fetchShopifyProductByHandle(handle)` to `src/lib/shopify.ts`
-- Add route `/product/:handle` in `src/App.tsx`
-- Update `ShopifyProductCard` (in `ProductShowcase.tsx` and `Collection.tsx`) to navigate to `/product/${node.handle}` instead of filtering
-- PDP includes: image gallery, title, price, variant selector (size), description, "Add to Cart" button, and a `ReviewsSection`
+## 2. Live Dashboard Stats
+- Update `AdminDashboard.tsx` to fetch counts via `Promise.allSettled`:
+  - active fragrance_notes, ingredient_mappings, formulation_rules, quiz_questions
+  - pending product_reviews, pending production_queue, new consultation_requests, recent orders
+- Skeleton loaders + error fallback per card.
 
-### 2. Product Reviews with Moderation
-- **DB migration**: create `product_reviews` table
-  - Columns: `id`, `user_id`, `product_handle`, `saved_scent_id` (nullable for community scents), `rating` (1-5), `title`, `body`, `status` ('pending'|'approved'|'rejected'), `created_at`, `moderated_at`, `moderated_by`
-  - RLS: anyone can view `approved`; authenticated users insert their own (forced status='pending'); admins manage all
-- Create `src/components/ReviewsSection.tsx` (list approved reviews + average rating)
-- Create `src/components/ReviewFormDialog.tsx` (auth-gated submit form)
-- Create `src/pages/admin/AdminReviews.tsx` and route `/admin/reviews` to approve/reject pending reviews
-- Add "Reviews" link in `AdminDashboard`
+## 3. New Admin Pages
+**`/admin/orders`** — `AdminOrders.tsx`
+- Table of recent orders (id, user email via profiles join, total, status, shopify_order_number, created_at).
+- Search by order_number / email, status filter, pagination (20/page).
+- New edge function `admin-list-orders` (service role + admin check via `has_role`).
 
-### 3. Dynamic Quiz Result Meta Tags + AI-Generated OG Images
-- **DB migration**: create `quiz_result_shares` table
-  - `id`, `token` (unique short slug), `saved_scent_id`, `fragrance_name`, `fragrance_code`, `summary`, `og_image_url`, `og_image_status` ('pending'|'ready'|'failed'), `og_image_prompt`, `created_at`
-  - RLS: public read; authenticated insert
-- **Storage bucket**: `quiz-og-images` (public)
-- **Edge functions**:
-  - `share-quiz-result` (verify_jwt=true): persists share record, kicks off image generation
-  - `generate-quiz-og-image` (verify_jwt=false, internal): calls Lovable AI `google/gemini-3-pro-image-preview` with structured prompt derived from fragrance notes/family/color, uploads PNG to storage, updates row to `ready`. Fallback to `google/gemini-3.1-flash-image-preview` on rate-limit/failure.
-  - `quiz-share-meta` (verify_jwt=false): returns HTML with OG/Twitter meta tags for crawlers, redirects real browsers to `/shop/quiz/results?share=<token>`
-- Add public alias route `/q/:token` handled by the meta edge function (frontend route also added as fallback that redirects)
-- Update `ShareFragranceDialog.tsx` to call `share-quiz-result` and copy `/q/:token` URL; show "Generating preview…" state
+**`/admin/production-queue`** — `AdminProductionQueue.tsx`
+- Table of queue items with status badges, fragrance_code, size, qty, created_at.
+- Actions: mark in_progress / completed / failed (via `admin-manage-production` edge function).
+- Realtime subscription on `production_queue` for live updates.
+- Drawer to view full formula JSON + linked machine_formulas pump instructions.
 
-### 4. Social Login (Google + Apple) with Account Linking
-- Create `src/components/SocialAuthButtons.tsx` with Google and Apple buttons using `lovable.auth.signInWithOAuth('google'|'apple')`
-- Add to `src/pages/Auth.tsx` (both Sign In and Sign Up tabs) above email form with "or continue with" divider
-- In `src/pages/Account.tsx`, add a "Connected accounts" card showing linked identities (via `supabase.auth.getUserIdentities()`) with Link/Unlink buttons using `supabase.auth.linkIdentity()` and `supabase.auth.unlinkIdentity()`
+**`/admin/users`** — `AdminUsers.tsx`
+- Search profiles by email/name. Show current roles (joined from user_roles).
+- Grant/revoke `admin` role via new `admin-manage-users` edge function.
+- Confirmation dialog before role changes; block self-demotion.
 
-### Files to Create
-- `src/pages/ProductDetail.tsx`
-- `src/components/ReviewsSection.tsx`
-- `src/components/ReviewFormDialog.tsx`
-- `src/components/SocialAuthButtons.tsx`
-- `src/pages/admin/AdminReviews.tsx`
-- `supabase/functions/share-quiz-result/index.ts`
-- `supabase/functions/generate-quiz-og-image/index.ts`
-- `supabase/functions/quiz-share-meta/index.ts`
+## 4. Manual Testing Flow
+**`/admin/testing`** — `AdminTesting.tsx`
+- Step 1: Pick or create a saved_scent (search by user/code).
+- Step 2: "Simulate paid order" → calls new `admin-simulate-order` edge function which inserts into `orders` + `production_queue` (mirrors webhook path) without touching Shopify.
+- Step 3: "Drive machine" → calls existing `machine-production-api` with DEV key; shows pump sequence and live status as queue advances.
+- Activity log panel showing each step's response.
 
-### Files to Modify
-- `src/App.tsx` (new routes)
-- `src/lib/shopify.ts` (fetchByHandle)
-- `src/components/ProductShowcase.tsx` (PDP nav)
-- `src/pages/Collection.tsx` (PDP nav, drop product query filter)
-- `src/pages/Auth.tsx` (social buttons)
-- `src/pages/Account.tsx` (linked identities)
-- `src/pages/admin/AdminDashboard.tsx` (Reviews link)
-- `src/components/ShareFragranceDialog.tsx` (share-quiz-result integration)
-- `supabase/config.toml` (verify_jwt settings for new functions)
+## 5. Edge Functions (new)
+All deployed with `verify_jwt = false` and in-code admin check (extract bearer → `getClaims` → `has_role(uid, 'admin')`):
+- `admin-list-orders` — paginated orders + joined profile email.
+- `admin-manage-users` — list/search profiles, grant/revoke roles.
+- `admin-manage-production` — update queue item status, log timestamps.
+- `admin-simulate-order` — insert synthetic paid order + queue entry from a saved_scent_id.
 
-### Migrations
-- `product_reviews` table + RLS
-- `quiz_result_shares` table + RLS
-- `quiz-og-images` storage bucket (public) + policies
+CORS via `corsHeaders` import; Zod validation on all inputs.
 
-### Notes
-- AI OG image: 1200×630, prompt built from dominant note family + mood + `fragranceColorMapper` palette
-- Image generation runs async; meta function falls back to default branded OG image if status != 'ready'
-- All admin auth uses existing `has_role(uid, 'admin')` pattern
-- Reviews are auth-gated submission, public read once approved
+## 6. Migration
+- No schema changes required (all needed tables exist: orders, profiles, user_roles, production_queue, machine_formulas).
+- Optional: add index on `production_queue(status, created_at)` for queue page performance.
+
+## 7. Out of Scope (this round)
+- Removing the auth bypass (`mem://testing-strategy/authentication-bypass`) — kept until user explicitly requests hardening.
+- Referrals admin page and Quiz Analytics page (deferred to a follow-up).
+- Editing orders or refunds (read-only this round).
+
+## Files Created
+- `src/components/admin/AdminLayout.tsx`
+- `src/components/admin/AdminSidebar.tsx`
+- `src/pages/admin/AdminOrders.tsx`
+- `src/pages/admin/AdminProductionQueue.tsx`
+- `src/pages/admin/AdminUsers.tsx`
+- `src/pages/admin/AdminTesting.tsx`
+- `supabase/functions/admin-list-orders/index.ts`
+- `supabase/functions/admin-manage-users/index.ts`
+- `supabase/functions/admin-manage-production/index.ts`
+- `supabase/functions/admin-simulate-order/index.ts`
+
+## Files Edited
+- `src/App.tsx` (nested admin routing)
+- `src/pages/admin/AdminDashboard.tsx` (live stats + nav cards updated)
+- `supabase/config.toml` (register 4 new functions with `verify_jwt = false`)
+
+Approve to switch to default mode and implement.
