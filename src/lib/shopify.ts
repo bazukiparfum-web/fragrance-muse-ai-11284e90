@@ -185,6 +185,42 @@ export async function fetchShopifyProducts(): Promise<ShopifyProduct[]> {
   return data.data.products.edges;
 }
 
+export const PRODUCT_BY_HANDLE_QUERY = `
+  query GetProductByHandle($handle: String!) {
+    productByHandle(handle: $handle) {
+      id
+      title
+      description
+      descriptionHtml
+      handle
+      priceRange {
+        minVariantPrice { amount currencyCode }
+      }
+      images(first: 10) {
+        edges { node { url altText } }
+      }
+      variants(first: 20) {
+        edges {
+          node {
+            id
+            title
+            price { amount currencyCode }
+            availableForSale
+            selectedOptions { name value }
+          }
+        }
+      }
+      options { name values }
+    }
+  }
+`;
+
+export async function fetchShopifyProductByHandle(handle: string): Promise<ShopifyProduct['node'] | null> {
+  const data = await storefrontApiRequest(PRODUCT_BY_HANDLE_QUERY, { handle });
+  if (!data) return null;
+  return data.data?.productByHandle || null;
+}
+
 // Cart helper functions
 function formatCheckoutUrl(checkoutUrl: string): string {
   try {
