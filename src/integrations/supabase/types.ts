@@ -567,25 +567,43 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          country: string | null
           created_at: string | null
           email: string
           full_name: string | null
           id: string
           phone: string | null
+          pincode: string | null
+          state: string | null
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           email: string
           full_name?: string | null
           id: string
           phone?: string | null
+          pincode?: string | null
+          state?: string | null
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           email?: string
           full_name?: string | null
           id?: string
           phone?: string | null
+          pincode?: string | null
+          state?: string | null
         }
         Relationships: []
       }
