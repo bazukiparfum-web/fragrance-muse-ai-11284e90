@@ -26,7 +26,7 @@ const TrustStrip = () => {
             </div>
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="h-4 w-4 text-luxury-gold" />
-              <span>IFRA Compliant Ingredients</span>
+              <span>IFRA Compliant Ingredients </span>
             </div>
             <div className="flex items-center gap-1.5">
               <Leaf className="h-4 w-4 text-luxury-gold" />
