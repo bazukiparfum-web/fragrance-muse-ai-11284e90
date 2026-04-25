@@ -1,137 +1,155 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import Header from '@/components/Header';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Database, Layers, HelpCircle, Beaker, Tag, MessageSquare, Star } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Layers, Beaker, Database, HelpCircle, Star, Factory, MessageSquare, ShoppingBag,
+} from 'lucide-react';
+
+interface StatCard {
+  label: string;
+  icon: any;
+  fetcher: () => Promise<number>;
+  to: string;
+}
+
+const cards: StatCard[] = [
+  {
+    label: 'Active Notes',
+    icon: Layers,
+    to: '/admin/notes',
+    fetcher: async () => {
+      const { count } = await supabase
+        .from('fragrance_notes')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+      return count ?? 0;
+    },
+  },
+  {
+    label: 'Ingredients',
+    icon: Beaker,
+    to: '/admin/ingredients',
+    fetcher: async () => {
+      const { count } = await supabase
+        .from('ingredient_mappings')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+      return count ?? 0;
+    },
+  },
+  {
+    label: 'Active Rules',
+    icon: Database,
+    to: '/admin/rules',
+    fetcher: async () => {
+      const { count } = await supabase
+        .from('formulation_rules')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+      return count ?? 0;
+    },
+  },
+  {
+    label: 'Quiz Questions',
+    icon: HelpCircle,
+    to: '/admin/questions',
+    fetcher: async () => {
+      const { count } = await supabase
+        .from('quiz_questions')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+      return count ?? 0;
+    },
+  },
+  {
+    label: 'Pending Reviews',
+    icon: Star,
+    to: '/admin/reviews',
+    fetcher: async () => {
+      const { count } = await supabase
+        .from('product_reviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      return count ?? 0;
+    },
+  },
+  {
+    label: 'Queue: Pending',
+    icon: Factory,
+    to: '/admin/production-queue',
+    fetcher: async () => {
+      const { count } = await supabase
+        .from('production_queue')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      return count ?? 0;
+    },
+  },
+  {
+    label: 'Consultations',
+    icon: MessageSquare,
+    to: '/admin/consultations',
+    fetcher: async () => {
+      const { count } = await supabase
+        .from('consultation_requests')
+        .select('*', { count: 'exact', head: true });
+      return count ?? 0;
+    },
+  },
+  {
+    label: 'Recent Orders',
+    icon: ShoppingBag,
+    to: '/admin/orders',
+    fetcher: async () => {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', since);
+      return count ?? 0;
+    },
+  },
+];
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState<(number | null)[]>(cards.map(() => null));
+
+  useEffect(() => {
+    Promise.allSettled(cards.map((c) => c.fetcher())).then((results) => {
+      setStats(results.map((r) => (r.status === 'fulfilled' ? r.value : 0)));
+    });
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <section className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="font-serif text-4xl font-bold mb-8 heading-luxury">Admin Dashboard</h1>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="p-6 hover-lift cursor-pointer" onClick={() => navigate('/admin/notes')}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <Layers className="h-6 w-6 text-accent" />
-                </div>
-                <h2 className="font-serif text-xl font-bold">Fragrance Notes</h2>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                Manage ingredients and notes used in scent creation
-              </p>
-              <Button className="mt-4 w-full">Manage Notes</Button>
-            </Card>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <h1 className="font-serif text-3xl font-bold mb-2">Admin Dashboard</h1>
+      <p className="text-muted-foreground mb-8">Overview of your platform at a glance.</p>
 
-            <Card className="p-6 hover-lift cursor-pointer" onClick={() => navigate('/admin/ingredients')}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <Beaker className="h-6 w-6 text-accent" />
-                </div>
-                <h2 className="font-serif text-xl font-bold">Ingredient Mappings</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {cards.map((c, i) => {
+          const Icon = c.icon;
+          return (
+            <Card
+              key={c.label}
+              className="p-5 cursor-pointer hover:bg-accent/5 transition"
+              onClick={() => navigate(c.to)}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <Icon className="h-5 w-5 text-accent" />
               </div>
-              <p className="text-muted-foreground text-sm">
-                Configure pump IDs, codes, and dispensing rates
-              </p>
-              <Button className="mt-4 w-full">Manage Mappings</Button>
+              {stats[i] === null ? (
+                <Skeleton className="h-8 w-16 mb-1" />
+              ) : (
+                <p className="text-3xl font-bold">{stats[i]}</p>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">{c.label}</p>
             </Card>
-
-            <Card className="p-6 hover-lift cursor-pointer" onClick={() => navigate('/admin/rules')}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <Database className="h-6 w-6 text-accent" />
-                </div>
-                <h2 className="font-serif text-xl font-bold">Formulation Rules</h2>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                Define rules for creating custom scent formulas
-              </p>
-              <Button className="mt-4 w-full">Manage Rules</Button>
-            </Card>
-
-            <Card className="p-6 hover-lift cursor-pointer" onClick={() => navigate('/admin/questions')}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <HelpCircle className="h-6 w-6 text-accent" />
-                </div>
-                <h2 className="font-serif text-xl font-bold">Quiz Questions</h2>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                Customize quiz questions and options
-              </p>
-              <Button className="mt-4 w-full">Manage Questions</Button>
-            </Card>
-            <Card className="p-6 hover-lift cursor-pointer" onClick={() => navigate('/admin/scents')}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <Tag className="h-6 w-6 text-accent" />
-                </div>
-                <h2 className="font-serif text-xl font-bold">Scent Tags</h2>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                Tag scents as influencer or celebrity picks
-              </p>
-              <Button className="mt-4 w-full">Manage Tags</Button>
-            </Card>
-
-            <Card className="p-6 hover-lift cursor-pointer" onClick={() => navigate('/admin/consultations')}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <MessageSquare className="h-6 w-6 text-accent" />
-                </div>
-                <h2 className="font-serif text-xl font-bold">Consultations</h2>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                View consultation requests from businesses
-              </p>
-              <Button className="mt-4 w-full">View Requests</Button>
-            </Card>
-
-            <Card className="p-6 hover-lift cursor-pointer" onClick={() => navigate('/admin/reviews')}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
-                  <Star className="h-6 w-6 text-accent" />
-                </div>
-                <h2 className="font-serif text-xl font-bold">Reviews</h2>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                Approve or reject customer reviews before publishing
-              </p>
-              <Button className="mt-4 w-full">Moderate Reviews</Button>
-            </Card>
-          </div>
-
-          <Card className="p-6 mt-8 bg-accent/5">
-            <h3 className="font-serif text-xl font-bold mb-4">Quick Stats</h3>
-            <div className="grid grid-cols-4 gap-4 text-center">
-              <div>
-                <p className="text-3xl font-bold text-accent">0</p>
-                <p className="text-sm text-muted-foreground">Active Notes</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-accent">0</p>
-                <p className="text-sm text-muted-foreground">Ingredients</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-accent">0</p>
-                <p className="text-sm text-muted-foreground">Active Rules</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-accent">0</p>
-                <p className="text-sm text-muted-foreground">Quiz Questions</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
+          );
+        })}
+      </div>
     </div>
   );
 };

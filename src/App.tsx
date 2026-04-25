@@ -25,6 +25,7 @@ import Terms from "./pages/legal/Terms";
 import Shipping from "./pages/legal/Shipping";
 import ResetPassword from "./pages/ResetPassword";
 import AdminRoute from "./components/AdminRoute";
+import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminNotes from "./pages/admin/AdminNotes";
 import AdminQuestions from "./pages/admin/AdminQuestions";
@@ -33,6 +34,10 @@ import AdminIngredients from "./pages/admin/AdminIngredients";
 import AdminScents from "./pages/admin/AdminScents";
 import AdminConsultations from "./pages/admin/AdminConsultations";
 import AdminReviews from "./pages/admin/AdminReviews";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminProductionQueue from "./pages/admin/AdminProductionQueue";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminTesting from "./pages/admin/AdminTesting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,15 +70,21 @@ const AppInner = () => {
           <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
           <Route path="/shop/quiz/for-someone-else" element={<QuizForSomeoneElse />} />
           <Route path="/shop/quiz/results" element={<QuizResults />} />
-          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/admin/notes" element={<AdminRoute><AdminNotes /></AdminRoute>} />
-          <Route path="/admin/questions" element={<AdminRoute><AdminQuestions /></AdminRoute>} />
-          <Route path="/admin/rules" element={<AdminRoute><AdminRules /></AdminRoute>} />
-          <Route path="/admin/ingredients" element={<AdminRoute><AdminIngredients /></AdminRoute>} />
-          <Route path="/admin/scents" element={<AdminRoute><AdminScents /></AdminRoute>} />
-          <Route path="/admin/consultations" element={<AdminRoute><AdminConsultations /></AdminRoute>} />
-          <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
+          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="notes" element={<AdminNotes />} />
+            <Route path="questions" element={<AdminQuestions />} />
+            <Route path="rules" element={<AdminRules />} />
+            <Route path="ingredients" element={<AdminIngredients />} />
+            <Route path="scents" element={<AdminScents />} />
+            <Route path="consultations" element={<AdminConsultations />} />
+            <Route path="reviews" element={<AdminReviews />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="production-queue" element={<AdminProductionQueue />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="testing" element={<AdminTesting />} />
+          </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
