@@ -44,3 +44,12 @@ verify_jwt = false
 
 [functions.process-email-queue]
 verify_jwt = true
+
+[functions.share-quiz-result]
+verify_jwt = false
+
+[functions.generate-quiz-og-image]
+verify_jwt = false
+
+[functions.quiz-share-meta]
+verify_jwt = false
