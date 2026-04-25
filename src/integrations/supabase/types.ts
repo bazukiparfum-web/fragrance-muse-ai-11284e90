@@ -452,6 +452,59 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          moderated_at: string | null
+          moderated_by: string | null
+          product_handle: string
+          rating: number
+          saved_scent_id: string | null
+          status: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          product_handle: string
+          rating: number
+          saved_scent_id?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          product_handle?: string
+          rating?: number
+          saved_scent_id?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_saved_scent_id_fkey"
+            columns: ["saved_scent_id"]
+            isOneToOne: false
+            referencedRelation: "saved_scents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_queue: {
         Row: {
           completed_at: string | null
@@ -643,6 +696,59 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      quiz_result_shares: {
+        Row: {
+          created_at: string
+          fragrance_code: string | null
+          fragrance_name: string
+          id: string
+          og_image_prompt: string | null
+          og_image_status: string
+          og_image_url: string | null
+          saved_scent_id: string | null
+          summary: string | null
+          token: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fragrance_code?: string | null
+          fragrance_name: string
+          id?: string
+          og_image_prompt?: string | null
+          og_image_status?: string
+          og_image_url?: string | null
+          saved_scent_id?: string | null
+          summary?: string | null
+          token: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fragrance_code?: string | null
+          fragrance_name?: string
+          id?: string
+          og_image_prompt?: string | null
+          og_image_status?: string
+          og_image_url?: string | null
+          saved_scent_id?: string | null
+          summary?: string | null
+          token?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_result_shares_saved_scent_id_fkey"
+            columns: ["saved_scent_id"]
+            isOneToOne: false
+            referencedRelation: "saved_scents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_rewards: {
         Row: {
