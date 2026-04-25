@@ -78,13 +78,25 @@ export function ShareFragranceDialog({
 
       if (referralError) throw referralError;
 
+      // Create a quiz_result_share with AI-generated OG image (best-effort, async)
+      try {
+        await supabase.functions.invoke('share-quiz-result', {
+          body: {
+            savedScentId: fragranceId,
+            fragranceName,
+          },
+        });
+      } catch (e) {
+        console.warn('share-quiz-result kickoff failed', e);
+      }
+
       setShareToken(newShareToken);
       setReferralCode(newReferralCode);
       onShareCreated(newShareToken, newReferralCode);
 
       toast({
         title: 'Share link created!',
-        description: 'Your fragrance is now ready to share.',
+        description: 'Your fragrance is now ready to share. AI preview image generating in the background.',
       });
     } catch (error: any) {
       console.error('Error generating share link:', error);
