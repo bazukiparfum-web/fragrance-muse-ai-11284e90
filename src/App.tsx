@@ -59,6 +59,7 @@ const AppInner = () => {
           <Route path="/legal/shipping" element={<Shipping />} />
           <Route path="/collection" element={<Collection />} />
           <Route path="/collection/:id" element={<ScentDetail />} />
+          <Route path="/product/:handle" element={<ProductDetail />} />
           <Route path="/shared/fragrance/:shareToken" element={<SharedFragrance />} />
           <Route path="/shop/quiz" element={<QuizLanding />} />
           <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
@@ -72,6 +73,7 @@ const AppInner = () => {
           <Route path="/admin/ingredients" element={<AdminRoute><AdminIngredients /></AdminRoute>} />
           <Route path="/admin/scents" element={<AdminRoute><AdminScents /></AdminRoute>} />
           <Route path="/admin/consultations" element={<AdminRoute><AdminConsultations /></AdminRoute>} />
+          <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
