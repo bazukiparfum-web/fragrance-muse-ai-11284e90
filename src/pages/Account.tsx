@@ -366,62 +366,44 @@ const Account = () => {
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Sidebar */}
             <Card className="p-6 h-fit sticky top-24">
-              <div className="space-y-2">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=dashboard')}
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Dashboard
+              <div className="space-y-1">
+                <Button variant={defaultTab === 'dashboard' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=dashboard')}>
+                  <User className="mr-2 h-4 w-4" /> Dashboard
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=scents')}
-                >
-                  <Heart className="mr-2 h-4 w-4" />
-                  My Scents
+                <Button variant={defaultTab === 'orders' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=orders')}>
+                  <Package className="mr-2 h-4 w-4" /> Order History
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=orders')}
-                >
-                  <Package className="mr-2 h-4 w-4" />
-                  Orders
+                <Button variant={defaultTab === 'scents' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=scents')}>
+                  <Heart className="mr-2 h-4 w-4" /> My Scents
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=subscriptions')}
-                >
-                  <ShoppingBag className="mr-2 h-4 w-4" />
-                  Subscriptions
+                <Button variant={defaultTab === 'reviews' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=reviews')}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Reviews
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=referrals')}
-                >
-                  <Gift className="mr-2 h-4 w-4" />
-                  Referrals
+                <Button variant={defaultTab === 'shipping' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=shipping')}>
+                  <MapPin className="mr-2 h-4 w-4" /> Shipping Details
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=settings')}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                <Button variant={defaultTab === 'settings' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=settings')}>
+                  <Settings className="mr-2 h-4 w-4" /> Account Settings
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-destructive hover:text-destructive"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+
+                <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-between">
+                      <span className="flex items-center"><ChevronRight className={`mr-2 h-4 w-4 transition-transform ${moreOpen ? 'rotate-90' : ''}`} /> More</span>
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-1 pl-4">
+                    <Button variant={defaultTab === 'subscriptions' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=subscriptions')}>
+                      <ShoppingBag className="mr-2 h-4 w-4" /> Subscriptions
+                    </Button>
+                    <Button variant={defaultTab === 'referrals' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=referrals')}>
+                      <Gift className="mr-2 h-4 w-4" /> Referrals
+                    </Button>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" /> Sign out
                 </Button>
               </div>
             </Card>
@@ -433,6 +415,8 @@ const Account = () => {
                   <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                   <TabsTrigger value="scents">My Scents</TabsTrigger>
                   <TabsTrigger value="orders">Orders</TabsTrigger>
+                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                  <TabsTrigger value="shipping">Shipping</TabsTrigger>
                   <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
                   <TabsTrigger value="referrals">Referrals</TabsTrigger>
                   <TabsTrigger value="settings">Settings</TabsTrigger>
