@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { User, Package, Heart, Settings, LogOut, ShoppingBag, Gift, Share2, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
+import { User, Package, Heart, Settings, LogOut, ShoppingBag, Gift, Share2, Copy, Check, ExternalLink, Loader2, Star, MapPin, ChevronDown, ChevronRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useCartStore } from '@/stores/cartStore';
 import { FragranceVisualizer } from '@/components/FragranceVisualizer';
@@ -67,9 +69,11 @@ const Account = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [referrals, setReferrals] = useState<any[]>([]);
   const [referralRewards, setReferralRewards] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [moreOpen, setMoreOpen] = useState(false);
   
   // Profile states
   const [profile, setProfile] = useState<any>(null);
@@ -81,6 +85,19 @@ const Account = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newsletter, setNewsletter] = useState(false);
   const [specialOffers, setSpecialOffers] = useState(false);
+
+  // Shipping form
+  const [shipping, setShipping] = useState({
+    full_name: '',
+    phone: '',
+    address_line1: '',
+    address_line2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    country: 'India',
+  });
+  const [savingShipping, setSavingShipping] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -96,24 +113,38 @@ const Account = () => {
 
       setCurrentUserId(user.id);
 
-      const [ordersData, scentsData, subsData, referralsData, rewardsData, profileData] = await Promise.all([
+      const [ordersData, scentsData, subsData, referralsData, rewardsData, profileData, reviewsData] = await Promise.allSettled([
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('saved_scents').select('*').eq('user_id', user.id),
         supabase.from('subscriptions').select('*').eq('user_id', user.id),
         supabase.from('referrals').select('*, saved_scents(name)').eq('referrer_id', user.id).order('created_at', { ascending: false }),
         supabase.from('referral_rewards').select('*, referrals(referral_code)').or(`referrer_id.eq.${user.id},referee_id.eq.${user.id}`).order('created_at', { ascending: false }),
         supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase.from('product_reviews').select('*, saved_scents(name)').eq('user_id', user.id).order('created_at', { ascending: false }),
       ]);
 
-      if (ordersData.data) setOrders(ordersData.data);
-      if (scentsData.data) setSavedScents(scentsData.data);
-      if (subsData.data) setSubscriptions(subsData.data);
-      if (referralsData.data) setReferrals(referralsData.data);
-      if (rewardsData.data) setReferralRewards(rewardsData.data);
-      if (profileData.data) {
-        setProfile(profileData.data);
-        setEditName(profileData.data.full_name || '');
-        setEditPhone(profileData.data.phone || '');
+      const pick = (r: any) => (r.status === 'fulfilled' ? r.value.data : null);
+      if (pick(ordersData)) setOrders(pick(ordersData));
+      if (pick(scentsData)) setSavedScents(pick(scentsData));
+      if (pick(subsData)) setSubscriptions(pick(subsData));
+      if (pick(referralsData)) setReferrals(pick(referralsData));
+      if (pick(rewardsData)) setReferralRewards(pick(rewardsData));
+      if (pick(reviewsData)) setReviews(pick(reviewsData));
+      const p = pick(profileData);
+      if (p) {
+        setProfile(p);
+        setEditName(p.full_name || '');
+        setEditPhone(p.phone || '');
+        setShipping({
+          full_name: p.full_name || '',
+          phone: p.phone || '',
+          address_line1: p.address_line1 || '',
+          address_line2: p.address_line2 || '',
+          city: p.city || '',
+          state: p.state || '',
+          pincode: p.pincode || '',
+          country: p.country || 'India',
+        });
       }
     } catch (error) {
       console.error('Error fetching data:', error);
