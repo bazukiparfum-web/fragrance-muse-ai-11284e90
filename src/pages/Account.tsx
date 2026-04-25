@@ -328,6 +328,35 @@ const Account = () => {
     toast.success('Preferences saved successfully');
   };
 
+  const handleSaveShipping = async () => {
+    setSavingShipping(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: shipping.full_name,
+          phone: shipping.phone,
+          address_line1: shipping.address_line1,
+          address_line2: shipping.address_line2,
+          city: shipping.city,
+          state: shipping.state,
+          pincode: shipping.pincode,
+          country: shipping.country,
+        })
+        .eq('id', user.id);
+      if (error) throw error;
+      setProfile({ ...profile, ...shipping });
+      toast.success('Shipping details saved');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to save shipping details');
+    } finally {
+      setSavingShipping(false);
+    }
+  };
+
   return (
     <>
       <Header />
