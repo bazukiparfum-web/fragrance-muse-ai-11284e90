@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { User, Package, Heart, Settings, LogOut, ShoppingBag, Gift, Share2, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
+import { User, Package, Heart, Settings, LogOut, ShoppingBag, Gift, Share2, Copy, Check, ExternalLink, Loader2, Star, MapPin, ChevronDown, ChevronRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useCartStore } from '@/stores/cartStore';
 import { FragranceVisualizer } from '@/components/FragranceVisualizer';
@@ -67,9 +69,11 @@ const Account = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [referrals, setReferrals] = useState<any[]>([]);
   const [referralRewards, setReferralRewards] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [moreOpen, setMoreOpen] = useState(false);
   
   // Profile states
   const [profile, setProfile] = useState<any>(null);
@@ -81,6 +85,19 @@ const Account = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newsletter, setNewsletter] = useState(false);
   const [specialOffers, setSpecialOffers] = useState(false);
+
+  // Shipping form
+  const [shipping, setShipping] = useState({
+    full_name: '',
+    phone: '',
+    address_line1: '',
+    address_line2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    country: 'India',
+  });
+  const [savingShipping, setSavingShipping] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -96,24 +113,38 @@ const Account = () => {
 
       setCurrentUserId(user.id);
 
-      const [ordersData, scentsData, subsData, referralsData, rewardsData, profileData] = await Promise.all([
+      const [ordersData, scentsData, subsData, referralsData, rewardsData, profileData, reviewsData] = await Promise.allSettled([
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('saved_scents').select('*').eq('user_id', user.id),
         supabase.from('subscriptions').select('*').eq('user_id', user.id),
         supabase.from('referrals').select('*, saved_scents(name)').eq('referrer_id', user.id).order('created_at', { ascending: false }),
         supabase.from('referral_rewards').select('*, referrals(referral_code)').or(`referrer_id.eq.${user.id},referee_id.eq.${user.id}`).order('created_at', { ascending: false }),
         supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase.from('product_reviews').select('*, saved_scents(name)').eq('user_id', user.id).order('created_at', { ascending: false }),
       ]);
 
-      if (ordersData.data) setOrders(ordersData.data);
-      if (scentsData.data) setSavedScents(scentsData.data);
-      if (subsData.data) setSubscriptions(subsData.data);
-      if (referralsData.data) setReferrals(referralsData.data);
-      if (rewardsData.data) setReferralRewards(rewardsData.data);
-      if (profileData.data) {
-        setProfile(profileData.data);
-        setEditName(profileData.data.full_name || '');
-        setEditPhone(profileData.data.phone || '');
+      const pick = (r: any) => (r.status === 'fulfilled' ? r.value.data : null);
+      if (pick(ordersData)) setOrders(pick(ordersData));
+      if (pick(scentsData)) setSavedScents(pick(scentsData));
+      if (pick(subsData)) setSubscriptions(pick(subsData));
+      if (pick(referralsData)) setReferrals(pick(referralsData));
+      if (pick(rewardsData)) setReferralRewards(pick(rewardsData));
+      if (pick(reviewsData)) setReviews(pick(reviewsData));
+      const p = pick(profileData);
+      if (p) {
+        setProfile(p);
+        setEditName(p.full_name || '');
+        setEditPhone(p.phone || '');
+        setShipping({
+          full_name: p.full_name || '',
+          phone: p.phone || '',
+          address_line1: p.address_line1 || '',
+          address_line2: p.address_line2 || '',
+          city: p.city || '',
+          state: p.state || '',
+          pincode: p.pincode || '',
+          country: p.country || 'India',
+        });
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -297,6 +328,35 @@ const Account = () => {
     toast.success('Preferences saved successfully');
   };
 
+  const handleSaveShipping = async () => {
+    setSavingShipping(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: shipping.full_name,
+          phone: shipping.phone,
+          address_line1: shipping.address_line1,
+          address_line2: shipping.address_line2,
+          city: shipping.city,
+          state: shipping.state,
+          pincode: shipping.pincode,
+          country: shipping.country,
+        })
+        .eq('id', user.id);
+      if (error) throw error;
+      setProfile({ ...profile, ...shipping });
+      toast.success('Shipping details saved');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to save shipping details');
+    } finally {
+      setSavingShipping(false);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -306,62 +366,44 @@ const Account = () => {
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Sidebar */}
             <Card className="p-6 h-fit sticky top-24">
-              <div className="space-y-2">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=dashboard')}
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Dashboard
+              <div className="space-y-1">
+                <Button variant={defaultTab === 'dashboard' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=dashboard')}>
+                  <User className="mr-2 h-4 w-4" /> Dashboard
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=scents')}
-                >
-                  <Heart className="mr-2 h-4 w-4" />
-                  My Scents
+                <Button variant={defaultTab === 'orders' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=orders')}>
+                  <Package className="mr-2 h-4 w-4" /> Order History
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=orders')}
-                >
-                  <Package className="mr-2 h-4 w-4" />
-                  Orders
+                <Button variant={defaultTab === 'scents' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=scents')}>
+                  <Heart className="mr-2 h-4 w-4" /> My Scents
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=subscriptions')}
-                >
-                  <ShoppingBag className="mr-2 h-4 w-4" />
-                  Subscriptions
+                <Button variant={defaultTab === 'reviews' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=reviews')}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Reviews
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=referrals')}
-                >
-                  <Gift className="mr-2 h-4 w-4" />
-                  Referrals
+                <Button variant={defaultTab === 'shipping' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=shipping')}>
+                  <MapPin className="mr-2 h-4 w-4" /> Shipping Details
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/shop/account?tab=settings')}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                <Button variant={defaultTab === 'settings' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=settings')}>
+                  <Settings className="mr-2 h-4 w-4" /> Account Settings
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-destructive hover:text-destructive"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+
+                <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-between">
+                      <span className="flex items-center"><ChevronRight className={`mr-2 h-4 w-4 transition-transform ${moreOpen ? 'rotate-90' : ''}`} /> More</span>
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-1 pl-4">
+                    <Button variant={defaultTab === 'subscriptions' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=subscriptions')}>
+                      <ShoppingBag className="mr-2 h-4 w-4" /> Subscriptions
+                    </Button>
+                    <Button variant={defaultTab === 'referrals' ? 'secondary' : 'ghost'} className="w-full justify-start" onClick={() => navigate('/shop/account?tab=referrals')}>
+                      <Gift className="mr-2 h-4 w-4" /> Referrals
+                    </Button>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" /> Sign out
                 </Button>
               </div>
             </Card>
@@ -373,6 +415,8 @@ const Account = () => {
                   <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                   <TabsTrigger value="scents">My Scents</TabsTrigger>
                   <TabsTrigger value="orders">Orders</TabsTrigger>
+                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                  <TabsTrigger value="shipping">Shipping</TabsTrigger>
                   <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
                   <TabsTrigger value="referrals">Referrals</TabsTrigger>
                   <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -562,6 +606,90 @@ const Account = () => {
                         </TableBody>
                       </Table>
                     )}
+                  </Card>
+                </TabsContent>
+
+                {/* Reviews Tab */}
+                <TabsContent value="reviews" className="space-y-6">
+                  <Card className="p-6">
+                    <h1 className="font-serif text-3xl mb-6">My Reviews</h1>
+                    {reviews.length === 0 ? (
+                      <div className="text-center py-12">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-muted-foreground mb-4">You haven't written any reviews yet.</p>
+                        <Button onClick={() => navigate('/shop/collection')}>Browse Fragrances</Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {reviews.map((rev) => (
+                          <Card key={rev.id} className="p-4">
+                            <div className="flex justify-between items-start mb-2 gap-3">
+                              <div>
+                                <h3 className="font-semibold">{rev.saved_scents?.name || rev.product_handle}</h3>
+                                <div className="flex items-center gap-1 mt-1">
+                                  {[1,2,3,4,5].map((n) => (
+                                    <Star key={n} className={`h-4 w-4 ${n <= rev.rating ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
+                                  ))}
+                                </div>
+                              </div>
+                              <Badge variant={rev.status === 'approved' ? 'default' : rev.status === 'pending' ? 'secondary' : 'outline'}>
+                                {rev.status}
+                              </Badge>
+                            </div>
+                            {rev.title && <p className="font-medium mb-1">{rev.title}</p>}
+                            <p className="text-sm text-muted-foreground mb-2">{rev.body}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(rev.created_at)}</p>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                </TabsContent>
+
+                {/* Shipping Details Tab */}
+                <TabsContent value="shipping" className="space-y-6">
+                  <Card className="p-6">
+                    <h1 className="font-serif text-3xl mb-6">Shipping Details</h1>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-name">Full Name</Label>
+                        <Input id="ship-name" value={shipping.full_name} onChange={(e) => setShipping({ ...shipping, full_name: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-phone">Phone</Label>
+                        <Input id="ship-phone" value={shipping.phone} onChange={(e) => setShipping({ ...shipping, phone: e.target.value })} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="ship-addr1">Address Line 1</Label>
+                        <Input id="ship-addr1" value={shipping.address_line1} onChange={(e) => setShipping({ ...shipping, address_line1: e.target.value })} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="ship-addr2">Address Line 2 (optional)</Label>
+                        <Input id="ship-addr2" value={shipping.address_line2} onChange={(e) => setShipping({ ...shipping, address_line2: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-city">City</Label>
+                        <Input id="ship-city" value={shipping.city} onChange={(e) => setShipping({ ...shipping, city: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-state">State</Label>
+                        <Input id="ship-state" value={shipping.state} onChange={(e) => setShipping({ ...shipping, state: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-pin">Pincode</Label>
+                        <Input id="ship-pin" value={shipping.pincode} onChange={(e) => setShipping({ ...shipping, pincode: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-country">Country</Label>
+                        <Input id="ship-country" value={shipping.country} onChange={(e) => setShipping({ ...shipping, country: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="flex justify-end pt-6">
+                      <Button onClick={handleSaveShipping} disabled={savingShipping}>
+                        {savingShipping && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Shipping Details
+                      </Button>
+                    </div>
                   </Card>
                 </TabsContent>
 
