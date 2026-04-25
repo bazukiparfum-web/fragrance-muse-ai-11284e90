@@ -72,6 +72,7 @@ function ScentCard({ scent, creatorName }: { scent: PublicScent; creatorName: st
 }
 
 function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
+  const navigate = useNavigate();
   const addItem = useCartStore(state => state.addItem);
   const isLoading = useCartStore(state => state.isLoading);
   const node = product.node;

@@ -83,13 +83,10 @@ function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
     toast.success(`${node.title} added to cart`);
   };
 
-  // Extract numeric ID from Shopify GID for routing
-  const numericId = node.id.split('/').pop();
-
   return (
     <Card
       className="overflow-hidden hover-lift cursor-pointer transition-all duration-300 hover:shadow-lg group"
-      onClick={() => navigate(`/collection?product=${node.handle || numericId}`)}
+      onClick={() => navigate(`/product/${node.handle}`)}
     >
       <div className="aspect-square overflow-hidden bg-muted">
         {image ? (
