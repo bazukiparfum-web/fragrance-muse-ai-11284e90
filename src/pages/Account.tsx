@@ -609,6 +609,90 @@ const Account = () => {
                   </Card>
                 </TabsContent>
 
+                {/* Reviews Tab */}
+                <TabsContent value="reviews" className="space-y-6">
+                  <Card className="p-6">
+                    <h1 className="font-serif text-3xl mb-6">My Reviews</h1>
+                    {reviews.length === 0 ? (
+                      <div className="text-center py-12">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-muted-foreground mb-4">You haven't written any reviews yet.</p>
+                        <Button onClick={() => navigate('/shop/collection')}>Browse Fragrances</Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {reviews.map((rev) => (
+                          <Card key={rev.id} className="p-4">
+                            <div className="flex justify-between items-start mb-2 gap-3">
+                              <div>
+                                <h3 className="font-semibold">{rev.saved_scents?.name || rev.product_handle}</h3>
+                                <div className="flex items-center gap-1 mt-1">
+                                  {[1,2,3,4,5].map((n) => (
+                                    <Star key={n} className={`h-4 w-4 ${n <= rev.rating ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
+                                  ))}
+                                </div>
+                              </div>
+                              <Badge variant={rev.status === 'approved' ? 'default' : rev.status === 'pending' ? 'secondary' : 'outline'}>
+                                {rev.status}
+                              </Badge>
+                            </div>
+                            {rev.title && <p className="font-medium mb-1">{rev.title}</p>}
+                            <p className="text-sm text-muted-foreground mb-2">{rev.body}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(rev.created_at)}</p>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                </TabsContent>
+
+                {/* Shipping Details Tab */}
+                <TabsContent value="shipping" className="space-y-6">
+                  <Card className="p-6">
+                    <h1 className="font-serif text-3xl mb-6">Shipping Details</h1>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-name">Full Name</Label>
+                        <Input id="ship-name" value={shipping.full_name} onChange={(e) => setShipping({ ...shipping, full_name: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-phone">Phone</Label>
+                        <Input id="ship-phone" value={shipping.phone} onChange={(e) => setShipping({ ...shipping, phone: e.target.value })} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="ship-addr1">Address Line 1</Label>
+                        <Input id="ship-addr1" value={shipping.address_line1} onChange={(e) => setShipping({ ...shipping, address_line1: e.target.value })} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="ship-addr2">Address Line 2 (optional)</Label>
+                        <Input id="ship-addr2" value={shipping.address_line2} onChange={(e) => setShipping({ ...shipping, address_line2: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-city">City</Label>
+                        <Input id="ship-city" value={shipping.city} onChange={(e) => setShipping({ ...shipping, city: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-state">State</Label>
+                        <Input id="ship-state" value={shipping.state} onChange={(e) => setShipping({ ...shipping, state: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-pin">Pincode</Label>
+                        <Input id="ship-pin" value={shipping.pincode} onChange={(e) => setShipping({ ...shipping, pincode: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ship-country">Country</Label>
+                        <Input id="ship-country" value={shipping.country} onChange={(e) => setShipping({ ...shipping, country: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="flex justify-end pt-6">
+                      <Button onClick={handleSaveShipping} disabled={savingShipping}>
+                        {savingShipping && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Shipping Details
+                      </Button>
+                    </div>
+                  </Card>
+                </TabsContent>
+
                 {/* Subscriptions Tab */}
                 <TabsContent value="subscriptions" className="space-y-6">
                   <Card className="p-6">
