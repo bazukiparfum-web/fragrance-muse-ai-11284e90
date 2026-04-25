@@ -16,6 +16,7 @@ import QuizForYourself from "./pages/QuizForYourself";
 import QuizForSomeoneElse from "./pages/QuizForSomeoneElse";
 import QuizResults from "./pages/QuizResults";
 import ScentDetail from "./pages/ScentDetail";
+import ProductDetail from "./pages/ProductDetail";
 import SharedFragrance from "./pages/SharedFragrance";
 import Collection from "./pages/Collection";
 import Business from "./pages/Business";
@@ -31,6 +32,7 @@ import AdminRules from "./pages/admin/AdminRules";
 import AdminIngredients from "./pages/admin/AdminIngredients";
 import AdminScents from "./pages/admin/AdminScents";
 import AdminConsultations from "./pages/admin/AdminConsultations";
+import AdminReviews from "./pages/admin/AdminReviews";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
