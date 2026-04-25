@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Database, Layers, HelpCircle, Beaker, Tag, MessageSquare } from 'lucide-react';
+import { Database, Layers, HelpCircle, Beaker, Tag, MessageSquare, Star } from 'lucide-react';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -93,6 +93,19 @@ const AdminDashboard = () => {
                 View consultation requests from businesses
               </p>
               <Button className="mt-4 w-full">View Requests</Button>
+            </Card>
+
+            <Card className="p-6 hover-lift cursor-pointer" onClick={() => navigate('/admin/reviews')}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-accent/10 rounded-lg">
+                  <Star className="h-6 w-6 text-accent" />
+                </div>
+                <h2 className="font-serif text-xl font-bold">Reviews</h2>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Approve or reject customer reviews before publishing
+              </p>
+              <Button className="mt-4 w-full">Moderate Reviews</Button>
             </Card>
           </div>
 

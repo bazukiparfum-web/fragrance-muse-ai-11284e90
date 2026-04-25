@@ -16,6 +16,7 @@ import QuizForYourself from "./pages/QuizForYourself";
 import QuizForSomeoneElse from "./pages/QuizForSomeoneElse";
 import QuizResults from "./pages/QuizResults";
 import ScentDetail from "./pages/ScentDetail";
+import ProductDetail from "./pages/ProductDetail";
 import SharedFragrance from "./pages/SharedFragrance";
 import Collection from "./pages/Collection";
 import Business from "./pages/Business";
@@ -31,6 +32,7 @@ import AdminRules from "./pages/admin/AdminRules";
 import AdminIngredients from "./pages/admin/AdminIngredients";
 import AdminScents from "./pages/admin/AdminScents";
 import AdminConsultations from "./pages/admin/AdminConsultations";
+import AdminReviews from "./pages/admin/AdminReviews";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +59,7 @@ const AppInner = () => {
           <Route path="/legal/shipping" element={<Shipping />} />
           <Route path="/collection" element={<Collection />} />
           <Route path="/collection/:id" element={<ScentDetail />} />
+          <Route path="/product/:handle" element={<ProductDetail />} />
           <Route path="/shared/fragrance/:shareToken" element={<SharedFragrance />} />
           <Route path="/shop/quiz" element={<QuizLanding />} />
           <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
@@ -70,6 +73,7 @@ const AppInner = () => {
           <Route path="/admin/ingredients" element={<AdminRoute><AdminIngredients /></AdminRoute>} />
           <Route path="/admin/scents" element={<AdminRoute><AdminScents /></AdminRoute>} />
           <Route path="/admin/consultations" element={<AdminRoute><AdminConsultations /></AdminRoute>} />
+          <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

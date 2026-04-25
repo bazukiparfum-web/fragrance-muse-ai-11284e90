@@ -72,6 +72,7 @@ function ScentCard({ scent, creatorName }: { scent: PublicScent; creatorName: st
 }
 
 function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
+  const navigate = useNavigate();
   const addItem = useCartStore(state => state.addItem);
   const isLoading = useCartStore(state => state.isLoading);
   const node = product.node;
@@ -95,7 +96,10 @@ function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
   };
 
   return (
-    <Card className="overflow-hidden hover-lift transition-all duration-300 hover:shadow-lg group">
+    <Card
+      className="overflow-hidden hover-lift cursor-pointer transition-all duration-300 hover:shadow-lg group"
+      onClick={() => navigate(`/product/${node.handle}`)}
+    >
       <div className="aspect-square overflow-hidden bg-muted">
         {image ? (
           <img
