@@ -13,7 +13,7 @@ const TrustStrip = () => {
               ))}
             </div>
             <span className="font-medium text-foreground">4.8</span>
-            <span className="text-muted-foreground">from 312+ happy customers</span>
+            <span className="text-muted-foreground">from 5000+ happy customers</span>
           </div>
 
           <span className="hidden md:inline text-border">·</span>
