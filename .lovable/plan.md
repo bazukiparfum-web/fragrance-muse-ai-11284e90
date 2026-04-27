@@ -1,74 +1,31 @@
-# Admin Console Overhaul
 
-## 1. Shared Admin Shell
-- Create `src/components/admin/AdminSidebar.tsx` (shadcn `Sidebar`, `collapsible="icon"`, NavLink active styles).
-- Create `src/components/admin/AdminLayout.tsx` wrapping children with `SidebarProvider`, persistent `SidebarTrigger` in topbar, breadcrumb header.
-- Refactor `src/App.tsx` to nest all `/admin/*` routes inside one `<AdminRoute><AdminLayout/></AdminRoute>` parent using `<Outlet/>`.
-- Sidebar groups: **Overview** (Dashboard), **Catalog** (Notes, Ingredients, Rules, Scents, Questions), **Operations** (Orders, Production Queue, Consultations, Reviews), **Access** (Users & Roles), **Tools** (Manual Testing).
+## Goal
+Add a homepage FAQ section that explains how the AI fragrance matching works — what users answer in the quiz and how/why they receive 3 fragrance matches.
 
-## 2. Live Dashboard Stats
-- Update `AdminDashboard.tsx` to fetch counts via `Promise.allSettled`:
-  - active fragrance_notes, ingredient_mappings, formulation_rules, quiz_questions
-  - pending product_reviews, pending production_queue, new consultation_requests, recent orders
-- Skeleton loaders + error fallback per card.
+## Files
 
-## 3. New Admin Pages
-**`/admin/orders`** — `AdminOrders.tsx`
-- Table of recent orders (id, user email via profiles join, total, status, shopify_order_number, created_at).
-- Search by order_number / email, status filter, pagination (20/page).
-- New edge function `admin-list-orders` (service role + admin check via `has_role`).
+### 1. Create `src/components/FAQ.tsx`
+A new client component using the existing shadcn `Accordion` primitive (`@/components/ui/accordion`).
 
-**`/admin/production-queue`** — `AdminProductionQueue.tsx`
-- Table of queue items with status badges, fragrance_code, size, qty, created_at.
-- Actions: mark in_progress / completed / failed (via `admin-manage-production` edge function).
-- Realtime subscription on `production_queue` for live updates.
-- Drawer to view full formula JSON + linked machine_formulas pump instructions.
+- Wrapper `<section className="py-16 md:py-24 bg-background">`
+- Container `max-w-3xl mx-auto px-4`
+- Centered heading **"How AI Matching Works"** (`text-3xl md:text-4xl font-display`)
+- Subheading: "Everything you need to know about your personalized fragrance journey." (`text-muted-foreground`)
+- `<Accordion type="single" collapsible>` with 6 items:
 
-**`/admin/users`** — `AdminUsers.tsx`
-- Search profiles by email/name. Show current roles (joined from user_roles).
-- Grant/revoke `admin` role via new `admin-manage-users` edge function.
-- Confirmation dialog before role changes; block self-demotion.
+  1. **How does the AI match me to a fragrance?** — Engine analyzes quiz answers across personality, mood, scent-family preferences, and lifestyle signals, then maps them to a curated IFRA-compliant ingredient library.
+  2. **What do I answer in the quiz?** — A 16-question, ~3-minute journey covering scent families, personality sliders (bold↔subtle, warm↔fresh), mood/occasion, color preferences, and lifestyle cues.
+  3. **Why do I receive 3 fragrances?** — Instead of one guess, the AI generates three distinct matches — typically a "safe favorite," an "adventurous twist," and a "signature statement" — so you can explore the range of what suits you.
+  4. **Can I see what's inside each fragrance?** — Yes. Every match shows top/heart/base notes, intensity, longevity, and a visual fingerprint. All ingredients are IFRA-compliant.
+  5. **What sizes can I order?** — 30ml and 50ml bottles, plus a 3-bottle Discovery Set (₹1,500) so you can try all three matches together at a saving.
+  6. **Can I tweak my fragrance after seeing results?** — Yes — use "Tweak Formula" on any result to adjust intensity or swap notes before ordering or publishing.
 
-## 4. Manual Testing Flow
-**`/admin/testing`** — `AdminTesting.tsx`
-- Step 1: Pick or create a saved_scent (search by user/code).
-- Step 2: "Simulate paid order" → calls new `admin-simulate-order` edge function which inserts into `orders` + `production_queue` (mirrors webhook path) without touching Shopify.
-- Step 3: "Drive machine" → calls existing `machine-production-api` with DEV key; shows pump sequence and live status as queue advances.
-- Activity log panel showing each step's response.
+- Below the accordion: centered `<Button size="lg">` "Take the Quiz" → `navigate('/quiz')`.
 
-## 5. Edge Functions (new)
-All deployed with `verify_jwt = false` and in-code admin check (extract bearer → `getClaims` → `has_role(uid, 'admin')`):
-- `admin-list-orders` — paginated orders + joined profile email.
-- `admin-manage-users` — list/search profiles, grant/revoke roles.
-- `admin-manage-production` — update queue item status, log timestamps.
-- `admin-simulate-order` — insert synthetic paid order + queue entry from a saved_scent_id.
+### 2. Edit `src/pages/Index.tsx`
+- Import `FAQ` from `@/components/FAQ`.
+- Render `<FAQ />` between `<ProductShowcase />` and `<Footer />`.
 
-CORS via `corsHeaders` import; Zod validation on all inputs.
-
-## 6. Migration
-- No schema changes required (all needed tables exist: orders, profiles, user_roles, production_queue, machine_formulas).
-- Optional: add index on `production_queue(status, created_at)` for queue page performance.
-
-## 7. Out of Scope (this round)
-- Removing the auth bypass (`mem://testing-strategy/authentication-bypass`) — kept until user explicitly requests hardening.
-- Referrals admin page and Quiz Analytics page (deferred to a follow-up).
-- Editing orders or refunds (read-only this round).
-
-## Files Created
-- `src/components/admin/AdminLayout.tsx`
-- `src/components/admin/AdminSidebar.tsx`
-- `src/pages/admin/AdminOrders.tsx`
-- `src/pages/admin/AdminProductionQueue.tsx`
-- `src/pages/admin/AdminUsers.tsx`
-- `src/pages/admin/AdminTesting.tsx`
-- `supabase/functions/admin-list-orders/index.ts`
-- `supabase/functions/admin-manage-users/index.ts`
-- `supabase/functions/admin-manage-production/index.ts`
-- `supabase/functions/admin-simulate-order/index.ts`
-
-## Files Edited
-- `src/App.tsx` (nested admin routing)
-- `src/pages/admin/AdminDashboard.tsx` (live stats + nav cards updated)
-- `supabase/config.toml` (register 4 new functions with `verify_jwt = false`)
-
-Approve to switch to default mode and implement.
+## Out of scope
+- No backend, migrations, or new memories needed.
+- No edits to existing components.
