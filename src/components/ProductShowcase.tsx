@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchShopifyProducts, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
+import { JsonLd } from "@/components/JsonLd";
 
 interface PublicScent {
   id: string;
@@ -170,8 +171,39 @@ const ProductShowcase = () => {
   const trendingPicks = scents.filter(s => s.creator_tag === 'influencer' || s.creator_tag === 'celebrity').slice(0, 4);
   const communityFavs = scents.filter(s => !s.creator_tag).slice(0, 4);
 
+  const itemListJsonLd = shopifyProducts.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Bazuki Signature Collection",
+    itemListElement: shopifyProducts.map((p, idx) => {
+      const node = p.node;
+      const img = node.images?.edges?.[0]?.node;
+      const price = node.priceRange.minVariantPrice;
+      return {
+        "@type": "ListItem",
+        position: idx + 1,
+        item: {
+          "@type": "Product",
+          name: node.title,
+          description: node.description,
+          image: img?.url,
+          url: `${window.location.origin}/product/${node.handle}`,
+          brand: { "@type": "Brand", name: "Bazuki Perfumes" },
+          offers: {
+            "@type": "Offer",
+            price: parseFloat(price.amount).toFixed(2),
+            priceCurrency: price.currencyCode || "INR",
+            availability: "https://schema.org/InStock",
+            url: `${window.location.origin}/product/${node.handle}`,
+          },
+        },
+      };
+    }),
+  } : null;
+
   return (
     <section className="py-20 md:py-32 bg-secondary">
+      {itemListJsonLd && <JsonLd id="homepage-collection" data={itemListJsonLd} />}
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">
