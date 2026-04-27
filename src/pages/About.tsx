@@ -5,9 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import scienceHero from "@/assets/science-hero.jpg";
 import technologyHero from "@/assets/technology-hero.jpg";
+import { useSEO } from "@/hooks/useSEO";
 
 const About = () => {
   const navigate = useNavigate();
+
+  useSEO({
+    title: "The Science & Technology Behind Bazuki Fragrances",
+    description:
+      "Discover how Bazuki blends AI-driven perfumery with a precision 10-pump dispensing machine to craft fragrances that feel unmistakably yours.",
+    image: scienceHero,
+  });
 
   return (
     <div className="min-h-screen bg-background">
