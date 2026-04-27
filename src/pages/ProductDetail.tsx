@@ -9,6 +9,7 @@ import { fetchShopifyProductByHandle, ShopifyProduct } from '@/lib/shopify';
 import { useCartStore } from '@/stores/cartStore';
 import { toast } from 'sonner';
 import { ReviewsSection } from '@/components/ReviewsSection';
+import { JsonLd } from '@/components/JsonLd';
 
 type ProductNode = ShopifyProduct['node'];
 
@@ -94,8 +95,40 @@ export default function ProductDetail() {
   const variants = product.variants?.edges || [];
   const price = selectedVariant?.price || product.priceRange.minVariantPrice;
 
+  const productJsonLd = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    name: product.title,
+    description: product.description || `${product.title} — AI-crafted luxury fragrance by Bazuki.`,
+    image: images.map((i) => i.node.url),
+    sku: selectedVariant?.id,
+    brand: { "@type": "Brand", name: "Bazuki Perfumes" },
+    offers: variants.length > 1
+      ? variants.map((v) => ({
+          "@type": "Offer",
+          sku: v.node.id,
+          name: v.node.title,
+          price: parseFloat(v.node.price.amount).toFixed(2),
+          priceCurrency: v.node.price.currencyCode || "INR",
+          availability: v.node.availableForSale
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+          url: `${window.location.origin}/product/${product.handle}`,
+        }))
+      : {
+          "@type": "Offer",
+          price: parseFloat(price.amount).toFixed(2),
+          priceCurrency: price.currencyCode || "INR",
+          availability: selectedVariant?.availableForSale
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+          url: `${window.location.origin}/product/${product.handle}`,
+        },
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id={`product-${product.handle}`} data={productJsonLd} />
       <Header />
       <main className="container mx-auto px-4 py-12">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-6">
