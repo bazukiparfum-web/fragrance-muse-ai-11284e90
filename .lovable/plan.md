@@ -1,56 +1,55 @@
-# Add BreadcrumbList + Validate Structured Data
+## Issues Found in `src/components/quiz/ColorPicker.tsx`
 
-Add `BreadcrumbList` JSON-LD to the homepage and Product Detail pages, then run Google's Rich Results validator against the existing JSON-LD blocks (Organization, WebSite, ItemList, Product) and fix anything it flags.
+Looking at the screenshot and the code, the color wheel has several bugs:
 
-## 1. BreadcrumbList JSON-LD
+### 1. Hue angle math is off by 90°
+`handleWheelClick` computes `atan2(y, x)` but the wheel itself is drawn rotated by `-90°` (red at top via `(i - 90)`). The click handler doesn't apply the same offset, so clicking on red (top) records hue ≈ 270° instead of 0°. Selecting the indicator and the picked color end up mismatched with where the user clicked.
 
-**Homepage (`src/pages/Index.tsx`)**
-Mount a `<JsonLd id="breadcrumbs-home" data={...} />` with a single-item breadcrumb:
-- Home → `https://bazukifragrance.com/`
+### 2. Only the thin ring is clickable
+The wheel is drawn as a 20px-wide ring (`wheelRadius - 20` to `wheelRadius`). Clicks inside the empty center do nothing, and clicks outside the ring still register angles — both feel broken. The screenshot confirms this is just a thin ring with a giant dead center.
 
-**PDP (`src/pages/ProductDetail.tsx`)**
-Add a `<JsonLd id={"breadcrumbs-" + handle} ... />` next to the existing Product JSON-LD:
-- Home → `/`
-- Collection → `/collection`
-- {Product Title} → `/product/{handle}`
+### 3. No drag support
+`isDragging` state is declared but never wired up. Users expect to drag the indicator around the wheel; today they must click repeatedly.
 
-Each item uses `{ "@type": "ListItem", position, name, item: <absolute URL> }` per schema.org spec, built off `window.location.origin` (matching the existing pattern).
+### 4. Saturation has no visual effect on the wheel
+The wheel always renders at 100% saturation regardless of the slider. The user can't see what their saturation choice looks like on the wheel itself — only in the small preview swatch.
 
-## 2. Rich Results validation pass
+### 5. Saturation slider background style is overridden
+The custom `style={{ background: ... }}` is applied to the Radix `Slider` root, but Radix renders its own track/range elements on top, so the gradient is invisible. The slider looks like a plain black bar (visible in the screenshot).
 
-After adding breadcrumbs, run Google's Rich Results Test against the live published URLs:
-- Homepage: `https://bazukifragrance.com/`
-- A representative PDP: `https://bazukifragrance.com/product/<first-shopify-handle>`
+### 6. Preview swatch turns near-black at low saturation
+`hsl(h, 0%, 50%)` is mid-gray, which is fine, but the indicator dot also uses the same formula — at 0% saturation the indicator becomes gray and disappears against the wheel's saturated colors, making it hard to see what's selected.
 
-Use the public validator endpoint via `websearch`/`fetch` to capture warnings, then patch the JSON-LD. Known likely fixes based on current code:
+### 7. Hue at center click is NaN
+If a user clicks the exact center, `atan2(0, 0)` returns 0 — not catastrophic, but combined with the dead-zone issue it's confusing.
 
-**`index.html` Organization**
-- Add `contactPoint` (or remove empty `sameAs: []` to avoid "empty array" warnings).
-- Add `logo` as an `ImageObject` with explicit `url` if validator flags it.
+### 8. Touch / mobile support missing
+No `onTouchStart`/`onTouchMove` handlers — the wheel is unusable on touch devices.
 
-**`ProductShowcase.tsx` ItemList**
-- `description` may be empty for some Shopify products → fall back to `${node.title} — luxury fragrance by Bazuki`.
-- `image` may be undefined when a product has no images → omit the field instead of emitting `undefined` (currently serializes to missing key, but guard explicitly).
-- Add `priceValidUntil` (e.g. end of current year) — Google warns when missing on Offers.
-- Add `itemCondition: "https://schema.org/NewCondition"`.
+### 9. Unused `useEffect` import
+Minor: imported but never used.
 
-**`ProductDetail.tsx` Product**
-- Same `priceValidUntil` + `itemCondition` additions on each Offer.
-- Use `mpn` or stable `sku` (strip the `gid://shopify/ProductVariant/` prefix to a clean numeric SKU) — Google prefers a human-readable SKU.
-- Add `hasMerchantReturnPolicy` and `shippingDetails` only if the validator escalates to errors (otherwise leave as warnings to avoid fabricating policy data).
-- Ensure `aggregateRating` / `review` are NOT emitted unless real review data exists (current code correctly omits — keep it that way).
+---
 
-## 3. Verification
+## Proposed Fixes
 
-- Re-run the Rich Results Test on both URLs.
-- Confirm: 0 errors, breadcrumbs detected, Product detected on PDP, ItemList detected on homepage.
-- Report remaining non-blocking warnings (e.g. shipping policy) to the user with a recommendation.
+Rewrite `src/components/quiz/ColorPicker.tsx`:
 
-## Files touched
+- **Fix angle math**: add `+ 90` offset so the top of the wheel = hue 0 (red), matching the drawn rotation. Normalize to `[0, 360)`.
+- **Make the whole wheel area interactive**: handle pointer events anywhere inside the SVG; project the click onto the ring by computing the angle from center regardless of radius. Ignore clicks too close to center (e.g. radius < 20px) to avoid jitter.
+- **Add drag support** using pointer events (`onPointerDown`, `onPointerMove`, `onPointerUp`, `setPointerCapture`) — works for mouse, touch, and stylus in one handler. Wire up the existing `isDragging` state.
+- **Reflect saturation on the wheel**: pass current `saturation` into `getColorFromHue(i, saturation)` for each segment so the wheel desaturates as the slider moves.
+- **Fix the slider track gradient**: replace the broken inline style with a custom slider — either a styled native `<input type="range">` with a CSS gradient background, or wrap the Radix Slider and inject the gradient on the `SliderPrimitive.Track` via a small style override. Use the input-range approach for reliability.
+- **Keep indicator visible**: stroke the indicator with a contrasting outline (already has white stroke — also add a dark inner stroke or shadow) and force the fill to use a minimum visible saturation for the dot itself, OR show two stacked rings (white outer, black inner) so it's visible on every hue/saturation.
+- **Clamp center clicks**: if click is within ~15px of center, ignore.
+- **Remove unused `useEffect` import.**
 
-- `src/pages/Index.tsx` — add breadcrumb JsonLd
-- `src/pages/ProductDetail.tsx` — add breadcrumb JsonLd, harden Product offer fields
-- `src/components/ProductShowcase.tsx` — harden ItemList Offer fields, image guard
-- `index.html` — small Organization cleanup if validator flags it
+No changes needed to `QuizContext`, `QuizForYourself`, or `QuizForSomeoneElse` — the prop API stays identical.
 
-No new dependencies. No DB or backend changes.
+---
+
+## Files to Modify
+
+- `src/components/quiz/ColorPicker.tsx` — rewrite as described above.
+
+No new dependencies. No other files affected.
