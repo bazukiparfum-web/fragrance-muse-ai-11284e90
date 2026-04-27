@@ -95,25 +95,30 @@ export default function ProductDetail() {
   const variants = product.variants?.edges || [];
   const price = selectedVariant?.price || product.priceRange.minVariantPrice;
 
+  const cleanSku = (gid?: string) => gid ? gid.split("/").pop() : undefined;
+  const priceValidUntil = `${new Date().getFullYear()}-12-31`;
+  const productUrl = `${window.location.origin}/product/${product.handle}`;
   const productJsonLd = {
     "@context": "https://schema.org/",
     "@type": "Product",
     name: product.title,
     description: product.description || `${product.title} — AI-crafted luxury fragrance by Bazuki.`,
     image: images.map((i) => i.node.url),
-    sku: selectedVariant?.id,
+    sku: cleanSku(selectedVariant?.id),
     brand: { "@type": "Brand", name: "Bazuki Perfumes" },
     offers: variants.length > 1
       ? variants.map((v) => ({
           "@type": "Offer",
-          sku: v.node.id,
+          sku: cleanSku(v.node.id),
           name: v.node.title,
           price: parseFloat(v.node.price.amount).toFixed(2),
           priceCurrency: v.node.price.currencyCode || "INR",
           availability: v.node.availableForSale
             ? "https://schema.org/InStock"
             : "https://schema.org/OutOfStock",
-          url: `${window.location.origin}/product/${product.handle}`,
+          itemCondition: "https://schema.org/NewCondition",
+          priceValidUntil,
+          url: productUrl,
         }))
       : {
           "@type": "Offer",
@@ -122,13 +127,26 @@ export default function ProductDetail() {
           availability: selectedVariant?.availableForSale
             ? "https://schema.org/InStock"
             : "https://schema.org/OutOfStock",
-          url: `${window.location.origin}/product/${product.handle}`,
+          itemCondition: "https://schema.org/NewCondition",
+          priceValidUntil,
+          url: productUrl,
         },
+  };
+
+  const breadcrumbsJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${window.location.origin}/` },
+      { "@type": "ListItem", position: 2, name: "Collection", item: `${window.location.origin}/collection` },
+      { "@type": "ListItem", position: 3, name: product.title, item: productUrl },
+    ],
   };
 
   return (
     <div className="min-h-screen bg-background">
       <JsonLd id={`product-${product.handle}`} data={productJsonLd} />
+      <JsonLd id={`breadcrumbs-${product.handle}`} data={breadcrumbsJsonLd} />
       <Header />
       <main className="container mx-auto px-4 py-12">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-6">
