@@ -1,55 +1,89 @@
-## Issues Found in `src/components/quiz/ColorPicker.tsx`
+## WhatsApp OTP Login (India)
 
-Looking at the screenshot and the code, the color wheel has several bugs:
+Add a phone-number + WhatsApp OTP login flow as the **primary** login method, while keeping email/password and Google sign-in as a fallback. India only (+91, 10-digit numbers).
 
-### 1. Hue angle math is off by 90°
-`handleWheelClick` computes `atan2(y, x)` but the wheel itself is drawn rotated by `-90°` (red at top via `(i - 90)`). The click handler doesn't apply the same offset, so clicking on red (top) records hue ≈ 270° instead of 0°. Selecting the indicator and the picked color end up mismatched with where the user clicked.
-
-### 2. Only the thin ring is clickable
-The wheel is drawn as a 20px-wide ring (`wheelRadius - 20` to `wheelRadius`). Clicks inside the empty center do nothing, and clicks outside the ring still register angles — both feel broken. The screenshot confirms this is just a thin ring with a giant dead center.
-
-### 3. No drag support
-`isDragging` state is declared but never wired up. Users expect to drag the indicator around the wheel; today they must click repeatedly.
-
-### 4. Saturation has no visual effect on the wheel
-The wheel always renders at 100% saturation regardless of the slider. The user can't see what their saturation choice looks like on the wheel itself — only in the small preview swatch.
-
-### 5. Saturation slider background style is overridden
-The custom `style={{ background: ... }}` is applied to the Radix `Slider` root, but Radix renders its own track/range elements on top, so the gradient is invisible. The slider looks like a plain black bar (visible in the screenshot).
-
-### 6. Preview swatch turns near-black at low saturation
-`hsl(h, 0%, 50%)` is mid-gray, which is fine, but the indicator dot also uses the same formula — at 0% saturation the indicator becomes gray and disappears against the wheel's saturated colors, making it hard to see what's selected.
-
-### 7. Hue at center click is NaN
-If a user clicks the exact center, `atan2(0, 0)` returns 0 — not catastrophic, but combined with the dead-zone issue it's confusing.
-
-### 8. Touch / mobile support missing
-No `onTouchStart`/`onTouchMove` handlers — the wheel is unusable on touch devices.
-
-### 9. Unused `useEffect` import
-Minor: imported but never used.
+Provider: **AiSensy** (or Gupshup / MSG91 — same shape of API; will use AiSensy as default and one swap-able env var). You'll provide an API key and the approved template name later.
 
 ---
 
-## Proposed Fixes
+## What the user sees
 
-Rewrite `src/components/quiz/ColorPicker.tsx`:
-
-- **Fix angle math**: add `+ 90` offset so the top of the wheel = hue 0 (red), matching the drawn rotation. Normalize to `[0, 360)`.
-- **Make the whole wheel area interactive**: handle pointer events anywhere inside the SVG; project the click onto the ring by computing the angle from center regardless of radius. Ignore clicks too close to center (e.g. radius < 20px) to avoid jitter.
-- **Add drag support** using pointer events (`onPointerDown`, `onPointerMove`, `onPointerUp`, `setPointerCapture`) — works for mouse, touch, and stylus in one handler. Wire up the existing `isDragging` state.
-- **Reflect saturation on the wheel**: pass current `saturation` into `getColorFromHue(i, saturation)` for each segment so the wheel desaturates as the slider moves.
-- **Fix the slider track gradient**: replace the broken inline style with a custom slider — either a styled native `<input type="range">` with a CSS gradient background, or wrap the Radix Slider and inject the gradient on the `SliderPrimitive.Track` via a small style override. Use the input-range approach for reliability.
-- **Keep indicator visible**: stroke the indicator with a contrasting outline (already has white stroke — also add a dark inner stroke or shadow) and force the fill to use a minimum visible saturation for the dot itself, OR show two stacked rings (white outer, black inner) so it's visible on every hue/saturation.
-- **Clamp center clicks**: if click is within ~15px of center, ignore.
-- **Remove unused `useEffect` import.**
-
-No changes needed to `QuizContext`, `QuizForYourself`, or `QuizForSomeoneElse` — the prop API stays identical.
+1. `/auth` page now opens with a **WhatsApp OTP** card by default:
+   - Country code locked to `+91`, 10-digit phone input.
+   - "Send OTP on WhatsApp" button.
+2. After Send: the input is replaced by a 6-digit OTP entry (using the existing `input-otp` component) with a 60-second resend timer.
+3. After Verify: user is signed in (Supabase session created) and redirected home. New users are auto-created.
+4. A subtle **"More login options"** link below reveals the existing Email/Password tabs and Google sign-in (current `Auth.tsx` content moved into a collapsible).
 
 ---
 
-## Files to Modify
+## How it works (technical)
 
-- `src/components/quiz/ColorPicker.tsx` — rewrite as described above.
+Supabase Auth doesn't natively support WhatsApp OTP, so we implement a custom OTP flow that ends in a real Supabase session via `signInWithPassword` against a deterministic system password (never exposed to the user).
 
-No new dependencies. No other files affected.
+### New DB table: `phone_otps`
+| col | type |
+|---|---|
+| `id` uuid PK |
+| `phone` text (E.164, e.g. `+919876543210`) |
+| `otp_hash` text (SHA-256 of OTP + per-row salt) |
+| `salt` text |
+| `attempts` int default 0 |
+| `expires_at` timestamptz |
+| `consumed_at` timestamptz null |
+| `created_at` timestamptz default now() |
+
+RLS: deny all to anon/authenticated. Only edge functions (service role) read/write.
+
+### New column on `profiles`
+- `phone` already exists. We'll add a unique index on `phone` (where not null) so phone numbers are unique per user.
+
+### Edge function: `whatsapp-send-otp`
+- Body: `{ phone: "9876543210" }` (10 digits, India)
+- Validates with Zod (10 digits, leading non-zero, etc.).
+- Rate-limit: max 3 sends per phone per 10 minutes, max 10 per IP per hour (in-memory map; warn this is per-instance only — fine for low volume).
+- Generates 6-digit OTP, hashes with random salt, stores in `phone_otps` with 5-min expiry.
+- Calls AiSensy/Gupshup/MSG91 API to send WhatsApp template message with OTP variable.
+- Returns `{ success: true }` (never returns the OTP).
+
+### Edge function: `whatsapp-verify-otp`
+- Body: `{ phone: "9876543210", otp: "123456" }`
+- Looks up latest non-consumed `phone_otps` row, checks expiry, hash, attempts (max 5).
+- On success: marks consumed, then:
+  1. Look up `profiles` by `phone = "+919876543210"`.
+  2. If not found: create a new auth user via admin API with email `+919876543210@phone.bazukifragrance.com` and a random 32-byte password. Insert profile row with the phone.
+  3. Either way: generate a session by calling `supabase.auth.admin.generateLink({ type: 'magiclink', email })` and return the action token, OR (cleaner) issue a short-lived custom JWT signed with `SUPABASE_JWT_SECRET` containing the user's `sub`. Front-end calls `supabase.auth.setSession({ access_token, refresh_token })`.
+  - We'll go with **`generateLink` + `verifyOtp` token_hash** which is the cleanest supported path (Supabase admin endpoint returns a `hashed_token` we exchange client-side via `supabase.auth.verifyOtp({ type: 'magiclink', token_hash })` to set the session — no fake email link clicked).
+
+### Front-end
+- New component `src/components/auth/WhatsAppOtpLogin.tsx` with two states (phone → otp).
+- `src/pages/Auth.tsx` restructured: WhatsApp OTP up top; existing tabs hidden behind "More login options" disclosure.
+- Phone validation client-side: `/^[6-9]\d{9}$/` (Indian mobile).
+
+### Secrets needed (request via `add_secret` after plan approval)
+- `WHATSAPP_PROVIDER` = `aisensy` | `gupshup` | `msg91` (defaults to `aisensy`)
+- `WHATSAPP_API_KEY` — your provider API key
+- `WHATSAPP_TEMPLATE_NAME` — approved OTP template name (e.g., `otp_login_v1`)
+- `WHATSAPP_SENDER_ID` — your registered WABA sender (phone or sender ID, format depends on provider)
+
+---
+
+## Files
+
+**Create**
+- `supabase/functions/whatsapp-send-otp/index.ts`
+- `supabase/functions/whatsapp-verify-otp/index.ts`
+- `src/components/auth/WhatsAppOtpLogin.tsx`
+
+**Modify**
+- `src/pages/Auth.tsx` — restructure with WhatsApp first, collapsed fallbacks
+- DB migration — create `phone_otps` table + RLS + unique phone index on `profiles`
+- `supabase/config.toml` — add `verify_jwt = false` for the two new functions (called from public Auth page)
+
+---
+
+## Limitations / things you handle later
+- AiSensy/Gupshup/MSG91 require an **approved OTP template** in your WhatsApp Business Account. Until that's approved, sends will fail. The code is ready; you just paste the template name into the secret when ready.
+- Rate limiting is in-memory (per edge function instance). For production scale, we'd later switch to a DB-based limiter.
+- A user logging in by phone gets a synthetic email like `+919876543210@phone.bazukifragrance.com` — invisible to them. If they later add a real email, we can swap it.
+- Only Indian numbers (+91) are accepted. Easy to extend later.
