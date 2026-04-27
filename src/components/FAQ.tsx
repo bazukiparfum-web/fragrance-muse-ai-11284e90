@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Accordion,
   AccordionContent,
@@ -7,10 +7,19 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 
-const faqs = [
+const faqs: { q: string; a: React.ReactNode }[] = [
   {
     q: "How does the AI match me to a fragrance?",
-    a: "Our engine analyzes your quiz answers across personality, mood, scent-family preferences, and lifestyle signals, then maps them to a curated IFRA-compliant ingredient library to compose scents that fit you.",
+    a: (
+      <>
+        Our engine analyzes your quiz answers across personality, mood, scent-family preferences,
+        and lifestyle signals, then maps them to a curated IFRA-compliant ingredient library to
+        compose scents that fit you.{" "}
+        <Link to="/about" className="text-primary underline-offset-4 hover:underline font-medium">
+          Learn about our science →
+        </Link>
+      </>
+    ),
   },
   {
     q: "What do I answer in the quiz?",
@@ -22,7 +31,15 @@ const faqs = [
   },
   {
     q: "Can I see what's inside each fragrance?",
-    a: "Yes. Every match shows its top, heart, and base notes, intensity, longevity, and a visual fingerprint. All ingredients are IFRA-compliant.",
+    a: (
+      <>
+        Yes. Every match shows its top, heart, and base notes, intensity, longevity, and a visual
+        fingerprint. All ingredients are IFRA-compliant.{" "}
+        <Link to="/ingredients" className="text-primary underline-offset-4 hover:underline font-medium">
+          Browse our ingredients →
+        </Link>
+      </>
+    ),
   },
   {
     q: "What sizes can I order?",

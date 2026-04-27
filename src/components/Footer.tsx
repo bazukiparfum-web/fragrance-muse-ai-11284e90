@@ -6,7 +6,7 @@ const Footer = () => {
   return (
     <footer className="bg-luxury-black text-white py-16">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
           {/* Brand */}
           <div>
             <h3 className="font-serif text-2xl font-bold mb-4 text-luxury-gold">Bazuki</h3>
@@ -42,6 +42,17 @@ const Footer = () => {
               <li><a href="/business" className="text-white/70 hover:text-luxury-gold transition-colors">Custom Fragrances</a></li>
               <li><a href="/business#consultation" className="text-white/70 hover:text-luxury-gold transition-colors">Consultation</a></li>
               <li><a href="/business" className="text-white/70 hover:text-luxury-gold transition-colors">Case Studies</a></li>
+            </ul>
+          </div>
+
+          {/* Discover */}
+          <div>
+            <h4 className="font-semibold text-lg mb-4 uppercase tracking-wider">Discover</h4>
+            <ul className="space-y-3">
+              <li><a href="/ingredients" className="text-white/70 hover:text-luxury-gold transition-colors">Ingredients</a></li>
+              <li><a href="/about" className="text-white/70 hover:text-luxury-gold transition-colors">Science & Technology</a></li>
+              <li><a href="/collection" className="text-white/70 hover:text-luxury-gold transition-colors">Collection</a></li>
+              <li><a href="/shop/quiz" className="text-white/70 hover:text-luxury-gold transition-colors">Take the Quiz</a></li>
             </ul>
           </div>
 
