@@ -1,96 +1,56 @@
-# SEO metadata, Ingredient detail modal & homepage Ingredients teaser
+# Add BreadcrumbList + Validate Structured Data
 
-## Overview
-Three additions:
-1. **SEO metadata** for `/ingredients` and `/about` (title, description, canonical, Open Graph, Twitter card).
-2. **Click-to-open modal** on each Ingredients grid card showing role (top/heart/base), scent profile, and typical pairing notes.
-3. **Homepage Ingredients teaser block** matching the uploaded image (image-left / text-right "10 essential building blocks" with "Discover the ingredients →" link).
+Add `BreadcrumbList` JSON-LD to the homepage and Product Detail pages, then run Google's Rich Results validator against the existing JSON-LD blocks (Organization, WebSite, ItemList, Product) and fix anything it flags.
 
-No new dependencies — `react-helmet` is not installed and we don't need it. We'll use a tiny `useSEO` hook that mutates `document.title` and meta tags on mount/cleanup.
+## 1. BreadcrumbList JSON-LD
 
----
+**Homepage (`src/pages/Index.tsx`)**
+Mount a `<JsonLd id="breadcrumbs-home" data={...} />` with a single-item breadcrumb:
+- Home → `https://bazukifragrance.com/`
 
-## 1. SEO metadata
+**PDP (`src/pages/ProductDetail.tsx`)**
+Add a `<JsonLd id={"breadcrumbs-" + handle} ... />` next to the existing Product JSON-LD:
+- Home → `/`
+- Collection → `/collection`
+- {Product Title} → `/product/{handle}`
 
-### New file: `src/hooks/useSEO.ts`
-Reusable hook. On mount it sets:
-- `document.title`
-- `<meta name="description">`
-- `<link rel="canonical">`
-- Open Graph: `og:title`, `og:description`, `og:type`, `og:url`, `og:image`
-- Twitter: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+Each item uses `{ "@type": "ListItem", position, name, item: <absolute URL> }` per schema.org spec, built off `window.location.origin` (matching the existing pattern).
 
-It creates tags if missing and restores prior values on unmount so navigation doesn't leave stale meta. Canonical URL = `window.location.origin + pathname`.
+## 2. Rich Results validation pass
 
-### Apply in pages
-- **`src/pages/Ingredients.tsx`**:
-  - Title: *"Our Ingredients — 10 IFRA-Compliant Building Blocks | Bazuki"*
-  - Description: *"Explore the 10 premium, IFRA-compliant fragrance notes Bazuki uses to compose every personalised scent — from bergamot and rose to sandalwood and amber."*
-  - OG image: imported `ingredients-hero.jpg` URL.
-- **`src/pages/About.tsx`**:
-  - Title: *"The Science & Technology Behind Bazuki Fragrances"*
-  - Description: *"Discover how Bazuki blends AI-driven perfumery with a precision 10-pump dispensing machine to craft fragrances that feel unmistakably yours."*
-  - OG image: imported `science-hero.jpg` URL.
+After adding breadcrumbs, run Google's Rich Results Test against the live published URLs:
+- Homepage: `https://bazukifragrance.com/`
+- A representative PDP: `https://bazukifragrance.com/product/<first-shopify-handle>`
 
----
+Use the public validator endpoint via `websearch`/`fetch` to capture warnings, then patch the JSON-LD. Known likely fixes based on current code:
 
-## 2. Ingredient detail modal
+**`index.html` Organization**
+- Add `contactPoint` (or remove empty `sameAs: []` to avoid "empty array" warnings).
+- Add `logo` as an `ImageObject` with explicit `url` if validator flags it.
 
-### Edit `src/pages/Ingredients.tsx`
-Extend the `LaunchNote` interface with:
-- `role: "Top" | "Heart" | "Base"`
-- `profile: string` — short sensory description
-- `pairings: string[]` — 2–4 names from the same launch list
+**`ProductShowcase.tsx` ItemList**
+- `description` may be empty for some Shopify products → fall back to `${node.title} — luxury fragrance by Bazuki`.
+- `image` may be undefined when a product has no images → omit the field instead of emitting `undefined` (currently serializes to missing key, but guard explicitly).
+- Add `priceValidUntil` (e.g. end of current year) — Google warns when missing on Offers.
+- Add `itemCondition: "https://schema.org/NewCondition"`.
 
-Role assignment: Bergamot/Lemon = Top; Lavender/Rose/Jasmine = Heart; Cedarwood/Sandalwood/Vanilla/Musk/Amber = Base. Pairings drawn only from the 10 launch notes.
+**`ProductDetail.tsx` Product**
+- Same `priceValidUntil` + `itemCondition` additions on each Offer.
+- Use `mpn` or stable `sku` (strip the `gid://shopify/ProductVariant/` prefix to a clean numeric SKU) — Google prefers a human-readable SKU.
+- Add `hasMerchantReturnPolicy` and `shippingDetails` only if the validator escalates to errors (otherwise leave as warnings to avoid fabricating policy data).
+- Ensure `aggregateRating` / `review` are NOT emitted unless real review data exists (current code correctly omits — keep it that way).
 
-Replace static cards with shadcn `Dialog`:
-- Each card wrapped in `<Dialog>`, the card itself is `<DialogTrigger asChild>` with `cursor-pointer` + existing `hover:shadow-md`.
-- `<DialogContent>` shows:
-  - Header: family-color dot + note name + family chip.
-  - **Role** badge (e.g., "Heart note") via shadcn `Badge`.
-  - **Scent profile** paragraph.
-  - **Pairs well with** — row of `Badge` chips per pairing.
-  - Footer line: *"Dispensed by PUMP-XX"* using `(index + 1).toString().padStart(2, "0")`.
-- Title/description use `text-primary-foreground` to match the existing dialog visual style memory.
-- Cards get `aria-label="View details for {name}"`.
+## 3. Verification
 
-Per-card uncontrolled Dialogs (simpler than central state).
+- Re-run the Rich Results Test on both URLs.
+- Confirm: 0 errors, breadcrumbs detected, Product detected on PDP, ItemList detected on homepage.
+- Report remaining non-blocking warnings (e.g. shipping policy) to the user with a recommendation.
 
----
+## Files touched
 
-## 3. Homepage Ingredients teaser block
+- `src/pages/Index.tsx` — add breadcrumb JsonLd
+- `src/pages/ProductDetail.tsx` — add breadcrumb JsonLd, harden Product offer fields
+- `src/components/ProductShowcase.tsx` — harden ItemList Offer fields, image guard
+- `index.html` — small Organization cleanup if validator flags it
 
-### New component: `src/components/IngredientsTeaser.tsx`
-Mirrors the uploaded image — image-left, text-right, mobile stacks.
-
-- Section: `py-16 md:py-24` with `container mx-auto px-4`.
-- `grid md:grid-cols-2 gap-10 md:gap-16 items-center`.
-- Left: rounded `ingredients-hero.jpg` (reuse existing asset).
-- Right:
-  - Eyebrow: `OUR PALETTE` (uppercase, gold).
-  - Heading: *"10 essential building blocks"* (`font-serif text-4xl md:text-5xl`).
-  - Two paragraphs (same copy as `/ingredients` hero).
-  - Link: *"Discover the ingredients →"* — `react-router-dom` `Link` to `/ingredients`.
-
-### Edit `src/pages/Index.tsx`
-Insert `<IngredientsTeaser />` between `<ProductShowcase />` and `<FAQ />`.
-
----
-
-## Files
-
-**New**
-- `src/hooks/useSEO.ts`
-- `src/components/IngredientsTeaser.tsx`
-
-**Modified**
-- `src/pages/Ingredients.tsx` — apply `useSEO`, extend launch-note data, wrap each grid card in a Dialog with role / profile / pairings.
-- `src/pages/About.tsx` — apply `useSEO`.
-- `src/pages/Index.tsx` — mount `<IngredientsTeaser />`.
-
-## Out of scope
-- No DB changes (notes stay hardcoded — stable launch set).
-- No new dependencies.
-- No header nav changes.
-- No edits to global `index.html` defaults (page-level meta overrides per route).
+No new dependencies. No DB or backend changes.
