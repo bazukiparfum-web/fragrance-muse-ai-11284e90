@@ -171,6 +171,7 @@ const ProductShowcase = () => {
   const trendingPicks = scents.filter(s => s.creator_tag === 'influencer' || s.creator_tag === 'celebrity').slice(0, 4);
   const communityFavs = scents.filter(s => !s.creator_tag).slice(0, 4);
 
+  const priceValidUntil = `${new Date().getFullYear()}-12-31`;
   const itemListJsonLd = shopifyProducts.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -179,24 +180,28 @@ const ProductShowcase = () => {
       const node = p.node;
       const img = node.images?.edges?.[0]?.node;
       const price = node.priceRange.minVariantPrice;
+      const productUrl = `${window.location.origin}/product/${node.handle}`;
+      const item: Record<string, any> = {
+        "@type": "Product",
+        name: node.title,
+        description: node.description || `${node.title} — luxury fragrance by Bazuki.`,
+        url: productUrl,
+        brand: { "@type": "Brand", name: "Bazuki Perfumes" },
+        offers: {
+          "@type": "Offer",
+          price: parseFloat(price.amount).toFixed(2),
+          priceCurrency: price.currencyCode || "INR",
+          availability: "https://schema.org/InStock",
+          itemCondition: "https://schema.org/NewCondition",
+          priceValidUntil,
+          url: productUrl,
+        },
+      };
+      if (img?.url) item.image = img.url;
       return {
         "@type": "ListItem",
         position: idx + 1,
-        item: {
-          "@type": "Product",
-          name: node.title,
-          description: node.description,
-          image: img?.url,
-          url: `${window.location.origin}/product/${node.handle}`,
-          brand: { "@type": "Brand", name: "Bazuki Perfumes" },
-          offers: {
-            "@type": "Offer",
-            price: parseFloat(price.amount).toFixed(2),
-            priceCurrency: price.currencyCode || "INR",
-            availability: "https://schema.org/InStock",
-            url: `${window.location.origin}/product/${node.handle}`,
-          },
-        },
+        item,
       };
     }),
   } : null;
