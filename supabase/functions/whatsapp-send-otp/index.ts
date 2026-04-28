@@ -56,22 +56,22 @@ async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
     throw new Error("WHATSAPP_11ZA_AUTH_TOKEN is not configured");
   }
 
-  const url = `${baseUrl.replace(/\/$/, "")}/pabbly/sendTemplate`;
+  const url = `${baseUrl.replace(/\/$/, "")}/createMessage`;
+  const phoneDigits = phoneE164.replace(/^\+/, "");
   const body = {
-    TemplateName: templateName,
-    Name: "Customer",
-    PhoneNumber: phoneE164.replace(/^\+/, ""), // 11za expects digits with country code, no '+'
-    Language: "en",
-    BodyDynamicData: otp,
-    ButtonValue: otp, // for COPY_CODE button on auth templates
+    authToken,
+    sendto: phoneDigits,
+    template_name: templateName,
+    data: {
+      body: [otp],
+      buttons: [{ type: "url", index: 0, value: otp }],
+    },
+    myop_ref_id: `otp-${Date.now()}`,
   };
 
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      authToken,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
