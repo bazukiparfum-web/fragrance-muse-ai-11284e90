@@ -6,12 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import { ReferralBanner } from '@/components/ReferralBanner';
 import { Separator } from '@/components/ui/separator';
 import { SocialAuthButtons } from '@/components/SocialAuthButtons';
+import { WhatsAppOtpLogin } from '@/components/auth/WhatsAppOtpLogin';
+import { ChevronDown } from 'lucide-react';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -178,136 +181,153 @@ const Auth = () => {
           )}
           
           <Card className="max-w-md mx-auto p-8">
-            <h1 className="font-serif text-3xl text-center mb-6">Welcome to BAZUKI</h1>
-            
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+            <h1 className="font-serif text-3xl text-center mb-2">Welcome to BAZUKI</h1>
+            <p className="text-center text-sm text-muted-foreground mb-6">
+              Sign in or create your account in seconds.
+            </p>
 
-              <TabsContent value="signin">
-                <div className="space-y-4">
-                  <SocialAuthButtons />
+            <WhatsAppOtpLogin />
 
-                  <div className="relative">
-                    <Separator />
-                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                      or continue with email
-                    </span>
-                  </div>
+            <Collapsible className="mt-8">
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  More login options <ChevronDown className="h-3 w-3" />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-6">
+                <Tabs defaultValue="signin" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="signin">Sign In</TabsTrigger>
+                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  </TabsList>
 
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div>
-                    <Label htmlFor="signin-email">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="signin-password">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
+                  <TabsContent value="signin">
+                    <div className="space-y-4">
+                      <SocialAuthButtons />
 
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? 'Signing In...' : 'Sign In'}
-                  </Button>
+                      <div className="relative">
+                        <Separator />
+                        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                          or continue with email
+                        </span>
+                      </div>
 
-                  <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-                    <DialogTrigger asChild>
-                      <Button variant="link" className="w-full mt-2" type="button">
-                        Forgot Password?
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Reset Password</DialogTitle>
-                        <DialogDescription>
-                          Enter your email address and we'll send you a link to reset your password.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleResetPassword} className="space-y-4">
+                      <form onSubmit={handleSignIn} className="space-y-4">
                         <div>
-                          <Label htmlFor="reset-email">Email</Label>
+                          <Label htmlFor="signin-email">Email</Label>
                           <Input
-                            id="reset-email"
+                            id="signin-email"
                             type="email"
                             placeholder="you@example.com"
-                            value={resetEmail}
-                            onChange={(e) => setResetEmail(e.target.value)}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             required
                           />
                         </div>
+
+                        <div>
+                          <Label htmlFor="signin-password">Password</Label>
+                          <Input
+                            id="signin-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+
                         <Button type="submit" className="w-full" disabled={loading}>
-                          {loading ? 'Sending...' : 'Send Reset Link'}
+                          {loading ? 'Signing In...' : 'Sign In'}
+                        </Button>
+
+                        <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                          <DialogTrigger asChild>
+                            <Button variant="link" className="w-full mt-2" type="button">
+                              Forgot Password?
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Reset Password</DialogTitle>
+                              <DialogDescription>
+                                Enter your email address and we'll send you a link to reset your password.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleResetPassword} className="space-y-4">
+                              <div>
+                                <Label htmlFor="reset-email">Email</Label>
+                                <Input
+                                  id="reset-email"
+                                  type="email"
+                                  placeholder="you@example.com"
+                                  value={resetEmail}
+                                  onChange={(e) => setResetEmail(e.target.value)}
+                                  required
+                                />
+                              </div>
+                              <Button type="submit" className="w-full" disabled={loading}>
+                                {loading ? 'Sending...' : 'Send Reset Link'}
+                              </Button>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                      </form>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="signup">
+                    <div className="space-y-4">
+                      <SocialAuthButtons />
+
+                      <div className="relative">
+                        <Separator />
+                        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                          or continue with email
+                        </span>
+                      </div>
+
+                      <form onSubmit={handleSignUp} className="space-y-4">
+                        <div>
+                          <Label htmlFor="signup-email">Email</Label>
+                          <Input
+                            id="signup-email"
+                            type="email"
+                            placeholder="you@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="signup-password">Password</Label>
+                          <Input
+                            id="signup-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            minLength={6}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Must be at least 6 characters
+                          </p>
+                        </div>
+
+                        <Button type="submit" className="w-full" disabled={loading}>
+                          {loading ? 'Creating Account...' : 'Create Account'}
                         </Button>
                       </form>
-                    </DialogContent>
-                  </Dialog>
-                </form>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <div className="space-y-4">
-                  <SocialAuthButtons />
-
-                  <div className="relative">
-                    <Separator />
-                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                      or continue with email
-                    </span>
-                  </div>
-                
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div>
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Must be at least 6 characters
-                    </p>
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? 'Creating Account...' : 'Create Account'}
-                  </Button>
-                </form>
-                </div>
-              </TabsContent>
-            </Tabs>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CollapsibleContent>
+            </Collapsible>
           </Card>
         </div>
       </div>
