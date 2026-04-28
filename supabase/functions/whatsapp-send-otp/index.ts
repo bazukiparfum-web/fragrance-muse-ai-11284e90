@@ -48,25 +48,25 @@ function generateOtp(): string {
 }
 
 async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
-  const baseUrl = Deno.env.get("WHATSAPP_11ZA_BASE_URL") ?? "https://app.11za.in/apis";
   const authToken = Deno.env.get("WHATSAPP_11ZA_AUTH_TOKEN");
   const templateName = Deno.env.get("WHATSAPP_11ZA_TEMPLATE_NAME") ?? "otp_login";
+  const originWebsite = Deno.env.get("WHATSAPP_11ZA_ORIGIN_WEBSITE") ?? "bazukifragrance.com";
 
   if (!authToken) {
     throw new Error("WHATSAPP_11ZA_AUTH_TOKEN is not configured");
   }
 
-  const url = `${baseUrl.replace(/\/$/, "")}/createMessage`;
+  // Official 11za endpoint per their Postman docs
+  const url = "https://api.11za.in/apis/template/sendTemplate";
   const phoneDigits = phoneE164.replace(/^\+/, "");
   const body = {
     authToken,
     sendto: phoneDigits,
-    template_name: templateName,
-    data: {
-      body: [otp],
-      buttons: [{ type: "url", index: 0, value: otp }],
-    },
-    myop_ref_id: `otp-${Date.now()}`,
+    originWebsite,
+    templateName,
+    language: "en",
+    data: [otp],          // template body variable {{1}}
+    buttonValue: otp,     // OTP for copy-code / URL button
   };
 
   const res = await fetch(url, {
@@ -76,7 +76,11 @@ async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
   });
 
   const text = await res.text();
-  if (!res.ok) {
+  let parsed: any = null;
+  try { parsed = JSON.parse(text); } catch { /* not JSON */ }
+
+  // 11za returns 200 with { Status, IsSuccess, Message } even on logical failures
+  if (!res.ok || (parsed && parsed.IsSuccess === false)) {
     console.error("11za send failed", res.status, text);
     throw new Error(`WhatsApp send failed [${res.status}]: ${text.slice(0, 300)}`);
   }
