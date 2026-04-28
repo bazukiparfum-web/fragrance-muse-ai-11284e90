@@ -164,7 +164,12 @@ export function WhatsAppOtpLogin() {
       <Button className="w-full" onClick={() => verifyOtp(otp)} disabled={loading || otp.length !== 6}>
         {loading ? "Verifying..." : "Verify & Continue"}
       </Button>
-      <div className="text-center text-sm">
+      <div className="space-y-2 text-center text-sm">
+        {resendIn > 0 && resendIn <= 30 && (
+          <p className="animate-fade-in text-xs text-muted-foreground">
+            Didn't get it? Make sure WhatsApp is installed on +91 {phone}.
+          </p>
+        )}
         {resendIn > 0 ? (
           <span className="text-muted-foreground">Resend OTP in {resendIn}s</span>
         ) : (
