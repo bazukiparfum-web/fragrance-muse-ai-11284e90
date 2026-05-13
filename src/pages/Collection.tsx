@@ -314,8 +314,14 @@ export default function Collection() {
     ],
   };
 
+  const breadcrumbs = buildBreadcrumbs([
+    { name: "Home", path: "/" },
+    { name: "Collection", path: "/collection" },
+  ]);
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-collection" data={breadcrumbs} />
       <JsonLd id="collection-itemlist" data={itemListJsonLd} />
       <Header />
 
