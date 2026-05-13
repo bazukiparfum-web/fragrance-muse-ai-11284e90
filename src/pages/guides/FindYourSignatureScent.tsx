@@ -3,6 +3,33 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useSEO } from "@/hooks/useSEO";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
+
+const SITE_URL = "https://www.bazukifragrance.com";
+const PAGE_PATH = "/guide/find-your-signature-scent";
+
+const breadcrumbs = buildBreadcrumbs([
+  { name: "Home", path: "/" },
+  { name: "Guides", path: "/guide/find-your-signature-scent" },
+  { name: "Find Your Signature Scent", path: PAGE_PATH },
+]);
+
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "How to Find Your Signature Scent",
+  description: "A 5-step guide using AI matching, scent families, and skin wear-testing to find a signature fragrance.",
+  author: { "@type": "Organization", name: "Bazuki Perfumes", url: SITE_URL },
+  publisher: {
+    "@type": "Organization",
+    name: "Bazuki Perfumes",
+    logo: { "@type": "ImageObject", url: `${SITE_URL}/favicon.png` },
+  },
+  datePublished: "2026-05-13",
+  dateModified: "2026-05-13",
+  mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}${PAGE_PATH}` },
+};
 
 const FindYourSignatureScent = () => {
   useSEO({

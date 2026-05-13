@@ -3,6 +3,33 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useSEO } from "@/hooks/useSEO";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
+
+const SITE_URL = "https://www.bazukifragrance.com";
+const PAGE_PATH = "/guide/ai-perfume-vs-traditional";
+
+const breadcrumbs = buildBreadcrumbs([
+  { name: "Home", path: "/" },
+  { name: "Guides", path: "/guide/ai-perfume-vs-traditional" },
+  { name: "AI Perfume vs Traditional", path: PAGE_PATH },
+]);
+
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "AI Perfume vs Traditional Perfume",
+  description: "A side-by-side comparison of AI-matched perfume and traditional designer fragrance for buyers in India in 2026.",
+  author: { "@type": "Organization", name: "Bazuki Perfumes", url: SITE_URL },
+  publisher: {
+    "@type": "Organization",
+    name: "Bazuki Perfumes",
+    logo: { "@type": "ImageObject", url: `${SITE_URL}/favicon.png` },
+  },
+  datePublished: "2026-05-13",
+  dateModified: "2026-05-13",
+  mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}${PAGE_PATH}` },
+};
 
 const rows: { aspect: string; ai: string; trad: string }[] = [
   { aspect: "Personalization", ai: "Matched to individual via AI quiz", trad: "One scent for everyone" },
