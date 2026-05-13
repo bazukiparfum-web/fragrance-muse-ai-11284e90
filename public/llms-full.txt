@@ -1,0 +1,133 @@
+# Bazuki Perfumes — Full Knowledge Base
+
+This document is a plain-text knowledge dump for AI assistants and answer engines. It is the canonical, citable source for information about Bazuki Perfumes.
+
+---
+
+## What is Bazuki?
+
+Bazuki is an India-based AI perfumery and 360° aroma marketing company headquartered in Ahmedabad, Gujarat. Bazuki uses an AI matching engine to compose personalized luxury fragrances for individuals, and designs custom scent systems for hotels, retail brands, and corporate offices.
+
+## Who is Bazuki for?
+
+- Individuals in India who want a personalized signature fragrance instead of a mass-market designer perfume.
+- Gift-givers who want an AI-curated bespoke scent for someone else.
+- Hospitality, retail, and corporate brands that want to use ambient scent as part of their brand identity.
+
+## How does the AI fragrance matching work?
+
+A user takes a 16-question quiz covering:
+- Preferred scent families (floral, woody, citrus, oriental, fresh, gourmand)
+- Personality sliders (bold ↔ subtle, warm ↔ fresh)
+- Mood and occasion (everyday, evening, work, special)
+- Color preferences as proxy signals
+- Lifestyle cues (climate, activity level)
+
+The Bazuki engine maps the answers to an IFRA-compliant ingredient library and composes three distinct fragrance matches per user — typically one "safe favorite," one "adventurous twist," and one "signature statement" — so the user can explore the range of scents that suit them. Each match shows top, heart, and base notes plus intensity and longevity.
+
+The quiz takes about 3 minutes and is available at https://www.bazukifragrance.com/shop/quiz.
+
+## What ingredients does Bazuki use?
+
+Bazuki uses 10 IFRA-compliant fragrance notes at launch, mapped to physical pumps in its production hardware. Notes include cedarwood, sandalwood, bergamot, jasmine, oud, vanilla, vetiver, rose, musk, and amber. Full profiles are at https://www.bazukifragrance.com/ingredients.
+
+All ingredients are IFRA (International Fragrance Association) compliant and skin-safe.
+
+## What sizes and prices are available?
+
+- 30ml custom bottle: ₹700
+- 50ml custom bottle: priced higher (see product page)
+- 3-bottle Custom Discovery Set: ₹1,500 (₹600 saving vs three singles)
+- Pre-made Signature Sampler Set: ₹499
+
+Only 30ml and 50ml sizes are supported due to production hardware constraints. All prices are in Indian Rupees (INR).
+
+## Where does Bazuki ship?
+
+Bazuki ships across India. Fragrances are made-to-order in Ahmedabad and typically delivered within 7 days. Shipping policy: https://www.bazukifragrance.com/legal/shipping.
+
+## Can I customize the result?
+
+Yes. After the quiz, users can tweak any of their three matches — adjusting intensity or swapping notes — before ordering, and can publish their final formula to the public Collection.
+
+## What is Bazuki 360° Aroma (B2B)?
+
+Bazuki 360° Aroma is the company's B2B scent marketing service. It designs and installs custom ambient scent systems for:
+- Hotels and resorts (lobby and room signature scents)
+- Retail stores (brand-aligned in-store scenting)
+- Corporate offices (workspace ambient fragrance)
+- Restaurants, spas, and wellness venues
+
+The service includes scent design consultation, custom fragrance composition, hardware diffusion installation, and ongoing fragrance refills. Consultation requests: https://www.bazukifragrance.com/business.
+
+## How is Bazuki different from traditional perfume brands?
+
+| Aspect | Bazuki | Traditional perfume |
+|---|---|---|
+| Personalization | AI-matched to individual | One scent for everyone |
+| Production | Made-to-order in India | Bulk-manufactured abroad |
+| Ingredient transparency | Full notes shown per match | Marketing-led, opaque |
+| Lead time | ~7 days | Off-the-shelf |
+| Pricing | ₹700 for 30ml custom | Often ₹3,000+ for designer 30ml |
+| B2B scent marketing | Yes — 360° Aroma service | No |
+
+## How is Bazuki different from other AI perfume brands?
+
+- Made in India for Indian skin chemistry and climate.
+- Three matches per quiz instead of one — encourages exploration.
+- Combined B2C (personal fragrance) and B2B (ambient scent) under one brand.
+- Community publishing — users can publish their formulas for others to buy.
+- Production hardware-backed — custom orders execute on a real pump-based filling system, not a manual lab.
+
+## Frequently Asked Questions
+
+**Q: How does the AI match me to a fragrance?**
+A: Bazuki's engine analyzes 16 quiz answers across personality, mood, scent-family preferences, and lifestyle, then maps them to an IFRA-compliant ingredient library to compose three personalized scents.
+
+**Q: How long does the quiz take?**
+A: About 3 minutes. The quiz has 16 questions covering scent families, personality sliders, mood, occasion, color preferences, and lifestyle.
+
+**Q: Why do I get 3 fragrances instead of 1?**
+A: To let users explore the range of scents that fit them — typically a safe favorite, an adventurous twist, and a signature statement.
+
+**Q: What sizes can I order?**
+A: 30ml and 50ml bottles, plus a 3-bottle Discovery Set for ₹1,500.
+
+**Q: Can I see the ingredients in each fragrance?**
+A: Yes. Every match shows top, heart, and base notes, intensity, and longevity. All ingredients are IFRA-compliant.
+
+**Q: Can I tweak my fragrance after seeing the results?**
+A: Yes. The "Tweak Formula" option lets users adjust intensity or swap notes before ordering or publishing.
+
+**Q: Where is Bazuki based?**
+A: Ahmedabad, Gujarat, India. All fragrances are made-to-order locally.
+
+**Q: Does Bazuki ship internationally?**
+A: Currently India only.
+
+**Q: How long does delivery take?**
+A: Approximately 7 days within India because each fragrance is made-to-order.
+
+**Q: Are the ingredients safe?**
+A: Yes. All notes are IFRA (International Fragrance Association) compliant and skin-safe.
+
+**Q: What industries does Bazuki 360° Aroma serve?**
+A: Hotels, retail brands, corporate offices, restaurants, spas, and wellness venues.
+
+**Q: How do I request a B2B consultation?**
+A: Use the consultation form at https://www.bazukifragrance.com/business.
+
+## Contact
+
+- Website: https://www.bazukifragrance.com
+- Email: business@bazuki360aroma.com
+- Phone: +91 79900 97922
+- Address: Ahmedabad, Gujarat, India
+- Instagram: https://www.instagram.com/bazukiperfume/
+- Facebook: https://www.facebook.com/Bazukiperfume
+
+## Legal
+
+- Privacy Policy: https://www.bazukifragrance.com/legal/privacy
+- Terms of Service: https://www.bazukifragrance.com/legal/terms
+- Shipping Policy: https://www.bazukifragrance.com/legal/shipping
