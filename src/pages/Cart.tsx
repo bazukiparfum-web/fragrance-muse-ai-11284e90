@@ -6,12 +6,18 @@ import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import Header from '@/components/Header';
 import { useSEO } from '@/hooks/useSEO';
+import { JsonLd } from '@/components/JsonLd';
+import { buildBreadcrumbs } from '@/lib/breadcrumbs';
 
 const Cart = () => {
   useSEO({
     title: "Your Cart – Bazuki Perfumes Checkout",
     description: "Review your selected luxury fragrances and AI-personalized perfumes before checkout. Free shipping on qualifying orders across India.",
   });
+  const breadcrumbs = buildBreadcrumbs([
+    { name: "Home", path: "/" },
+    { name: "Cart", path: "/shop/cart" },
+  ]);
   const navigate = useNavigate();
   const { cartItems, updateQuantity, removeFromCart, loading } = useCart();
 
@@ -22,6 +28,7 @@ const Cart = () => {
   if (cartItems.length === 0) {
     return (
       <>
+        <JsonLd id="breadcrumbs-cart" data={breadcrumbs} />
         <Header />
         <div className="min-h-screen pt-24 pb-12">
           <div className="container mx-auto px-4">
