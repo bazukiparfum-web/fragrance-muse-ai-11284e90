@@ -49,6 +49,7 @@ const Cart = () => {
 
   return (
     <>
+      <JsonLd id="breadcrumbs-cart" data={breadcrumbs} />
       <Header />
       <div className="min-h-screen pt-24 pb-12 bg-secondary/30">
         <div className="container mx-auto px-4">
