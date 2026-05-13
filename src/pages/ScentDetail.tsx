@@ -183,8 +183,15 @@ export default function ScentDetail() {
   const heartNotes = scent.formula?.filter((n: any) => n.category === 'heart') || [];
   const baseNotes = scent.formula?.filter((n: any) => n.category === 'base') || [];
 
+  const breadcrumbs = buildBreadcrumbs([
+    { name: "Home", path: "/" },
+    { name: "Collection", path: "/collection" },
+    { name: scent.name || "Fragrance", path: `/collection/${scent.id}` },
+  ]);
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id={`breadcrumbs-scent-${scent.id}`} data={breadcrumbs} />
       <Header />
       
       <main className="container mx-auto px-4 py-8 md:py-12">
