@@ -1,17 +1,23 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Gift, User, Clock } from 'lucide-react';
+import { Gift, User, Clock, BookOpen, ArrowRight } from 'lucide-react';
 import { useQuiz } from '@/contexts/QuizContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useSEO } from '@/hooks/useSEO';
+import { JsonLd } from '@/components/JsonLd';
+import { buildBreadcrumbs } from '@/lib/breadcrumbs';
 
 const QuizLanding = () => {
   useSEO({
     title: "AI Fragrance Quiz – Find Your Signature Scent | Bazuki",
     description: "Take our 2-minute AI fragrance quiz. Get 3 personalized perfumes matched to your personality, mood, and lifestyle. Made-to-order in India.",
   });
+  const breadcrumbs = buildBreadcrumbs([
+    { name: 'Home', path: '/' },
+    { name: 'Quiz', path: '/shop/quiz' },
+  ]);
   const navigate = useNavigate();
   const { setIsForGift, resetAnswers } = useQuiz();
 
@@ -45,6 +51,7 @@ const QuizLanding = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-quiz" data={breadcrumbs} />
       <Header />
       
       <section className="container mx-auto px-4 py-20">
