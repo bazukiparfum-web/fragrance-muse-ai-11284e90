@@ -10,6 +10,7 @@ import { useCartStore } from '@/stores/cartStore';
 import { toast } from 'sonner';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { JsonLd } from '@/components/JsonLd';
+import { useSEO } from '@/hooks/useSEO';
 
 type ProductNode = ShopifyProduct['node'];
 
