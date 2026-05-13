@@ -53,6 +53,7 @@ const Header = () => {
               size="icon"
               onClick={() => navigate(-1)}
               className="text-foreground hover:text-accent"
+              aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -60,6 +61,7 @@ const Header = () => {
           <button 
             onClick={() => navigate('/')}
             className="font-serif text-2xl font-semibold text-foreground hover:text-accent transition-colors"
+            aria-label="Bazuki home"
           >
             BAZUKI
           </button>
