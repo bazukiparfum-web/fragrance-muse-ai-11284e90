@@ -14,6 +14,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { fetchShopifyProducts, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
+import { useSEO } from "@/hooks/useSEO";
+import { JsonLd } from "@/components/JsonLd";
 
 interface PublicScent {
   id: string;
