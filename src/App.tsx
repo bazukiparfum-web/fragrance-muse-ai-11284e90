@@ -41,6 +41,9 @@ import AdminProductionQueue from "./pages/admin/AdminProductionQueue";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTesting from "./pages/admin/AdminTesting";
 import NotFound from "./pages/NotFound";
+import FindYourSignatureScent from "./pages/guides/FindYourSignatureScent";
+import PerfumeNotesExplained from "./pages/guides/PerfumeNotesExplained";
+import AIPerfumeVsTraditional from "./pages/guides/AIPerfumeVsTraditional";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +77,9 @@ const AppInner = () => {
           <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
           <Route path="/shop/quiz/for-someone-else" element={<QuizForSomeoneElse />} />
           <Route path="/shop/quiz/results" element={<QuizResults />} />
+          <Route path="/guide/find-your-signature-scent" element={<FindYourSignatureScent />} />
+          <Route path="/guide/perfume-notes-explained" element={<PerfumeNotesExplained />} />
+          <Route path="/guide/ai-perfume-vs-traditional" element={<AIPerfumeVsTraditional />} />
           <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
             <Route index element={<AdminDashboard />} />
             <Route path="dashboard" element={<AdminDashboard />} />
