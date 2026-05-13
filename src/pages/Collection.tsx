@@ -163,6 +163,10 @@ function SectionHeader({ icon: Icon, title, subtitle }: { icon: any; title: stri
 }
 
 export default function Collection() {
+  useSEO({
+    title: "Fragrance Collection – Signature & Custom Scents | Bazuki",
+    description: "Browse signature pre-made perfumes and AI-personalized custom fragrances created by our community, influencers, and celebrities.",
+  });
   const [scents, setScents] = useState<PublicScent[]>([]);
   const [shopifyProducts, setShopifyProducts] = useState<ShopifyProduct[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
