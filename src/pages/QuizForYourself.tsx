@@ -17,8 +17,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ColorPicker } from '@/components/quiz/ColorPicker';
 import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
+import { useSEO } from '@/hooks/useSEO';
 
 const QuizForYourself = () => {
+  useSEO({
+    title: "Personal Fragrance Quiz – Find Your Scent | Bazuki",
+    description: "Answer 16 quick questions about your personality, mood, and preferences. Our AI crafts 3 unique perfumes made just for you, delivered in 7 days.",
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { answers, updateAnswer, setAllAnswers, resetAnswers } = useQuiz();

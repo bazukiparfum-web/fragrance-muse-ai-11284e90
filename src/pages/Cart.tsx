@@ -5,8 +5,13 @@ import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import Header from '@/components/Header';
+import { useSEO } from '@/hooks/useSEO';
 
 const Cart = () => {
+  useSEO({
+    title: "Your Cart – Bazuki Perfumes Checkout",
+    description: "Review your selected luxury fragrances and AI-personalized perfumes before checkout. Free shipping on qualifying orders across India.",
+  });
   const navigate = useNavigate();
   const { cartItems, updateQuantity, removeFromCart, loading } = useCart();
 

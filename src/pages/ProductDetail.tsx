@@ -10,6 +10,7 @@ import { useCartStore } from '@/stores/cartStore';
 import { toast } from 'sonner';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { JsonLd } from '@/components/JsonLd';
+import { useSEO } from '@/hooks/useSEO';
 
 type ProductNode = ShopifyProduct['node'];
 
@@ -38,20 +39,20 @@ export default function ProductDetail() {
     return () => { cancelled = true; };
   }, [handle]);
 
-  // SEO meta
-  useEffect(() => {
-    if (!product) return;
-    const title = `${product.title} | BAZUKI`;
-    document.title = title.length > 60 ? title.slice(0, 57) + '...' : title;
-    const desc = (product.description || '').slice(0, 155);
-    let metaDesc = document.querySelector('meta[name="description"]');
-    if (!metaDesc) {
-      metaDesc = document.createElement('meta');
-      metaDesc.setAttribute('name', 'description');
-      document.head.appendChild(metaDesc);
-    }
-    metaDesc.setAttribute('content', desc);
-  }, [product]);
+  // SEO meta — unique title/description and self-referencing canonical/og:url per product
+  const seoTitle = product
+    ? `${product.title} – Luxury Fragrance | Bazuki Perfumes`.slice(0, 60)
+    : 'Bazuki Perfumes';
+  const seoDescription = product
+    ? (product.description || `Shop ${product.title} from Bazuki — AI-crafted luxury fragrance, made-to-order in India and delivered in 7 days.`).slice(0, 155)
+    : '';
+  const seoImage = product?.images?.edges?.[0]?.node?.url;
+  useSEO({
+    title: seoTitle,
+    description: seoDescription,
+    image: seoImage,
+    type: 'product',
+  });
 
   const handleAddToCart = async () => {
     if (!product || !selectedVariant) return;

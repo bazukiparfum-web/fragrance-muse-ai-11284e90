@@ -13,6 +13,7 @@ import { useQuiz } from '@/contexts/QuizContext';
 import { useCartStore } from '@/stores/cartStore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useSEO } from '@/hooks/useSEO';
 
 interface Recommendation {
   id: string;
@@ -35,6 +36,10 @@ interface Recommendation {
 }
 
 const QuizResults = () => {
+  useSEO({
+    title: "Your AI Fragrance Matches – Quiz Results | Bazuki",
+    description: "Your 3 personalized perfume recommendations from our AI fragrance engine. Tweak the formula, save favorites, or order made-to-order in 7 days.",
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const { answers } = useQuiz();
