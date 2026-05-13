@@ -583,6 +583,7 @@ const QuizForSomeoneElse = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-quiz-gift" data={quizGiftBreadcrumbs} />
       <Header />
       
       <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>

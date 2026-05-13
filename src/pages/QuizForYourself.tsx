@@ -600,6 +600,7 @@ const QuizForYourself = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-quiz-yourself" data={quizYourselfBreadcrumbs} />
       <Header />
       
       <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
