@@ -85,15 +85,15 @@ export const CartDrawer = () => {
                       </div>
 
                       <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeItem(item.variantId)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`Remove ${item.product.node.title} from cart`} onClick={() => removeItem(item.variantId)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                         <div className="flex items-center gap-1">
-                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.variantId, item.quantity - 1)}>
+                          <Button variant="outline" size="icon" className="h-6 w-6" aria-label="Decrease quantity" onClick={() => updateQuantity(item.variantId, item.quantity - 1)}>
                             <Minus className="h-3 w-3" />
                           </Button>
                           <span className="w-8 text-center text-sm">{item.quantity}</span>
-                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.variantId, item.quantity + 1)}>
+                          <Button variant="outline" size="icon" className="h-6 w-6" aria-label="Increase quantity" onClick={() => updateQuantity(item.variantId, item.quantity + 1)}>
                             <Plus className="h-3 w-3" />
                           </Button>
                         </div>
