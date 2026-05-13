@@ -103,6 +103,32 @@ const QuizLanding = () => {
               </div>
             </button>
           </div>
+
+          <div className="mt-20 max-w-3xl mx-auto">
+            <div className="flex items-center justify-center gap-2 mb-6 text-muted-foreground">
+              <BookOpen className="h-4 w-4" />
+              <span className="text-sm uppercase tracking-wider">Not sure where to start?</span>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              {[
+                { to: '/guide/find-your-signature-scent', title: 'Find Your Signature Scent', desc: 'A 5-step guide to your perfect match' },
+                { to: '/guide/perfume-notes-explained', title: 'Perfume Notes Explained', desc: 'Top, heart & base notes glossary' },
+                { to: '/guide/ai-perfume-vs-traditional', title: 'AI vs Traditional Perfume', desc: 'How they actually compare' },
+              ].map((g) => (
+                <Link
+                  key={g.to}
+                  to={g.to}
+                  className="group p-5 rounded-lg border border-border bg-card hover:border-accent transition-colors text-left"
+                >
+                  <h4 className="font-serif text-lg font-semibold mb-1 group-hover:text-accent transition-colors">{g.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-2">{g.desc}</p>
+                  <span className="text-xs text-accent inline-flex items-center gap-1">
+                    Read guide <ArrowRight className="h-3 w-3" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
