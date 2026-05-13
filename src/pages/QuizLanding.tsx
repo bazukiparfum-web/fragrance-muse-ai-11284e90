@@ -5,8 +5,13 @@ import Footer from '@/components/Footer';
 import { Gift, User, Clock } from 'lucide-react';
 import { useQuiz } from '@/contexts/QuizContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useSEO } from '@/hooks/useSEO';
 
 const QuizLanding = () => {
+  useSEO({
+    title: "AI Fragrance Quiz – Find Your Signature Scent | Bazuki",
+    description: "Take our 2-minute AI fragrance quiz. Get 3 personalized perfumes matched to your personality, mood, and lifestyle. Made-to-order in India.",
+  });
   const navigate = useNavigate();
   const { setIsForGift, resetAnswers } = useQuiz();
 
