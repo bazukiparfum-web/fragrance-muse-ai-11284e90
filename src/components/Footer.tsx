@@ -51,8 +51,9 @@ const Footer = () => {
             <ul className="space-y-3">
               <li><a href="/ingredients" className="text-white/70 hover:text-luxury-gold transition-colors">Ingredients</a></li>
               <li><a href="/about" className="text-white/70 hover:text-luxury-gold transition-colors">Science & Technology</a></li>
-              <li><a href="/collection" className="text-white/70 hover:text-luxury-gold transition-colors">Collection</a></li>
-              <li><a href="/shop/quiz" className="text-white/70 hover:text-luxury-gold transition-colors">Take the Quiz</a></li>
+              <li><a href="/guide/find-your-signature-scent" className="text-white/70 hover:text-luxury-gold transition-colors">Find Your Signature Scent</a></li>
+              <li><a href="/guide/perfume-notes-explained" className="text-white/70 hover:text-luxury-gold transition-colors">Perfume Notes Explained</a></li>
+              <li><a href="/guide/ai-perfume-vs-traditional" className="text-white/70 hover:text-luxury-gold transition-colors">AI vs Traditional Perfume</a></li>
             </ul>
           </div>
 
