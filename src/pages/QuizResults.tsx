@@ -36,6 +36,10 @@ interface Recommendation {
 }
 
 const QuizResults = () => {
+  useSEO({
+    title: "Your AI Fragrance Matches – Quiz Results | Bazuki",
+    description: "Your 3 personalized perfume recommendations from our AI fragrance engine. Tweak the formula, save favorites, or order made-to-order in 7 days.",
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const { answers } = useQuiz();
