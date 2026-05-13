@@ -13,6 +13,7 @@ import { useQuiz } from '@/contexts/QuizContext';
 import { useCartStore } from '@/stores/cartStore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useSEO } from '@/hooks/useSEO';
 
 interface Recommendation {
   id: string;
