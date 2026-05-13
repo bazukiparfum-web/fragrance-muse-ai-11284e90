@@ -41,6 +41,8 @@ const FindYourSignatureScent = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-guide-signature" data={breadcrumbs} />
+      <JsonLd id="article-guide-signature" data={articleJsonLd} />
       <Header />
       <article className="container mx-auto px-4 max-w-3xl pt-24 pb-16 prose prose-neutral dark:prose-invert">
         <header className="mb-10">

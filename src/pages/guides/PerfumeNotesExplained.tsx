@@ -59,6 +59,8 @@ const PerfumeNotesExplained = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-guide-notes" data={breadcrumbs} />
+      <JsonLd id="article-guide-notes" data={articleJsonLd} />
       <Header />
       <article className="container mx-auto px-4 max-w-3xl pt-24 pb-16">
         <header className="mb-10">

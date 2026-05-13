@@ -54,6 +54,8 @@ const AIPerfumeVsTraditional = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-guide-aivstrad" data={breadcrumbs} />
+      <JsonLd id="article-guide-aivstrad" data={articleJsonLd} />
       <Header />
       <article className="container mx-auto px-4 max-w-4xl pt-24 pb-16">
         <header className="mb-10">
