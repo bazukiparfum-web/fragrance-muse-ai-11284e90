@@ -16,6 +16,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 interface PublicScent {
   id: string;
@@ -313,8 +314,14 @@ export default function Collection() {
     ],
   };
 
+  const breadcrumbs = buildBreadcrumbs([
+    { name: "Home", path: "/" },
+    { name: "Collection", path: "/collection" },
+  ]);
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-collection" data={breadcrumbs} />
       <JsonLd id="collection-itemlist" data={itemListJsonLd} />
       <Header />
 

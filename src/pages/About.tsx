@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import scienceHero from "@/assets/science-hero.jpg";
 import technologyHero from "@/assets/technology-hero.jpg";
 import { useSEO } from "@/hooks/useSEO";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 const About = () => {
   const navigate = useNavigate();
@@ -17,8 +19,14 @@ const About = () => {
     image: scienceHero,
   });
 
+  const breadcrumbs = buildBreadcrumbs([
+    { name: "Home", path: "/" },
+    { name: "About", path: "/about" },
+  ]);
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-about" data={breadcrumbs} />
       <Header />
 
       {/* Page heading */}

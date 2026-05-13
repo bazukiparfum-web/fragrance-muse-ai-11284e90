@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { ArrowLeft, ShoppingCart, Wand2, Calendar, Share2, Loader2, Globe, GlobeLock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 export default function ScentDetail() {
   const { id } = useParams();
@@ -181,8 +183,15 @@ export default function ScentDetail() {
   const heartNotes = scent.formula?.filter((n: any) => n.category === 'heart') || [];
   const baseNotes = scent.formula?.filter((n: any) => n.category === 'base') || [];
 
+  const breadcrumbs = buildBreadcrumbs([
+    { name: "Home", path: "/" },
+    { name: "Collection", path: "/collection" },
+    { name: scent.name || "Fragrance", path: `/collection/${scent.id}` },
+  ]);
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id={`breadcrumbs-scent-${scent.id}`} data={breadcrumbs} />
       <Header />
       
       <main className="container mx-auto px-4 py-8 md:py-12">

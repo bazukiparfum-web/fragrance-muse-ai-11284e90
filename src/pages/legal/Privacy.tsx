@@ -1,8 +1,17 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
+
+const breadcrumbs = buildBreadcrumbs([
+  { name: "Home", path: "/" },
+  { name: "Legal", path: "/legal/privacy" },
+  { name: "Privacy", path: "/legal/privacy" },
+]);
 
 const Privacy = () => (
   <div className="min-h-screen">
+    <JsonLd id="breadcrumbs-privacy" data={breadcrumbs} />
     <Header />
     <main className="pt-24 pb-20 container mx-auto px-4 max-w-3xl">
       <h1 className="font-serif text-4xl md:text-5xl font-bold mb-8">Privacy Policy</h1>

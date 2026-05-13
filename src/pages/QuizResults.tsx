@@ -1,10 +1,10 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ShoppingCart, Sparkles, Save, Loader2, Globe } from 'lucide-react';
+import { ShoppingCart, Sparkles, Save, Loader2, Globe, BookOpen, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SaveScentDialog } from '@/components/SaveScentDialog';
 import { QuizAnalytics } from '@/components/QuizAnalytics';
@@ -14,6 +14,14 @@ import { useCartStore } from '@/stores/cartStore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useSEO } from '@/hooks/useSEO';
+import { JsonLd } from '@/components/JsonLd';
+import { buildBreadcrumbs } from '@/lib/breadcrumbs';
+
+const quizResultsBreadcrumbs = buildBreadcrumbs([
+  { name: 'Home', path: '/' },
+  { name: 'Quiz', path: '/shop/quiz' },
+  { name: 'Results', path: '/shop/quiz/results' },
+]);
 
 interface Recommendation {
   id: string;
@@ -359,6 +367,7 @@ const QuizResults = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-quiz-results" data={quizResultsBreadcrumbs} />
       <Header />
       
       <section className="container mx-auto px-4 py-12">
@@ -544,6 +553,34 @@ const QuizResults = () => {
               )}
             </Button>
           </Card>
+
+
+          {/* Learn more — guide links */}
+          <div className="mt-16 max-w-4xl mx-auto">
+            <div className="flex items-center justify-center gap-2 mb-6 text-muted-foreground">
+              <BookOpen className="h-4 w-4" />
+              <span className="text-sm uppercase tracking-wider">Learn more about your matches</span>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              {[
+                { to: '/guide/perfume-notes-explained', title: 'What top, heart & base notes mean', desc: 'Read the notes glossary' },
+                { to: '/guide/find-your-signature-scent', title: 'How to find your signature scent', desc: '5-step wear-test method' },
+                { to: '/guide/ai-perfume-vs-traditional', title: 'How AI matching compares', desc: 'AI vs traditional perfume' },
+              ].map((g) => (
+                <Link
+                  key={g.to}
+                  to={g.to}
+                  className="group p-5 rounded-lg border border-border bg-card hover:border-accent transition-colors text-left"
+                >
+                  <h4 className="font-serif text-lg font-semibold mb-1 group-hover:text-accent transition-colors">{g.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-2">{g.desc}</p>
+                  <span className="text-xs text-accent inline-flex items-center gap-1">
+                    Read guide <ArrowRight className="h-3 w-3" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
 
           {/* Analytics Section */}
           <div className="mt-12">

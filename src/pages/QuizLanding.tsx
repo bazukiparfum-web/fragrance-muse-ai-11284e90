@@ -1,17 +1,23 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Gift, User, Clock } from 'lucide-react';
+import { Gift, User, Clock, BookOpen, ArrowRight } from 'lucide-react';
 import { useQuiz } from '@/contexts/QuizContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useSEO } from '@/hooks/useSEO';
+import { JsonLd } from '@/components/JsonLd';
+import { buildBreadcrumbs } from '@/lib/breadcrumbs';
 
 const QuizLanding = () => {
   useSEO({
     title: "AI Fragrance Quiz – Find Your Signature Scent | Bazuki",
     description: "Take our 2-minute AI fragrance quiz. Get 3 personalized perfumes matched to your personality, mood, and lifestyle. Made-to-order in India.",
   });
+  const breadcrumbs = buildBreadcrumbs([
+    { name: 'Home', path: '/' },
+    { name: 'Quiz', path: '/shop/quiz' },
+  ]);
   const navigate = useNavigate();
   const { setIsForGift, resetAnswers } = useQuiz();
 
@@ -45,6 +51,7 @@ const QuizLanding = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-quiz" data={breadcrumbs} />
       <Header />
       
       <section className="container mx-auto px-4 py-20">
@@ -95,6 +102,32 @@ const QuizLanding = () => {
                 </div>
               </div>
             </button>
+          </div>
+
+          <div className="mt-20 max-w-3xl mx-auto">
+            <div className="flex items-center justify-center gap-2 mb-6 text-muted-foreground">
+              <BookOpen className="h-4 w-4" />
+              <span className="text-sm uppercase tracking-wider">Not sure where to start?</span>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              {[
+                { to: '/guide/find-your-signature-scent', title: 'Find Your Signature Scent', desc: 'A 5-step guide to your perfect match' },
+                { to: '/guide/perfume-notes-explained', title: 'Perfume Notes Explained', desc: 'Top, heart & base notes glossary' },
+                { to: '/guide/ai-perfume-vs-traditional', title: 'AI vs Traditional Perfume', desc: 'How they actually compare' },
+              ].map((g) => (
+                <Link
+                  key={g.to}
+                  to={g.to}
+                  className="group p-5 rounded-lg border border-border bg-card hover:border-accent transition-colors text-left"
+                >
+                  <h4 className="font-serif text-lg font-semibold mb-1 group-hover:text-accent transition-colors">{g.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-2">{g.desc}</p>
+                  <span className="text-xs text-accent inline-flex items-center gap-1">
+                    Read guide <ArrowRight className="h-3 w-3" />
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>

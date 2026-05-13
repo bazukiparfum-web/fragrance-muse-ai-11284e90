@@ -19,6 +19,13 @@ import { FragranceVisualizer } from '@/components/FragranceVisualizer';
 import { CartMigrationBanner } from '@/components/CartMigrationBanner';
 import Header from '@/components/Header';
 import { toast } from 'sonner';
+import { JsonLd } from '@/components/JsonLd';
+import { buildBreadcrumbs } from '@/lib/breadcrumbs';
+
+const accountBreadcrumbs = buildBreadcrumbs([
+  { name: 'Home', path: '/' },
+  { name: 'Account', path: '/shop/account' },
+]);
 
 interface Order {
   id: string;
@@ -359,6 +366,7 @@ const Account = () => {
 
   return (
     <>
+      <JsonLd id="breadcrumbs-account" data={accountBreadcrumbs} />
       <Header />
       <div className="min-h-screen pt-24 pb-12 bg-secondary/30">
         <div className="container mx-auto px-4">

@@ -18,6 +18,14 @@ import { ColorPicker } from '@/components/quiz/ColorPicker';
 import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
 import { useSEO } from '@/hooks/useSEO';
+import { JsonLd } from '@/components/JsonLd';
+import { buildBreadcrumbs } from '@/lib/breadcrumbs';
+
+const quizGiftBreadcrumbs = buildBreadcrumbs([
+  { name: 'Home', path: '/' },
+  { name: 'Quiz', path: '/shop/quiz' },
+  { name: 'For Someone Else', path: '/shop/quiz/for-someone-else' },
+]);
 
 const QuizForSomeoneElse = () => {
   useSEO({
@@ -575,6 +583,7 @@ const QuizForSomeoneElse = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-quiz-gift" data={quizGiftBreadcrumbs} />
       <Header />
       
       <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>

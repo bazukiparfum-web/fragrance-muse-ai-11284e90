@@ -7,6 +7,7 @@ import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 const SITE_URL = "https://www.bazukifragrance.com";
 
@@ -16,13 +17,7 @@ const Index = () => {
     description: "AI-personalized luxury perfumes made in India. Take a 2-minute quiz to discover your signature scent, plus 360° aroma solutions for business.",
   });
 
-  const breadcrumbsJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
-    ],
-  };
+  const breadcrumbsJsonLd = buildBreadcrumbs([{ name: "Home", path: "/" }]);
 
   const faqJsonLd = {
     "@context": "https://schema.org",

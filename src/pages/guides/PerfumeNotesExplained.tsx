@@ -3,6 +3,33 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useSEO } from "@/hooks/useSEO";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
+
+const SITE_URL = "https://www.bazukifragrance.com";
+const PAGE_PATH = "/guide/perfume-notes-explained";
+
+const breadcrumbs = buildBreadcrumbs([
+  { name: "Home", path: "/" },
+  { name: "Guides", path: "/guide/perfume-notes-explained" },
+  { name: "Perfume Notes Explained", path: PAGE_PATH },
+]);
+
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "Perfume Notes Explained",
+  description: "A glossary of perfume terms — top, heart and base notes, sillage, longevity, accords and scent families.",
+  author: { "@type": "Organization", name: "Bazuki Perfumes", url: SITE_URL },
+  publisher: {
+    "@type": "Organization",
+    name: "Bazuki Perfumes",
+    logo: { "@type": "ImageObject", url: `${SITE_URL}/favicon.png` },
+  },
+  datePublished: "2026-05-13",
+  dateModified: "2026-05-13",
+  mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}${PAGE_PATH}` },
+};
 
 const terms: { term: string; def: string; detail: string }[] = [
   { term: "Top notes", def: "The first scents you smell when you spray a fragrance, lasting 5–15 minutes.", detail: "Top notes are typically light, volatile molecules like citrus, herbs, and light fruits. They form the first impression but evaporate fast." },
@@ -32,6 +59,8 @@ const PerfumeNotesExplained = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-guide-notes" data={breadcrumbs} />
+      <JsonLd id="article-guide-notes" data={articleJsonLd} />
       <Header />
       <article className="container mx-auto px-4 max-w-3xl pt-24 pb-16">
         <header className="mb-10">
