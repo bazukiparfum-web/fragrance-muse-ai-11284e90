@@ -1,0 +1,22 @@
+# Bazuki Perfumes
+
+> AI-personalized luxury fragrances and 360° aroma solutions, made-to-order in India. Take a 2-minute quiz to discover three custom scents matched to your personality, mood, and lifestyle.
+
+## Pages
+
+- [Home](/): Brand overview, hero, signature collection highlights, and FAQ.
+- [AI Fragrance Quiz](/shop/quiz): 16-question quiz that generates three personalized fragrances.
+- [Collection](/collection): Browse signature pre-made scents and community-published custom fragrances.
+- [Ingredients](/ingredients): IFRA-compliant fragrance notes used in our formulations.
+- [Business / 360° Aroma](/business): Custom aroma marketing solutions for hotels, retail, and offices.
+- [About](/about): Our science, technology, and approach to AI fragrance composition.
+- [Account](/shop/account): User account for saved scents and order history.
+- [Privacy Policy](/legal/privacy)
+- [Terms of Service](/legal/terms)
+- [Shipping Policy](/legal/shipping)
+
+## Notes
+
+- Bottles available in 30ml and 50ml; 3-bottle Discovery Set ₹1,500.
+- Pricing in INR; ships across India.
+- Contact: business@bazuki360aroma.com · +91 79900 97922 · Ahmedabad, Gujarat.
