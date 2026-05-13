@@ -1,8 +1,13 @@
 import Header from "@/components/Header";
 import BusinessAroma from "@/components/BusinessAroma";
 import Footer from "@/components/Footer";
+import { useSEO } from "@/hooks/useSEO";
 
 const Business = () => {
+  useSEO({
+    title: "360° Aroma Solutions for Business | Bazuki Perfumes",
+    description: "Bespoke scent design and IoT-enabled aroma systems for hotels, retail, and offices across India. Custom fragrances that bring your brand to life.",
+  });
   return (
     <div className="min-h-screen">
       <Header />
