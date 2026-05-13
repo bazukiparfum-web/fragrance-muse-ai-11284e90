@@ -293,9 +293,31 @@ export default function Collection() {
     );
   }
 
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Bazuki Fragrance Collection",
+    itemListElement: [
+      ...shopifyProducts.slice(0, 20).map((p, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `https://www.bazukifragrance.com/product/${p.node.handle}`,
+        name: p.node.title,
+      })),
+      ...scents.slice(0, 20).map((s, i) => ({
+        "@type": "ListItem",
+        position: shopifyProducts.length + i + 1,
+        url: `https://www.bazukifragrance.com/collection/${s.id}`,
+        name: s.name,
+      })),
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="collection-itemlist" data={itemListJsonLd} />
       <Header />
+
 
       <main className="container mx-auto px-4 py-12">
         <div className="text-center mb-12">
