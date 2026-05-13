@@ -16,6 +16,8 @@ import { ArrowRight, ShieldCheck, Layers, Sparkles } from "lucide-react";
 import ingredientsHero from "@/assets/ingredients-hero.jpg";
 import { getNoteColor } from "@/lib/fragranceColorMapper";
 import { useSEO } from "@/hooks/useSEO";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 interface LaunchNote {
   name: string;

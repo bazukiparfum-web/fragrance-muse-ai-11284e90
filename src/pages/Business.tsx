@@ -2,14 +2,21 @@ import Header from "@/components/Header";
 import BusinessAroma from "@/components/BusinessAroma";
 import Footer from "@/components/Footer";
 import { useSEO } from "@/hooks/useSEO";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 const Business = () => {
   useSEO({
     title: "360° Aroma Solutions for Business | Bazuki Perfumes",
     description: "Bespoke scent design and IoT-enabled aroma systems for hotels, retail, and offices across India. Custom fragrances that bring your brand to life.",
   });
+  const breadcrumbs = buildBreadcrumbs([
+    { name: "Home", path: "/" },
+    { name: "Business", path: "/business" },
+  ]);
   return (
     <div className="min-h-screen">
+      <JsonLd id="breadcrumbs-business" data={breadcrumbs} />
       <Header />
       <div className="pt-16">
         <section className="bg-luxury-black text-primary-foreground py-20 md:py-28">
