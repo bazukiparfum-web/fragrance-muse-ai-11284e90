@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { ArrowLeft, ShoppingCart, Wand2, Calendar, Share2, Loader2, Globe, GlobeLock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 export default function ScentDetail() {
   const { id } = useParams();
