@@ -16,6 +16,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 interface PublicScent {
   id: string;
