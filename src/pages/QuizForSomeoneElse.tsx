@@ -17,8 +17,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ColorPicker } from '@/components/quiz/ColorPicker';
 import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
+import { useSEO } from '@/hooks/useSEO';
 
 const QuizForSomeoneElse = () => {
+  useSEO({
+    title: "Gift Fragrance Quiz – Perfume for a Loved One | Bazuki",
+    description: "Create a thoughtful AI-personalized perfume gift. Answer questions about them and we'll craft 3 bespoke fragrances delivered with a custom note.",
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { answers, updateAnswer, setAllAnswers, resetAnswers } = useQuiz();
