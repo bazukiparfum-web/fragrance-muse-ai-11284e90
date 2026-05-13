@@ -125,8 +125,14 @@ const Ingredients = () => {
     document.getElementById("list")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const breadcrumbs = buildBreadcrumbs([
+    { name: "Home", path: "/" },
+    { name: "Ingredients", path: "/ingredients" },
+  ]);
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd id="breadcrumbs-ingredients" data={breadcrumbs} />
       <Header />
 
       {/* Hero */}
