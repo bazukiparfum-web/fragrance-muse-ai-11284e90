@@ -1,10 +1,10 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ShoppingCart, Sparkles, Save, Loader2, Globe } from 'lucide-react';
+import { ShoppingCart, Sparkles, Save, Loader2, Globe, BookOpen, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SaveScentDialog } from '@/components/SaveScentDialog';
 import { QuizAnalytics } from '@/components/QuizAnalytics';
@@ -14,6 +14,14 @@ import { useCartStore } from '@/stores/cartStore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useSEO } from '@/hooks/useSEO';
+import { JsonLd } from '@/components/JsonLd';
+import { buildBreadcrumbs } from '@/lib/breadcrumbs';
+
+const quizResultsBreadcrumbs = buildBreadcrumbs([
+  { name: 'Home', path: '/' },
+  { name: 'Quiz', path: '/shop/quiz' },
+  { name: 'Results', path: '/shop/quiz/results' },
+]);
 
 interface Recommendation {
   id: string;
