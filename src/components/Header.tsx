@@ -87,6 +87,7 @@ const Header = () => {
               onClick={() => navigate('/admin')}
               className="relative text-muted-foreground hover:text-accent"
               title="Admin Dashboard"
+              aria-label="Admin Dashboard"
             >
               <Shield className="h-5 w-5" />
             </Button>
@@ -98,6 +99,7 @@ const Header = () => {
             onClick={() => navigate(user ? '/shop/account' : '/auth')}
             className="relative text-muted-foreground hover:text-accent hidden sm:inline-flex"
             title={user ? 'My Account' : 'Sign In'}
+            aria-label={user ? 'My Account' : 'Sign In'}
           >
             {user ? <UserCheck className="h-5 w-5" /> : <User className="h-5 w-5" />}
           </Button>
