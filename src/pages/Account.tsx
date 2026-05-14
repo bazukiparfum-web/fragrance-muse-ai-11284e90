@@ -365,6 +365,11 @@ const Account = () => {
     }
   };
 
+  useSEO({
+    title: 'My Account — Orders, Saved Scents & Referrals | Bazuki',
+    description: 'Manage your Bazuki account: view orders, revisit your AI-crafted fragrances, share scents, and track referral rewards in one place.',
+  });
+
   return (
     <>
       <JsonLd id="breadcrumbs-account" data={accountBreadcrumbs} />
