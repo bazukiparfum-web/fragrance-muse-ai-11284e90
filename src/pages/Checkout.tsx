@@ -359,6 +359,11 @@ const Checkout = () => {
     </div>
   );
 
+  useSEO({
+    title: 'Secure Checkout | Bazuki Perfumes',
+    description: 'Complete your Bazuki order with secure checkout, free shipping across India over ₹1,500, and 7-day made-to-order delivery.',
+  });
+
   return (
     <>
       <Header />
