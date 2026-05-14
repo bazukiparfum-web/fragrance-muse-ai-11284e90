@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import { FragranceVisualizer } from '@/components/FragranceVisualizer';
 import { useToast } from '@/hooks/use-toast';
 import { ShoppingCart, Sparkles } from 'lucide-react';
+import { useSEO } from '@/hooks/useSEO';
 
 interface SavedScent {
   id: string;
