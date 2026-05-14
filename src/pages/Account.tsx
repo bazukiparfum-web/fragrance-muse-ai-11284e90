@@ -21,6 +21,7 @@ import Header from '@/components/Header';
 import { toast } from 'sonner';
 import { JsonLd } from '@/components/JsonLd';
 import { buildBreadcrumbs } from '@/lib/breadcrumbs';
+import { useSEO } from '@/hooks/useSEO';
 
 const accountBreadcrumbs = buildBreadcrumbs([
   { name: 'Home', path: '/' },
