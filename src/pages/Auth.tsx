@@ -166,6 +166,11 @@ const Auth = () => {
   };
 
 
+  useSEO({
+    title: 'Sign In or Create Account | Bazuki Perfumes',
+    description: 'Sign in to Bazuki to save your AI-personalized fragrances, track orders, and unlock referral rewards. New here? Create an account in seconds.',
+  });
+
   return (
     <>
       <Header />
