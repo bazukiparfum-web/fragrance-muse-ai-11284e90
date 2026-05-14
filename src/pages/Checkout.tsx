@@ -11,6 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
+import { useSEO } from '@/hooks/useSEO';
 import { z } from 'zod';
 
 const shippingSchema = z.object({
