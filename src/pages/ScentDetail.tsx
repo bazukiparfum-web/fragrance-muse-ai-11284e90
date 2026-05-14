@@ -52,6 +52,14 @@ export default function ScentDetail() {
     }
   };
 
+  const scentName = scent?.name || 'AI Fragrance';
+  const scentDesc = scent?.description || scent?.story || `Explore ${scentName} — an AI-personalized fragrance composed from premium IFRA-compliant notes by Bazuki Perfumes.`;
+  useSEO({
+    title: `${scentName} — AI Fragrance | Bazuki Perfumes`,
+    description: scentDesc.slice(0, 160),
+    type: 'product',
+  });
+
   const handleAddToCart = async () => {
     if (!scent || !scent.prices) return;
 
