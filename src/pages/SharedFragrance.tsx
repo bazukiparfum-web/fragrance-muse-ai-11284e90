@@ -95,6 +95,13 @@ export default function SharedFragrance() {
     return scent.formula[category] || [];
   };
 
+  const sharedName = scent?.name || 'Shared AI Fragrance';
+  useSEO({
+    title: `${sharedName} — A Bazuki AI Fragrance Shared With You`,
+    description: `Discover ${sharedName}, a personalized AI-crafted fragrance from Bazuki Perfumes. Take the 2-minute quiz to compose your own signature scent.`,
+    type: 'article',
+  });
+
   if (loading) {
     return (
       <>
