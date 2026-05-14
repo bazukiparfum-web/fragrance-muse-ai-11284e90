@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { SocialAuthButtons } from '@/components/SocialAuthButtons';
 import { WhatsAppOtpLogin } from '@/components/auth/WhatsAppOtpLogin';
 import { ChevronDown } from 'lucide-react';
+import { useSEO } from '@/hooks/useSEO';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -164,6 +165,11 @@ const Auth = () => {
     }
   };
 
+
+  useSEO({
+    title: 'Sign In or Create Account | Bazuki Perfumes',
+    description: 'Sign in to Bazuki to save your AI-personalized fragrances, track orders, and unlock referral rewards. New here? Create an account in seconds.',
+  });
 
   return (
     <>

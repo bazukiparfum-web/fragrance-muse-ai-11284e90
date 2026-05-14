@@ -16,6 +16,7 @@ import { ArrowLeft, ShoppingCart, Wand2, Calendar, Share2, Loader2, Globe, Globe
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { JsonLd } from "@/components/JsonLd";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
+import { useSEO } from "@/hooks/useSEO";
 
 export default function ScentDetail() {
   const { id } = useParams();
@@ -50,6 +51,14 @@ export default function ScentDetail() {
       setIsLoading(false);
     }
   };
+
+  const scentName = scent?.name || 'AI Fragrance';
+  const scentDesc = scent?.description || scent?.story || `Explore ${scentName} — an AI-personalized fragrance composed from premium IFRA-compliant notes by Bazuki Perfumes.`;
+  useSEO({
+    title: `${scentName} — AI Fragrance | Bazuki Perfumes`,
+    description: scentDesc.slice(0, 160),
+    type: 'product',
+  });
 
   const handleAddToCart = async () => {
     if (!scent || !scent.prices) return;

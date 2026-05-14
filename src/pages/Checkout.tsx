@@ -11,6 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
+import { useSEO } from '@/hooks/useSEO';
 import { z } from 'zod';
 
 const shippingSchema = z.object({
@@ -357,6 +358,11 @@ const Checkout = () => {
       ))}
     </div>
   );
+
+  useSEO({
+    title: 'Secure Checkout | Bazuki Perfumes',
+    description: 'Complete your Bazuki order with secure checkout, free shipping across India over ₹1,500, and 7-day made-to-order delivery.',
+  });
 
   return (
     <>

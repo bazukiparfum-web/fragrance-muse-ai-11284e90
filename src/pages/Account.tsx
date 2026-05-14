@@ -21,6 +21,7 @@ import Header from '@/components/Header';
 import { toast } from 'sonner';
 import { JsonLd } from '@/components/JsonLd';
 import { buildBreadcrumbs } from '@/lib/breadcrumbs';
+import { useSEO } from '@/hooks/useSEO';
 
 const accountBreadcrumbs = buildBreadcrumbs([
   { name: 'Home', path: '/' },
@@ -363,6 +364,11 @@ const Account = () => {
       setSavingShipping(false);
     }
   };
+
+  useSEO({
+    title: 'My Account — Orders, Saved Scents & Referrals | Bazuki',
+    description: 'Manage your Bazuki account: view orders, revisit your AI-crafted fragrances, share scents, and track referral rewards in one place.',
+  });
 
   return (
     <>
