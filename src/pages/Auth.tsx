@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { SocialAuthButtons } from '@/components/SocialAuthButtons';
 import { WhatsAppOtpLogin } from '@/components/auth/WhatsAppOtpLogin';
 import { ChevronDown } from 'lucide-react';
+import { useSEO } from '@/hooks/useSEO';
 
 const Auth = () => {
   const navigate = useNavigate();
