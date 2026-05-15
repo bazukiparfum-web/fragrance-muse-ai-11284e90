@@ -1,117 +1,63 @@
+# Immersive Quiz Redesign
 
-# Scent Library — `/collection` rebuild
+Replace the two quiz pages with a shared full-screen immersive shell. Keep all existing data flow (dynamic DB questions, auto-save, resume, edge function call, navigation to `/shop/quiz/results`) — only the presentation layer changes. The results page is out of scope.
 
-Replace the existing `/collection` page with a new dark-luxury **Scent Library**, merging Shopify signature products and public AI-generated scents into one filterable grid, with a slide-in drawer for details.
+## What changes (UX)
 
-## Scope
+- **Full-screen dark canvas** — no Header/Footer chrome on the quiz screens, fixed viewport height, deep charcoal background, gold (#C9A84C) accents, cream text.
+- **Animated ambient background** — pure CSS only. Two layers:
+  - Slow drifting smoke gradients (radial-gradient blobs animated with `@keyframes` translate + opacity, 20–40s loops).
+  - Floating particles (10–15 absolutely-positioned dots with staggered `animation-delay`, slow rise + fade). `pointer-events: none`, `prefers-reduced-motion` disables both.
+- **Top progress bar** — slim gold fill across full width, "Step X of N" label centered below (N = dynamic question count, per user choice).
+- **One question per screen** with large typography:
+  - Question text in Cormorant Garamond, `clamp(36px, 6vw, 64px)`, max-width ~720px, centered.
+  - Answer controls re-skinned for the dark surface (radio cards with gold hover/selected ring, sliders/color picker on translucent panels, scent-family chips with emoji).
+  - Smooth crossfade + slight Y-translate between steps (`animate-fade-in`, key on `currentStep`).
+- **Sticky bottom nav bar** — Back / Skip / Next, gold primary CTA, mobile-first; arrow keys + Enter also navigate.
+- **AI crafting loading screen** — after final step, show a centered overlay for ~3s with:
+  - Pulsing gold orb (CSS-only).
+  - Headline "Bazuki AI is crafting your scent profile…" in Cormorant.
+  - Rotating sub-status lines ("Analyzing your personality…" → "Blending top notes…" → "Calibrating intensity…").
+  - Runs **in parallel** with the real `create-custom-scent` edge call; navigates to `/shop/quiz/results` only when both the 3s minimum AND the response have resolved.
 
-- Frontend-only rebuild of `src/pages/Collection.tsx`.
-- New supporting components under `src/components/library/`.
-- Reuse existing infra: `fetchShopifyProducts`, `supabase` (`saved_scents`), `useCartStore`, `FragrancePyramid`, `Header`, `Footer`, `useSEO`.
-- No DB schema changes, no edge function changes, no auth changes.
+## Files
 
-## Page structure
-
-```
-<Header />
-<HeroLibrary />              ← headline + sub-copy, gold glow backdrop
-<MoodFilterBar />            ← sticky under header, gold pill chips
-<ScentGrid />                ← 1 / 2 / 3 col responsive masonry-feel grid
-<ScentDetailDrawer />        ← right slide-in (Sheet), opens on card click
-<Footer />
-```
-
-### Hero
-- Headline `Discover Our Scent Universe` (Cormorant Garamond, h1).
-- Sub-copy `Every bottle is a unique formula created by Bazuki's AI engine` (Inter).
-- Backdrop: subtle gold radial glow on `bz-bg-primary`. No image (keeps LCP on the headline).
-
-### Mood filter bar
-- Categories: **All, Woody, Floral, Citrus, Oriental, Musky, Fresh**.
-- Pills: rounded-full, `border-gold/40`, active = `bg-gold text-primary-foreground`.
-- Sticky `top-16`, `bg-bz-primary/80 backdrop-blur`.
-- Filtering is client-side based on a derived `mood` for each item (see Technical).
-
-### Scent card
-- Layout: vertical card, `bg-bz-card`, `border-gold/15`, `rounded-xl`, padding `p-5`.
-- Top: small `<FragrancePyramid size="sm" />` as visual.
-- Name (Cormorant 22px), 1-line mood description (cream-muted, italic).
-- Note pills row: small amber chips grouped Top / Heart / Base (max 2 each, `+N more`).
-- Price block: `30ml ₹X · 50ml ₹Y` in gold.
-- Footer: `Details →` ghost-gold button (full width on mobile).
-- Hover: `transition-all duration-300`, soft gold border + `glow-gold-sm` shadow, 1px translateY(-2px).
-
-### Detail drawer
-- Right-side `Sheet` (`SheetContent side="right"`, `w-full sm:max-w-xl`).
-- Contents:
-  - Name + creator/family tagline.
-  - Full description (uses `formulation_notes` for DB scents, Shopify `description` for products).
-  - `<FragrancePyramid size="lg" />` with sequential layer animation (already built-in).
-  - Size selector toggle: 30ml / 50ml.
-  - CTAs (stacked, gold primary first):
-    - **Add to Cart** → `useCartStore.addItem()` with selected size/variant.
-    - **Tweak This Scent** → navigates to `/shop/quiz?seed=<id>` (graceful: just routes to quiz landing if seed unsupported).
-- Close on overlay click / Esc / X button.
-
-## Technical
-
-### Data model
-```ts
-type LibraryItem = {
-  id: string;
-  source: "shopify" | "scent";
-  name: string;
-  description: string;
-  mood: "Woody"|"Floral"|"Citrus"|"Oriental"|"Musky"|"Fresh";
-  notes: { top: string[]; heart: string[]; base: string[] };
-  prices: { ml30?: number; ml50?: number };
-  shopify?: { productId: string; variants: ShopifyVariant[] };
-  raw: ShopifyProduct | PublicScent;
-};
-```
-
-### Merge logic (in `Collection.tsx`)
-- `Promise.allSettled([fetchShopifyProducts(50), supabase.from('saved_scents').select('*').eq('is_public', true).limit(60)])`.
-- Map each source through `toLibraryItem()`; concat; dedupe by `name`.
-- **Mood derivation**:
-  - Shopify: parse from `product_type` / tags if present, else infer from name keywords; default `Oriental`.
-  - DB scent: derive from `visual_data.family` if present, else infer from notes (heart-note keyword map).
-- **Notes**:
-  - Shopify: parse from product `description` lines like `Top:`, `Heart:`, `Base:` if present; otherwise empty arrays → pyramid uses its built-in empty state.
-  - DB scent: from `formula.notes` ({ top, heart, base } arrays).
-- **Prices**:
-  - Shopify: from variant titles matching `/30 ?ml/i` / `/50 ?ml/i`.
-  - DB scent: from `prices` JSON, fallback to ₹700 / ₹1100 (per memory).
-
-### Files
+**New**
+- `src/components/quiz/ImmersiveQuizShell.tsx` — full-screen layout: background layers, top progress, slot for question, sticky nav.
+- `src/components/quiz/QuizBackground.tsx` — CSS smoke + particles, respects `prefers-reduced-motion`.
+- `src/components/quiz/QuizCraftingScreen.tsx` — 3-second AI loading overlay with rotating status messages.
+- `src/components/quiz/QuestionRenderer.tsx` — extracted from current `renderStep()` switch; restyled for dark surface; reused by both quiz pages.
 
 **Edited**
-- `src/pages/Collection.tsx` — full rewrite to new layout. SEO title `Scent Library — Bazuki Fragrance`.
-
-**Created**
-- `src/components/library/HeroLibrary.tsx`
-- `src/components/library/MoodFilterBar.tsx`
-- `src/components/library/ScentCard.tsx`
-- `src/components/library/ScentDetailDrawer.tsx`
-- `src/lib/libraryMapper.ts` — `toLibraryItem`, `inferMood`, `parseNotesFromDescription`, `pickPrices`.
+- `src/pages/QuizForYourself.tsx` — strip Header/inline JSX, keep all hooks/data logic (questions load, auto-save, resume dialog, submit), render `<ImmersiveQuizShell>` + `<QuestionRenderer>`. On submit, show `<QuizCraftingScreen>` while awaiting the edge function with a 3s minimum delay, then navigate.
+- `src/pages/QuizForSomeoneElse.tsx` — same treatment.
+- `src/index.css` — add keyframes `@keyframes smoke-drift`, `@keyframes particle-rise`, `@keyframes orb-pulse`; utility classes `.quiz-bg`, `.quiz-particle`, `.quiz-orb`.
 
 **Untouched**
-- `ScentDetail.tsx` route still works at `/collection/:id` for direct links.
-- All Shopify tools, edge functions, RLS, and other pages.
+- `src/contexts/QuizContext.tsx`, `src/pages/QuizResults.tsx`, `src/pages/QuizLanding.tsx`, edge functions, cart/Shopify logic.
 
-### Styling
-- Uses existing tokens: `bg-bz-primary`, `bg-bz-card`, `text-cream`, `text-gold`, `border-gold`, `glow-gold-sm`, `rounded-pill`, `font-display`.
-- No new colors. No raw hex in JSX.
-- Animations: card fade-up via existing `Reveal` component (stagger 60ms); pyramid uses its built-in `bz-pyramid-rise`.
+## Technical notes
 
-### Responsive
-- Mobile (<640): 1 col, drawer becomes full-width.
-- Tablet (≥768): 2 cols.
-- Desktop (≥1024): 3 cols.
-- Filter bar: horizontal scroll on overflow, `snap-x`.
+- Resume dialog is preserved but restyled with `text-primary-foreground` (per project memory).
+- `totalSteps` stays dynamic from `questions.length`; label reads `Step {currentStep} of {totalSteps}`.
+- Crafting screen logic:
+  ```ts
+  const [crafting, setCrafting] = useState(false);
+  const handleSubmit = async () => {
+    setCrafting(true);
+    const [res] = await Promise.all([
+      supabase.functions.invoke('create-custom-scent', { body: { answers } }),
+      new Promise(r => setTimeout(r, 3000)),
+    ]);
+    // ...existing normalization + navigate
+  };
+  ```
+- Background uses only Tailwind + CSS (no framer-motion, no canvas/three).
+- Mobile-first: question typography scales with `clamp()`, nav bar `fixed bottom-0` with safe-area inset.
+- Keyboard: ArrowLeft → back, ArrowRight/Enter → next (when step complete).
 
 ## Out of scope
-- Editing community scent data, AI prompts, or pricing logic.
-- Adding new bottle sizes (5ml not included — 30ml/50ml only per project memory).
-- Changes to checkout flow, header, or footer.
-- Server-side filtering or new endpoints.
+
+- Redesigning `QuizResults`, `QuizLanding`, results cards, header, or any backend/edge code.
+- Changing question content, count, or auto-save schema.
+- Adding new libraries.
