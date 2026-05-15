@@ -91,7 +91,7 @@ const HeroB2B = () => {
           {/* LEFT */}
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gold">
-              360° Aroma Solutions · B2B
+              Scent Marketing · 360° Aroma Solutions
             </div>
 
             <h1 className="mt-8 mb-6 font-serif font-light text-cream text-[38px] md:text-[52px] lg:text-[64px]" style={{ lineHeight: 1.15 }}>

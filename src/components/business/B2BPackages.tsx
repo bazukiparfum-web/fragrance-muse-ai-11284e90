@@ -82,7 +82,7 @@ const B2BPackages = () => {
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gold">
-            B2B Packages
+            Scent Marketing Packages
           </p>
           <h2 className="mt-4 font-serif font-light leading-[1.15] text-cream text-[34px] md:text-[44px]">
             Choose the Right Aroma Plan for Your Space

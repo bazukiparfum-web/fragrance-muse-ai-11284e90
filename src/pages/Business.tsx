@@ -17,13 +17,13 @@ import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 const Business = () => {
   useSEO({
-    title: "360° Aroma Solutions for Business | Bazuki Fragrance",
+    title: "Scent Marketing for Business | Bazuki Fragrance",
     description:
-      "Custom brand scents, IoT diffusers and refill subscriptions for hotels, retail, offices, spas, events and automotive across India.",
+      "Scent Marketing — custom brand scents, IoT diffusers and refill subscriptions for hotels, retail, offices, spas, events and automotive across India.",
   });
   const breadcrumbs = buildBreadcrumbs([
     { name: "Home", path: "/" },
-    { name: "Business", path: "/business" },
+    { name: "Scent Marketing", path: "/business" },
   ]);
   return (
     <div className="min-h-screen">
