@@ -10,6 +10,7 @@ import ServicesOffered from "@/components/business/ServicesOffered";
 import B2BTestimonials from "@/components/business/B2BTestimonials";
 import LeadCaptureForm from "@/components/business/LeadCaptureForm";
 import B2BCtaStrip from "@/components/business/B2BCtaStrip";
+import FAQ from "@/components/FAQ";
 import { useSEO } from "@/hooks/useSEO";
 import { JsonLd } from "@/components/JsonLd";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
@@ -38,6 +39,9 @@ const Business = () => {
         <ServicesOffered />
         <B2BTestimonials />
         <LeadCaptureForm />
+        <div id="faq">
+          <FAQ />
+        </div>
         <B2BCtaStrip />
       </main>
       <Footer />
