@@ -251,6 +251,69 @@ export type Database = {
         }
         Relationships: []
       }
+      gift_cards: {
+        Row: {
+          amount_inr: number
+          balance_inr: number
+          code: string
+          created_at: string
+          delivery_type: string
+          id: string
+          order_id: string | null
+          personal_message: string | null
+          purchaser_id: string | null
+          recipient_email: string | null
+          recipient_name: string
+          redeemed_at: string | null
+          redeemed_by: string | null
+          sender_name: string
+          shipping_address: Json | null
+          status: string
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          amount_inr: number
+          balance_inr: number
+          code: string
+          created_at?: string
+          delivery_type: string
+          id?: string
+          order_id?: string | null
+          personal_message?: string | null
+          purchaser_id?: string | null
+          recipient_email?: string | null
+          recipient_name: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          sender_name: string
+          shipping_address?: Json | null
+          status?: string
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          amount_inr?: number
+          balance_inr?: number
+          code?: string
+          created_at?: string
+          delivery_type?: string
+          id?: string
+          order_id?: string | null
+          personal_message?: string | null
+          purchaser_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          sender_name?: string
+          shipping_address?: Json | null
+          status?: string
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ingredient_mappings: {
         Row: {
           created_at: string | null
