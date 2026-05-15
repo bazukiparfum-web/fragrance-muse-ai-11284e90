@@ -21,6 +21,7 @@ import ProductDetail from "./pages/ProductDetail";
 import SharedFragrance from "./pages/SharedFragrance";
 import Collection from "./pages/Collection";
 import Business from "./pages/Business";
+import ScentCoaching from "./pages/ScentCoaching";
 import Ingredients from "./pages/Ingredients";
 import About from "./pages/About";
 import Privacy from "./pages/legal/Privacy";
@@ -65,6 +66,7 @@ const AppInner = () => {
           <Route path="/shop/account/scents/:id" element={<ScentDetail />} />
           <Route path="/account" element={<Navigate to="/shop/account" replace />} />
           <Route path="/business" element={<Business />} />
+          <Route path="/scent-coaching" element={<ScentCoaching />} />
           <Route path="/ingredients" element={<Ingredients />} />
           <Route path="/about" element={<About />} />
           <Route path="/legal/privacy" element={<Privacy />} />
