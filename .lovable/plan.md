@@ -1,102 +1,117 @@
-## Wire FragrancePyramid into the app + accessibility & empty-state polish
 
-Four scoped changes — all presentation-only, no backend or schema work.
+# Scent Library — `/collection` rebuild
 
----
+Replace the existing `/collection` page with a new dark-luxury **Scent Library**, merging Shopify signature products and public AI-generated scents into one filterable grid, with a slide-in drawer for details.
 
-### 1. Shared note-description helper
+## Scope
 
-**New file:** `src/lib/noteDescriptions.ts`
+- Frontend-only rebuild of `src/pages/Collection.tsx`.
+- New supporting components under `src/components/library/`.
+- Reuse existing infra: `fetchShopifyProducts`, `supabase` (`saved_scents`), `useCartStore`, `FragrancePyramid`, `Header`, `Footer`, `useSEO`.
+- No DB schema changes, no edge function changes, no auth changes.
 
-Tiny lookup that converts a note name (string) into a `{ name, description }` `Note` object the pyramid expects.
+## Page structure
 
-```ts
-const NOTE_DESCRIPTIONS: Record<string, string> = {
-  Bergamot: "Sparkling Italian citrus with a green edge.",
-  Lemon: "Crisp, sun-bright zest.",
-  Rose: "Velvety, romantic petals.",
-  Oud: "Smoky, resinous agarwood.",
-  Sandalwood: "Creamy, meditative warmth.",
-  Vanilla: "Sweet gourmand softness.",
-  // …~30 entries covering all notes used in FeaturedScents + QuizResults defaults
-};
-
-export function toNote(name: string): Note {
-  return {
-    name,
-    description: NOTE_DESCRIPTIONS[name] ?? "A signature accord in this fragrance.",
-  };
-}
-
-export function toNotes(names: (string | { note?: string; name?: string })[]): Note[] {
-  return names.map(n => toNote(typeof n === "string" ? n : (n.note ?? n.name ?? "")))
-              .filter(n => n.name);
-}
+```
+<Header />
+<HeroLibrary />              ← headline + sub-copy, gold glow backdrop
+<MoodFilterBar />            ← sticky under header, gold pill chips
+<ScentGrid />                ← 1 / 2 / 3 col responsive masonry-feel grid
+<ScentDetailDrawer />        ← right slide-in (Sheet), opens on card click
+<Footer />
 ```
 
-This keeps `FragrancePyramid`'s clean `Note[]` API while letting both call sites pass whatever shape they have.
+### Hero
+- Headline `Discover Our Scent Universe` (Cormorant Garamond, h1).
+- Sub-copy `Every bottle is a unique formula created by Bazuki's AI engine` (Inter).
+- Backdrop: subtle gold radial glow on `bz-bg-primary`. No image (keeps LCP on the headline).
 
----
+### Mood filter bar
+- Categories: **All, Woody, Floral, Citrus, Oriental, Musky, Fresh**.
+- Pills: rounded-full, `border-gold/40`, active = `bg-gold text-primary-foreground`.
+- Sticky `top-16`, `bg-bz-primary/80 backdrop-blur`.
+- Filtering is client-side based on a derived `mood` for each item (see Technical).
 
-### 2. Integrate into Featured Scents cards
+### Scent card
+- Layout: vertical card, `bg-bz-card`, `border-gold/15`, `rounded-xl`, padding `p-5`.
+- Top: small `<FragrancePyramid size="sm" />` as visual.
+- Name (Cormorant 22px), 1-line mood description (cream-muted, italic).
+- Note pills row: small amber chips grouped Top / Heart / Base (max 2 each, `+N more`).
+- Price block: `30ml ₹X · 50ml ₹Y` in gold.
+- Footer: `Details →` ghost-gold button (full width on mobile).
+- Hover: `transition-all duration-300`, soft gold border + `glow-gold-sm` shadow, 1px translateY(-2px).
 
-**Edit:** `src/components/home/FeaturedScents.tsx`
+### Detail drawer
+- Right-side `Sheet` (`SheetContent side="right"`, `w-full sm:max-w-xl`).
+- Contents:
+  - Name + creator/family tagline.
+  - Full description (uses `formulation_notes` for DB scents, Shopify `description` for products).
+  - `<FragrancePyramid size="lg" />` with sequential layer animation (already built-in).
+  - Size selector toggle: 30ml / 50ml.
+  - CTAs (stacked, gold primary first):
+    - **Add to Cart** → `useCartStore.addItem()` with selected size/variant.
+    - **Tweak This Scent** → navigates to `/shop/quiz?seed=<id>` (graceful: just routes to quiz landing if seed unsupported).
+- Close on overlay click / Esc / X button.
 
-- Replace the gradient square (`<div className="aspect-square">`) with `<FragrancePyramid size="sm" topNotes={...} heartNotes={...} baseNotes={...} />` rendered against the existing dark gradient background as a subtle backdrop (keep the radial-gold glow behind for atmosphere).
-- Drop the redundant Top/Heart/Base `Pill` row — the pyramid already shows them. Keep mood, price, and the two action buttons.
-- Convert each `SCENTS` entry's `top`/`heart`/`base` strings through `toNote()` so the pyramid receives proper `Note[]`.
-- Card height stays consistent across the 4-up grid; pyramid sized via the `sm` preset (~180px svg), padded inside a flex-centered container.
+## Technical
 
----
+### Data model
+```ts
+type LibraryItem = {
+  id: string;
+  source: "shopify" | "scent";
+  name: string;
+  description: string;
+  mood: "Woody"|"Floral"|"Citrus"|"Oriental"|"Musky"|"Fresh";
+  notes: { top: string[]; heart: string[]; base: string[] };
+  prices: { ml30?: number; ml50?: number };
+  shopify?: { productId: string; variants: ShopifyVariant[] };
+  raw: ShopifyProduct | PublicScent;
+};
+```
 
-### 3. Integrate into Quiz Results
+### Merge logic (in `Collection.tsx`)
+- `Promise.allSettled([fetchShopifyProducts(50), supabase.from('saved_scents').select('*').eq('is_public', true).limit(60)])`.
+- Map each source through `toLibraryItem()`; concat; dedupe by `name`.
+- **Mood derivation**:
+  - Shopify: parse from `product_type` / tags if present, else infer from name keywords; default `Oriental`.
+  - DB scent: derive from `visual_data.family` if present, else infer from notes (heart-note keyword map).
+- **Notes**:
+  - Shopify: parse from product `description` lines like `Top:`, `Heart:`, `Base:` if present; otherwise empty arrays → pyramid uses its built-in empty state.
+  - DB scent: from `formula.notes` ({ top, heart, base } arrays).
+- **Prices**:
+  - Shopify: from variant titles matching `/30 ?ml/i` / `/50 ?ml/i`.
+  - DB scent: from `prices` JSON, fallback to ₹700 / ₹1100 (per memory).
 
-**Edit:** `src/pages/QuizResults.tsx`
+### Files
 
-- In the per-recommendation `<Card>`, replace the three "Top / Heart / Base" badge sections (lines ~400–432) with one `<FragrancePyramid size="md" ... />`.
-- Use `getNotesByCategory(scent.formula, 'top'|'heart'|'base')` already in the file, then map each entry through `toNote(item.note ?? item.name)` to build the `Note[]` props.
-- Keep intensity/longevity bars, pricing, size selector, and CTAs untouched (the pyramid's own longevity strip complements rather than replaces the existing intensity/longevity meters since those reflect AI-computed scores, not the layer-duration heuristic).
+**Edited**
+- `src/pages/Collection.tsx` — full rewrite to new layout. SEO title `Scent Library — Bazuki Fragrance`.
 
----
+**Created**
+- `src/components/library/HeroLibrary.tsx`
+- `src/components/library/MoodFilterBar.tsx`
+- `src/components/library/ScentCard.tsx`
+- `src/components/library/ScentDetailDrawer.tsx`
+- `src/lib/libraryMapper.ts` — `toLibraryItem`, `inferMood`, `parseNotesFromDescription`, `pickPrices`.
 
-### 4. Accessibility upgrades to FragrancePyramid
+**Untouched**
+- `ScentDetail.tsx` route still works at `/collection/:id` for direct links.
+- All Shopify tools, edge functions, RLS, and other pages.
 
-**Edit:** `src/components/FragrancePyramid.tsx`
+### Styling
+- Uses existing tokens: `bg-bz-primary`, `bg-bz-card`, `text-cream`, `text-gold`, `border-gold`, `glow-gold-sm`, `rounded-pill`, `font-display`.
+- No new colors. No raw hex in JSX.
+- Animations: card fade-up via existing `Reveal` component (stagger 60ms); pyramid uses its built-in `bz-pyramid-rise`.
 
-- **Real keyboard nav:** wrap each band trigger in a `<g>` with `role="button"`, `tabIndex={0}`, and add `onKeyDown` for `Enter`/`Space` to toggle a sticky-open tooltip. Move from SVG-`<g>`-with-tabindex (Safari quirk) to a thin `<foreignObject>`-free pattern: keep the `<g>` but pair it with an invisible focusable `<rect>` that sits on top to receive focus reliably across browsers.
-- **Visible focus ring:** add a focus-visible SVG outline — second polygon stroke at 1.5px in `hsl(var(--bz-gold))` with 6px outset offset using `stroke-dasharray` ring style, only rendered when `focused === layer.key`. CSS `:focus-visible` on the focusable rect drives the state via `onFocus`/`onBlur` already in place.
-- **Roving focus:** `ArrowUp` / `ArrowDown` move focus between bands (top ↔ heart ↔ base); `Home` jumps to top, `End` to base. Implement via refs array + `focus()` calls.
-- **Legend pill chips:** they're already `<button>`s, but add `focus-visible:ring-2 focus-visible:ring-[hsl(var(--bz-gold))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--bz-bg-card))]` for parity.
-- **ARIA:** group root gets `role="group"` `aria-label="Fragrance note pyramid"`. Each band's `aria-label` already lists its notes; extend to include the layer's longevity ("Base notes lasting 4 to 8 hours: …").
+### Responsive
+- Mobile (<640): 1 col, drawer becomes full-width.
+- Tablet (≥768): 2 cols.
+- Desktop (≥1024): 3 cols.
+- Filter bar: horizontal scroll on overflow, `snap-x`.
 
----
-
-### 5. Polished empty-state
-
-**Edit:** `src/components/FragrancePyramid.tsx`
-
-When a layer's `notes` array is empty:
-
-- **In-band:** instead of blank space, render a small italic placeholder text in the band's `textColor` at `0.55` opacity: `"— undisclosed —"` for the band's notes line. Apex (top) uses 8px font; others 10px.
-- **Tooltip:** show a tasteful card instead of "No notes":
-  ```
-  TOP NOTES
-  This composition keeps its top accord private —
-  a quiet opening that lets the heart speak first.
-  ```
-  Three layer-specific copy lines so each empty band reads intentional, not broken.
-- **Legend chip:** replace the dim `—` with a single muted pill `"Composition private"` styled with `border-dashed border-gold/20` and `text-dim italic` — no hover/click affordance, `aria-disabled="true"`, `tabIndex={-1}`.
-- **Whole-pyramid empty fallback:** if all three layers are empty, render a centered message inside the SVG: `"Notes coming soon"` in Cormorant gold, plus a soft gold glow on the silhouette so the shape still feels luxe rather than placeholder-y.
-
----
-
-### Files touched
-
-- **Create:** `src/lib/noteDescriptions.ts`
-- **Edit:** `src/components/home/FeaturedScents.tsx`, `src/pages/QuizResults.tsx`, `src/components/FragrancePyramid.tsx`
-
-### Out of scope
-
-- Backend changes, AI prompt changes, or persisting per-note descriptions in DB.
-- Restyling the rest of the QuizResults card chrome (kept as-is to limit blast radius).
-- Touching `ScentCard` in `src/components/ProductShowcase.tsx` (different surface, not in your request).
+## Out of scope
+- Editing community scent data, AI prompts, or pricing logic.
+- Adding new bottle sizes (5ml not included — 30ml/50ml only per project memory).
+- Changes to checkout flow, header, or footer.
+- Server-side filtering or new endpoints.
