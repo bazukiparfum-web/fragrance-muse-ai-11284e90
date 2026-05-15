@@ -1,49 +1,39 @@
-# B2B Hero Redesign — `/business`
+# Science Behind Scent Marketing — `/business`
 
-Replace `src/components/business/HeroB2B.tsx` with a premium, data-led, full-viewport hero. No other sections change.
+Add one new section between `HeroB2B` and `UseCasesGrid`. No other changes.
 
-## Layout
+## New file
 
-Full viewport height (`min-h-screen` minus header), `bg-bz-primary` (#080808), subtle gold radial glow kept for atmosphere. Container splits 55/45 on `lg:` and stacks on mobile.
+`src/components/business/ScentScience.tsx`
 
-### Left column (55%)
+## Structure
 
-1. **Eyebrow tag** — `360° AROMA SOLUTIONS · B2B`, Inter 10px, `text-gold` (#C9A84C), `tracking-[0.3em]`, uppercase.
-2. **Headline** (3 lines, each its own block):
-   - "Your Brand Has a Logo."
-   - "Your Brand Has a Color."
-   - "Now Give It a Scent." — gold accent on this line.
-   Cormorant Garamond, weight 300, `text-cream` (#F5ECD7), `leading-[1.1]`, sizes `text-[38px] md:text-[52px] lg:text-[64px]`.
-3. **Sub-copy** — "Bazuki partners with hotels, retail stores, offices, and event spaces across India to design custom aroma identities — fragrances that make your brand unforgettable." Inter 16px, `text-[#8A7A6A]` via `text-body`, `max-w-[460px]`, `leading-[1.75]`.
-4. **CTAs** (flex row, wrap on mobile):
-   - Primary: "Request a Free Consultation" — `variant="luxury"` pill (`rounded-pill`), scrolls to `#lead-form`.
-   - Secondary: "WhatsApp Us Now →" — custom ghost pill, `border border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10`. Opens `https://wa.me/?text=Hi%20Bazuki%2C%20I'm%20interested%20in%20aroma%20solutions%20for%20my%20business.` in new tab. (Phone number left empty — see open question.)
-5. **Micro-stats row** — 3 items separated by `h-3 w-px bg-gold/20` dividers. Inter 11px, `text-[#6B5D50]` (`text-dim`), uppercase, `tracking-[0.1em]`. Stacks vertically on mobile (no dividers).
+Section: `bg-bz-secondary` (#0D0D0D), `py-24` (96px top/bottom), centered container.
 
-### Right column (45%, `hidden lg:grid`)
+1. **Eyebrow**: "WHY SCENT WORKS" — Inter, `text-[10px]`, `text-gold`, `tracking-[0.3em]`, uppercase, centered.
+2. **Headline**: "The Most Powerful Sense. The Most Underused Brand Tool." — `font-serif font-light text-[34px] md:text-[44px] text-cream`, centered, `max-w-3xl mx-auto`.
+3. **Sub-copy**: scent-bypasses-rational-thought paragraph — Inter `text-[15px] text-body leading-[1.75] max-w-[560px] mx-auto`.
+4. **Stat cards** (`grid md:grid-cols-3 gap-6`):
+   - Card: `bg-bz-card border border-gold-strong/15 rounded-xl p-10 text-center`.
+   - Stat number: `font-serif text-[80px] leading-none text-gold`.
+   - Label: Inter `text-[15px] text-cream-muted leading-relaxed mt-4`.
+   - Source: `text-[10px] uppercase tracking-[0.15em] mt-6 text-[hsl(30_15%_25%)]` (≈ #4A3F35, inline since no token matches).
+   - Content: 75% / 44% / 10–15% with the spec'd labels and sources.
+5. **3-step brain explainer** — sub-heading "How Scent Works in the Brain" (small, gold, centered).
+   - `grid md:grid-cols-3 gap-6 relative`.
+   - Dashed connector: a single absolute `border-t border-dashed border-gold-strong/30` line behind the row, `hidden md:block`, vertically centered between icon rows.
+   - Each step: `bg-bz-card border border-gold-strong/15 rounded-xl p-6 text-center relative z-10` with lucide icon (`Wind` for nose/wave, `Brain`, `Sparkles` for heart/spark) in a `w-12 h-12 rounded-full bg-bz-primary border border-gold-strong/30 text-gold` circle, then label in Inter 13px cream, then 1-line body in `text-body text-[12px]`.
+6. **Bottom CTA**: "See How We Apply This for Your Industry ↓" — `<a href="#use-cases">` button-styled gold text link, centered, with the arrow wrapped in a span using `animate-bounce`.
 
-2×2 mosaic, `grid-cols-2 gap-3`, each tile `aspect-square rounded-xl border border-gold/20 overflow-hidden relative group`:
-- Top-left: Hospitality
-- Top-right: Retail
-- Bottom-left: Corporate
-- Bottom-right: Wellness
+## Wiring
 
-Each tile uses a placeholder dark gradient (`bg-gradient-to-br from-bz-card via-bz-secondary to-bz-primary` with a tinted accent per tile) since no real images exist yet. Bottom-left label pill: `absolute bottom-3 left-3 px-3 py-1 rounded-pill bg-bz-primary/70 backdrop-blur text-gold text-[10px] uppercase tracking-[0.2em]`. Hover: `group-hover:brightness-110 transition` and `group-hover:border-gold/60 group-hover:shadow-[0_0_24px_hsl(var(--bz-gold)/0.25)]`.
+Edit `src/pages/Business.tsx` only to:
+- import `ScentScience`
+- render `<ScentScience />` between `<HeroB2B />` and `<UseCasesGrid />`
 
-### Mobile (<lg)
+Also confirm `UseCasesGrid` section root has `id="use-cases"` (matches existing CTA scroll target). If missing, add it — single attribute change.
 
-Stack: headline → sub-copy → CTAs → stats. Mosaic replaced with horizontal scroll strip (`flex gap-3 overflow-x-auto snap-x px-4 -mx-4`) of 4 tiles, each `min-w-[70%] aspect-[4/3]` with same labels.
+## Tokens & constraints
 
-## Files
-
-- **Rewrite** `src/components/business/HeroB2B.tsx` — single-file change.
-- No new components, no new assets, no new routes, no DB changes.
-- `src/pages/Business.tsx` and all other sections untouched.
-
-## Tokens
-
-Reuses existing `bz-*`/`luxury-*` tokens. The two literal hex values (`#25D366` WhatsApp green, and the spec's exact `#8A7A6A`/`#6B5D50`/`#F5ECD7` greys) already match `--bz-text-body`, `--bz-text-dim`, `--bz-cream` — used via semantic classes (`text-body`, `text-dim`, `text-cream`). Only WhatsApp green stays inline as a brand color.
-
-## Open question
-
-WhatsApp link needs a phone number. I'll use a numberless `wa.me/?text=…` (opens chooser) unless you have a business number to embed. If you want, share the number and I'll hardcode `wa.me/91XXXXXXXXXX`.
+- Reuses existing `bz-*`/`gold` tokens. Only the source-tag color (`#4A3F35`) is hard-coded inline since no semantic token matches and adding one isn't justified for 3 lines of caption.
+- No new deps (lucide-react already in use). No DB changes. No new routes.
