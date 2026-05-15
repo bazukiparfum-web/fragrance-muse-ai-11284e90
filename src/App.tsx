@@ -12,6 +12,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
 import QuizLanding from "./pages/QuizLanding";
+import GiftCards from "./pages/GiftCards";
 import QuizForYourself from "./pages/QuizForYourself";
 import QuizForSomeoneElse from "./pages/QuizForSomeoneElse";
 import QuizResults from "./pages/QuizResults";
