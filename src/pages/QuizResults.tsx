@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { useSEO } from '@/hooks/useSEO';
 import { JsonLd } from '@/components/JsonLd';
 import { buildBreadcrumbs } from '@/lib/breadcrumbs';
+import { FragrancePyramid } from '@/components/FragrancePyramid';
+import { toNotes } from '@/lib/noteDescriptions';
 
 const quizResultsBreadcrumbs = buildBreadcrumbs([
   { name: 'Home', path: '/' },
