@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HeroB2B from "@/components/business/HeroB2B";
+import ScentScience from "@/components/business/ScentScience";
 import UseCasesGrid from "@/components/business/UseCasesGrid";
 import HowItWorks from "@/components/business/HowItWorks";
 import ServicesOffered from "@/components/business/ServicesOffered";
