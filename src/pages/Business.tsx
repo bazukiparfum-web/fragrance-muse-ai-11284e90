@@ -28,6 +28,7 @@ const Business = () => {
       <Header />
       <main className="pt-16">
         <HeroB2B />
+        <ScentScience />
         <UseCasesGrid />
         <HowItWorks />
         <ServicesOffered />
