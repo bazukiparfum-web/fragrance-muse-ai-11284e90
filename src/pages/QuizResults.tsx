@@ -399,42 +399,16 @@ const QuizResults = () => {
 
                   <p className="text-muted-foreground mb-6 italic">{scent.story}</p>
 
-                  <div className="space-y-4 mb-6">
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2">Top Notes</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {getNotesByCategory(scent.formula, 'top').map((item: any) => (
-                          <span key={item.note || item.name} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                            {item.note || item.name} ({item.percentage}%)
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2">Heart Notes</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {getNotesByCategory(scent.formula, 'heart').map((item: any) => (
-                          <span key={item.note || item.name} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                            {item.note || item.name} ({item.percentage}%)
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2">Base Notes</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {getNotesByCategory(scent.formula, 'base').map((item: any) => (
-                          <span key={item.note || item.name} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
-                            {item.note || item.name} ({item.percentage}%)
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="mb-6">
+                    <FragrancePyramid
+                      size="md"
+                      topNotes={toNotes(getNotesByCategory(scent.formula, 'top'))}
+                      heartNotes={toNotes(getNotesByCategory(scent.formula, 'heart'))}
+                      baseNotes={toNotes(getNotesByCategory(scent.formula, 'base'))}
+                    />
 
                     {scent.formulationNotes && (
-                      <div className="text-xs text-muted-foreground italic pt-2 border-t">
+                      <div className="text-xs text-muted-foreground italic pt-4 mt-4 border-t">
                         {scent.formulationNotes}
                       </div>
                     )}
