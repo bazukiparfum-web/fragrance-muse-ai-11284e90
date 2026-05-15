@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import HeroB2B from "@/components/business/HeroB2B";
 import ScentScience from "@/components/business/ScentScience";
 import UseCasesGrid from "@/components/business/UseCasesGrid";
+import B2BPackages from "@/components/business/B2BPackages";
 import HowItWorks from "@/components/business/HowItWorks";
 import ServicesOffered from "@/components/business/ServicesOffered";
 import B2BTestimonials from "@/components/business/B2BTestimonials";
@@ -30,6 +31,7 @@ const Business = () => {
         <HeroB2B />
         <ScentScience />
         <UseCasesGrid />
+        <B2BPackages />
         <HowItWorks />
         <ServicesOffered />
         <B2BTestimonials />
