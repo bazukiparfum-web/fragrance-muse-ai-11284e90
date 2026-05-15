@@ -1,48 +1,75 @@
-# Industry Detail Modal — `/business` use-cases
+# B2B Pricing & Packages Section — `/business`
 
-Make each industry card open a modal with a 3-step scent marketing plan and recommended fragrance categories. Wire the existing "Learn More →" hover bar as the click target.
+Add a self-qualifying 3-tier pricing section + trusted-by strip after the industry grid.
 
 ## Files
 
-- **New** `src/components/business/IndustryDetailDialog.tsx` — shadcn `Dialog`-based modal.
-- **Edit** `src/components/business/UseCasesGrid.tsx` — add per-industry `plan` + `categories` to the data, manage `selected` state, render the dialog, make the whole card (and the Learn More bar) clickable.
+- **New** `src/components/business/B2BPackages.tsx` — section with header, 3 cards, footnote, trust strip.
+- **Edit** `src/pages/Business.tsx` — render `<B2BPackages />` between `<UseCasesGrid />` and `<HowItWorks />`.
 
 No new deps, no DB, no other sections touched.
 
-## Per-industry content (added to existing 6 cases)
+## Section structure (`B2BPackages.tsx`)
 
-Each case gets:
-- `plan: [{ title, body }, { title, body }, { title, body }]` — 3 steps tailored to the industry.
-- `categories: string[]` — 3–4 recommended fragrance families.
+Wrapper: `<section id="packages" className="bg-bz-primary py-24">` (token `--bz-bg-primary` = `#080808`).
 
-| Industry | 3-step plan | Recommended categories |
-|---|---|---|
-| Hotels & Hospitality | 1. Lobby Identity — define the first-breath signature. 2. Suite Continuity — quieter version in rooms and corridors. 3. Brand Memory — take-home amenities echo the same scent. | Woody-Oud, Warm Amber, Fresh Linen, White Tea |
-| Retail & Boutiques | 1. Mood Mapping — match scent to category and customer mindset. 2. Zone Diffusion — calibrate intensity per fitting room and floor. 3. Conversion Anchors — light scent bursts at decision points. | Citrus-Floral, Powdery Musk, Soft Leather, Vanilla |
-| Offices & Co-working | 1. Focus Profile — energising blends for work zones. 2. Calm Pockets — soothing notes in meeting rooms and lounges. 3. Wellness Schedule — adaptive diffusion across the day. | Green Tea, Mint-Citrus, Cedar, Sandalwood |
-| Events & Weddings | 1. Concept Brief — co-create a scent around the story. 2. Venue Activation — pre-event diffusion before guests arrive. 3. Memento — bottled keepsake for guests. | Rose-Oud, Champagne Floral, Spiced Amber, White Musk |
-| Spas & Wellness | 1. Therapy Map — scent paired to each treatment. 2. Consistency Layer — same base across rooms and reception. 3. Aftercare — at-home product extends the ritual. | Lavender, Eucalyptus, Sandalwood, Neroli |
-| Automotive | 1. Showroom Signature — defines the marque on entry. 2. Cabin Scenting — delivery-ready in every new vehicle. 3. Service Touchpoint — refresh on every visit. | Leather, Smoky Wood, Bergamot, Iris |
+### Header (centered, max-w-2xl)
+- Eyebrow: `text-[10px] font-semibold uppercase tracking-[0.3em] text-gold` → "B2B PACKAGES"
+- Headline: `font-serif font-light text-cream text-[34px] md:text-[44px]` → "Choose the Right Aroma Plan for Your Space"
+- Sub: `text-[15px] text-body` → "All plans include a free scent consultation. No setup complexity. Ships across India."
 
-## Modal structure (`IndustryDetailDialog.tsx`)
+### Pricing cards — `grid grid-cols-1 lg:grid-cols-3 gap-6`
 
-Props: `{ open, onOpenChange, industry: Case | null }`. Renders nothing when `industry` is null.
+Shared card classes: `relative rounded-xl bg-bz-card p-8 flex flex-col`.
 
-`DialogContent`: `max-w-2xl bg-bz-card border-gold-strong/20 text-cream`.
+Each card:
+- Tier name — `font-serif text-[24px] text-cream`
+- "Best for:" line — `text-[11px] uppercase tracking-[0.2em] text-gold` label + `text-[13px] text-body` value
+- Price — `font-serif text-[40px] text-cream` + small "Onwards" / sub line below in `text-[12px] text-body`
+- Feature list — `<ul className="space-y-3">` items: `<Check size={16} className="text-gold mt-0.5 shrink-0" />` + `text-[13px] text-cream`
+- CTA at bottom (`mt-auto pt-6`): full-width button
 
-- **Header**: industry icon (gold, thin, 28px) + `DialogTitle` font-serif 28px cream + small italic problem line in `text-body`.
-- **Section A — "Your 3-Step Scent Marketing Plan"**: gold eyebrow (10px tracking-[0.3em]). Below, vertical list of 3 numbered steps. Each row: gold circle with step number (`w-8 h-8 rounded-full border border-gold-strong/40 text-gold`), step title in cream 15px semibold, body in `text-body` 13px.
-- **Section B — "Recommended Fragrance Categories"**: gold eyebrow. Wrap of pill chips: `rounded-pill border border-gold-strong/40 px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-gold`.
-- **Footer CTA**: `Button variant="luxury"` "Request a Tailored Plan" → closes dialog and scrolls to `#lead-form`.
+Card 1 — Starter
+- Border: `border border-gold-strong/15`
+- Best for: "Small offices, boutiques, home studios"
+- Price: "₹5,999" + "Onwards"
+- Sub: "Includes diffuser rental + 1 refill"
+- Features (4): 1 cold-air diffuser (up to 500 sq ft); 1 custom or curated scent oil (100ml); Monthly refill delivery (refills extra); Scent consultation call (30 min)
+- CTA: ghost gold — `border border-gold-strong/40 text-gold hover:bg-gold/10` → "Get Started"
 
-## Card interaction (`UseCasesGrid.tsx`)
+Card 2 — Business (featured)
+- Border: `border border-gold-strong/40`, `shadow-[0_0_32px_hsl(var(--bz-gold)/0.2)]`, `lg:-translate-y-2`
+- Top-right badge: absolute `-top-3 right-6 rounded-pill bg-gold text-bz-primary text-[10px] uppercase tracking-[0.2em] font-semibold px-3 py-1` → "Most Popular"
+- Best for: "Retail stores, spas, co-working spaces"
+- Price: "₹9,999" + "Onwards"
+- Sub: "Includes 1 diffuser + custom scent"
+- Features (5): 1 cold-air diffuser (up to 1,000 sq ft); Custom brand scent formulation; Monthly refills + delivery (refills extra); Monthly scent review call; Branded scent card for your space
+- CTA: solid gold — `bg-gold text-bz-primary hover:bg-gold/90 font-semibold` → "Request a Quote"
 
-- Convert the card root from `<div>` to `<button type="button">` with same classes plus `text-left w-full`. `onClick` sets `selected` state.
-- Keep the existing hover slide-up "Learn More →" bar — purely visual hint; click is now on the whole card.
-- Render `<IndustryDetailDialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)} industry={selected} />` once at the bottom of the section.
+Card 3 — Enterprise
+- Border: `border border-gold-strong/15`
+- Best for: "Hotels, large retail chains, event companies"
+- Price: "Custom Pricing" (no Onwards)
+- Sub: "Multi-location, white-label available"
+- Features (6): Unlimited diffusers across locations; Proprietary brand scent (yours exclusively); HVAC integration available; Dedicated account manager; White-label oil packaging with your branding; Annual scent strategy review
+- CTA: ghost gold → "Talk to Us"
+
+All CTAs scroll to `#lead-form` via `onClick` → `document.getElementById('lead-form')?.scrollIntoView({ behavior: 'smooth' })`.
+
+### Footnote
+`mt-8 text-center text-[11px] text-dim` → "* All prices exclusive of GST. Minimum 3-month commitment for Starter and Business plans. Enterprise pricing on request."
+
+### Trusted-by strip
+- `mt-16 border-t border-gold-strong/15 pt-10` container.
+- Centered eyebrow: `text-[10px] uppercase tracking-[0.3em] text-gold` → "TRUSTED BY"
+- Wrap row `mt-6 flex flex-wrap justify-center gap-3`:
+  - Chip: `rounded-pill border border-gold-strong/40 bg-bz-card px-4 py-2 text-[12px] tracking-[0.1em] text-cream`
+  - Brands: Narayani Heights Hotel · Concept Hyundai · MG · Harley Davidson · Honda Motors · KGB Golf Clubs
+
+## Page wiring (`Business.tsx`)
+
+Insert `<B2BPackages />` after `<UseCasesGrid />` and before `<HowItWorks />`.
 
 ## Out of scope
-
-- No routing to dedicated industry pages (modal-only as requested).
-- No CMS — content lives inline in the case data.
-- No analytics events.
+- No real form — CTAs scroll to existing `#lead-form`.
+- No analytics, no CMS, no logo image assets (text chips only as requested).
