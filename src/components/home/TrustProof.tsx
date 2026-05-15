@@ -43,8 +43,11 @@ const TrustProof = () => {
               } ${i % 2 === 0 ? "border-r md:border-r" : ""} ${i < 2 ? "border-b md:border-b-0 pb-8 md:pb-0" : ""}`}
               style={{ borderColor: "hsl(var(--bz-gold) / 0.15)" }}
             >
-              <div className="font-display text-gold leading-none mb-3">
-                <CountUp value={s.n} className="text-4xl" />
+              <div
+                className="font-display text-gold leading-none mb-3"
+                style={{ fontSize: "clamp(1.75rem, 1.2rem + 2.4vw, 3rem)" }}
+              >
+                <CountUp value={s.n} />
               </div>
               <div className="font-body text-cream text-[11px] uppercase tracking-[0.2em]">
                 {s.label}
