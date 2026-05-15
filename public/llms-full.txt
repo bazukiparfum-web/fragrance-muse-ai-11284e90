@@ -50,9 +50,9 @@ Bazuki ships across India. Fragrances are made-to-order in Ahmedabad and typical
 
 Yes. After the quiz, users can tweak any of their three matches — adjusting intensity or swapping notes — before ordering, and can publish their final formula to the public Collection.
 
-## What is Bazuki 360° Aroma (B2B)?
+## What is Bazuki 360° Aroma (Scent Marketing)?
 
-Bazuki 360° Aroma is the company's B2B scent marketing service. It designs and installs custom ambient scent systems for:
+Bazuki 360° Aroma is the company's Scent Marketing service. It designs and installs custom ambient scent systems for:
 - Hotels and resorts (lobby and room signature scents)
 - Retail stores (brand-aligned in-store scenting)
 - Corporate offices (workspace ambient fragrance)
@@ -69,13 +69,13 @@ The service includes scent design consultation, custom fragrance composition, ha
 | Ingredient transparency | Full notes shown per match | Marketing-led, opaque |
 | Lead time | ~7 days | Off-the-shelf |
 | Pricing | ₹700 for 30ml custom | Often ₹3,000+ for designer 30ml |
-| B2B scent marketing | Yes — 360° Aroma service | No |
+| Scent Marketing | Yes — 360° Aroma service | No |
 
 ## How is Bazuki different from other AI perfume brands?
 
 - Made in India for Indian skin chemistry and climate.
 - Three matches per quiz instead of one — encourages exploration.
-- Combined B2C (personal fragrance) and B2B (ambient scent) under one brand.
+- Combined personal fragrance and Scent Marketing (ambient scent) under one brand.
 - Community publishing — users can publish their formulas for others to buy.
 - Production hardware-backed — custom orders execute on a real pump-based filling system, not a manual lab.
 
@@ -114,7 +114,7 @@ A: Yes. All notes are IFRA (International Fragrance Association) compliant and s
 **Q: What industries does Bazuki 360° Aroma serve?**
 A: Hotels, retail brands, corporate offices, restaurants, spas, and wellness venues.
 
-**Q: How do I request a B2B consultation?**
+**Q: How do I request a Scent Marketing consultation?**
 A: Use the consultation form at https://www.bazukifragrance.com/business.
 
 ## Contact
