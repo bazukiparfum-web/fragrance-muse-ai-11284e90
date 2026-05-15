@@ -1,8 +1,10 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import TrustStrip from "@/components/TrustStrip";
-import ProductShowcase from "@/components/ProductShowcase";
-import IngredientsTeaser from "@/components/IngredientsTeaser";
+import HowItWorks from "@/components/home/HowItWorks";
+import FeaturedScents from "@/components/home/FeaturedScents";
+import QuizCTABanner from "@/components/home/QuizCTABanner";
+import TrustProof from "@/components/home/TrustProof";
+import B2BTeaser from "@/components/home/B2BTeaser";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import { JsonLd } from "@/components/JsonLd";
@@ -101,9 +103,11 @@ const Index = () => {
       <JsonLd id="localbusiness-home" data={localBusinessJsonLd} />
       <Header />
       <Hero />
-      <TrustStrip />
-      <ProductShowcase />
-      <IngredientsTeaser />
+      <HowItWorks />
+      <FeaturedScents />
+      <QuizCTABanner />
+      <TrustProof />
+      <B2BTeaser />
       <FAQ />
       <Footer />
     </div>
