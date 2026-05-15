@@ -50,7 +50,7 @@ const B2BTeaser = () => {
                 className="font-body inline-flex items-center gap-2 rounded-pill px-7 py-3 text-xs uppercase tracking-[0.2em] text-cream hover:bg-gold hover:text-[hsl(var(--bz-bg-primary))] transition-all duration-200"
                 style={{ border: "1px solid hsl(var(--bz-gold) / 0.4)" }}
               >
-                Explore B2B Solutions
+                Explore Scent Marketing
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </Reveal>

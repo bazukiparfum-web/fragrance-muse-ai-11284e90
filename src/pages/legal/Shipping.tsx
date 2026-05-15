@@ -40,7 +40,7 @@ const Shipping = () => (
 
         <section>
           <h2 className="font-serif text-2xl font-semibold text-foreground mt-8 mb-3">5. International Orders</h2>
-          <p>International shipping is not currently offered. For B2B enquiries outside India, please <a href="/business" className="text-luxury-gold hover:underline">contact our business team</a>.</p>
+          <p>International shipping is not currently offered. For Scent Marketing enquiries outside India, please <a href="/business" className="text-luxury-gold hover:underline">contact our business team</a>.</p>
         </section>
       </div>
     </main>
