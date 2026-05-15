@@ -1,108 +1,85 @@
-# Lead Capture Form Upgrade — `/business`
+# Business FAQ + Final CTA — `/business`
 
-Rewrite `LeadCaptureForm` into a consultative, pre-qualifying form with a richer success state and alternate-contact strip. No DB schema changes — extra qualifying fields are packed into the existing `comment` column.
+Add a B2B-specific FAQ accordion just above the footer, plus a closing CTA strip. Replaces the current generic `<FAQ />` (which is about AI quiz matching) and the existing `<B2BCtaStrip />` on this page only.
+
+> Note: the brief lists "8 FAQ items" but only 7 questions are provided. Building the 7 supplied. If you want an 8th, send the copy and I'll append it.
 
 ## Files
 
-- **Edit** `src/components/business/LeadCaptureForm.tsx` — full rewrite of the section.
-- No page wiring change (already mounted in `Business.tsx`); no new deps; reuse existing zod, supabase client, sonner.
+- **New** `src/components/business/BusinessFAQ.tsx` — section with eyebrow, headline, accordion (built on existing `@/components/ui/accordion`, which is shadcn Radix-based and natively single-open).
+- **New** `src/components/business/FinalCtaStrip.tsx` — closing CTA strip with WhatsApp + consultation buttons.
+- **Edit** `src/pages/Business.tsx` — drop the temporary `<div id="faq"><FAQ /></div>` and the existing `<B2BCtaStrip />`; render `<BusinessFAQ />` then `<FinalCtaStrip />` as the last sections before `<Footer />`. Remove unused `FAQ` and `B2BCtaStrip` imports. (`B2BCtaStrip.tsx` file stays in repo, just unused on this page.)
 
-## Section wrapper
+## `BusinessFAQ.tsx`
 
-`<section id="lead-form" className="bg-bz-primary py-24">` (keep existing id so all CTAs still scroll here).
+Wrapper: `<section id="faq" className="py-24" style={{ backgroundColor: "#080808" }}>` (keeps the `#faq` anchor used by the lead form's "Read the FAQ ↓" link).
 
-## Form card
+Header (centered, max-w-2xl):
+- Eyebrow `text-[10px] font-semibold uppercase tracking-[0.3em] text-gold` → "COMMON QUESTIONS"
+- Headline `mt-4 font-serif font-light leading-[1.15] text-cream text-[34px] md:text-[44px]` → "Everything You Need to Know"
 
-Outer card: `mx-auto max-w-[680px] rounded-2xl border border-gold-strong/20 p-8 md:p-12` with inline `style={{ backgroundColor: "#141414" }}`.
+Accordion: shadcn `<Accordion type="single" collapsible className="mx-auto mt-12 max-w-3xl space-y-3">`.
 
-Header inside card (centered):
-- Headline `font-serif font-light text-cream text-[28px] md:text-[32px]` → "Start Your Aroma Journey"
-- Sub `mt-2 text-[14px]` with inline `style={{ color: "#8A7A6A" }}` → "Fill this in and our scent consultant will reach out within 24 hours."
+Per item — `<AccordionItem>` styled (override default border) with classes:
+`group rounded-lg border border-gold-strong/10 px-6 py-1 transition-colors data-[state=open]:border-gold-strong/30`
+and inline `style={{ backgroundColor: "#0D0D0D" }}` (active state via class `data-[state=open]:bg-[#141414]`).
 
-## Field styling (shared)
+`<AccordionTrigger>` overrides default chevron with a custom "+" icon that rotates to "×" when open. Implementation:
+- Wrap shadcn `AccordionTrigger` is fine; pass `className="hover:no-underline py-5 text-left"` and disable the built-in chevron via `[&>svg]:hidden`.
+- Append a custom span: `<Plus className="h-4 w-4 shrink-0 text-gold transition-transform duration-300 group-data-[state=open]:rotate-45" />` (rotating a `+` 45° visually becomes `×`).
+- Question text: `text-[15px] font-medium text-cream` (Inter via base font).
 
-Every input/select/textarea uses raw native elements (avoid pulling shadcn theme):
-- Base classes: `w-full rounded-lg border border-gold-strong/20 px-4 py-3 text-[14px] text-cream placeholder:text-cream/30 focus:border-gold focus:outline-none transition-colors` with inline `style={{ backgroundColor: "#0D0D0D" }}`.
-- Labels: `text-[11px] uppercase tracking-[0.2em] text-gold mb-1.5 block`.
-- Error text: `mt-1 text-[11px] text-destructive`.
-- Selects use native `<select>` styled the same way + a chevron via `appearance-none bg-no-repeat` (inline `backgroundImage` URL data SVG of a gold chevron, `paddingRight: 2.5rem`).
+`<AccordionContent>` uses shadcn's built-in max-height/opacity animation (matches the requested smooth reveal). Inner `<p className="pb-5 text-[14px] leading-[1.7]" style={{ color: "#8A7A6A" }}>{answer}</p>`.
 
-## Form rows
+Items array (7):
 
-- **Row 1** — `grid grid-cols-1 sm:grid-cols-2 gap-4`:
-  - Full Name (`name`, placeholder "Your name", maxLength 100)
-  - Business Name (`company`, placeholder "Your company or brand name", maxLength 120)
-- **Row 2** — `grid grid-cols-1 sm:grid-cols-2 gap-4`:
-  - WhatsApp Number (`phone`, type=tel, placeholder "+91 XXXXX XXXXX", maxLength 20). Wrapped in a relative div with a `<MessageCircle />` lucide icon (16px, `text-gold`, absolute `left-3 top-1/2 -translate-y-1/2`); input gets `pl-10`.
-  - Email Address (`email`, type=email, placeholder "you@company.com", maxLength 255)
-- **Row 3 (full)** — Industry select (`industry`), placeholder option "Select your industry". Options: `Hotel / Resort`, `Retail Store`, `Office / Co-working`, `Spa & Wellness`, `Events & Weddings`, `Automotive`, `Restaurant & Café`, `Other`.
-- **Row 4 (full)** — Space size select (`spaceSize`), placeholder "Approximate space size". Options: `Under 500 sq ft`, `500–1,500 sq ft`, `1,500–5,000 sq ft`, `5,000+ sq ft`, `Multiple locations`.
-- **Row 5 (full)** — Budget select (`budget`), placeholder "Monthly budget range". Options: `Under ₹6,000`, `₹6,000–₹15,000`, `₹15,000+`, `Not sure yet`.
-- **Row 6 (full)** — Textarea (`message`, rows=4, maxLength 2000, placeholder "Tell us about your space and what you're hoping to achieve").
+1. Q: "How long does it take to get a custom scent made?"  
+   A: "For curated scents from our library — we can deploy within 5–7 business days. For a fully custom brand scent formulation, the process typically takes 2–3 weeks including consultation, sampling, and your approval."
+2. Q: "Can I get our brand's exclusive scent — one no other business uses?"  
+   A: "Yes. Our Enterprise plan includes a proprietary scent formulation that is registered to your brand exclusively. No other Bazuki client will use the same formula."
+3. Q: "Do you provide the diffuser hardware or do we need to buy it?"  
+   A: "All plans include diffuser rental — you don't need to purchase anything upfront. Hardware is maintained and replaced by Bazuki. Enterprise clients can opt for HVAC-integrated diffusion systems."
+4. Q: "What cities do you currently serve?"  
+   A: "We currently serve businesses in Ahmedabad, Mumbai, Surat, Vadodara, and Bangalore. We're expanding rapidly — reach out even if your city isn't listed and we'll confirm availability."
+5. Q: "Can you white-label the scent oil with our branding?"  
+   A: "Yes — our Enterprise plan includes branded oil packaging with your logo, label design, and product name. Ideal for hospitality brands and retail chains."
+6. Q: "What's the refill process like?"  
+   A: "Monthly refills are shipped to your door automatically. You'll receive a WhatsApp notification 3 days before dispatch. No phone calls, no paperwork."
+7. Q: "Is there a free trial or sample?"  
+   A: "We offer a free scent consultation call and, for Business and Enterprise prospects, we can send a curated sample kit (3 scent strips) before you commit."
 
-## Submit button
+## `FinalCtaStrip.tsx`
 
-Native `<button type="submit">`:
-`mt-2 w-full h-[52px] rounded-pill bg-gold text-primary-foreground text-[13px] font-semibold uppercase tracking-[0.1em] hover:bg-gold/90 transition-colors disabled:opacity-60`
+Wrapper: `<section className="py-20" style={{ background: "linear-gradient(135deg, #1A0F00 0%, #080808 100%)" }}>`.
 
-Label: `Request My Free Consultation →` (or "Submitting…" when in flight).
+Inner `container mx-auto px-4 text-center`:
+- Headline `font-serif font-light text-cream text-[26px] md:text-[32px]` → "Still have questions?"
+- Buttons row `mt-8 flex flex-col sm:flex-row items-center justify-center gap-4`:
+  - WhatsApp ghost: `<a href="https://wa.me/919999999999" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-pill border border-[#25D366] px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.15em] text-[#25D366] transition-colors hover:bg-[#25D366] hover:text-white">` with `<MessageCircle size={14} />` + "WhatsApp Us"
+  - Solid gold: `<button onClick={scrollToLead} className="rounded-pill bg-gold px-7 py-3 text-[12px] font-semibold uppercase tracking-[0.2em] text-primary-foreground transition-colors hover:bg-gold/90">` → "Book a Consultation". Scrolls to `#lead-form`.
 
-## Validation (zod)
+Reuses the same placeholder WhatsApp number (`919999999999`) flagged earlier.
 
+## `Business.tsx` page wiring
+
+Final order:
 ```
-name: trim min 1 max 100
-company: trim min 1 max 120
-phone: trim min 7 max 20
-email: trim email max 255
-industry: min 1
-spaceSize: min 1
-budget: min 1
-message: trim min 10 max 2000
+<HeroB2B />
+<ScentScience />
+<UseCasesGrid />
+<B2BPackages />
+<ClientStories />
+<HowItWorks />
+<ServicesOffered />
+<B2BTestimonials />
+<LeadCaptureForm />
+<BusinessFAQ />
+<FinalCtaStrip />
 ```
-
-On invalid → set per-field error map, render under each field.
-
-## Submit handler
-
-Reuse existing `createClient(VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY)` pattern. Insert into `consultation_requests`:
-```
-{
-  name,
-  email,
-  phone,
-  comment: `Company: ${company}\nIndustry: ${industry}\nSpace size: ${spaceSize}\nBudget: ${budget}\nMessage: ${message}`,
-}
-```
-On error → `toast.error("Failed to submit. Please try again.")`. On success → set `success=true` and store the submitted name in state for the confirmation copy.
-
-## Success state
-
-Replaces the `<form>` (still inside the same dark card):
-- Centered column.
-- Gold check: 64px circle `border border-gold-strong/40 bg-gold/10`, lucide `<Check size={32} className="text-gold" />`.
-- Headline `mt-6 font-serif text-[28px] font-light text-cream` → `Thank you, {name}! Our scent consultant will WhatsApp you within 24 hours.`
-- Link `mt-4 inline-flex items-center gap-1 text-[13px] uppercase tracking-[0.2em] text-gold hover:text-gold/80`, using `<Link to="/library">` → "While you wait, explore our Scent Library →".
-
-## Alternate contact strip (below card)
-
-`mt-10 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-[680px] mx-auto text-center`. Two columns:
-
-1. "Prefer WhatsApp?" — `text-[13px] text-body`, then a button:
-   - `<a href="https://wa.me/919999999999" target="_blank" rel="noopener noreferrer">` styled `mt-3 inline-flex items-center gap-2 rounded-pill bg-[#25D366] text-white px-5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.15em] hover:bg-[#1ebe5d] transition-colors`. Lucide `<MessageCircle size={14} />` + "Chat with us". (Phone number — see Open question.)
-2. "Have more questions?" — same body class. A `<button>` `mt-3 inline-flex items-center gap-1 text-[12px] uppercase tracking-[0.2em] text-gold hover:text-gold/80` → "Read the FAQ ↓". `onClick` scrolls to `#faq`.
-
-## FAQ anchor
-
-`/business` does not currently render the shared `<FAQ />` component, so `#faq` would not exist. To make the FAQ link work without expanding scope, the existing `FAQ` component will be wrapped at use-time in the page (small page edit) — see Open question 2.
-
-## Open questions for the user
-
-1. **WhatsApp number** — what number should the green "Chat with us" button dial? (Currently no business number is wired in code.) If unspecified, I'll use a placeholder `+91 99999 99999` and flag it in code.
-2. **FAQ link target** — `/business` has no FAQ section. Options: (a) add the existing `<FAQ />` component to the page so `#faq` resolves, (b) link to a dedicated `/faq` route (does not exist either), or (c) drop the FAQ link. Default if no answer: option (a) — render `<FAQ />` between `LeadCaptureForm` and `B2BCtaStrip`, give it `id="faq"`.
+Remove imports: `FAQ`, `B2BCtaStrip`.
 
 ## Out of scope
-
-- No schema migration (consultation_requests already accepts the data via `comment`).
-- No backend notification / WhatsApp send-out wiring.
-- No analytics events.
-- `B2BCtaStrip`, `B2BTestimonials`, `ClientStories`, `B2BPackages`, etc., untouched.
+- No FAQPage JSON-LD schema (can add if you want SEO rich results).
+- No CMS / DB-driven FAQ — items live in the component.
+- No analytics, no live chat widget.
+- WhatsApp number stays as placeholder until you provide the real one.
