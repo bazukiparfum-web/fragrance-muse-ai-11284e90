@@ -6,7 +6,7 @@ const STATS = [
   { n: "52", label: "Curated Ingredients" },
   { n: "3", label: "Custom Perfumes Per Order" },
   { n: "2,000+", label: "Unique Formulas Created" },
-  { n: "​Make In India", label: "​PAN" },
+  { n: "​Nation Wide", label: "​Delivered Across India" },
 ];
 
 const TESTIMONIALS = [
@@ -43,8 +43,8 @@ const TrustProof = () => {
               } ${i % 2 === 0 ? "border-r md:border-r" : ""} ${i < 2 ? "border-b md:border-b-0 pb-8 md:pb-0" : ""}`}
               style={{ borderColor: "hsl(var(--bz-gold) / 0.15)" }}
             >
-              <div className="font-display text-gold text-4xl md:text-[48px] leading-none mb-3">
-                <CountUp value={s.n} />
+              <div className="font-display text-gold leading-none mb-3">
+                <CountUp value={s.n} className="text-5xl" />
               </div>
               <div className="font-body text-cream text-[11px] uppercase tracking-[0.2em]">
                 {s.label}
