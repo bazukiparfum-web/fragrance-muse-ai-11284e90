@@ -1,44 +1,48 @@
-# Industry Use-Cases Upgrade — `/business`
+# Industry Detail Modal — `/business` use-cases
 
-Rewrite `src/components/business/UseCasesGrid.tsx` to consultative cards. Single-file change.
+Make each industry card open a modal with a 3-step scent marketing plan and recommended fragrance categories. Wire the existing "Learn More →" hover bar as the click target.
 
-## Section header
+## Files
 
-- Eyebrow: "OUR INDUSTRIES" — Inter 10px, gold, `tracking-[0.3em]`, uppercase.
-- Headline: "We Scent Every Space That Matters" — Cormorant Garamond `text-[34px] md:text-[44px]`, font-light, cream, centered.
+- **New** `src/components/business/IndustryDetailDialog.tsx` — shadcn `Dialog`-based modal.
+- **Edit** `src/components/business/UseCasesGrid.tsx` — add per-industry `plan` + `categories` to the data, manage `selected` state, render the dialog, make the whole card (and the Learn More bar) clickable.
 
-## Card data (6)
+No new deps, no DB, no other sections touched.
 
-Each card: `{ icon, name, problem, solution, outcome }`.
+## Per-industry content (added to existing 6 cases)
 
-| Industry | Icon (lucide, thin) | Problem | Solution | Outcome pill |
-|---|---|---|---|---|
-| Hotels | `BedDouble` | Guests forget a stay. They never forget a scent. | Signature lobby + suite scents tied to your brand identity. | ↑ Guest satisfaction scores |
-| Retail | `ShoppingBag` | Browsers leave. Scented spaces convert. | Custom in-store aroma tuned to your category and customer. | ↑ Dwell time by 44% |
-| Offices | `Building2` | Productivity drops in sterile, odorless environments. | Calming, focus-enhancing diffusion across workspaces. | ↑ Focus & wellbeing |
-| Events | `PartyPopper` | A signature scent makes your event unforgettable. | Bespoke fragrance designed for the occasion and venue. | ↑ Lasting brand recall |
-| Spas | `Flower2` | Inconsistent scent breaks the relaxation experience. | Therapeutic, consistent blends across every treatment room. | ↑ Repeat bookings |
-| Automotive | `Car` | New car smell is the world's most powerful brand memory. | Showroom and cabin scenting that defines your marque. | ↑ Premium brand perception |
+Each case gets:
+- `plan: [{ title, body }, { title, body }, { title, body }]` — 3 steps tailored to the industry.
+- `categories: string[]` — 3–4 recommended fragrance families.
 
-Icons rendered with `strokeWidth={1.25}` and `size={32}`, `text-gold`.
+| Industry | 3-step plan | Recommended categories |
+|---|---|---|
+| Hotels & Hospitality | 1. Lobby Identity — define the first-breath signature. 2. Suite Continuity — quieter version in rooms and corridors. 3. Brand Memory — take-home amenities echo the same scent. | Woody-Oud, Warm Amber, Fresh Linen, White Tea |
+| Retail & Boutiques | 1. Mood Mapping — match scent to category and customer mindset. 2. Zone Diffusion — calibrate intensity per fitting room and floor. 3. Conversion Anchors — light scent bursts at decision points. | Citrus-Floral, Powdery Musk, Soft Leather, Vanilla |
+| Offices & Co-working | 1. Focus Profile — energising blends for work zones. 2. Calm Pockets — soothing notes in meeting rooms and lounges. 3. Wellness Schedule — adaptive diffusion across the day. | Green Tea, Mint-Citrus, Cedar, Sandalwood |
+| Events & Weddings | 1. Concept Brief — co-create a scent around the story. 2. Venue Activation — pre-event diffusion before guests arrive. 3. Memento — bottled keepsake for guests. | Rose-Oud, Champagne Floral, Spiced Amber, White Musk |
+| Spas & Wellness | 1. Therapy Map — scent paired to each treatment. 2. Consistency Layer — same base across rooms and reception. 3. Aftercare — at-home product extends the ritual. | Lavender, Eucalyptus, Sandalwood, Neroli |
+| Automotive | 1. Showroom Signature — defines the marque on entry. 2. Cabin Scenting — delivery-ready in every new vehicle. 3. Service Touchpoint — refresh on every visit. | Leather, Smoky Wood, Bergamot, Iris |
 
-## Card style
+## Modal structure (`IndustryDetailDialog.tsx`)
 
-- `group relative overflow-hidden rounded-xl bg-bz-card border border-gold-strong/15 p-8 transition-all duration-300 hover:-translate-y-1 hover:border-gold-strong/60 hover:shadow-[0_0_28px_hsl(var(--bz-gold)/0.25)]`
-- Inner stack:
-  1. Icon (top, gold, thin).
-  2. Industry name — `font-serif text-[22px] text-cream mt-4`.
-  3. "The challenge:" label — Inter 11px gold uppercase `tracking-[0.2em] mt-5`. On next line: italic problem text in `text-[14px] text-body italic leading-snug`.
-  4. "What Bazuki does:" label — same gold-uppercase-11px style `mt-4`. Solution in `text-[13px] text-cream leading-relaxed`.
-  5. Outcome pill — `inline-flex mt-6 rounded-pill border border-gold-strong/40 px-3 py-1 text-[10px] uppercase tracking-[0.15em] text-gold`.
-- "Learn More →" hover slide-up: an absolute footer bar `absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-bz-primary/90 backdrop-blur border-t border-gold-strong/30 px-8 py-3 text-[12px] uppercase tracking-[0.2em] text-gold`. Renders the text "Learn More →". Card gets `pb-14` so the slide-up bar doesn't cover the outcome pill on hover (or the pill sits above the bar via `relative z-10`). Use the `pb` approach for clean stacking. Non-interactive (no link target yet — span/button placeholder consistent with current static section).
+Props: `{ open, onOpenChange, industry: Case | null }`. Renders nothing when `industry` is null.
 
-## Layout
+`DialogContent`: `max-w-2xl bg-bz-card border-gold-strong/20 text-cream`.
 
-`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6`. Section keeps `id="use-cases"`, swaps `bg-luxury-black` for `bg-bz-primary`, padding `py-24`.
+- **Header**: industry icon (gold, thin, 28px) + `DialogTitle` font-serif 28px cream + small italic problem line in `text-body`.
+- **Section A — "Your 3-Step Scent Marketing Plan"**: gold eyebrow (10px tracking-[0.3em]). Below, vertical list of 3 numbered steps. Each row: gold circle with step number (`w-8 h-8 rounded-full border border-gold-strong/40 text-gold`), step title in cream 15px semibold, body in `text-body` 13px.
+- **Section B — "Recommended Fragrance Categories"**: gold eyebrow. Wrap of pill chips: `rounded-pill border border-gold-strong/40 px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-gold`.
+- **Footer CTA**: `Button variant="luxury"` "Request a Tailored Plan" → closes dialog and scrolls to `#lead-form`.
+
+## Card interaction (`UseCasesGrid.tsx`)
+
+- Convert the card root from `<div>` to `<button type="button">` with same classes plus `text-left w-full`. `onClick` sets `selected` state.
+- Keep the existing hover slide-up "Learn More →" bar — purely visual hint; click is now on the whole card.
+- Render `<IndustryDetailDialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)} industry={selected} />` once at the bottom of the section.
 
 ## Out of scope
 
-- No header/footer, hero, or other sections touched.
-- No new routes or destinations for "Learn More" (placeholder visual only — can wire later).
-- No new design tokens; reuses `bz-*`/`gold` utilities already in `index.css`.
+- No routing to dedicated industry pages (modal-only as requested).
+- No CMS — content lives inline in the case data.
+- No analytics events.
