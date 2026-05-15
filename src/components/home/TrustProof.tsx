@@ -1,4 +1,6 @@
 import { Star } from "lucide-react";
+import { Reveal } from "@/components/anim/Reveal";
+import { CountUp } from "@/components/anim/CountUp";
 
 const STATS = [
   { n: "52", label: "Curated Ingredients" },
@@ -32,30 +34,32 @@ const TrustProof = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10">
           {STATS.map((s, i) => (
-            <div
+            <Reveal
               key={s.label}
+              variant="item"
+              delay={i * 80}
               className={`text-center px-4 ${
-                i < STATS.length - 1
-                  ? "md:border-r"
-                  : ""
+                i < STATS.length - 1 ? "md:border-r" : ""
               } ${i % 2 === 0 ? "border-r md:border-r" : ""} ${i < 2 ? "border-b md:border-b-0 pb-8 md:pb-0" : ""}`}
               style={{ borderColor: "hsl(var(--bz-gold) / 0.15)" }}
             >
               <div className="font-display text-gold text-4xl md:text-[48px] leading-none mb-3">
-                {s.n}
+                <CountUp value={s.n} />
               </div>
               <div className="font-body text-cream text-[11px] uppercase tracking-[0.2em]">
                 {s.label}
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
 
         {/* Testimonials */}
         <div className="grid md:grid-cols-3 gap-6 mt-20">
-          {TESTIMONIALS.map((t) => (
-            <div
+          {TESTIMONIALS.map((t, i) => (
+            <Reveal
               key={t.name}
+              variant="item"
+              delay={i * 80}
               className="rounded-lg p-7 bg-bz-card transition-all duration-200 hover:-translate-y-1 hover:glow-gold-sm"
               style={{ border: "1px solid hsl(var(--bz-gold) / 0.15)" }}
             >
@@ -71,7 +75,7 @@ const TrustProof = () => {
                 <span className="font-body font-semibold text-cream text-sm">{t.name}</span>
                 <span className="font-body text-cream-muted text-xs">{t.city}</span>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>

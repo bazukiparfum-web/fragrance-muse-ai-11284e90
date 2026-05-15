@@ -1,51 +1,66 @@
-# Hero Bottle — Replace placeholder with AI-generated image
+## Goal
+Confirm the homepage section order and add scroll-triggered animations across the page, with mobile/perf checks.
 
-Generate a single cinematic, transparent-background bottle image and swap it into `Hero.tsx`.
+## Page assembly (src/pages/Index.tsx)
+Order is already correct: Header → Hero → HowItWorks → FeaturedScents → QuizCTABanner → TrustProof → B2BTeaser → FAQ → Footer. I'll remove `FAQ` from the spec? No — keep it since it's already wired and valuable; confirm with you only if you want it dropped. Otherwise leave Footer last. (Default: keep FAQ between B2B and Footer.)
 
-## Generate
+## New shared animation primitives
+Create `src/hooks/useInView.ts` — IntersectionObserver hook (threshold 0.2 ≈ "80% viewport entry"), one-shot trigger, respects `prefers-reduced-motion`.
 
-- Tool: `imagegen--generate_image`, `model: "premium"` (text legibility for "BAZUKI" label), `transparent_background: true`.
-- Path: `src/assets/hero-bottle.png` (PNG for transparency).
-- Dimensions: `768 x 1280` (tall portrait, matches hero column aspect).
-- Prompt: photoreal modern minimalist flacon — tall rectangular glass with squared shoulders, deep amber/topaz liquid catching warm light, brushed gold rectangular cap, thin engraved gold "BAZUKI" wordmark on the front, soft gold rim-light on edges, subtle reflections, against pure transparent background, cinematic dark-luxury studio lighting, ultra-sharp product render, 8k.
+Create `src/components/anim/Reveal.tsx` — wraps children, applies opacity 0→1 + translateY(24px→0) over 0.6s ease-out when in view. Variants: `headline` (24px), `item` (16px). Supports `delay` prop for staggering.
 
-## Swap into Hero
+Add CSS keyframes to `src/index.css`:
+- `bz-reveal-up` (used by Reveal)
+- `bz-draw-line` (stroke-dashoffset 100→0, 1s ease-out) for HowItWorks connector
+- `bz-count-up` is JS, not CSS
 
-Edit `src/components/Hero.tsx`:
+All animated wrappers add `will-change: transform, opacity` only while animating, removed after.
 
-- Import: `import heroBottle from "@/assets/hero-bottle.png";`
-- Replace the placeholder bottle block (the `<div>` styled as "180px × 300px" container with cap/neck/label children) with:
+## Per-section changes
 
-```tsx
-<div className="relative" style={{ width: 240, height: 380 }}>
-  {/* Halo glow behind bottle */}
-  <div
-    aria-hidden
-    className="absolute inset-0 -z-10"
-    style={{
-      background: "radial-gradient(closest-side, rgba(201,168,76,0.28), transparent 70%)",
-      filter: "blur(30px)",
-      animation: "bz-bottle-glow 6s ease-in-out infinite",
-    }}
-  />
-  <img
-    src={heroBottle}
-    alt="Bazuki signature perfume bottle"
-    className="w-full h-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.7)]"
-    style={{ animation: "bz-bob 6s ease-in-out infinite" }}
-  />
-</div>
-```
+**HowItWorks**
+- Wrap headline in `<Reveal variant="headline">`.
+- Replace the dashed `<div>` connector with an inline `<svg>` containing a dashed gold line; animate `stroke-dashoffset` from full length → 0 over 1s once the section enters view (uses same `useInView`).
+- Wrap each step card in `<Reveal variant="item" delay={i*80} />`.
 
-- Keep `bz-bottle-glow` and `bz-bob` keyframes already defined in the inline `<style>` block.
-- Floating note tags, fragrance pyramid, eyebrow, headline, CTAs, trust stats, mobile marquee, scroll indicator — all unchanged.
+**FeaturedScents**
+- Headline + eyebrow → `<Reveal variant="headline">`.
+- Each `ScentCard` → `<Reveal variant="item" delay={i*80} />`.
+- Add `loading="lazy"` to any `<img>` (currently gradients only — n/a, but apply when real images land).
 
-## QA
+**QuizCTABanner**
+- Split the quote into `<span>` per word; each span animates opacity 0→1 + translateY 8px→0, staggered 30ms, triggered when banner enters view via `useInView`.
+- Right-column copy + CTA → `<Reveal variant="item" delay={...}>`.
 
-- View the generated PNG to confirm transparent background, gold-on-dark palette, and a clean upright silhouette before claiming complete.
-- If the image has visible background fringing or label is illegible, re-generate once with prompt tweaks (no infinite loop).
+**TrustProof**
+- Build `useCountUp(target, duration=1200)` hook: starts when stat row enters view; parses numeric portion of strings like `"2,000+"` → animates 0 → 2000, re-appends suffix (`+`, `,`). For non-numeric (`"PAN"`) skip count and just fade in.
+- Wrap each stat in `<Reveal variant="item" delay={i*80}>`; numbers replaced with `<CountUp value={...}>`.
+- Testimonial cards → `<Reveal variant="item" delay={i*80}>`.
+
+**B2BTeaser**
+- Headline → `<Reveal variant="headline">`; chips + CTA → staggered `<Reveal variant="item">`.
+
+**Hero**
+- Already has bobbing notes (kept as-is, not scroll-triggered).
+- Add `fetchpriority="high"` to bottle `<img>` is fine, but to ensure LCP = headline, also add `loading="eager"` only to bottle and confirm headline renders first in DOM (it does). No Reveal wrapper on hero (above the fold).
+
+**Header**
+- Scroll transition at 80px already implemented (line 33). I'll verify in browser after build.
+
+## Performance + a11y
+- All Reveal wrappers `will-change: transform, opacity` only while `data-animating="true"`; cleared on animationend.
+- `prefers-reduced-motion: reduce` short-circuits Reveal/CountUp to instant final state.
+- Confirm no `<img>` above the fold uses `loading="lazy"` (only hero bottle is above fold; keep eager).
+- IntersectionObserver is passive — no main-thread blocking.
+
+## Final QA pass
+- Browser screenshots at 375 / 430 / 768 / 1024 / 1440 to verify responsive layout and that hero CTAs sit above the fold.
+- Ripgrep for stray non-gold accent colors (`#3b82f6`, `blue-`, `gray-` in homepage components) and replace with gold tokens if any leaked in.
+- Console-log check after load.
+
+## Files
+**New**: `src/hooks/useInView.ts`, `src/hooks/useCountUp.ts`, `src/components/anim/Reveal.tsx`, `src/components/anim/CountUp.tsx`, `src/components/anim/WordReveal.tsx`
+**Edited**: `src/index.css` (keyframes), `src/components/home/HowItWorks.tsx`, `FeaturedScents.tsx`, `QuizCTABanner.tsx`, `TrustProof.tsx`, `B2BTeaser.tsx`, `src/pages/Index.tsx` (verify order).
 
 ## Out of scope
-
-- Changing layout, colors, or any other section.
-- Generating multiple bottle variants.
+No backend, schema, or business-logic changes. Hero left visually unchanged aside from img priority hints.
