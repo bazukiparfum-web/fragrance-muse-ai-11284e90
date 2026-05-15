@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { Reveal } from "@/components/anim/Reveal";
+import { WordReveal } from "@/components/anim/WordReveal";
 
 const QuizCTABanner = () => {
   return (
@@ -17,12 +19,17 @@ const QuizCTABanner = () => {
             >
               "
             </span>
-            <p className="font-display italic text-cream text-3xl md:text-[52px] leading-[1.1]">
-              Every human deserves a scent that is entirely their own.
-            </p>
+            <WordReveal
+              text="Every human deserves a scent that is entirely their own."
+              as="p"
+              className="font-display italic text-cream text-3xl md:text-[52px] leading-[1.1]"
+              stagger={30}
+            />
           </blockquote>
 
-          <div
+          <Reveal
+            variant="item"
+            delay={200}
             className="md:pl-12 md:border-l"
             style={{ borderColor: "hsl(var(--bz-gold) / 0.25)" }}
           >
@@ -31,13 +38,13 @@ const QuizCTABanner = () => {
               memory to molecule.
             </p>
             <Link
-              to="/quiz"
+              to="/shop/quiz"
               className="font-body inline-flex items-center gap-2 rounded-pill px-8 py-4 text-sm font-medium uppercase tracking-[0.2em] bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md transition-all duration-200"
             >
               Begin Your Scent Journey
               <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>
