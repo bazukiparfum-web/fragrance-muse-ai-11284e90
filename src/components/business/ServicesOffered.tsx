@@ -38,11 +38,11 @@ const ServicesOffered = () => {
               <div className="w-14 h-14 rounded-lg bg-luxury-gold/10 flex items-center justify-center mb-5">
                 <Icon className="w-7 h-7 text-luxury-gold" />
               </div>
-              <h3 className="font-serif text-2xl font-semibold mb-3">{title}</h3>
-              <p className="text-primary-foreground/95 mb-6 leading-relaxed">{desc}</p>
+              <h3 className="font-serif text-2xl font-semibold mb-3 text-cream">{title}</h3>
+              <p className="text-cream mb-6 leading-relaxed">{desc}</p>
               <ul className="space-y-3 mt-auto">
                 {points.map((p) => (
-                  <li key={p} className="flex items-start gap-2 text-sm text-primary-foreground">
+                  <li key={p} className="flex items-start gap-2 text-sm text-cream">
                     <Check className="w-4 h-4 text-luxury-gold mt-0.5 flex-shrink-0" />
                     <span>{p}</span>
                   </li>
