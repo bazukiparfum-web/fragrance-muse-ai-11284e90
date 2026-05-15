@@ -66,6 +66,7 @@ const AppInner = () => {
           <Route path="/shop/account/scents/:id" element={<ScentDetail />} />
           <Route path="/account" element={<Navigate to="/shop/account" replace />} />
           <Route path="/business" element={<Business />} />
+          <Route path="/scent-coaching" element={<ScentCoaching />} />
           <Route path="/ingredients" element={<Ingredients />} />
           <Route path="/about" element={<About />} />
           <Route path="/legal/privacy" element={<Privacy />} />
