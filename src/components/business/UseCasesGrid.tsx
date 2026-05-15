@@ -1,33 +1,101 @@
-import { BedDouble, ShoppingBag, Building2, PartyPopper, Flower2, Car } from "lucide-react";
+import { BedDouble, ShoppingBag, Building2, PartyPopper, Flower2, Car, type LucideIcon } from "lucide-react";
 
-const cases = [
-  { icon: BedDouble, title: "Hotels & Hospitality", desc: "Signature lobby and suite scents that define your guest experience." },
-  { icon: ShoppingBag, title: "Retail & Boutiques", desc: "Aroma identities that boost dwell time and brand recall." },
-  { icon: Building2, title: "Offices & Co-working", desc: "Calming, focus-enhancing scents for productive workspaces." },
-  { icon: PartyPopper, title: "Events & Weddings", desc: "Bespoke fragrances curated for once-in-a-lifetime moments." },
-  { icon: Flower2, title: "Spas & Wellness", desc: "Therapeutic blends designed to relax, restore and rejuvenate." },
-  { icon: Car, title: "Automotive", desc: "Premium cabin scenting for showrooms and luxury fleets." },
+type Case = {
+  icon: LucideIcon;
+  name: string;
+  problem: string;
+  solution: string;
+  outcome: string;
+};
+
+const cases: Case[] = [
+  {
+    icon: BedDouble,
+    name: "Hotels & Hospitality",
+    problem: "Guests forget a stay. They never forget a scent.",
+    solution: "Signature lobby and suite scents tied to your brand identity.",
+    outcome: "↑ Guest satisfaction scores",
+  },
+  {
+    icon: ShoppingBag,
+    name: "Retail & Boutiques",
+    problem: "Browsers leave. Scented spaces convert.",
+    solution: "Custom in-store aroma tuned to your category and customer.",
+    outcome: "↑ Dwell time by 44%",
+  },
+  {
+    icon: Building2,
+    name: "Offices & Co-working",
+    problem: "Productivity drops in sterile, odorless environments.",
+    solution: "Calming, focus-enhancing diffusion across workspaces.",
+    outcome: "↑ Focus & wellbeing",
+  },
+  {
+    icon: PartyPopper,
+    name: "Events & Weddings",
+    problem: "A signature scent makes your event unforgettable.",
+    solution: "Bespoke fragrance designed for the occasion and venue.",
+    outcome: "↑ Lasting brand recall",
+  },
+  {
+    icon: Flower2,
+    name: "Spas & Wellness",
+    problem: "Inconsistent scent breaks the relaxation experience.",
+    solution: "Therapeutic, consistent blends across every treatment room.",
+    outcome: "↑ Repeat bookings",
+  },
+  {
+    icon: Car,
+    name: "Automotive",
+    problem: "New car smell is the world's most powerful brand memory.",
+    solution: "Showroom and cabin scenting that defines your marque.",
+    outcome: "↑ Premium brand perception",
+  },
 ];
 
 const UseCasesGrid = () => {
   return (
-    <section id="use-cases" className="bg-luxury-black text-primary-foreground py-20 md:py-28">
+    <section id="use-cases" className="bg-bz-primary py-24">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <p className="text-luxury-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">Where We Work</p>
-          <h2 className="font-serif text-3xl md:text-5xl font-bold">Industries We Scent</h2>
+        <div className="mx-auto mb-14 max-w-2xl text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gold">
+            Our Industries
+          </p>
+          <h2 className="mt-4 font-serif font-light leading-[1.15] text-cream text-[34px] md:text-[44px]">
+            We Scent Every Space That Matters
+          </h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cases.map(({ icon: Icon, title, desc }) => (
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {cases.map(({ icon: Icon, name, problem, solution, outcome }) => (
             <div
-              key={title}
-              className="group p-8 rounded-lg border border-luxury-gold/15 bg-white/[0.02] hover:border-luxury-gold/60 hover:bg-luxury-gold/5 transition-all duration-300"
+              key={name}
+              className="group relative overflow-hidden rounded-xl border border-gold-strong/15 bg-bz-card p-8 pb-10 transition-all duration-300 hover:-translate-y-1 hover:border-gold-strong/60 hover:shadow-[0_0_28px_hsl(var(--bz-gold)/0.25)]"
             >
-              <div className="w-14 h-14 rounded-lg bg-luxury-gold/10 flex items-center justify-center mb-5 group-hover:bg-luxury-gold/20 transition-colors">
-                <Icon className="w-7 h-7 text-luxury-gold" />
+              <Icon size={32} strokeWidth={1.25} className="text-gold" />
+
+              <h3 className="mt-4 font-serif text-[22px] font-light text-cream">{name}</h3>
+
+              <div className="mt-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
+                The challenge:
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-2">{title}</h3>
-              <p className="text-primary-foreground/70 text-sm leading-relaxed">{desc}</p>
+              <p className="mt-1 text-[14px] italic leading-snug text-body">{problem}</p>
+
+              <div className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
+                What Bazuki does:
+              </div>
+              <p className="mt-1 text-[13px] leading-relaxed text-cream">{solution}</p>
+
+              <div className="relative z-10 mt-6">
+                <span className="inline-flex rounded-pill border border-gold-strong/40 px-3 py-1 text-[10px] uppercase tracking-[0.15em] text-gold">
+                  {outcome}
+                </span>
+              </div>
+
+              {/* Hover slide-up */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-full border-t border-gold-strong/30 bg-bz-primary/90 px-8 py-3 text-center text-[12px] font-semibold uppercase tracking-[0.2em] text-gold backdrop-blur transition-transform duration-300 group-hover:translate-y-0">
+                Learn More →
+              </div>
             </div>
           ))}
         </div>
