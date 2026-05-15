@@ -1,96 +1,65 @@
-# BreadcrumbList, Article Schema & Quiz Guide Links
+# Premium Sticky Navigation — Bazuki
 
-## Objective
-Add structured data breadcrumbs sitewide, Article schema on guide pages, and contextual guide links from quiz flows.
+Replaces the existing `Header` sitewide with a new ghost-style nav matching the spec.
 
-## Phase 1: BreadcrumbList JSON-LD
+## Files
 
-Create `src/lib/breadcrumbs.ts` — a helper that maps routes to breadcrumb arrays and generates `BreadcrumbList` schema objects.
+- **`index.html`** — add Google Fonts preconnect + `<link>` for `Cormorant+Garamond:wght@400;500;600` and `Inter:wght@400;500`.
+- **`tailwind.config.ts`** — extend `fontFamily` with `cormorant: ['Cormorant Garamond', 'serif']` (keep existing `sans`/`serif`).
+- **`src/components/Header.tsx`** — full rewrite to new spec (keeps the same export so `App.tsx` doesn't change).
+- **`src/components/SearchOverlay.tsx`** *(new)* — full-screen search overlay (UI only, input + close, no backend hookup).
 
-Add `<JsonLd id="breadcrumbs-...">` to every public-facing page:
-- Index: Home only (already has this — verify and keep)
-- /about: Home > About
-- /business: Home > Business
-- /ingredients: Home > Ingredients
-- /collection: Home > Collection
-- /collection/:id: Home > Collection > Scent Detail
-- /product/:handle: Home > Collection > Product
-- /shop/quiz: Home > Quiz
-- /shop/quiz/for-yourself: Home > Quiz > For Yourself
-- /shop/quiz/for-someone-else: Home > Quiz > For Someone Else
-- /shop/quiz/results: Home > Quiz > Results
-- /guide/find-your-signature-scent: Home > Guide > Find Your Signature Scent
-- /guide/perfume-notes-explained: Home > Guide > Perfume Notes Explained
-- /guide/ai-perfume-vs-traditional: Home > Guide > AI Perfume vs Traditional
-- /shop/cart: Home > Cart
-- /shop/account: Home > Account
-- /legal/*: Home > Legal > {Privacy|Terms|Shipping}
+## Behavior
 
-Implementation pattern per page:
-```tsx
-import { buildBreadcrumbs } from "@/lib/breadcrumbs";
-const crumbs = buildBreadcrumbs([
-  { name: "Home", path: "/" },
-  { name: "Quiz", path: "/shop/quiz" },
-  { name: "Results", path: "/shop/quiz/results" },
-]);
-<JsonLd id="breadcrumbs-quiz-results" data={crumbs} />
+- Fixed top, `z-50`, full width.
+- Scroll listener (`useEffect` + `window.scrollY`) toggles `scrolled` state at >80px.
+  - Unscrolled: `bg-transparent`, no border.
+  - Scrolled: `bg-[#0A0A0A]`, `border-b border-[#C9A84C]/10`.
+  - `transition-[background-color,border-color] duration-300 ease-in-out`.
+- No box-shadow ever.
+
+## Layout (desktop ≥ md)
+
+```
+[ BAZUKI logo ]      [ Shop  Quiz  Library  B2B  About ]      [ 🔍  🛒(badge)  Take the Quiz ]
 ```
 
-## Phase 2: Article JSON-LD on Guide Pages
+- **Logo** (left): `font-cormorant text-2xl tracking-[0.25em] text-[#F5ECD7]`, links to `/`.
+- **Nav links** (center): `font-sans text-[12px] uppercase tracking-[0.12em] text-[#C8B99A]`. Each link is a `<Link>` with a `::after` pseudo underline (1px gold) animating `scale-x` from `origin-left` on hover, 0.2s ease — implemented via a small custom utility class in component (`group` + `after:` Tailwind arbitrary values).
+- **Right cluster**:
+  - Search icon — Lucide `Search` `strokeWidth={1}` `size={18}`, opens `SearchOverlay`.
+  - Cart icon — Lucide `ShoppingBag` `strokeWidth={1}`, with absolute-positioned gold circle badge showing `useCartStore` item count (reuse existing store; hide badge if 0).
+  - "Take the Quiz" CTA → `/shop/quiz`: pill (`rounded-full`), `border border-[#C9A84C]`, `bg-transparent text-[#F5ECD7]`, hover → `bg-[#C9A84C] text-black`, `transition-colors duration-300`.
 
-Add `Article` schema to all three guide pages using `JsonLd`:
+## Route mapping
 
-**Fields per guide:**
-- `@type`: "Article"
-- `headline`: matches page H1
-- `author`: `{ @type: "Organization", name: "Bazuki Perfumes" }`
-- `publisher`: `{ @type: "Organization", name: "Bazuki Perfumes", logo: { @type: "ImageObject", url: "https://www.bazukifragrance.com/favicon.png" } }`
-- `datePublished`: `"2026-05-13"` (today)
-- `dateModified`: `"2026-05-13"`
-- `mainEntityOfPage`: current page URL
-- `image`: same as og:image if available, else omit
+- Shop → `/collection`
+- Scent Quiz → `/shop/quiz`
+- Scent Library → `/ingredients`
+- B2B → `/business`
+- About → `/about`
 
-## Phase 3: Contextual Guide Links in Quiz Flows
+## Mobile (< md)
 
-**QuizLanding (`/shop/quiz`):**
-Add a "Not sure where to start?" section below the CTA cards with 3 compact link cards:
-- "How to Find Your Signature Scent" → /guide/find-your-signature-scent
-- "Perfume Notes Explained" → /guide/perfume-notes-explained
-- "AI vs Traditional Perfume" → /guide/ai-perfume-vs-traditional
+- Logo + hamburger (3 thin gold lines, custom SVG or Lucide `Menu` `strokeWidth={1} className="text-[#C9A84C]"`).
+- Tap → full-screen overlay: `fixed inset-0 bg-[#0A0A0A] z-[60]`, links stacked vertically, `font-cormorant text-3xl text-[#F5ECD7]` with gold dividers.
+- Animation: slide-in from right using existing Tailwind `animate-slide-in-right` (already in design system) + `animate-fade-in` for backdrop.
+- Close (X) top-right; tap link closes overlay and navigates.
+- Right cluster (search, cart, CTA) stacked at bottom of mobile overlay.
 
-**QuizResults (`/shop/quiz/results`):**
-Add a "Learn more about your matches" section above the Analytics section with the same 3 links, framed as "Want to understand what top/heart/base notes mean?" and "Curious how AI matching works?"
+## Search overlay
 
-**QuizForYourself & QuizForSomeoneElse:**
-No changes — these are active question flows where external links would distract.
+- `fixed inset-0 bg-[#0A0A0A]/95 backdrop-blur z-[70]`.
+- Centered input: `bg-transparent border-b border-[#C9A84C]/40 text-[#F5ECD7] placeholder:text-[#C8B99A]/50 font-cormorant text-2xl` with autofocus.
+- Close button top-right; ESC key closes; submit is a no-op for now (logs query).
 
-## Files to Create
-- `src/lib/breadcrumbs.ts` — breadcrumb builder utility
+## Notes / preserved behavior
 
-## Files to Modify
-- `src/pages/Index.tsx` — verify existing breadcrumb
-- `src/pages/About.tsx` — add breadcrumbs
-- `src/pages/Business.tsx` — add breadcrumbs
-- `src/pages/Ingredients.tsx` — add breadcrumbs
-- `src/pages/Collection.tsx` — add breadcrumbs
-- `src/pages/ScentDetail.tsx` — add breadcrumbs
-- `src/pages/ProductDetail.tsx` — add breadcrumbs
-- `src/pages/QuizLanding.tsx` — add breadcrumbs + guide links
-- `src/pages/QuizForYourself.tsx` — add breadcrumbs
-- `src/pages/QuizForSomeoneElse.tsx` — add breadcrumbs
-- `src/pages/QuizResults.tsx` — add breadcrumbs + guide links
-- `src/pages/guides/FindYourSignatureScent.tsx` — add breadcrumbs + Article schema
-- `src/pages/guides/PerfumeNotesExplained.tsx` — add breadcrumbs + Article schema
-- `src/pages/guides/AIPerfumeVsTraditional.tsx` — add breadcrumbs + Article schema
-- `src/pages/Cart.tsx` — add breadcrumbs
-- `src/pages/legal/Privacy.tsx` — add breadcrumbs
-- `src/pages/legal/Terms.tsx` — add breadcrumbs
-- `src/pages/legal/Shipping.tsx` — add breadcrumbs
-- `src/pages/Account.tsx` — add breadcrumbs
+- Keep the existing admin shield + auth/account icon logic from current `Header.tsx`, restyled to match (thin gold icons in the right cluster). Back button is removed (the new spec is logo-only on the left).
+- Cart drawer trigger: reuse existing `CartDrawer` opening pattern by wrapping the new cart icon as its trigger (or import the store directly and open).
+- All colors are inlined per exact hex spec rather than added as CSS tokens, since they're brand-fixed and only used here.
 
-## Out of Scope
-- Admin routes (no SEO value)
-- Auth/ResetPassword (no SEO value)
-- Dynamic per-city breadcrumbs (future geo phase)
-- Breadcrumb UI components (only JSON-LD structured data)
+## Out of scope
+
+- Wiring search to a real backend.
+- Changing any page content / other components.
