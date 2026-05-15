@@ -44,7 +44,7 @@ const TrustProof = () => {
               style={{ borderColor: "hsl(var(--bz-gold) / 0.15)" }}
             >
               <div className="font-display text-gold leading-none mb-3">
-                <CountUp value={s.n} className="text-5xl" />
+                <CountUp value={s.n} className="text-4xl" />
               </div>
               <div className="font-body text-cream text-[11px] uppercase tracking-[0.2em]">
                 {s.label}
