@@ -4,9 +4,9 @@ import { CountUp } from "@/components/anim/CountUp";
 
 const STATS = [
   { n: "52", label: "Curated Ingredients" },
-  { n: "3", label: "Custom Bottles Per Order" },
+  { n: "3", label: "Custom Perfumes Per Order" },
   { n: "2,000+", label: "Unique Formulas Created" },
-  { n: "PAN", label: "Delivered Across India" },
+  { n: "​Make In India", label: "​PAN" },
 ];
 
 const TESTIMONIALS = [
