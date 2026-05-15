@@ -132,3 +132,16 @@
   .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
   .font-body { font-family: 'Inter', system-ui, sans-serif; }
 }
+
+@keyframes bz-pyramid-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  svg g[style*="bz-pyramid-rise"] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
