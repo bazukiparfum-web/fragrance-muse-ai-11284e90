@@ -4,6 +4,7 @@ import HeroB2B from "@/components/business/HeroB2B";
 import ScentScience from "@/components/business/ScentScience";
 import UseCasesGrid from "@/components/business/UseCasesGrid";
 import B2BPackages from "@/components/business/B2BPackages";
+import ClientStories from "@/components/business/ClientStories";
 import HowItWorks from "@/components/business/HowItWorks";
 import ServicesOffered from "@/components/business/ServicesOffered";
 import B2BTestimonials from "@/components/business/B2BTestimonials";
@@ -32,6 +33,7 @@ const Business = () => {
         <ScentScience />
         <UseCasesGrid />
         <B2BPackages />
+        <ClientStories />
         <HowItWorks />
         <ServicesOffered />
         <B2BTestimonials />
