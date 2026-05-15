@@ -1,66 +1,71 @@
-## Goal
-Confirm the homepage section order and add scroll-triggered animations across the page, with mobile/perf checks.
+## FragrancePyramid component
 
-## Page assembly (src/pages/Index.tsx)
-Order is already correct: Header → Hero → HowItWorks → FeaturedScents → QuizCTABanner → TrustProof → B2BTeaser → FAQ → Footer. I'll remove `FAQ` from the spec? No — keep it since it's already wired and valuable; confirm with you only if you want it dropped. Otherwise leave Footer last. (Default: keep FAQ between B2B and Footer.)
+Create `src/components/FragrancePyramid.tsx` — a reusable, embeddable visualization of a fragrance's three note layers.
 
-## New shared animation primitives
-Create `src/hooks/useInView.ts` — IntersectionObserver hook (threshold 0.2 ≈ "80% viewport entry"), one-shot trigger, respects `prefers-reduced-motion`.
+### Props
 
-Create `src/components/anim/Reveal.tsx` — wraps children, applies opacity 0→1 + translateY(24px→0) over 0.6s ease-out when in view. Variants: `headline` (24px), `item` (16px). Supports `delay` prop for staggering.
+```ts
+interface Note { name: string; description: string }
+interface FragrancePyramidProps {
+  topNotes: Note[];
+  heartNotes: Note[];
+  baseNotes: Note[];
+  size?: "sm" | "md" | "lg";   // default "md" — for product cards vs results screen
+  className?: string;
+}
+```
 
-Add CSS keyframes to `src/index.css`:
-- `bz-reveal-up` (used by Reveal)
-- `bz-draw-line` (stroke-dashoffset 100→0, 1s ease-out) for HowItWorks connector
-- `bz-count-up` is JS, not CSS
+### Visual structure
 
-All animated wrappers add `will-change: transform, opacity` only while animating, removed after.
+SVG-based pyramid (scales cleanly, sharp edges) with 3 horizontal trapezoidal bands stacked from apex to base:
 
-## Per-section changes
+```text
+       ▲           Top    — pale gold  #F5E6C8  (~25% height, narrowest)
+      ▲▲▲          Heart  — amber      #C9A84C  (~35% height, mid)
+     ▲▲▲▲▲         Base   — deep brown #6B3F1A  (~40% height, widest)
+```
 
-**HowItWorks**
-- Wrap headline in `<Reveal variant="headline">`.
-- Replace the dashed `<div>` connector with an inline `<svg>` containing a dashed gold line; animate `stroke-dashoffset` from full length → 0 over 1s once the section enters view (uses same `useInView`).
-- Wrap each step card in `<Reveal variant="item" delay={i*80} />`.
+Each band rendered as an SVG `<polygon>` with the corresponding fill. A label ("TOP", "HEART", "BASE") sits inside or beside each band in Cormorant Garamond small caps gold, and the comma-joined note names render as Inter body text overlaid on the band (auto-contrast: dark text on the pale-gold top, cream text on amber + brown).
 
-**FeaturedScents**
-- Headline + eyebrow → `<Reveal variant="headline">`.
-- Each `ScentCard` → `<Reveal variant="item" delay={i*80} />`.
-- Add `loading="lazy"` to any `<img>` (currently gradients only — n/a, but apply when real images land).
+Beside (right of) the pyramid on `md`/`lg` sizes, a vertical legend lists each layer's notes as pill tags (`rounded-pill border-gold/30`). On `sm` (product card embed), the legend collapses and only in-band names show.
 
-**QuizCTABanner**
-- Split the quote into `<span>` per word; each span animates opacity 0→1 + translateY 8px→0, staggered 30ms, triggered when banner enters view via `useInView`.
-- Right-column copy + CTA → `<Reveal variant="item" delay={...}>`.
+### Interaction
 
-**TrustProof**
-- Build `useCountUp(target, duration=1200)` hook: starts when stat row enters view; parses numeric portion of strings like `"2,000+"` → animates 0 → 2000, re-appends suffix (`+`, `,`). For non-numeric (`"PAN"`) skip count and just fade in.
-- Wrap each stat in `<Reveal variant="item" delay={i*80}>`; numbers replaced with `<CountUp value={...}>`.
-- Testimonial cards → `<Reveal variant="item" delay={i*80}>`.
+- Hover/tap a band → band gets a warm gold glow (`box-shadow: 0 0 32px hsl(var(--bz-gold) / 0.45)`), opacity bump, and a Radix Tooltip / Popover anchored to the band shows a list of `{name — description}` for every note in that layer.
+- Pill tags on the side legend each have their own tooltip (single note name + description) for fine-grained discovery.
+- Keyboard accessible: each band is a `<button>` wrapper with `aria-label`, tooltips trigger on focus.
 
-**B2BTeaser**
-- Headline → `<Reveal variant="headline">`; chips + CTA → staggered `<Reveal variant="item">`.
+### Load-in animation
 
-**Hero**
-- Already has bobbing notes (kept as-is, not scroll-triggered).
-- Add `fetchpriority="high"` to bottle `<img>` is fine, but to ensure LCP = headline, also add `loading="eager"` only to bottle and confirm headline renders first in DOM (it does). No Reveal wrapper on hero (above the fold).
+CSS keyframe `bz-pyramid-rise` (opacity 0 + translateY 12px → 0). Apply with staggered `animation-delay`: base 0ms, heart 200ms, top 400ms (bottom-up sequence as specified). Respect `prefers-reduced-motion` — skip animation, render final state.
 
-**Header**
-- Scroll transition at 80px already implemented (line 33). I'll verify in browser after build.
+### Longevity indicator
 
-## Performance + a11y
-- All Reveal wrappers `will-change: transform, opacity` only while `data-animating="true"`; cleared on animationend.
-- `prefers-reduced-motion: reduce` short-circuits Reveal/CountUp to instant final state.
-- Confirm no `<img>` above the fold uses `loading="lazy"` (only hero bottle is above fold; keep eager).
-- IntersectionObserver is passive — no main-thread blocking.
+Below the pyramid, a 3-row mini-strip:
 
-## Final QA pass
-- Browser screenshots at 375 / 430 / 768 / 1024 / 1440 to verify responsive layout and that hero CTAs sit above the fold.
-- Ripgrep for stray non-gold accent colors (`#3b82f6`, `blue-`, `gray-` in homepage components) and replace with gold tokens if any leaked in.
-- Console-log check after load.
+```text
+Top   ●○○○○○○○  1–2 hr
+Heart ●●●●○○○○  2–4 hr
+Base  ●●●●●●●●  4–8 hr
+```
 
-## Files
-**New**: `src/hooks/useInView.ts`, `src/hooks/useCountUp.ts`, `src/components/anim/Reveal.tsx`, `src/components/anim/CountUp.tsx`, `src/components/anim/WordReveal.tsx`
-**Edited**: `src/index.css` (keyframes), `src/components/home/HowItWorks.tsx`, `FeaturedScents.tsx`, `QuizCTABanner.tsx`, `TrustProof.tsx`, `B2BTeaser.tsx`, `src/pages/Index.tsx` (verify order).
+Implemented as 8 small dots per row using `Circle` icons from lucide-react (filled vs outline), color-coded to the band. Uses `font-body text-xs text-cream-muted` for the label + duration text.
 
-## Out of scope
-No backend, schema, or business-logic changes. Hero left visually unchanged aside from img priority hints.
+### Reusability
+
+- Default export `FragrancePyramid`, named export the `Note` type.
+- `size="sm"` → ~180px wide, no side legend, compact longevity strip → fits in `ScentCard` / `ShopifyProductCard`.
+- `size="md"` (default) → ~320px → quiz result inline.
+- `size="lg"` → ~480px with full legend → quiz results hero, product detail pages.
+- Pure presentational — no data fetching, no store coupling.
+
+### Tokens
+
+All colors via Bazuki tokens already in `index.css` (gold, cream, bz-bg-card). The three brand-spec hex values (`#F5E6C8`, `#C9A84C`, `#6B3F1A`) are inlined as SVG fills since they're brand-locked layer colors, not theme tokens. Glow uses existing `--glow-gold-md`. Border radii follow `--radius` for the wrapper card.
+
+### Files
+
+- **Create** `src/components/FragrancePyramid.tsx`
+- **Edit** `src/index.css` — add `@keyframes bz-pyramid-rise` + `.bz-pyramid-band` utility (animation + reduced-motion guard)
+
+No integration into product cards / quiz results in this pass — component ships standalone and ready to drop in. I'll mention the import path in the closing message so you can wire it where you want next.
