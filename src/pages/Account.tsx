@@ -18,6 +18,8 @@ import { useCartStore } from '@/stores/cartStore';
 import { FragranceVisualizer } from '@/components/FragranceVisualizer';
 import { CartMigrationBanner } from '@/components/CartMigrationBanner';
 import Header from '@/components/Header';
+import { MyScentsHeader } from '@/components/account/MyScentsHeader';
+import { MyScentsTabs } from '@/components/account/MyScentsTabs';
 import { toast } from 'sonner';
 import { JsonLd } from '@/components/JsonLd';
 import { buildBreadcrumbs } from '@/lib/breadcrumbs';
@@ -85,6 +87,8 @@ const Account = () => {
   
   // Profile states
   const [profile, setProfile] = useState<any>(null);
+  const [memberSince, setMemberSince] = useState<string | null>(null);
+  const [lastQuiz, setLastQuiz] = useState<any | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [editName, setEditName] = useState('');
@@ -120,16 +124,20 @@ const Account = () => {
       }
 
       setCurrentUserId(user.id);
+      setMemberSince(user.created_at || null);
 
-      const [ordersData, scentsData, subsData, referralsData, rewardsData, profileData, reviewsData] = await Promise.allSettled([
+      const [ordersData, scentsData, subsData, referralsData, rewardsData, profileData, reviewsData, quizData] = await Promise.allSettled([
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('saved_scents').select('*').eq('user_id', user.id),
+        supabase.from('saved_scents').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('subscriptions').select('*').eq('user_id', user.id),
         supabase.from('referrals').select('*, saved_scents(name)').eq('referrer_id', user.id).order('created_at', { ascending: false }),
         supabase.from('referral_rewards').select('*, referrals(referral_code)').or(`referrer_id.eq.${user.id},referee_id.eq.${user.id}`).order('created_at', { ascending: false }),
         supabase.from('profiles').select('*').eq('id', user.id).single(),
         supabase.from('product_reviews').select('*, saved_scents(name)').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('quiz_responses').select('*').eq('user_id', user.id).eq('completed', true).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
+      const lq = quizData.status === 'fulfilled' ? (quizData.value as any).data : null;
+      if (lq) setLastQuiz(lq);
 
       const pick = (r: any) => (r.status === 'fulfilled' ? r.value.data : null);
       if (pick(ordersData)) setOrders(pick(ordersData));
