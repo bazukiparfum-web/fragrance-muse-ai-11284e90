@@ -294,67 +294,26 @@ const Hero = () => {
               </div>
             ))}
 
-            {/* Bottle illustration (placeholder with inner gold glow) */}
-            <div
-              aria-hidden
-              className="relative"
-              style={{
-                width: "180px",
-                height: "300px",
-                borderRadius: "20px 20px 12px 12px",
-                background: `linear-gradient(180deg, rgba(201,168,76,0.08) 0%, rgba(123,74,30,0.18) 100%)`,
-                border: `1px solid ${GOLD}40`,
-                animation: "bz-bottle-glow 6s ease-in-out infinite",
-              }}
-            >
-              {/* Cap */}
+            {/* Bottle */}
+            <div className="relative" style={{ width: 260, height: 400 }}>
               <div
-                className="absolute left-1/2 -translate-x-1/2"
+                aria-hidden
+                className="absolute inset-0 -z-10"
                 style={{
-                  top: "-26px",
-                  width: "70px",
-                  height: "30px",
-                  borderRadius: "4px",
-                  background: `linear-gradient(180deg, ${GOLD} 0%, #6e5a28 100%)`,
-                  boxShadow: `0 0 20px ${GOLD}40`,
+                  background:
+                    "radial-gradient(closest-side, rgba(201,168,76,0.32), transparent 70%)",
+                  filter: "blur(36px)",
+                  animation: "bz-bottle-glow 6s ease-in-out infinite",
                 }}
               />
-              {/* Neck */}
-              <div
-                className="absolute left-1/2 -translate-x-1/2"
-                style={{
-                  top: "-6px",
-                  width: "50px",
-                  height: "10px",
-                  background: `${GOLD}66`,
-                }}
+              <img
+                src={heroBottle}
+                alt="Bazuki signature perfume bottle"
+                width={1024}
+                height={1536}
+                className="w-full h-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.7)]"
+                style={{ animation: "bz-bob 6s ease-in-out infinite" }}
               />
-              {/* Label */}
-              <div
-                className="absolute left-1/2 -translate-x-1/2 text-center"
-                style={{
-                  top: "55%",
-                  transform: "translate(-50%, -50%)",
-                  color: CREAM,
-                }}
-              >
-                <div
-                  className="font-cormorant"
-                  style={{ fontSize: "22px", letterSpacing: "0.25em" }}
-                >
-                  BAZUKI
-                </div>
-                <div
-                  style={{
-                    marginTop: "8px",
-                    fontSize: "9px",
-                    letterSpacing: "0.3em",
-                    color: GOLD,
-                  }}
-                >
-                  EAU DE PARFUM
-                </div>
-              </div>
             </div>
 
             {/* Fragrance pyramid */}
