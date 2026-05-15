@@ -493,98 +493,17 @@ const Account = () => {
 
                 {/* My Scents Tab */}
                 <TabsContent value="scents" className="space-y-6">
-                  <Card className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <h1 className="font-serif text-3xl">My Scents</h1>
-                      <Button onClick={() => navigate('/shop/quiz')}>
-                        Create New Fragrance
-                      </Button>
-                    </div>
-                    {savedScents.length === 0 ? (
-                      <div className="text-center py-12">
-                        <p className="text-muted-foreground mb-4">
-                          No saved scents yet. Create your custom fragrance to save it here.
-                        </p>
-                        <Button onClick={() => navigate('/shop/quiz')}>
-                          Take the Quiz
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="grid md:grid-cols-2 gap-6">
-                        {savedScents.map((scent) => (
-                          <Card 
-                            key={scent.id} 
-                            className="p-6 cursor-pointer hover:shadow-lg transition-shadow"
-                            onClick={() => navigate(`/shop/account/scents/${scent.id}`)}
-                          >
-                            <div className="flex gap-4 mb-4">
-                              {scent.visual_data && (
-                                <FragranceVisualizer
-                                  visualData={scent.visual_data}
-                                  size="small"
-                                />
-                              )}
-                              <div className="flex-1">
-                                <div className="flex items-start justify-between mb-2">
-                                  <h3 className="font-semibold text-lg">{scent.name}</h3>
-                                  {scent.fragrance_code && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {scent.fragrance_code}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                  Created {formatDate(scent.created_at)}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {(scent.match_score || scent.intensity || scent.longevity) && (
-                              <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-                                {scent.match_score && (
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Match</p>
-                                    <p className="text-sm font-semibold">{scent.match_score}%</p>
-                                  </div>
-                                )}
-                                {scent.intensity && (
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Intensity</p>
-                                    <p className="text-sm font-semibold">{scent.intensity}/10</p>
-                                  </div>
-                                )}
-                                {scent.longevity && (
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Longevity</p>
-                                    <p className="text-sm font-semibold">{scent.longevity}/10</p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            
-                            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="flex-1"
-                                onClick={() => handleReorder(scent)}
-                              >
-                                Reorder
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="flex-1"
-                                onClick={() => navigate(`/shop/account/scents/${scent.id}`)}
-                              >
-                                View Details
-                              </Button>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </Card>
+                  <MyScentsHeader
+                    fullName={profile?.full_name}
+                    email={profile?.email}
+                    memberSince={memberSince}
+                    savedScents={savedScents}
+                  />
+                  <MyScentsTabs
+                    savedScents={savedScents}
+                    lastQuiz={lastQuiz}
+                    onScentCreated={(s) => setSavedScents((prev) => [s, ...prev])}
+                  />
                 </TabsContent>
 
                 {/* Orders Tab */}
