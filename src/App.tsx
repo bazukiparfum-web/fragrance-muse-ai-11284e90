@@ -21,6 +21,7 @@ import ProductDetail from "./pages/ProductDetail";
 import SharedFragrance from "./pages/SharedFragrance";
 import Collection from "./pages/Collection";
 import Business from "./pages/Business";
+import ScentCoaching from "./pages/ScentCoaching";
 import Ingredients from "./pages/Ingredients";
 import About from "./pages/About";
 import Privacy from "./pages/legal/Privacy";
