@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { Reveal } from "@/components/anim/Reveal";
+import { FragrancePyramid } from "@/components/FragrancePyramid";
+import { toNote } from "@/lib/noteDescriptions";
 
 type Scent = {
   name: string;
@@ -50,16 +52,6 @@ const SCENTS: Scent[] = [
   },
 ];
 
-const Pill = ({ label, value }: { label: string; value: string }) => (
-  <span
-    className="inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-[10px] font-body uppercase tracking-[0.18em]"
-    style={{ border: "1px solid hsl(var(--bz-gold) / 0.25)", color: "hsl(var(--bz-cream-muted))" }}
-  >
-    <span className="text-gold">{label}</span>
-    <span>{value}</span>
-  </span>
-);
-
 const FeaturedScents = () => {
   return (
     <section className="w-full bg-bz-primary py-24 md:py-32">
@@ -107,11 +99,11 @@ const FeaturedScents = () => {
 
 const ScentCard = ({ scent }: { scent: Scent }) => (
   <article
-    className="group rounded-xl overflow-hidden bg-bz-card transition-all duration-200 hover:-translate-y-1 hover:glow-gold-sm h-full"
+    className="group rounded-xl overflow-hidden bg-bz-card transition-all duration-200 hover:-translate-y-1 hover:glow-gold-sm h-full flex flex-col"
     style={{ border: "1px solid hsl(var(--bz-gold) / 0.15)" }}
   >
     <div
-      className="aspect-square w-full relative"
+      className="aspect-square w-full relative flex items-center justify-center px-4"
       style={{ background: scent.gradient }}
     >
       <div
@@ -122,18 +114,20 @@ const ScentCard = ({ scent }: { scent: Scent }) => (
             "radial-gradient(circle at 50% 60%, hsl(var(--bz-gold) / 0.18) 0%, transparent 60%)",
         }}
       />
+      <div className="relative">
+        <FragrancePyramid
+          size="sm"
+          topNotes={[toNote(scent.top)]}
+          heartNotes={[toNote(scent.heart)]}
+          baseNotes={[toNote(scent.base)]}
+        />
+      </div>
     </div>
-    <div className="p-5">
+    <div className="p-5 flex flex-col flex-1">
       <h3 className="font-display text-cream text-2xl mb-1.5">{scent.name}</h3>
       <p className="font-body text-[13px] text-cream-muted mb-4">{scent.mood}</p>
 
-      <div className="flex flex-wrap gap-1.5 mb-5">
-        <Pill label="Top" value={scent.top} />
-        <Pill label="Heart" value={scent.heart} />
-        <Pill label="Base" value={scent.base} />
-      </div>
-
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 mt-auto">
         <span className="font-body text-gold text-sm tracking-wide">{scent.price}</span>
       </div>
 
