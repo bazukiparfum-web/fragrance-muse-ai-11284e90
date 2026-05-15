@@ -39,10 +39,10 @@ const ServicesOffered = () => {
                 <Icon className="w-7 h-7 text-luxury-gold" />
               </div>
               <h3 className="font-serif text-2xl font-semibold mb-3">{title}</h3>
-              <p className="text-primary-foreground/70 mb-6 leading-relaxed">{desc}</p>
+              <p className="text-primary-foreground/95 mb-6 leading-relaxed">{desc}</p>
               <ul className="space-y-3 mt-auto">
                 {points.map((p) => (
-                  <li key={p} className="flex items-start gap-2 text-sm text-primary-foreground/80">
+                  <li key={p} className="flex items-start gap-2 text-sm text-primary-foreground">
                     <Check className="w-4 h-4 text-luxury-gold mt-0.5 flex-shrink-0" />
                     <span>{p}</span>
                   </li>
