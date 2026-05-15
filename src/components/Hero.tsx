@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronDown } from "lucide-react";
+import heroBottle from "@/assets/hero-bottle.png";
 
 const GOLD = "#C9A84C";
 const CREAM = "#F5ECD7";
