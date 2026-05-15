@@ -312,8 +312,12 @@ const Hero = () => {
                 alt="Bazuki signature perfume bottle"
                 width={1024}
                 height={1536}
+                loading="eager"
+                decoding="async"
+                // @ts-expect-error – fetchpriority is a valid HTML attribute
+                fetchpriority="low"
                 className="w-full h-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.7)]"
-                style={{ animation: "bz-bob 6s ease-in-out infinite" }}
+                style={{ animation: "bz-bob 6s ease-in-out infinite", willChange: "transform" }}
               />
             </div>
 
