@@ -39,7 +39,7 @@ const ServicesOffered = () => {
                 <Icon className="w-7 h-7 text-luxury-gold" />
               </div>
               <h3 className="font-serif text-2xl font-semibold mb-3 text-cream">{title}</h3>
-              <p className="text-cream/90 mb-6 leading-relaxed">{desc}</p>
+              <p className="text-cream mb-6 leading-relaxed">{desc}</p>
               <ul className="space-y-3 mt-auto">
                 {points.map((p) => (
                   <li key={p} className="flex items-start gap-2 text-sm text-cream">
