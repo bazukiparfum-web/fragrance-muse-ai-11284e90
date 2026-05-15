@@ -12,6 +12,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Account from "./pages/Account";
 import QuizLanding from "./pages/QuizLanding";
+import GiftCards from "./pages/GiftCards";
 import QuizForYourself from "./pages/QuizForYourself";
 import QuizForSomeoneElse from "./pages/QuizForSomeoneElse";
 import QuizResults from "./pages/QuizResults";
@@ -77,6 +78,7 @@ const AppInner = () => {
           <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
           <Route path="/shop/quiz/for-someone-else" element={<QuizForSomeoneElse />} />
           <Route path="/shop/quiz/results" element={<QuizResults />} />
+          <Route path="/gift-cards" element={<GiftCards />} />
           <Route path="/guide/find-your-signature-scent" element={<FindYourSignatureScent />} />
           <Route path="/guide/perfume-notes-explained" element={<PerfumeNotesExplained />} />
           <Route path="/guide/ai-perfume-vs-traditional" element={<AIPerfumeVsTraditional />} />
