@@ -1,14 +1,21 @@
 import Header from "@/components/Header";
-import BusinessAroma from "@/components/BusinessAroma";
 import Footer from "@/components/Footer";
+import HeroB2B from "@/components/business/HeroB2B";
+import UseCasesGrid from "@/components/business/UseCasesGrid";
+import HowItWorks from "@/components/business/HowItWorks";
+import ServicesOffered from "@/components/business/ServicesOffered";
+import B2BTestimonials from "@/components/business/B2BTestimonials";
+import LeadCaptureForm from "@/components/business/LeadCaptureForm";
+import B2BCtaStrip from "@/components/business/B2BCtaStrip";
 import { useSEO } from "@/hooks/useSEO";
 import { JsonLd } from "@/components/JsonLd";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 const Business = () => {
   useSEO({
-    title: "360° Aroma Solutions for Business | Bazuki Perfumes",
-    description: "Bespoke scent design and IoT-enabled aroma systems for hotels, retail, and offices across India. Custom fragrances that bring your brand to life.",
+    title: "360° Aroma Solutions for Business | Bazuki Fragrance",
+    description:
+      "Custom brand scents, IoT diffusers and refill subscriptions for hotels, retail, offices, spas, events and automotive across India.",
   });
   const breadcrumbs = buildBreadcrumbs([
     { name: "Home", path: "/" },
@@ -18,24 +25,15 @@ const Business = () => {
     <div className="min-h-screen">
       <JsonLd id="breadcrumbs-business" data={breadcrumbs} />
       <Header />
-      <div className="pt-16">
-        <section className="bg-luxury-black text-primary-foreground py-20 md:py-28">
-          <div className="container mx-auto px-4 text-center">
-            <div className="inline-block px-4 py-2 bg-luxury-gold/10 rounded-full mb-6">
-              <span className="text-luxury-gold font-semibold uppercase tracking-wider text-sm">
-                For Businesses
-              </span>
-            </div>
-            <h1 className="font-serif text-4xl md:text-6xl font-bold mb-6">
-              Scent Your Brand
-            </h1>
-            <p className="text-lg md:text-xl text-primary-foreground/80 max-w-2xl mx-auto">
-              From boutique hotels to boardrooms — bespoke scent design and IoT-enabled aroma systems for premium spaces across India.
-            </p>
-          </div>
-        </section>
-        <BusinessAroma showHero={false} />
-      </div>
+      <main className="pt-16">
+        <HeroB2B />
+        <UseCasesGrid />
+        <HowItWorks />
+        <ServicesOffered />
+        <B2BTestimonials />
+        <LeadCaptureForm />
+        <B2BCtaStrip />
+      </main>
       <Footer />
     </div>
   );

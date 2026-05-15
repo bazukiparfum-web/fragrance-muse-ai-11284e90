@@ -1,66 +1,49 @@
-# Gift Cards Page
+# 360° Aroma Solutions — B2B Page Rebuild
 
-## Scope
-New `/gift-cards` route + redeem modal accessible from nav and the page itself. DB-only flow (no Shopify gift card product). Digital sends immediately; physical ships with the order.
+Replace the current `/business` page with a full marketing landing built to spec, keeping Bazuki's dark luxury aesthetic.
 
-## DB migration
-New table `gift_cards`:
-- `code` (text, unique) — generated `BAZ-XXXX-XXXX-XXXX`
-- `tier` (text: 'signature' | 'luxury')
-- `amount_inr` (int), `balance_inr` (int)
-- `delivery_type` (text: 'digital' | 'physical')
-- `recipient_name`, `sender_name`, `personal_message` (≤150)
-- `recipient_email` (digital), `shipping_address` (jsonb, physical)
-- `purchaser_id` (uuid, nullable), `redeemed_by` (uuid, nullable), `redeemed_at`
-- `order_id` (uuid, nullable — links to `orders` once paid)
-- `status` ('pending_payment' | 'active' | 'redeemed' | 'expired')
-- standard timestamps
+## Sections
 
-RLS:
-- INSERT: anyone authenticated (purchaser_id = auth.uid())
-- SELECT: purchaser or redeemer; admins all
-- UPDATE: redemption via edge function only (service role)
+1. **Hero** — Full-width dark band, gold "For Businesses" eyebrow, Cormorant headline "Transform Your Space with Scent", sub "From hotels to retail — Bazuki creates custom aroma identities for your brand", primary CTA scrolls to lead form, secondary CTA scrolls to use cases.
+2. **Use Cases Grid** — 6 cards, lucide icons, gold border on hover:
+   - Hotels & Hospitality (`Hotel`/`BedDouble`)
+   - Retail & Boutiques (`ShoppingBag`)
+   - Offices & Co-working (`Building2`)
+   - Events & Weddings (`PartyPopper`)
+   - Spas & Wellness (`Flower2`)
+   - Automotive (`Car`)
+3. **How It Works** — 4-step horizontal timeline (vertical on mobile) with gold step numbers and connector line: Consultation → Scent Profile → Custom Formulation → Deployment.
+4. **Services Offered** — 3 columns: Custom Brand Scent, Diffuser Supply, Refill Subscription. Each with icon, short description, bullet list.
+5. **Testimonials** — 3 placeholder cards (boutique hotel, retail brand, wellness spa) with company-type badge, quote, 5-star gold rating.
+6. **Lead Capture Form** — `id="lead-form"`, dark card with gold border. Fields: Company Name, Contact Person, WhatsApp/Phone, Type of Business (Select dropdown: Hotel, Retail, Office, Event, Spa, Automotive, Other), Requirement (textarea). On success, replaces form with confirmation panel "We'll reach out within 24 hours".
+7. **Footer CTA Strip** — Gold gradient band: "Ready to define your aroma identity?" + "Book a Free Consultation" button (scrolls to form).
 
-## Edge functions
-- `redeem-gift-card` — validates code, marks `redeemed_by`, returns balance + tier so frontend can credit user (creates a per-user discount code via existing referral/Shopify discount pattern, or stores credit on profile — for v1 just mark redeemed and toast amount; full credit-spending wiring noted as follow-up).
-- `send-gift-card-email` — uses existing transactional email infra to email recipient with code + message + sender name (digital flow only, fired after order webhook marks gift card paid).
-- Hook into existing `shopify-webhook-handler`: when an order containing a gift-card line item is paid → set `gift_cards.status='active'`, `order_id=...`, and trigger `send-gift-card-email` for digital.
+## Technical
 
-## Files
+**Files:**
+- `src/pages/Business.tsx` — rewrite to compose new sections directly (drop `BusinessAroma` import).
+- `src/components/business/HeroB2B.tsx`
+- `src/components/business/UseCasesGrid.tsx`
+- `src/components/business/HowItWorks.tsx`
+- `src/components/business/ServicesOffered.tsx`
+- `src/components/business/B2BTestimonials.tsx`
+- `src/components/business/LeadCaptureForm.tsx`
+- `src/components/business/B2BCtaStrip.tsx`
 
-**New:**
-- `src/pages/GiftCards.tsx` — hero + 2 tier cards + "Redeem" link
-- `src/components/gift-cards/GiftCardHero.tsx`
-- `src/components/gift-cards/GiftTierCard.tsx` — gold-bordered card per tier
-- `src/components/gift-cards/GiftPurchaseDialog.tsx` — 5-step wizard shell with progress dots
-- `src/components/gift-cards/steps/StepDelivery.tsx` — Digital / Physical toggle
-- `src/components/gift-cards/steps/StepPersonalize.tsx` — recipient/sender/message (zod, 150 char)
-- `src/components/gift-cards/steps/StepDetails.tsx` — recipient email (digital, sends immediately) OR shipping address (physical, prefilled from profile)
-- `src/components/gift-cards/steps/StepPreview.tsx` — rendered dark-gold gift card mockup
-- `src/components/gift-cards/steps/StepCheckout.tsx` — summary + "Pay & Send" → creates `gift_cards` row (pending_payment), then adds a Shopify gift-card product variant (Signature/Luxury) to cart and opens Shopify checkout
-- `src/components/gift-cards/GiftCardPreview.tsx` — reusable visual component (dark, gold foil typography, Cormorant)
-- `src/components/gift-cards/RedeemDialog.tsx` — code entry → calls `redeem-gift-card`
-- `supabase/functions/redeem-gift-card/index.ts`
-- `supabase/functions/send-gift-card-email/index.ts`
-- Migration for `gift_cards` table
+`BusinessAroma.tsx` stays untouched (still used by `B2BTeaser` on home).
 
-**Edited:**
-- `src/App.tsx` — add `<Route path="/gift-cards" element={<GiftCards />} />`
-- `src/components/Header.tsx` — add "Gift Cards" + "Redeem" nav links (desktop + mobile)
-- `supabase/functions/shopify-webhook-handler/index.ts` — detect gift-card line items, activate row, send email
-- `src/index.css` — `.gift-foil` gradient utility for the gold-foil card preview
+**Data persistence:** Reuse existing `consultation_requests` table via the same public-client insert pattern as `BusinessAroma.tsx`. Mapping:
+- `name` ← Contact Person
+- `phone` ← WhatsApp/Phone
+- `email` ← `noreply+b2b@bazuki.local` (placeholder, since schema requires non-null email and the spec form omits it)
+- `comment` ← formatted string: `Company: {company}\nType: {businessType}\nRequirement: {requirement}`
 
-## Shopify products needed
-Two pre-made products (created manually or via `shopify--create_product` in a follow-up): `Bazuki Gift Card — Signature ₹999` and `Bazuki Gift Card — Luxury ₹1,999`. Their variant IDs stored as constants in `src/lib/giftCardProducts.ts`. Cart uses existing `useCartStore.addItem` with metadata fields (`giftCardId`, `recipientEmail`, etc.) passed via cart attributes so webhook can look up the row.
+Validation via zod (company ≤120, contact ≤100, phone ≤20, type required, requirement ≤2000). No DB migration.
 
-## Design
-- Dark page, gold (`hsl(var(--primary))`) accents.
-- Tier cards: tall portrait, thin gold border, Cormorant Garamond price, soft inner gradient. Hover lifts.
-- Preview card: 16:10 dark canvas, gold foil-style heading "Bazuki", recipient name in Cormorant 32px, message italic 14px, "₹999 / ₹1999" bottom-right, code blurred ("XXXX-XXXX-XXXX") in preview.
-- Wizard: dialog with sticky footer (Back / Continue), 5 progress dots up top, smooth fade between steps.
-- Mobile-first: dialog becomes full-screen sheet under `sm`.
+**Design tokens:** `bg-luxury-black`, `text-luxury-gold`, `border-luxury-gold/20`, `font-serif` for headlines, semantic tokens elsewhere. No new colors.
 
-## Out of scope
-- Gift-card credit balance applied at checkout (redemption marks card used + toasts amount; spending the credit on a future order is a follow-up).
-- Scheduled future-dated digital delivery (per your answer — send immediately).
-- Real Shopify Gift Card API (using regular products as proxies).
+**SEO:** Update `useSEO` title/description to match new headline; keep breadcrumb JSON-LD.
+
+## Out of Scope
+- No changes to `BusinessAroma.tsx`, admin consultations view, or DB schema.
+- No new email/notification wiring (existing insert flow already feeds admin queue).
