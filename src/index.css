@@ -2,124 +2,133 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Bazuki Fragrance Design System
+   All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    /* Luxury Bazuki Brand Colors */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 9%;
-    
-    --luxury-black: 0 0% 0%;
-    --luxury-white: 0 0% 100%;
-    --luxury-gold: 43 72% 52%;
-    --luxury-gold-light: 43 72% 62%;
-    --luxury-gold-dark: 43 72% 42%;
+    /* Bazuki brand tokens (dark luxury) */
+    --bz-bg-primary: 0 0% 3%;          /* #080808 */
+    --bz-bg-secondary: 0 0% 5%;        /* #0D0D0D */
+    --bz-bg-card: 0 0% 8%;             /* #141414 */
+    --bz-gold: 43 56% 55%;             /* #C9A84C */
+    --bz-gold-muted: 38 41% 39%;       /* #8A6F3A */
+    --bz-gold-border: 43 56% 55%;      /* used with /15 alpha */
+    --bz-cream: 41 65% 90%;            /* #F5ECD7 */
+    --bz-cream-muted: 39 31% 70%;      /* #C8B99A */
+    --bz-text-body: 30 13% 48%;        /* #8A7A6A */
+    --bz-text-dim: 27 15% 37%;         /* #6B5D50 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    /* Semantic shadcn tokens mapped to Bazuki palette */
+    --background: var(--bz-bg-primary);
+    --foreground: var(--bz-cream);
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --card: var(--bz-bg-card);
+    --card-foreground: var(--bz-cream);
 
-    --primary: 0 0% 0%;
-    --primary-foreground: 0 0% 100%;
+    --popover: var(--bz-bg-secondary);
+    --popover-foreground: var(--bz-cream);
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 9%;
+    --primary: var(--bz-gold);
+    --primary-foreground: var(--bz-bg-primary);
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --secondary: var(--bz-bg-secondary);
+    --secondary-foreground: var(--bz-cream);
 
-    --accent: 43 72% 52%;
-    --accent-foreground: 0 0% 9%;
+    --muted: var(--bz-bg-secondary);
+    --muted-foreground: var(--bz-text-body);
 
-    --destructive: 0 84.2% 60.2%;
+    --accent: var(--bz-gold);
+    --accent-foreground: var(--bz-bg-primary);
+
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 83%;
-    --input: 0 0% 83%;
-    --ring: 0 0% 0%;
+    --border: var(--bz-gold);            /* used with /15 via utility */
+    --input: var(--bz-bg-card);
+    --ring: var(--bz-gold);
 
-    --radius: 0.5rem;
-    
+    /* Radii */
+    --radius: 0.75rem;                   /* 12px cards */
+    --radius-pill: 100px;                /* buttons / tags */
+
     /* Transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    /* Shadows */
-    --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
-    --shadow-luxury: 0 8px 32px rgba(212, 175, 55, 0.15);
+    --transition-base: all 0.2s ease;
+
+    /* Glow shadows (no hard shadows) */
+    --glow-gold-sm: 0 0 16px hsl(var(--bz-gold) / 0.15);
+    --glow-gold-md: 0 0 32px hsl(var(--bz-gold) / 0.2);
+    --glow-gold-lg: 0 0 64px hsl(var(--bz-gold) / 0.25);
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-
-    --card: 0 0% 9%;
-    --card-foreground: 0 0% 100%;
-
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 100%;
-
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 43 72% 52%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 0% 100%;
+    --background: var(--bz-bg-primary);
+    --foreground: var(--bz-cream);
+    --card: var(--bz-bg-card);
+    --card-foreground: var(--bz-cream);
+    --popover: var(--bz-bg-secondary);
+    --popover-foreground: var(--bz-cream);
+    --primary: var(--bz-gold);
+    --primary-foreground: var(--bz-bg-primary);
+    --secondary: var(--bz-bg-secondary);
+    --secondary-foreground: var(--bz-cream);
+    --muted: var(--bz-bg-secondary);
+    --muted-foreground: var(--bz-text-body);
+    --accent: var(--bz-gold);
+    --accent-foreground: var(--bz-bg-primary);
+    --border: var(--bz-gold);
+    --input: var(--bz-bg-card);
+    --ring: var(--bz-gold);
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--bz-gold-border) / 0.15);
   }
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: hsl(var(--bz-cream));
   }
-  
-  .heading-luxury {
-    @apply text-foreground;
+
+  a, button, input, textarea, select {
+    transition: var(--transition-base);
   }
-  
-  .text-gold {
-    color: hsl(var(--luxury-gold));
-  }
-  
-  .bg-gold {
-    background-color: hsl(var(--luxury-gold));
-  }
-  
-  .hover-lift {
-    transition: var(--transition-smooth);
-  }
-  
-  .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-luxury);
-  }
+}
+
+@layer utilities {
+  .text-gold { color: hsl(var(--bz-gold)); }
+  .text-gold-muted { color: hsl(var(--bz-gold-muted)); }
+  .text-cream { color: hsl(var(--bz-cream)); }
+  .text-cream-muted { color: hsl(var(--bz-cream-muted)); }
+  .text-body { color: hsl(var(--bz-text-body)); }
+  .text-dim { color: hsl(var(--bz-text-dim)); }
+
+  .bg-gold { background-color: hsl(var(--bz-gold)); }
+  .bg-bz-primary { background-color: hsl(var(--bz-bg-primary)); }
+  .bg-bz-secondary { background-color: hsl(var(--bz-bg-secondary)); }
+  .bg-bz-card { background-color: hsl(var(--bz-bg-card)); }
+
+  .border-gold { border-color: hsl(var(--bz-gold) / 0.15); }
+  .border-gold-strong { border-color: hsl(var(--bz-gold) / 0.4); }
+
+  .glow-gold-sm { box-shadow: var(--glow-gold-sm); }
+  .glow-gold-md { box-shadow: var(--glow-gold-md); }
+  .glow-gold-lg { box-shadow: var(--glow-gold-lg); }
+
+  .rounded-pill { border-radius: var(--radius-pill); }
+
+  .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+  .font-body { font-family: 'Inter', system-ui, sans-serif; }
 }
