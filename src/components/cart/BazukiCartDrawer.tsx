@@ -1,11 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { Minus, Plus, X, Loader2, ShoppingBag } from "lucide-react";
+import { Minus, Plus, X, Loader2, ShoppingBag, AlertCircle } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { useCheckoutRedirect } from "@/hooks/useCheckoutRedirect";
 import CheckoutLoadingOverlay from "@/components/checkout/CheckoutLoadingOverlay";
+import WhatsAppCaptureField, {
+  isValidWhatsApp,
+  fullE164,
+  WhatsAppValue,
+} from "@/components/checkout/WhatsAppCaptureField";
+import { supabase } from "@/integrations/supabase/client";
 
 const GOLD = "#C9A84C";
+
+const WA_STORAGE_KEY = "bazuki_wa_optin";
 
 export default function BazukiCartDrawer() {
   const isDrawerOpen = useCartStore((s) => s.isDrawerOpen);
@@ -18,8 +26,26 @@ export default function BazukiCartDrawer() {
   const removeItem = useCartStore((s) => s.removeItem);
   const syncCart = useCartStore((s) => s.syncCart);
   const getCheckoutUrl = useCartStore((s) => s.getCheckoutUrl);
+  const cartId = useCartStore((s) => s.cartId);
 
-  const { launchCheckout, isLaunching } = useCheckoutRedirect();
+  const { launchCheckout, isLaunching, isError, error, retry, reset } = useCheckoutRedirect();
+
+  const [wa, setWa] = useState<WhatsAppValue>(() => {
+    try {
+      const raw = localStorage.getItem(WA_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return { phone: parsed.phone || "", consent: !!parsed.consent };
+      }
+    } catch {}
+    return { phone: "", consent: false };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(WA_STORAGE_KEY, JSON.stringify(wa));
+    } catch {}
+  }, [wa]);
 
   const totalPrice = items.reduce(
     (sum, i) => sum + parseFloat(i.price.amount) * i.quantity,
@@ -31,12 +57,34 @@ export default function BazukiCartDrawer() {
     if (isDrawerOpen) syncCart();
   }, [isDrawerOpen, syncCart]);
 
-  const handleCheckout = () => {
+  const waValid = isValidWhatsApp(wa);
+
+  const doCheckoutLaunch = async () => {
     const url = getCheckoutUrl();
-    if (!url) return;
-    launchCheckout(url);
-    closeDrawer();
+    // Fire-and-forget opt-in save (don't block checkout on it)
+    if (waValid) {
+      try {
+        await supabase.functions.invoke("whatsapp-optin", {
+          body: {
+            phone: fullE164(wa.phone),
+            consent: wa.consent,
+            cartId: cartId ?? null,
+            source: "cart_drawer",
+          },
+        });
+      } catch (e) {
+        console.error("whatsapp-optin save failed", e);
+      }
+    }
+    launchCheckout(url, doCheckoutLaunch);
+    if (url) closeDrawer();
   };
+
+  const handleCheckout = () => {
+    if (!waValid) return;
+    void doCheckoutLaunch();
+  };
+
 
   const formatMoney = (amt: number) =>
     currency === "INR" || !currency ? `₹${amt.toLocaleString("en-IN")}` : `${currency} ${amt.toLocaleString()}`;
