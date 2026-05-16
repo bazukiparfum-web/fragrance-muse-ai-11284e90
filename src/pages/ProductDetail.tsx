@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, Check, Minus, Plus, ArrowLeft, ShoppingBag } from 'lucide-react';
 import { fetchShopifyProductByHandle, ShopifyProduct } from '@/lib/shopify';
 import { useCartStore } from '@/stores/cartStore';
