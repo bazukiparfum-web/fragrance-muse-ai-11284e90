@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { label: 'Scent Quiz', path: '/shop/quiz' },
   { label: 'Gift Cards', path: '/gift-cards' },
   { label: 'Scent Library', path: '/ingredients' },
+  { label: 'Scent Coaching', path: '/scent-coaching' },
   { label: 'Scent Marketing', path: '/business' },
   { label: 'About', path: '/about' },
 ];

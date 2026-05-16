@@ -108,6 +108,14 @@ const Index = () => {
       <QuizCTABanner />
       <TrustProof />
       <B2BTeaser />
+      <section className="w-full py-10 border-t border-luxury-gold/15" style={{ backgroundColor: "#0A0A0A" }}>
+        <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-4 text-center">
+          <p className="font-cormorant text-xl md:text-2xl text-cream">Want personal guidance? Book a free 15-min call with a scent expert.</p>
+          <a href="/scent-coaching" className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs uppercase tracking-[0.2em] text-cream border border-luxury-gold/50 hover:bg-luxury-gold hover:text-luxury-black transition-colors">
+            Scent Coaching →
+          </a>
+        </div>
+      </section>
       <FAQ />
       <Footer />
     </div>
