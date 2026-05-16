@@ -533,6 +533,7 @@ export default function ProductDetail() {
         <ReviewsSection productHandle={product.handle} productName={product.title} />
       </main>
       <Footer />
+      <CheckoutLoadingOverlay open={isLaunching} />
     </div>
   );
 }
