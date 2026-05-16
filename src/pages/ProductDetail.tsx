@@ -67,7 +67,7 @@ export default function ProductDetail() {
   const [buyStatus, setBuyStatus] = useState<'idle' | 'loading' | 'error'>('idle');
 
   const addItem = useCartStore((s) => s.addItem);
-  const { launchCheckout, isLaunching } = useCheckoutRedirect();
+  const { launchCheckout, isLaunching, isError, error: launchError, retry: retryLaunch, reset: resetLaunch } = useCheckoutRedirect();
   const openDrawer = useCartStore((s) => s.openDrawer);
 
   useEffect(() => {
