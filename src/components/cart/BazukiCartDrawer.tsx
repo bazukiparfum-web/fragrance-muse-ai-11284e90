@@ -41,9 +41,7 @@ export default function BazukiCartDrawer() {
     <Sheet open={isDrawerOpen} onOpenChange={setDrawerOpen}>
       <SheetContent
         side="right"
-        hideCloseButton
-        overlayClassName="bg-black/60"
-        className="w-full sm:max-w-[420px] sm:w-[420px] p-0 border-l text-cream flex flex-col"
+        className="w-full sm:max-w-[420px] sm:w-[420px] p-0 border-l text-cream flex flex-col [&>button.absolute]:hidden"
         style={{
           backgroundColor: "#0D0D0D",
           borderLeftColor: "rgba(201,168,76,0.2)",
