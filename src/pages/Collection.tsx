@@ -75,6 +75,29 @@ export default function Collection() {
     [items, mood],
   );
 
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [mood]);
+
+  const visibleItems = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = visibleCount < filtered.length;
+
+  const { ref: sentinelRef, inView: sentinelInView } = useInView<HTMLDivElement>({
+    threshold: 0,
+    rootMargin: "0px 0px 400px 0px",
+    once: false,
+  });
+
+  useEffect(() => {
+    if (!sentinelInView || !hasMore) return;
+    const t = setTimeout(() => {
+      setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+    }, 150);
+    return () => clearTimeout(t);
+  }, [sentinelInView, hasMore, filtered.length]);
+
   const openItem = (i: LibraryItem) => {
     setActive(i);
     setDrawerOpen(true);
