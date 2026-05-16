@@ -13,6 +13,8 @@ import { ReviewsSection } from '@/components/ReviewsSection';
 import { JsonLd } from '@/components/JsonLd';
 import { useSEO } from '@/hooks/useSEO';
 import { cn } from '@/lib/utils';
+import { useCheckoutRedirect } from '@/hooks/useCheckoutRedirect';
+import CheckoutLoadingOverlay from '@/components/checkout/CheckoutLoadingOverlay';
 
 type ProductNode = ShopifyProduct['node'];
 
@@ -65,6 +67,7 @@ export default function ProductDetail() {
   const [buyStatus, setBuyStatus] = useState<'idle' | 'loading' | 'error'>('idle');
 
   const addItem = useCartStore((s) => s.addItem);
+  const { launchCheckout, isLaunching } = useCheckoutRedirect();
   const openDrawer = useCartStore((s) => s.openDrawer);
 
   useEffect(() => {
@@ -169,7 +172,7 @@ export default function ProductDetail() {
     if (ok) {
       const url = useCartStore.getState().checkoutUrl;
       if (url) {
-        window.open(url, '_blank');
+        launchCheckout(url);
         setBuyStatus('idle');
         return;
       }
@@ -423,13 +426,13 @@ export default function ProductDetail() {
                   <span tabIndex={isOutOfStock ? 0 : -1} className="block">
                     <Button
                       onClick={handleBuyNow}
-                      disabled={isOutOfStock || buyStatus === 'loading'}
+                      disabled={isOutOfStock || buyStatus === 'loading' || isLaunching}
                       aria-describedby={stockMessage ? 'stock-helper' : undefined}
                       variant="outline"
                       className="w-full rounded-full bg-transparent text-cream hover:bg-gold/10 hover:text-cream"
                       style={{ height: '52px', border: '1px solid hsl(var(--bz-gold))' }}
                     >
-                      {buyStatus === 'loading' ? (
+                      {buyStatus === 'loading' || isLaunching ? (
                         <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing checkout…</>
                       ) : buyStatus === 'error' ? (
                         'Checkout failed — Retry'
@@ -530,6 +533,7 @@ export default function ProductDetail() {
         <ReviewsSection productHandle={product.handle} productName={product.title} />
       </main>
       <Footer />
+      <CheckoutLoadingOverlay open={isLaunching} />
     </div>
   );
 }

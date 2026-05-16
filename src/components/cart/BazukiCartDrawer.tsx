@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Minus, Plus, X, Loader2, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
+import { useCheckoutRedirect } from "@/hooks/useCheckoutRedirect";
+import CheckoutLoadingOverlay from "@/components/checkout/CheckoutLoadingOverlay";
 
 const GOLD = "#C9A84C";
 
@@ -17,6 +19,8 @@ export default function BazukiCartDrawer() {
   const syncCart = useCartStore((s) => s.syncCart);
   const getCheckoutUrl = useCartStore((s) => s.getCheckoutUrl);
 
+  const { launchCheckout, isLaunching } = useCheckoutRedirect();
+
   const totalPrice = items.reduce(
     (sum, i) => sum + parseFloat(i.price.amount) * i.quantity,
     0,
@@ -30,7 +34,7 @@ export default function BazukiCartDrawer() {
   const handleCheckout = () => {
     const url = getCheckoutUrl();
     if (!url) return;
-    window.open(url, "_blank");
+    launchCheckout(url);
     closeDrawer();
   };
 
@@ -185,11 +189,11 @@ export default function BazukiCartDrawer() {
 
               <button
                 onClick={handleCheckout}
-                disabled={items.length === 0 || isLoading || isSyncing || !getCheckoutUrl()}
+                disabled={items.length === 0 || isLoading || isSyncing || isLaunching || !getCheckoutUrl()}
                 className="w-full h-[52px] rounded-full text-[12px] font-medium uppercase tracking-[0.14em] transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center"
                 style={{ backgroundColor: GOLD, color: "#000" }}
               >
-                {isLoading || isSyncing ? (
+                {isLoading || isSyncing || isLaunching ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   "Proceed to Checkout"
@@ -207,6 +211,7 @@ export default function BazukiCartDrawer() {
           </>
         )}
       </SheetContent>
+      <CheckoutLoadingOverlay open={isLaunching} />
     </Sheet>
   );
 }

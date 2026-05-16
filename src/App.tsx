@@ -46,6 +46,8 @@ import NotFound from "./pages/NotFound";
 import FindYourSignatureScent from "./pages/guides/FindYourSignatureScent";
 import ShopifyDebugPanel from "./components/dev/ShopifyDebugPanel";
 import BazukiCartDrawer from "./components/cart/BazukiCartDrawer";
+import CheckoutTestChecklist from "./components/dev/CheckoutTestChecklist";
+import OrderConfirmation from "./pages/OrderConfirmation";
 import PerfumeNotesExplained from "./pages/guides/PerfumeNotesExplained";
 import AIPerfumeVsTraditional from "./pages/guides/AIPerfumeVsTraditional";
 
@@ -87,6 +89,8 @@ const AppInner = () => {
           <Route path="/guide/find-your-signature-scent" element={<FindYourSignatureScent />} />
           <Route path="/guide/perfume-notes-explained" element={<PerfumeNotesExplained />} />
           <Route path="/guide/ai-perfume-vs-traditional" element={<AIPerfumeVsTraditional />} />
+          <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route path="/scent-library" element={<Navigate to="/collection" replace />} />
           <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
             <Route index element={<AdminDashboard />} />
             <Route path="dashboard" element={<AdminDashboard />} />
@@ -108,6 +112,7 @@ const AppInner = () => {
       </BrowserRouter>
       <BazukiCartDrawer />
       <ShopifyDebugPanel />
+      <CheckoutTestChecklist />
     </>
   );
 };
