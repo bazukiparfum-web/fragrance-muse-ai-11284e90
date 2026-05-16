@@ -281,7 +281,7 @@ const Header = () => {
               <button onClick={() => handleMobileNav(user ? '/shop/account' : '/auth')} aria-label="Account">
                 {user ? <UserCheck strokeWidth={1} size={20} /> : <User strokeWidth={1} size={20} />}
               </button>
-              <button onClick={() => handleMobileNav('/shop/cart')} aria-label="Cart" className="relative">
+              <button onClick={() => { setMobileOpen(false); openDrawer(); }} aria-label="Cart" className="relative">
                 <ShoppingBag strokeWidth={1} size={20} />
                 {totalItems > 0 && (
                   <span
