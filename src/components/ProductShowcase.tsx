@@ -87,7 +87,7 @@ function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
   return (
     <Card
       className="overflow-hidden hover-lift cursor-pointer transition-all duration-300 hover:shadow-lg group"
-      onClick={() => navigate(`/product/${node.handle}`)}
+      onClick={() => navigate(`/products/${node.handle}`)}
     >
       <div className="aspect-square overflow-hidden bg-muted">
         {image ? (
@@ -180,7 +180,7 @@ const ProductShowcase = () => {
       const node = p.node;
       const img = node.images?.edges?.[0]?.node;
       const price = node.priceRange.minVariantPrice;
-      const productUrl = `${window.location.origin}/product/${node.handle}`;
+      const productUrl = `${window.location.origin}/products/${node.handle}`;
       const item: Record<string, any> = {
         "@type": "Product",
         name: node.title,

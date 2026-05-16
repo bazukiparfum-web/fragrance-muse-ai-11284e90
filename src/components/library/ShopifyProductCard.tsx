@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -25,6 +26,7 @@ function formatPrice(amount: number, currencyCode: string) {
 }
 
 export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
+  const navigate = useNavigate();
   const addItem = useCartStore((s) => s.addItem);
   const openDrawer = useCartStore((s) => s.openDrawer);
   const [status, setStatus] = useState<"idle" | "adding" | "added" | "error">("idle");
@@ -76,7 +78,7 @@ export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
 
   return (
     <article
-      onClick={() => onOpen(item)}
+      onClick={() => navigate(`/products/${raw.node.handle}`)}
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-xl bg-bz-card border border-gold cursor-pointer",
         "transition-all duration-300 hover:-translate-y-0.5 hover:border-gold-strong hover:glow-gold-sm",
