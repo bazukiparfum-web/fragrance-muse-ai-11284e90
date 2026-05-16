@@ -13,6 +13,8 @@ import { ReviewsSection } from '@/components/ReviewsSection';
 import { JsonLd } from '@/components/JsonLd';
 import { useSEO } from '@/hooks/useSEO';
 import { cn } from '@/lib/utils';
+import { useCheckoutRedirect } from '@/hooks/useCheckoutRedirect';
+import CheckoutLoadingOverlay from '@/components/checkout/CheckoutLoadingOverlay';
 
 type ProductNode = ShopifyProduct['node'];
 
