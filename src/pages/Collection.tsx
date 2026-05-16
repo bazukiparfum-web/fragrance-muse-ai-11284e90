@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HeroLibrary from "@/components/library/HeroLibrary";
 import MoodFilterBar from "@/components/library/MoodFilterBar";
 import ScentCard from "@/components/library/ScentCard";
+import ShopifyProductCard from "@/components/library/ShopifyProductCard";
+import CardSkeleton from "@/components/library/CardSkeleton";
+import { CollectionEmpty, CollectionError } from "@/components/library/CollectionStates";
 import ScentDetailDrawer from "@/components/library/ScentDetailDrawer";
 import { fetchShopifyProducts } from "@/lib/shopify";
 import { supabase } from "@/integrations/supabase/client";
 import { buildLibrary, MOODS, type LibraryItem, type Mood, type PublicScent } from "@/lib/libraryMapper";
 import { useSEO } from "@/hooks/useSEO";
-import { Loader2 } from "lucide-react";
 
 export default function Collection() {
   useSEO({
@@ -20,40 +22,45 @@ export default function Collection() {
 
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [mood, setMood] = useState<Mood | "All">("All");
   const [active, setActive] = useState<LibraryItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const [shopRes, scentRes] = await Promise.allSettled([
-        fetchShopifyProducts(),
-        supabase
-          .from("saved_scents")
-          .select(
-            "id, name, formulation_notes, formula, visual_data, prices, fragrance_code, creator_tag, shopify_product_id, shopify_variant_id",
-          )
-          .eq("is_public", true)
-          .order("created_at", { ascending: false })
-          .limit(60),
-      ]);
-      if (cancelled) return;
+  const loadLibrary = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    const [shopRes, scentRes] = await Promise.allSettled([
+      fetchShopifyProducts(),
+      supabase
+        .from("saved_scents")
+        .select(
+          "id, name, formulation_notes, formula, visual_data, prices, fragrance_code, creator_tag, shopify_product_id, shopify_variant_id",
+        )
+        .eq("is_public", true)
+        .order("created_at", { ascending: false })
+        .limit(60),
+    ]);
 
-      const shop = shopRes.status === "fulfilled" ? shopRes.value : [];
-      const scents =
-        scentRes.status === "fulfilled" && !scentRes.value.error
-          ? ((scentRes.value.data ?? []) as unknown as PublicScent[])
-          : [];
+    const shopOk = shopRes.status === "fulfilled";
+    const scentOk = scentRes.status === "fulfilled" && !scentRes.value.error;
 
-      setItems(buildLibrary(shop, scents));
+    if (!shopOk && !scentOk) {
+      console.error("Collection load failed", { shopRes, scentRes });
+      setError(true);
       setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
+      return;
+    }
+
+    const shop = shopOk ? shopRes.value : [];
+    const scents = scentOk ? ((scentRes.value.data ?? []) as unknown as PublicScent[]) : [];
+    setItems(buildLibrary(shop, scents));
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    loadLibrary();
+  }, [loadLibrary]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { All: items.length };
@@ -81,22 +88,24 @@ export default function Collection() {
 
         <section className="container mx-auto px-6 py-10 md:py-14">
           {loading ? (
-            <div className="flex items-center justify-center py-24 text-cream-muted">
-              <Loader2 className="h-6 w-6 animate-spin mr-3 text-gold" />
-              Loading the library…
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
             </div>
+          ) : error ? (
+            <CollectionError onRetry={loadLibrary} />
           ) : filtered.length === 0 ? (
-            <div className="text-center py-24">
-              <p className="font-display text-2xl text-cream mb-2">Nothing here yet</p>
-              <p className="text-cream-muted">
-                No scents match this mood right now. Try another category.
-              </p>
-            </div>
+            <CollectionEmpty />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((item, idx) => (
-                <ScentCard key={item.id} item={item} index={idx} onOpen={openItem} />
-              ))}
+              {filtered.map((item, idx) =>
+                item.source === "shopify" && item.shopify ? (
+                  <ShopifyProductCard key={item.id} item={item} index={idx} onOpen={openItem} />
+                ) : (
+                  <ScentCard key={item.id} item={item} index={idx} onOpen={openItem} />
+                ),
+              )}
             </div>
           )}
         </section>

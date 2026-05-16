@@ -236,3 +236,12 @@
     animation: none !important;
   }
 }
+
+@keyframes shimmer-gold {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.shimmer-gold {
+  background: linear-gradient(90deg, transparent 0%, hsl(var(--bz-gold) / 0.05) 50%, transparent 100%);
+  animation: shimmer-gold 1.8s linear infinite;
+}
