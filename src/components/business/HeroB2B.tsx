@@ -25,29 +25,53 @@ type TileData = {
 };
 
 const tiles: TileData[] = [
-  { label: "Hospitality", color: "#3D2B1F", descriptor: "Hotels · Resorts · Boutique Stays" },
-  { label: "Retail", color: "#2B1F3D", descriptor: "Boutiques · Showrooms · Flagship Stores" },
-  { label: "Corporate", color: "#1A2B3D", descriptor: "Offices · Co-working · HQ Lobbies" },
-  { label: "Wellness", color: "#1A3D2B", descriptor: "Spas · Clinics · Yoga Studios" },
+  {
+    label: "Hospitality",
+    descriptor: "Hotels · Resorts · Boutique Stays",
+    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80",
+    bgPosition: "center top",
+  },
+  {
+    label: "Retail",
+    descriptor: "Boutiques · Showrooms · Flagship Stores",
+    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
+  },
+  {
+    label: "Corporate",
+    descriptor: "Offices · Co-working · HQ Lobbies",
+    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+  },
+  {
+    label: "Wellness",
+    descriptor: "Spas · Clinics · Yoga Studios",
+    image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
+    bgPosition: "center top",
+  },
 ];
 
-const Tile = ({ label, color, descriptor, className = "" }: TileData & { className?: string }) => (
+const Tile = ({ label, descriptor, image, bgPosition = "center", className = "" }: TileData & { className?: string }) => (
   <div
-    className={`group relative overflow-hidden rounded-xl border border-[rgba(201,168,76,0.2)] transition-all duration-300 hover:brightness-[1.3] hover:border-[#C9A84C] hover:shadow-[0_0_24px_rgba(201,168,76,0.35)] ${className}`}
-    style={{
-      background: `radial-gradient(circle at center, ${color} 0%, #080808 75%)`,
-    }}
+    className={`group relative overflow-hidden rounded-xl border border-[rgba(201,168,76,0.15)] transition-all duration-300 hover:border-[#C9A84C] hover:shadow-[0_0_24px_rgba(201,168,76,0.35)] ${className}`}
   >
-    {/* inner glow */}
+    {/* background image */}
     <div
-      className="pointer-events-none absolute inset-0"
+      className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-105"
+      style={{
+        backgroundImage: `url(${image})`,
+        backgroundSize: "cover",
+        backgroundPosition: bgPosition,
+      }}
+    />
+    {/* dark gradient overlay */}
+    <div
+      className="absolute inset-0 transition-opacity duration-[400ms] ease-out group-hover:opacity-75"
       style={{
         background:
-          "radial-gradient(circle at center, rgba(255,255,255,0.04) 0%, transparent 60%)",
+          "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)",
       }}
     />
     {/* hover descriptor */}
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100">
+    <div className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center px-4 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100">
       <span
         className="text-center font-body text-[11px]"
         style={{ color: "#C8B99A" }}
@@ -57,9 +81,9 @@ const Tile = ({ label, color, descriptor, className = "" }: TileData & { classNa
     </div>
     {/* label pill */}
     <div
-      className="absolute bottom-4 left-4 rounded-full px-3 py-1 font-body text-[9px] uppercase backdrop-blur-sm"
+      className="absolute bottom-4 left-4 z-[2] rounded-full px-3 py-1 font-body text-[9px] uppercase backdrop-blur-sm"
       style={{
-        background: "rgba(201,168,76,0.1)",
+        background: "rgba(10,10,10,0.55)",
         border: "1px solid rgba(201,168,76,0.4)",
         color: "#C9A84C",
         letterSpacing: "0.2em",
