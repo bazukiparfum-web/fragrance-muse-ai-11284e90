@@ -26,7 +26,8 @@ function formatPrice(amount: number, currencyCode: string) {
 
 export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
   const addItem = useCartStore((s) => s.addItem);
-  const isLoading = useCartStore((s) => s.isLoading);
+  const openDrawer = useCartStore((s) => s.openDrawer);
+  const [status, setStatus] = useState<"idle" | "adding" | "added" | "error">("idle");
 
   const raw = item.shopify!.raw;
   const variants = raw.node.variants.edges.map((e) => e.node);
@@ -48,18 +49,29 @@ export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!selected) return;
-    await addItem({
-      product: raw,
-      variantId: selected.id,
-      variantTitle: selected.title,
-      price: { amount: selected.price.amount, currencyCode: currency },
-      quantity: 1,
-      selectedOptions: selected.selectedOptions ?? [],
-    });
-    toast.success("Added to cart", {
-      description: `${raw.node.title}${selected.title && selected.title !== "Default Title" ? ` · ${selected.title}` : ""}`,
-    });
+    if (!selected || status === "adding") return;
+    setStatus("adding");
+    try {
+      const ok = await addItem({
+        product: raw,
+        variantId: selected.id,
+        variantTitle: selected.title,
+        price: { amount: selected.price.amount, currencyCode: currency },
+        quantity: 1,
+        selectedOptions: selected.selectedOptions ?? [],
+      });
+      if (ok) {
+        setStatus("added");
+        openDrawer();
+        setTimeout(() => setStatus("idle"), 1500);
+      } else {
+        setStatus("error");
+        setTimeout(() => setStatus("idle"), 2000);
+      }
+    } catch {
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 2000);
+    }
   };
 
   return (
