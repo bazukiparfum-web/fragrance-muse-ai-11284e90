@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Menu, X, Shield, User, UserCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCartStore } from '@/stores/cartStore';
@@ -22,6 +22,9 @@ const BLACK = '#0A0A0A';
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + '/');
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -88,22 +91,26 @@ const Header = () => {
 
           {/* Desktop nav links */}
           <nav className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className="relative font-sans uppercase transition-colors hover:text-[color:var(--bz-cream)] after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-px after:w-full after:bg-[#C9A84C] after:origin-left after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-200 after:ease-out"
-                style={{
-                  color: MUTED,
-                  fontSize: '12px',
-                  letterSpacing: '0.12em',
-                  // @ts-ignore – CSS var for hover
-                  ['--bz-cream' as any]: CREAM,
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const active = isActive(link.path);
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  aria-current={active ? 'page' : undefined}
+                  className={`relative font-sans uppercase transition-colors hover:text-[color:var(--bz-cream)] after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-px after:w-full after:bg-[#C9A84C] after:origin-left after:transition-transform after:duration-200 after:ease-out ${active ? 'after:scale-x-100' : 'after:scale-x-0 hover:after:scale-x-100'}`}
+                  style={{
+                    color: active ? CREAM : MUTED,
+                    fontSize: '12px',
+                    letterSpacing: '0.12em',
+                    // @ts-ignore – CSS var for hover
+                    ['--bz-cream' as any]: CREAM,
+                  }}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Right cluster */}
@@ -218,16 +225,25 @@ const Header = () => {
           </div>
 
           <nav className="flex flex-col px-8 pt-8">
-            {NAV_LINKS.map((link) => (
-              <button
-                key={link.path}
-                onClick={() => handleMobileNav(link.path)}
-                className="text-left py-5 font-cormorant text-3xl border-b transition-colors"
-                style={{ color: CREAM, borderColor: `${GOLD}1A` }}
-              >
-                {link.label}
-              </button>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const active = isActive(link.path);
+              return (
+                <button
+                  key={link.path}
+                  onClick={() => handleMobileNav(link.path)}
+                  aria-current={active ? 'page' : undefined}
+                  className="text-left py-5 font-cormorant text-3xl border-b transition-colors"
+                  style={{
+                    color: active ? GOLD : CREAM,
+                    borderColor: `${GOLD}1A`,
+                    paddingLeft: active ? '0.75rem' : 0,
+                    borderLeft: active ? `2px solid ${GOLD}` : '2px solid transparent',
+                  }}
+                >
+                  {link.label}
+                </button>
+              );
+            })}
           </nav>
 
           <div className="absolute bottom-10 left-0 right-0 px-8 flex flex-col items-stretch gap-4">
