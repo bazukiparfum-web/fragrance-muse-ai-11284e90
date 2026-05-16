@@ -23,7 +23,13 @@ export default function CheckoutTestChecklist() {
     return ITEMS.map(() => false);
   });
 
+  const enabled =
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    !!localStorage.getItem("bz_show_test_panel");
+
   useEffect(() => {
+    if (!enabled) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
   }, [checked]);
 
