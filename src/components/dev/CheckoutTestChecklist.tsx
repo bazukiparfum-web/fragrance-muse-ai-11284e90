@@ -36,6 +36,8 @@ export default function CheckoutTestChecklist() {
   const toggle = (i: number) =>
     setChecked((c) => c.map((v, idx) => (idx === i ? !v : v)));
 
+  if (!enabled) return null;
+
   return (
     <details
       className="fixed bottom-4 left-4 z-[90] rounded-md text-cream font-sans text-xs shadow-lg"
