@@ -106,6 +106,12 @@ export default function ProductDetail() {
     || (typeof (selectedVariant as any)?.quantityAvailable === 'number' && (selectedVariant as any).quantityAvailable <= 0);
   const rawMax = (selectedVariant as any)?.quantityAvailable;
   const maxQuantity = typeof rawMax === 'number' && rawMax > 0 ? rawMax : 99;
+  const lowStock = !isOutOfStock && typeof rawMax === 'number' && rawMax > 0 && rawMax <= 10;
+  const stockMessage = isOutOfStock
+    ? 'Sold out — try another size'
+    : lowStock
+    ? `Only ${rawMax} left in stock — order soon`
+    : null;
 
   // Clamp quantity when variant (and its stock) changes
   useEffect(() => {
