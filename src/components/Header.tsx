@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, Menu, X, Shield, User, UserCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,7 +32,19 @@ const Header = () => {
   const [user, setUser] = useState<any>(null);
 
   const items = useCartStore((s) => s.items);
+  const openDrawer = useCartStore((s) => s.openDrawer);
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
+  const prevCountRef = useRef(totalItems);
+  const [bump, setBump] = useState(false);
+  useEffect(() => {
+    if (totalItems > prevCountRef.current) {
+      setBump(true);
+      const t = setTimeout(() => setBump(false), 250);
+      prevCountRef.current = totalItems;
+      return () => clearTimeout(t);
+    }
+    prevCountRef.current = totalItems;
+  }, [totalItems]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
@@ -150,7 +162,7 @@ const Header = () => {
 
             {/* Cart */}
             <button
-              onClick={() => navigate('/shop/cart')}
+              onClick={() => openDrawer()}
               aria-label={`Cart${totalItems > 0 ? `, ${totalItems} item${totalItems !== 1 ? 's' : ''}` : ''}`}
               className="relative inline-flex items-center justify-center transition-colors"
               style={{ color: MUTED }}
@@ -158,8 +170,12 @@ const Header = () => {
               <ShoppingBag strokeWidth={1} size={18} />
               {totalItems > 0 && (
                 <span
-                  className="absolute -top-2 -right-2 h-4 min-w-4 px-1 rounded-full flex items-center justify-center text-[10px] font-medium"
-                  style={{ backgroundColor: GOLD, color: BLACK }}
+                  className="absolute -top-2 -right-2 h-4 min-w-4 px-1 rounded-full flex items-center justify-center text-[10px] font-medium transition-transform duration-200"
+                  style={{
+                    backgroundColor: GOLD,
+                    color: BLACK,
+                    transform: bump ? 'scale(1.3)' : 'scale(1)',
+                  }}
                 >
                   {totalItems}
                 </span>
@@ -265,7 +281,7 @@ const Header = () => {
               <button onClick={() => handleMobileNav(user ? '/shop/account' : '/auth')} aria-label="Account">
                 {user ? <UserCheck strokeWidth={1} size={20} /> : <User strokeWidth={1} size={20} />}
               </button>
-              <button onClick={() => handleMobileNav('/shop/cart')} aria-label="Cart" className="relative">
+              <button onClick={() => { setMobileOpen(false); openDrawer(); }} aria-label="Cart" className="relative">
                 <ShoppingBag strokeWidth={1} size={20} />
                 {totalItems > 0 && (
                   <span

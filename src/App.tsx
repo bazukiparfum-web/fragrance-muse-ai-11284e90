@@ -45,6 +45,7 @@ import AdminTesting from "./pages/admin/AdminTesting";
 import NotFound from "./pages/NotFound";
 import FindYourSignatureScent from "./pages/guides/FindYourSignatureScent";
 import ShopifyDebugPanel from "./components/dev/ShopifyDebugPanel";
+import BazukiCartDrawer from "./components/cart/BazukiCartDrawer";
 import PerfumeNotesExplained from "./pages/guides/PerfumeNotesExplained";
 import AIPerfumeVsTraditional from "./pages/guides/AIPerfumeVsTraditional";
 
@@ -104,6 +105,7 @@ const AppInner = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      <BazukiCartDrawer />
       <ShopifyDebugPanel />
     </>
   );
