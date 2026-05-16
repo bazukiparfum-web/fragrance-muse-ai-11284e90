@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Minus, Plus, X, Loader2, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
+import { useCheckoutRedirect } from "@/hooks/useCheckoutRedirect";
+import CheckoutLoadingOverlay from "@/components/checkout/CheckoutLoadingOverlay";
 
 const GOLD = "#C9A84C";
 
