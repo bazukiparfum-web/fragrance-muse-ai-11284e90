@@ -106,6 +106,7 @@ const AppInner = () => {
             <Route path="production-queue" element={<AdminProductionQueue />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="testing" element={<AdminTesting />} />
+            <Route path="shopify-redirect-setup" element={<ShopifyRedirectSetup />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
