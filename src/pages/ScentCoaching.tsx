@@ -381,11 +381,14 @@ const BookingDialog = ({
   const [form, setForm] = useState<BookingForm>({ name: "", email: "", whatsapp: "", fragrance: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setForm({ name: "", email: "", whatsapp: "", fragrance: "" });
       setErrors({});
+      setSubmitError(null);
+      setSubmitting(false);
     }
   }, [open]);
 
