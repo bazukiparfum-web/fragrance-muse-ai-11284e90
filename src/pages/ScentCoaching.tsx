@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useSEO } from "@/hooks/useSEO";
+import { JsonLd } from "@/components/JsonLd";
+import { buildBreadcrumbs } from "@/lib/breadcrumbs";
+import ogScentCoaching from "@/assets/og-scent-coaching.jpg";
 
 type Intent = "self" | "gift";
 
@@ -72,9 +75,36 @@ const ScentCoaching = () => {
     title: "Scent Coaching — Free 15-min Call With a Fragrance Expert | Bazuki",
     description:
       "Book a free 15-minute 1-on-1 call with a Bazuki scent specialist. Personal guidance for your signature fragrance — or gift a session.",
-    image: "/placeholder.svg",
+    image: ogScentCoaching,
     type: "website",
   });
+
+  const breadcrumbsJsonLd = buildBreadcrumbs([
+    { name: "Home", path: "/" },
+    { name: "Scent Coaching", path: "/scent-coaching" },
+  ]);
+
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: "Bazuki Scent Coaching",
+    serviceType: "Fragrance consultation",
+    description:
+      "Free 15-minute 1-on-1 video consultation with a Bazuki fragrance specialist to help you find or gift your signature scent.",
+    provider: {
+      "@type": "Organization",
+      name: "Bazuki Perfumes",
+      url: "https://www.bazukifragrance.com",
+    },
+    areaServed: { "@type": "Country", name: "India" },
+    url: "https://www.bazukifragrance.com/scent-coaching",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "INR",
+      availability: "https://schema.org/InStock",
+    },
+  };
 
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [intent, setIntent] = useState<Intent>("self");
@@ -97,6 +127,8 @@ const ScentCoaching = () => {
 
   return (
     <div className="min-h-screen bg-luxury-black text-cream">
+      <JsonLd id="breadcrumbs-scent-coaching" data={breadcrumbsJsonLd} />
+      <JsonLd id="service-scent-coaching" data={serviceJsonLd} />
       <Header />
 
       {/* HERO */}
