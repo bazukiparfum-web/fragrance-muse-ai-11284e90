@@ -101,6 +101,16 @@ export default function ProductDetail() {
   const notes = useMemo(() => parseNotesFromDescription(product?.description), [product?.description]);
   const hasNotes = notes.top.length + notes.heart.length + notes.base.length > 0;
 
+  const isOutOfStock = !selectedVariant?.availableForSale
+    || (typeof (selectedVariant as any)?.quantityAvailable === 'number' && (selectedVariant as any).quantityAvailable <= 0);
+  const rawMax = (selectedVariant as any)?.quantityAvailable;
+  const maxQuantity = typeof rawMax === 'number' && rawMax > 0 ? rawMax : 99;
+
+  // Clamp quantity when variant (and its stock) changes
+  useEffect(() => {
+    setQuantity((q) => Math.min(Math.max(1, q), Math.max(1, maxQuantity)));
+  }, [selectedVariantId, maxQuantity]);
+
   const shortDesc = useMemo(() => {
     if (!product?.description) return '';
     const firstSentence = product.description.split(/(?<=[.!?])\s/)[0] ?? product.description;
