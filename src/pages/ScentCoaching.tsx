@@ -543,8 +543,16 @@ const BookingDialog = ({
             />
             {errors.fragrance && <p className="text-xs text-destructive mt-1">{errors.fragrance}</p>}
           </div>
+          {submitError && (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+            >
+              {submitError}
+            </div>
+          )}
           <Button type="submit" variant="luxury" className="w-full" disabled={submitting}>
-            {submitting ? "Booking…" : "Confirm Booking"}
+            {submitting ? "Booking…" : submitError ? "Try Again" : "Confirm Booking"}
           </Button>
         </form>
       </DialogContent>
