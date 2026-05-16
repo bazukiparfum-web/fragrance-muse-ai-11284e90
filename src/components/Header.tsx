@@ -162,7 +162,7 @@ const Header = () => {
 
             {/* Cart */}
             <button
-              onClick={() => navigate('/shop/cart')}
+              onClick={() => openDrawer()}
               aria-label={`Cart${totalItems > 0 ? `, ${totalItems} item${totalItems !== 1 ? 's' : ''}` : ''}`}
               className="relative inline-flex items-center justify-center transition-colors"
               style={{ color: MUTED }}
@@ -170,8 +170,12 @@ const Header = () => {
               <ShoppingBag strokeWidth={1} size={18} />
               {totalItems > 0 && (
                 <span
-                  className="absolute -top-2 -right-2 h-4 min-w-4 px-1 rounded-full flex items-center justify-center text-[10px] font-medium"
-                  style={{ backgroundColor: GOLD, color: BLACK }}
+                  className="absolute -top-2 -right-2 h-4 min-w-4 px-1 rounded-full flex items-center justify-center text-[10px] font-medium transition-transform duration-200"
+                  style={{
+                    backgroundColor: GOLD,
+                    color: BLACK,
+                    transform: bump ? 'scale(1.3)' : 'scale(1)',
+                  }}
                 >
                   {totalItems}
                 </span>
