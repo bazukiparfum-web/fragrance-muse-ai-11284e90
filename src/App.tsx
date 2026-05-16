@@ -76,7 +76,8 @@ const AppInner = () => {
           <Route path="/legal/shipping" element={<Shipping />} />
           <Route path="/collection" element={<Collection />} />
           <Route path="/collection/:id" element={<ScentDetail />} />
-          <Route path="/product/:handle" element={<ProductDetail />} />
+          <Route path="/products/:handle" element={<ProductDetail />} />
+          <Route path="/product/:handle" element={<Navigate to="/products/:handle" replace />} />
           <Route path="/shared/fragrance/:shareToken" element={<SharedFragrance />} />
           <Route path="/shop/quiz" element={<QuizLanding />} />
           <Route path="/shop/quiz/for-yourself" element={<QuizForYourself />} />
