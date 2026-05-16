@@ -172,7 +172,7 @@ export default function ProductDetail() {
     if (ok) {
       const url = useCartStore.getState().checkoutUrl;
       if (url) {
-        window.open(url, '_blank');
+        launchCheckout(url);
         setBuyStatus('idle');
         return;
       }
