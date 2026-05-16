@@ -19,7 +19,7 @@ async function attachShopifyOrderNote(
   consent: boolean,
 ): Promise<{ orderId: string | null; status: "sent" | "failed" | "skipped"; error?: string }> {
   const shopDomain = Deno.env.get("SHOPIFY_STORE_PERMANENT_DOMAIN") ||
-    Deno.env.get("SHOPIFY_SHOP_DOMAIN");
+    Deno.env.get("SHOPIFY_SHOP_DOMAIN") || "jg651i-6z.myshopify.com";
   const token = Deno.env.get("SHOPIFY_ACCESS_TOKEN");
   if (!shopDomain || !token) return { orderId: null, status: "skipped", error: "missing_shopify_env" };
   try {
