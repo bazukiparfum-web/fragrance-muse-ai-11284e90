@@ -206,7 +206,15 @@ const HeroB2B = () => {
           </div>
 
           {/* RIGHT — desktop mosaic */}
-          <div className="hidden lg:grid grid-cols-2 gap-3">
+          <div
+            className="hidden lg:grid grid-cols-2 rounded-xl"
+            style={{
+              gap: "1px",
+              backgroundColor: "rgba(201,168,76,0.15)",
+              boxShadow: "inset 0 0 60px rgba(201,168,76,0.06)",
+              padding: "1px",
+            }}
+          >
             {tiles.map((t) => (
               <Tile key={t.label} {...t} className="aspect-square" />
             ))}
