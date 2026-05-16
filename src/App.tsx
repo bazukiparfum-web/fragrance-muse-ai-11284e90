@@ -42,6 +42,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminProductionQueue from "./pages/admin/AdminProductionQueue";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTesting from "./pages/admin/AdminTesting";
+import ShopifyRedirectSetup from "./pages/admin/ShopifyRedirectSetup";
 import NotFound from "./pages/NotFound";
 import FindYourSignatureScent from "./pages/guides/FindYourSignatureScent";
 import ShopifyDebugPanel from "./components/dev/ShopifyDebugPanel";
@@ -105,6 +106,7 @@ const AppInner = () => {
             <Route path="production-queue" element={<AdminProductionQueue />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="testing" element={<AdminTesting />} />
+            <Route path="shopify-redirect-setup" element={<ShopifyRedirectSetup />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

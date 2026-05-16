@@ -67,7 +67,7 @@ export default function ProductDetail() {
   const [buyStatus, setBuyStatus] = useState<'idle' | 'loading' | 'error'>('idle');
 
   const addItem = useCartStore((s) => s.addItem);
-  const { launchCheckout, isLaunching } = useCheckoutRedirect();
+  const { launchCheckout, isLaunching, isError, error: launchError, retry: retryLaunch, reset: resetLaunch } = useCheckoutRedirect();
   const openDrawer = useCartStore((s) => s.openDrawer);
 
   useEffect(() => {
@@ -172,7 +172,7 @@ export default function ProductDetail() {
     if (ok) {
       const url = useCartStore.getState().checkoutUrl;
       if (url) {
-        launchCheckout(url);
+        launchCheckout(url, () => { void handleBuyNow(); });
         setBuyStatus('idle');
         return;
       }
@@ -533,7 +533,12 @@ export default function ProductDetail() {
         <ReviewsSection productHandle={product.handle} productName={product.title} />
       </main>
       <Footer />
-      <CheckoutLoadingOverlay open={isLaunching} />
+      <CheckoutLoadingOverlay
+        open={isLaunching || isError}
+        error={isError ? launchError : undefined}
+        onRetry={isError ? retryLaunch : undefined}
+        onClose={isError ? resetLaunch : undefined}
+      />
     </div>
   );
 }
