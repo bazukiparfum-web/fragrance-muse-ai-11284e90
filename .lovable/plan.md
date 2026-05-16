@@ -1,63 +1,61 @@
-## Update hero mosaic in `src/components/business/HeroB2B.tsx`
+# Shopify Storefront Connection Verification
 
-Single-file change. Replace the radial-gradient-only tiles with real Unsplash photos, a dark gradient overlay, and a thin gold-line grid frame around the 2×2 mosaic. Mobile scroll strip uses the same tiles, so it inherits the photos for free.
+Goal: Confirm the Storefront API is live and returning real product data before building any new cart/checkout UI. No production UI changes.
 
-### 1. Add `image` (and per-tile `bgPosition`) to the tile data
+## What already exists
 
-```ts
-type TileData = {
-  label: string;
-  descriptor: string;
-  image: string;
-  bgPosition?: string; // defaults to "center"
-};
+- `src/lib/shopify.ts` already initializes the Storefront client with hardcoded constants:
+  - `SHOPIFY_STORE_PERMANENT_DOMAIN = 'jg651i-6z.myshopify.com'`
+  - `SHOPIFY_STOREFRONT_TOKEN = '95b86894e26ad7e37bd04e955084497e'`
+  - `SHOPIFY_API_VERSION = '2025-07'`
+  - Helper `storefrontApiRequest(query, variables)` posts to the GraphQL endpoint.
+- `.env` does not currently contain `VITE_SHOPIFY_STORE_DOMAIN` or `VITE_SHOPIFY_STOREFRONT_TOKEN`. The project's convention is the hardcoded constants in `src/lib/shopify.ts`. Plan will use those (they are publishable values), and additionally read `import.meta.env.VITE_SHOPIFY_STORE_DOMAIN` / `VITE_SHOPIFY_STOREFRONT_TOKEN` as overrides if present, so the user's requested env var names work too.
 
-const tiles: TileData[] = [
-  { label: "Hospitality", descriptor: "Hotels · Resorts · Boutique Stays",
-    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80",
-    bgPosition: "center top" },
-  { label: "Retail", descriptor: "Boutiques · Showrooms · Flagship Stores",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80" },
-  { label: "Corporate", descriptor: "Offices · Co-working · HQ Lobbies",
-    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80" },
-  { label: "Wellness", descriptor: "Spas · Clinics · Yoga Studios",
-    image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
-    bgPosition: "center top" },
-];
-```
+## Changes
 
-The old `color` field is dropped (no longer used).
+### 1. New component: `src/components/dev/ShopifyDebugPanel.tsx`
+- Renders `null` unless `import.meta.env.DEV` is true.
+- Fixed bottom-right card (`fixed bottom-4 right-4 z-[9999]`), max-width ~320px, dark translucent background, monospace text, semantic color tokens (`text-green-500` / `text-red-500` for status — acceptable here since it's a dev-only diagnostic, not production UI).
+- On mount, runs a Storefront GraphQL query:
+  ```graphql
+  query DebugProducts {
+    products(first: 3) {
+      edges {
+        node {
+          id
+          title
+          handle
+          priceRange { minVariantPrice { amount currencyCode } }
+          images(first: 1) { edges { node { url } } }
+        }
+      }
+    }
+  }
+  ```
+- Uses `storefrontApiRequest` from `@/lib/shopify`.
+- States: `loading | connected | failed` with error message string.
+- `console.log('[Shopify Debug] Full response:', data)` and `console.error` on failure.
+- Panel content:
+  - Status line ("Shopify Status: Connected ✓" green / "Failed ✗" red + error)
+  - Store domain (resolved from env override or `SHOPIFY_STORE_PERMANENT_DOMAIN`)
+  - Product count fetched
+  - List of `title — {amount} {currencyCode}` for each product
+  - Small "×" button to dismiss the panel for the session
+- No changes to `src/lib/shopify.ts` required; export the existing domain constant is already exported.
 
-### 2. Rewrite the `Tile` component
+### 2. Mount the panel
+- Edit `src/App.tsx`: import `ShopifyDebugPanel` and render once at the root (inside the Router but outside route switches) so it's visible on every page in dev.
 
-- Outer `<div>`: keep `group relative overflow-hidden rounded-xl`, change border to `border border-[rgba(201,168,76,0.15)]`, keep the gold hover glow.
-- Background-image layer: `position: absolute; inset: 0; background-image: url(...); background-size: cover; background-position: <bgPosition>;`.
-- Overlay layer (real DOM element, not `::after`, to keep Tailwind-friendly and allow hover state):
-  - `background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)`
-  - `transition: opacity 0.4s ease` — on `group-hover` reduce opacity (approximates the "0.85 → 0.65" softening at the bottom by lowering the whole overlay's opacity to ~0.75).
-- Hover descriptor: keep as-is, ensure it sits above overlay (`relative z-10`).
-- Label pill: keep current styling, add `z-index: 2` (Tailwind `z-[2]`) so it stays above the overlay.
+## Verification steps after implementation
 
-### 3. Add the gold grid frame to the 2×2 mosaic
+1. Open preview → bottom-right shows the panel.
+2. Confirm green "Connected ✓" with domain `jg651i-6z.myshopify.com` and 3 product titles/prices.
+3. Check browser console for `[Shopify Debug] Full response:` log with raw GraphQL data.
+4. If failed, the error message is visible in the panel and console — report back.
 
-Replace the existing `<div className="hidden lg:grid grid-cols-2 gap-3">` wrapper with:
+## Files touched
 
-```tsx
-<div
-  className="hidden lg:grid grid-cols-2 rounded-xl"
-  style={{
-    gap: "1px",
-    backgroundColor: "rgba(201,168,76,0.15)",
-    boxShadow: "inset 0 0 60px rgba(201,168,76,0.06)",
-    padding: "1px",
-  }}
->
-```
+- New: `src/components/dev/ShopifyDebugPanel.tsx`
+- Edit: `src/App.tsx` (one import + one JSX line)
 
-The 1px gap renders the parent's gold background between cells, creating the luxury grid line. Inner box-shadow gives the subtle gold vignette. Mobile scroll strip is left untouched (it's a horizontal strip, not a 2×2 grid).
-
-### 4. Files touched
-
-- `src/components/business/HeroB2B.tsx` only.
-
-No new dependencies, no asset downloads (Unsplash URLs are loaded directly by the browser). No copy or layout changes outside the mosaic.
+No production UI, no cart/checkout work, no env file edits (env file is auto-managed).
