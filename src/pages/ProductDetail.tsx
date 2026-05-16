@@ -378,11 +378,6 @@ export default function ProductDetail() {
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
-              {!isOutOfStock && typeof (selectedVariant as any)?.quantityAvailable === 'number' && (selectedVariant as any).quantityAvailable > 0 && (selectedVariant as any).quantityAvailable <= 10 && (
-                <p className="mt-2 text-xs text-gold/80">
-                  Only {(selectedVariant as any).quantityAvailable} left in stock
-                </p>
-              )}
             </div>
 
             {/* Add to Cart + Buy Now (with stock tooltips) */}
