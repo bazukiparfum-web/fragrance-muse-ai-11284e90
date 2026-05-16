@@ -135,17 +135,25 @@ export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
         )}
 
         <Button
-          disabled={outOfStock || isLoading}
+          disabled={outOfStock || status === "adding"}
           onClick={handleAdd}
           className={cn(
-            "rounded-pill mt-1",
+            "rounded-pill mt-1 transition-colors",
             outOfStock
               ? "bg-bz-secondary/60 text-cream-muted hover:bg-bz-secondary/60 cursor-not-allowed"
+              : status === "added"
+              ? "bg-emerald-600 hover:bg-emerald-600 text-white"
+              : status === "error"
+              ? "bg-red-600 hover:bg-red-600 text-white"
               : "bg-gold text-primary-foreground hover:bg-gold/90",
           )}
         >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+          {status === "adding" ? (
+            <><Loader2 className="h-4 w-4 animate-spin mr-2" />Adding...</>
+          ) : status === "added" ? (
+            <><Check className="h-4 w-4 mr-2" />Added</>
+          ) : status === "error" ? (
+            "Failed — Retry"
           ) : outOfStock ? (
             "Out of Stock"
           ) : (
