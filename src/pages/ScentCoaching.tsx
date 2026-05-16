@@ -69,9 +69,11 @@ type BookingForm = z.infer<typeof bookingSchema>;
 
 const ScentCoaching = () => {
   useSEO({
-    title: "Scent Coaching — Talk to a Fragrance Expert | Bazuki",
+    title: "Scent Coaching — Free 15-min Call With a Fragrance Expert | Bazuki",
     description:
-      "Book a free 15-minute 1-on-1 call with a Bazuki fragrance specialist. Personalized scent guidance for you or as a gift.",
+      "Book a free 15-minute 1-on-1 call with a Bazuki scent specialist. Personal guidance for your signature fragrance — or gift a session.",
+    image: "/placeholder.svg",
+    type: "website",
   });
 
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
