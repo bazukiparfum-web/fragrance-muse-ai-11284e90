@@ -225,16 +225,25 @@ const Header = () => {
           </div>
 
           <nav className="flex flex-col px-8 pt-8">
-            {NAV_LINKS.map((link) => (
-              <button
-                key={link.path}
-                onClick={() => handleMobileNav(link.path)}
-                className="text-left py-5 font-cormorant text-3xl border-b transition-colors"
-                style={{ color: CREAM, borderColor: `${GOLD}1A` }}
-              >
-                {link.label}
-              </button>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const active = isActive(link.path);
+              return (
+                <button
+                  key={link.path}
+                  onClick={() => handleMobileNav(link.path)}
+                  aria-current={active ? 'page' : undefined}
+                  className="text-left py-5 font-cormorant text-3xl border-b transition-colors"
+                  style={{
+                    color: active ? GOLD : CREAM,
+                    borderColor: `${GOLD}1A`,
+                    paddingLeft: active ? '0.75rem' : 0,
+                    borderLeft: active ? `2px solid ${GOLD}` : '2px solid transparent',
+                  }}
+                >
+                  {link.label}
+                </button>
+              );
+            })}
           </nav>
 
           <div className="absolute bottom-10 left-0 right-0 px-8 flex flex-col items-stretch gap-4">
