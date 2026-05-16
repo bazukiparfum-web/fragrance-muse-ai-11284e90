@@ -122,15 +122,33 @@ export default function Collection() {
           ) : filtered.length === 0 ? (
             <CollectionEmpty />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((item, idx) =>
-                item.source === "shopify" && item.shopify ? (
-                  <ShopifyProductCard key={item.id} item={item} index={idx} onOpen={openItem} />
-                ) : (
-                  <ScentCard key={item.id} item={item} index={idx} onOpen={openItem} />
-                ),
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {visibleItems.map((item, idx) =>
+                  item.source === "shopify" && item.shopify ? (
+                    <ShopifyProductCard key={item.id} item={item} index={idx} onOpen={openItem} />
+                  ) : (
+                    <ScentCard key={item.id} item={item} index={idx} onOpen={openItem} />
+                  ),
+                )}
+              </div>
+
+              {hasMore && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <CardSkeleton key={`more-${i}`} />
+                  ))}
+                </div>
               )}
-            </div>
+
+              <div ref={sentinelRef} aria-hidden className="h-1 w-full" />
+
+              {!hasMore && filtered.length > PAGE_SIZE && (
+                <p role="status" className="text-center text-cream-muted text-sm mt-10">
+                  You've reached the end of the library.
+                </p>
+              )}
+            </>
           )}
         </section>
       </main>
