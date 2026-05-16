@@ -42,6 +42,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminProductionQueue from "./pages/admin/AdminProductionQueue";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTesting from "./pages/admin/AdminTesting";
+import ShopifyRedirectSetup from "./pages/admin/ShopifyRedirectSetup";
 import NotFound from "./pages/NotFound";
 import FindYourSignatureScent from "./pages/guides/FindYourSignatureScent";
 import ShopifyDebugPanel from "./components/dev/ShopifyDebugPanel";
