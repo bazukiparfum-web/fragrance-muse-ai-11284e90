@@ -189,11 +189,11 @@ export default function BazukiCartDrawer() {
 
               <button
                 onClick={handleCheckout}
-                disabled={items.length === 0 || isLoading || isSyncing || !getCheckoutUrl()}
+                disabled={items.length === 0 || isLoading || isSyncing || isLaunching || !getCheckoutUrl()}
                 className="w-full h-[52px] rounded-full text-[12px] font-medium uppercase tracking-[0.14em] transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center"
                 style={{ backgroundColor: GOLD, color: "#000" }}
               >
-                {isLoading || isSyncing ? (
+                {isLoading || isSyncing || isLaunching ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   "Proceed to Checkout"
