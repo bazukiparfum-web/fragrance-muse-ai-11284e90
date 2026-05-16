@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useInView } from "@/hooks/useInView";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HeroLibrary from "@/components/library/HeroLibrary";
@@ -74,6 +75,29 @@ export default function Collection() {
     [items, mood],
   );
 
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [mood]);
+
+  const visibleItems = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = visibleCount < filtered.length;
+
+  const { ref: sentinelRef, inView: sentinelInView } = useInView<HTMLDivElement>({
+    threshold: 0,
+    rootMargin: "0px 0px 400px 0px",
+    once: false,
+  });
+
+  useEffect(() => {
+    if (!sentinelInView || !hasMore) return;
+    const t = setTimeout(() => {
+      setVisibleCount((c) => Math.min(c + PAGE_SIZE, filtered.length));
+    }, 150);
+    return () => clearTimeout(t);
+  }, [sentinelInView, hasMore, filtered.length]);
+
   const openItem = (i: LibraryItem) => {
     setActive(i);
     setDrawerOpen(true);
@@ -98,15 +122,33 @@ export default function Collection() {
           ) : filtered.length === 0 ? (
             <CollectionEmpty />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((item, idx) =>
-                item.source === "shopify" && item.shopify ? (
-                  <ShopifyProductCard key={item.id} item={item} index={idx} onOpen={openItem} />
-                ) : (
-                  <ScentCard key={item.id} item={item} index={idx} onOpen={openItem} />
-                ),
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {visibleItems.map((item, idx) =>
+                  item.source === "shopify" && item.shopify ? (
+                    <ShopifyProductCard key={item.id} item={item} index={idx} onOpen={openItem} />
+                  ) : (
+                    <ScentCard key={item.id} item={item} index={idx} onOpen={openItem} />
+                  ),
+                )}
+              </div>
+
+              {hasMore && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <CardSkeleton key={`more-${i}`} />
+                  ))}
+                </div>
               )}
-            </div>
+
+              <div ref={sentinelRef} aria-hidden className="h-1 w-full" />
+
+              {!hasMore && filtered.length > PAGE_SIZE && (
+                <p role="status" className="text-center text-cream-muted text-sm mt-10">
+                  You've reached the end of the library.
+                </p>
+              )}
+            </>
           )}
         </section>
       </main>
