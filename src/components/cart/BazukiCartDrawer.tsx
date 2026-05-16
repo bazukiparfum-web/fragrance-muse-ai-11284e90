@@ -211,6 +211,7 @@ export default function BazukiCartDrawer() {
           </>
         )}
       </SheetContent>
+      <CheckoutLoadingOverlay open={isLaunching} />
     </Sheet>
   );
 }
