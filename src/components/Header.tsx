@@ -22,6 +22,9 @@ const BLACK = '#0A0A0A';
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + '/');
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
