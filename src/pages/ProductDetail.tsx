@@ -533,7 +533,12 @@ export default function ProductDetail() {
         <ReviewsSection productHandle={product.handle} productName={product.title} />
       </main>
       <Footer />
-      <CheckoutLoadingOverlay open={isLaunching} />
+      <CheckoutLoadingOverlay
+        open={isLaunching || isError}
+        error={isError ? launchError : undefined}
+        onRetry={isError ? retryLaunch : undefined}
+        onClose={isError ? resetLaunch : undefined}
+      />
     </div>
   );
 }
