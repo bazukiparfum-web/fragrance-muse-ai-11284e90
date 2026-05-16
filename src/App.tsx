@@ -112,6 +112,7 @@ const AppInner = () => {
       </BrowserRouter>
       <BazukiCartDrawer />
       <ShopifyDebugPanel />
+      <CheckoutTestChecklist />
     </>
   );
 };
