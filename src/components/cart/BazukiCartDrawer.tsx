@@ -235,11 +235,36 @@ export default function BazukiCartDrawer() {
                 Shipping &amp; taxes calculated at checkout
               </p>
 
+              <WhatsAppCaptureField value={wa} onChange={setWa} disabled={isLaunching} compact />
+
+              {isError && (
+                <div
+                  className="flex items-start gap-2 rounded-md px-3 py-2"
+                  style={{
+                    border: "1px solid rgba(232,122,122,0.4)",
+                    backgroundColor: "rgba(232,122,122,0.06)",
+                  }}
+                >
+                  <AlertCircle size={14} className="mt-0.5 flex-shrink-0" style={{ color: "#e87a7a" }} />
+                  <div className="flex-1 text-[12px]" style={{ color: "#e87a7a" }}>
+                    {error || "Checkout failed."}
+                    <button
+                      onClick={() => { reset(); void doCheckoutLaunch(); }}
+                      className="ml-2 underline hover:no-underline"
+                      style={{ color: GOLD }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={handleCheckout}
-                disabled={items.length === 0 || isLoading || isSyncing || isLaunching || !getCheckoutUrl()}
+                disabled={items.length === 0 || isLoading || isSyncing || isLaunching || !waValid}
                 className="w-full h-[52px] rounded-full text-[12px] font-medium uppercase tracking-[0.14em] transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center"
                 style={{ backgroundColor: GOLD, color: "#000" }}
+                title={!waValid ? "Enter your WhatsApp number and consent to continue" : undefined}
               >
                 {isLoading || isSyncing || isLaunching ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -259,7 +284,12 @@ export default function BazukiCartDrawer() {
           </>
         )}
       </SheetContent>
-      <CheckoutLoadingOverlay open={isLaunching} />
+      <CheckoutLoadingOverlay
+        open={isLaunching || isError}
+        error={isError ? error : undefined}
+        onRetry={isError ? retry : undefined}
+        onClose={isError ? reset : undefined}
+      />
     </Sheet>
   );
 }
