@@ -874,7 +874,7 @@ const Account = () => {
                         tokens <span className="text-destructive">0</span> Review tokens: <span className="text-destructive">0</span>
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        These can be spend on 5ml scents. Your remaining tokens will be deducted <span className="text-destructive">automatically</span> in the basket during check out.
+                        These can be spend on 30ml scents. Your remaining tokens will be deducted <span className="text-destructive">automatically</span> in the basket during check out.
                       </p>
                     </div>
                   </Card>
