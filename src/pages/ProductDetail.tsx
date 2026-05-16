@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, Check, Minus, Plus, ArrowLeft, ShoppingBag } from 'lucide-react';
 import { fetchShopifyProductByHandle, ShopifyProduct } from '@/lib/shopify';
 import { useCartStore } from '@/stores/cartStore';
@@ -105,6 +106,12 @@ export default function ProductDetail() {
     || (typeof (selectedVariant as any)?.quantityAvailable === 'number' && (selectedVariant as any).quantityAvailable <= 0);
   const rawMax = (selectedVariant as any)?.quantityAvailable;
   const maxQuantity = typeof rawMax === 'number' && rawMax > 0 ? rawMax : 99;
+  const lowStock = !isOutOfStock && typeof rawMax === 'number' && rawMax > 0 && rawMax <= 10;
+  const stockMessage = isOutOfStock
+    ? 'Sold out — try another size'
+    : lowStock
+    ? `Only ${rawMax} left in stock — order soon`
+    : null;
 
   // Clamp quantity when variant (and its stock) changes
   useEffect(() => {
@@ -371,56 +378,85 @@ export default function ProductDetail() {
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
-              {!isOutOfStock && typeof (selectedVariant as any)?.quantityAvailable === 'number' && (selectedVariant as any).quantityAvailable > 0 && (selectedVariant as any).quantityAvailable <= 10 && (
-                <p className="mt-2 text-xs text-gold/80">
-                  Only {(selectedVariant as any).quantityAvailable} left in stock
-                </p>
-              )}
             </div>
 
-            {/* Add to Cart */}
-            <Button
-              onClick={handleAddToCart}
-              disabled={isOutOfStock || addStatus === 'adding'}
-              className={cn(
-                'w-full rounded-full mb-3 font-medium transition-colors',
-                addStatus === 'added'
-                  ? 'bg-emerald-600 hover:bg-emerald-600 text-white'
-                  : addStatus === 'error'
-                  ? 'bg-red-600 hover:bg-red-600 text-white'
-                  : 'bg-gold text-primary-foreground hover:bg-gold/90',
-              )}
-              style={{ height: '52px' }}
-            >
-              {addStatus === 'adding' ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Adding…</>
-              ) : addStatus === 'added' ? (
-                <><Check className="h-4 w-4 mr-2" /> Added</>
-              ) : addStatus === 'error' ? (
-                'Failed — Retry'
-              ) : isOutOfStock ? (
-                'Sold Out'
-              ) : (
-                'Add to Cart'
-              )}
-            </Button>
+            {/* Add to Cart + Buy Now (with stock tooltips) */}
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={isOutOfStock ? 0 : -1} className="block">
+                    <Button
+                      onClick={handleAddToCart}
+                      disabled={isOutOfStock || addStatus === 'adding'}
+                      aria-describedby={stockMessage ? 'stock-helper' : undefined}
+                      className={cn(
+                        'w-full rounded-full mb-3 font-medium transition-colors',
+                        addStatus === 'added'
+                          ? 'bg-emerald-600 hover:bg-emerald-600 text-white'
+                          : addStatus === 'error'
+                          ? 'bg-red-600 hover:bg-red-600 text-white'
+                          : 'bg-gold text-primary-foreground hover:bg-gold/90',
+                      )}
+                      style={{ height: '52px' }}
+                    >
+                      {addStatus === 'adding' ? (
+                        <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Adding…</>
+                      ) : addStatus === 'added' ? (
+                        <><Check className="h-4 w-4 mr-2" /> Added</>
+                      ) : addStatus === 'error' ? (
+                        'Failed — Retry'
+                      ) : isOutOfStock ? (
+                        'Sold Out'
+                      ) : (
+                        'Add to Cart'
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {stockMessage && (
+                  <TooltipContent side="top">{stockMessage}</TooltipContent>
+                )}
+              </Tooltip>
 
-            {/* Buy Now */}
-            <Button
-              onClick={handleBuyNow}
-              disabled={isOutOfStock || buyStatus === 'loading'}
-              variant="outline"
-              className="w-full rounded-full bg-transparent text-cream hover:bg-gold/10 hover:text-cream"
-              style={{ height: '52px', border: '1px solid hsl(var(--bz-gold))' }}
-            >
-              {buyStatus === 'loading' ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing checkout…</>
-              ) : buyStatus === 'error' ? (
-                'Checkout failed — Retry'
-              ) : (
-                'Buy Now'
-              )}
-            </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={isOutOfStock ? 0 : -1} className="block">
+                    <Button
+                      onClick={handleBuyNow}
+                      disabled={isOutOfStock || buyStatus === 'loading'}
+                      aria-describedby={stockMessage ? 'stock-helper' : undefined}
+                      variant="outline"
+                      className="w-full rounded-full bg-transparent text-cream hover:bg-gold/10 hover:text-cream"
+                      style={{ height: '52px', border: '1px solid hsl(var(--bz-gold))' }}
+                    >
+                      {buyStatus === 'loading' ? (
+                        <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing checkout…</>
+                      ) : buyStatus === 'error' ? (
+                        'Checkout failed — Retry'
+                      ) : (
+                        'Buy Now'
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {stockMessage && (
+                  <TooltipContent side="top">{stockMessage}</TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+
+            {stockMessage && (
+              <p
+                id="stock-helper"
+                role="status"
+                className={cn(
+                  'mt-3 text-xs',
+                  isOutOfStock ? 'text-red-400' : 'text-gold/80',
+                )}
+              >
+                {stockMessage}
+              </p>
+            )}
 
             {/* Fragrance Pyramid */}
             {hasNotes && (
