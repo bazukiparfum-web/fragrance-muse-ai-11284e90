@@ -8,7 +8,7 @@ const STEPS = [
     n: "01",
     Icon: MessageSquare,
     title: "Take the Quiz",
-    body: "7 questions about your personality, memories, and preferences.",
+    body: "A 16-question journey through your personality, memories, and preferences.",
   },
   {
     n: "02",
@@ -20,7 +20,7 @@ const STEPS = [
     n: "03",
     Icon: FlaskConical,
     title: "Receive Your Scents",
-    body: "3 custom 5ml bottles arrive at your door, labeled with your formula ID.",
+    body: "3 custom 30ml bottles arrive at your door, labeled with your formula ID.",
   },
 ];
 

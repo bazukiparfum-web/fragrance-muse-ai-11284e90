@@ -6,7 +6,7 @@ const STATS = [
   { n: "52", label: "Curated Ingredients" },
   { n: "3", label: "Custom Perfumes Per Order" },
   { n: "2,000+", label: "Unique Formulas Created" },
-  { n: "​Nation Wide", label: "​Delivered Across India" },
+  { n: "Pan-India", label: "Delivered Across India" },
 ];
 
 const TESTIMONIALS = [

@@ -113,8 +113,12 @@ const AppInner = () => {
         </Routes>
       </BrowserRouter>
       <BazukiCartDrawer />
-      <ShopifyDebugPanel />
-      <CheckoutTestChecklist />
+      {import.meta.env.DEV && (
+        <>
+          <ShopifyDebugPanel />
+          <CheckoutTestChecklist />
+        </>
+      )}
     </>
   );
 };
