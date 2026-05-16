@@ -1150,6 +1150,48 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_optins: {
+        Row: {
+          cart_id: string | null
+          consent: boolean
+          created_at: string
+          id: string
+          phone: string
+          shopify_note_status: string
+          shopify_order_id: string | null
+          shopify_order_number: string | null
+          source: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cart_id?: string | null
+          consent?: boolean
+          created_at?: string
+          id?: string
+          phone: string
+          shopify_note_status?: string
+          shopify_order_id?: string | null
+          shopify_order_number?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cart_id?: string | null
+          consent?: boolean
+          created_at?: string
+          id?: string
+          phone?: string
+          shopify_note_status?: string
+          shopify_order_id?: string | null
+          shopify_order_number?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
