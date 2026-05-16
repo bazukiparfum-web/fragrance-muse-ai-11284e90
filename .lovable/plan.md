@@ -1,20 +1,24 @@
 ## Goal
-Make the /business page use "Scent Marketing" consistently in user-visible copy. Component/file names stay the same to avoid churn.
+The `/scent-coaching` page exists but has no entry points. Add navigation so users can discover and reach it.
 
-## Visible text changes
+## Changes
 
-1. **`src/components/business/HeroB2B.tsx`**
-   - Eyebrow line: `360° Aroma Solutions · B2B` → `Scent Marketing · 360° Aroma Solutions`
+1. **Header nav (`src/components/Header.tsx`)**
+   - Add `{ label: 'Scent Coaching', path: '/scent-coaching' }` to `NAV_LINKS` (desktop + mobile menu use the same array).
+   - Placement: between "Scent Library" and "Scent Marketing" so consult-style links sit together.
 
-2. **`src/components/business/B2BPackages.tsx`** (line ~85)
-   - Section eyebrow `B2B Packages` → `Scent Marketing Packages`
+2. **Footer (`src/components/Footer.tsx`)**
+   - Add a "Scent Coaching" link under the existing Explore/Services column so it's reachable from every page.
 
-3. **`src/pages/Business.tsx`** SEO
-   - Title: `360° Aroma Solutions for Business | Bazuki Fragrance` → `Scent Marketing for Business | Bazuki Fragrance`
-   - Meta description: prepend "Scent Marketing —" so it reads: `Scent Marketing — custom brand scents, IoT diffusers and refill subscriptions for hotels, retail, offices, spas, events and automotive across India.`
-   - Breadcrumb label `Business` → `Scent Marketing`
+3. **Homepage teaser (`src/pages/Index.tsx`)**
+   - Add a small CTA link to `/scent-coaching` — either as a secondary button inside the existing `B2BTeaser` section or as a one-line strip above the FAQ ("Want personal guidance? Book a free 15-min call with a scent expert →").
+
+4. **Quiz Results page (`src/pages/QuizResults.tsx`)**
+   - Add a soft prompt near the results ("Not sure which match is you? Talk to a scent expert →" linking to `/scent-coaching`) — high-intent placement.
 
 ## Out of scope
-- Renaming files/components (HeroB2B.tsx, B2BPackages.tsx, B2BTestimonials.tsx, B2BCtaStrip.tsx) and the `hero-b2b` DOM id — internal only, not user-visible.
-- Other sections (ScentScience, UseCasesGrid, ClientStories, ServicesOffered, FAQ, LeadCaptureForm, FinalCtaStrip) contain no "B2B" copy and need no changes.
-- Header nav label (already updated to "Scent Marketing").
+- No changes to `/scent-coaching` itself.
+- No new sitemap/robots edits (route already deployed; sitemap update optional, can be added if you want).
+
+## Confirm
+Should I include all four touchpoints, or only the header + footer for now?
