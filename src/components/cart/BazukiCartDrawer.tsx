@@ -19,6 +19,8 @@ export default function BazukiCartDrawer() {
   const syncCart = useCartStore((s) => s.syncCart);
   const getCheckoutUrl = useCartStore((s) => s.getCheckoutUrl);
 
+  const { launchCheckout, isLaunching } = useCheckoutRedirect();
+
   const totalPrice = items.reduce(
     (sum, i) => sum + parseFloat(i.price.amount) * i.quantity,
     0,
@@ -32,7 +34,7 @@ export default function BazukiCartDrawer() {
   const handleCheckout = () => {
     const url = getCheckoutUrl();
     if (!url) return;
-    window.open(url, "_blank");
+    launchCheckout(url);
     closeDrawer();
   };
 
