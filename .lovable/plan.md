@@ -1,64 +1,24 @@
-# Scent Coaching — Polish & Verify
+## Scent Coaching SEO — current state and proposed polish
 
-Three small, scoped changes plus a live test pass. No business-logic changes.
+The `/scent-coaching` page already calls `useSEO(...)` (lines 71–77), which sets `<title>`, meta description, canonical, `og:title`/`og:description`/`og:type`/`og:url`, and Twitter card tags via `src/hooks/useSEO.ts`. So the core ask is already wired. Two refinements remain:
 
----
+### 1. Replace placeholder OG image
+Currently `image: "/placeholder.svg"` — SVG is not a valid OG image (LinkedIn/WhatsApp/Slack will reject or ignore it) and the placeholder content is meaningless. Two options:
 
-## 1. Header active state for `/scent-coaching` (and all nav links)
+- **(a)** Generate a branded 1200×630 OG image (dark luxury, gold accent, headline "Talk to a Scent Expert · Free 15-min call") via the image tool, save to `src/assets/og-scent-coaching.jpg`, import it, and pass to `useSEO`.
+- **(b)** Drop the `image` field entirely so social cards fall back cleanly to the sitewide `og-image.jpg` from `index.html` (better than a broken SVG).
 
-`src/components/Header.tsx` currently renders every nav link with the same muted color and only animates the gold underline on hover. We'll add a route-aware active style so the current page is visibly highlighted — applied generically to every link, not just Scent Coaching, so behavior is consistent across the nav.
+Recommended: **(a)** — purpose-built image gives a noticeably better preview.
 
-- Use `useLocation()` from `react-router-dom`.
-- A link is "active" when `location.pathname === link.path` OR `location.pathname.startsWith(link.path + '/')`.
-- **Desktop:** active link uses cream color (instead of muted) and renders the gold underline at `scale-x-100` (no hover needed). Add `aria-current="page"` for accessibility.
-- **Mobile fullscreen menu:** active link gets gold color instead of cream and a thin gold left-accent (border-l-2) on the row.
+### 2. Add BreadcrumbList + Service JSON-LD
+Other pages (Home, Business) emit JSON-LD via `<JsonLd>`. Scent Coaching has none. Add:
 
-No new dependencies, no markup restructure — just conditional class/style on the existing `<Link>` / `<button>`.
+- `BreadcrumbList` via `buildBreadcrumbs([{name:"Home",path:"/"},{name:"Scent Coaching",path:"/scent-coaching"}])` — matches the pattern in `Business.tsx`.
+- `Service` schema describing the free 15-min consultation (provider = Bazuki, areaServed = IN, price = 0) so Google can surface it as a service offering.
 
-## 2. SEO meta for `/scent-coaching`
+### Files to touch
+- `src/pages/ScentCoaching.tsx` — swap image, add two `<JsonLd>` blocks, import `buildBreadcrumbs` + `JsonLd`.
+- `src/assets/og-scent-coaching.jpg` — new branded OG image (only if option (a)).
 
-The page already calls `useSEO({ title, description })`, which sets `<title>`, description, canonical, `og:title/description/type/url`, and the Twitter card tags. Two gaps:
-
-- **No `og:image`.** Social previews (LinkedIn, WhatsApp, Slack) will fall back to whatever sitewide image exists, which is not coaching-relevant.
-- **Copy could be sharper** for search snippets.
-
-Changes in `src/pages/ScentCoaching.tsx` only:
-
-- Tighten the SEO call:
-  - `title`: `"Scent Coaching — Free 15-min Call With a Fragrance Expert | Bazuki"` (≈75 chars; under the soft limit and keyword-led).
-  - `description`: `"Book a free 15-minute 1-on-1 call with a Bazuki scent specialist. Personal guidance for your signature fragrance — or gift a session."` (≈150 chars).
-  - `image`: `"/placeholder.svg"` for now (matches the hero placeholder already on the page). Flagged below as an optional follow-up if a branded OG image is wanted.
-  - `type`: `"website"`.
-
-`useSEO` already handles canonical + OG + Twitter, so no other wiring needed.
-
-**Optional follow-up (not in this plan unless you say so):** generate a branded 1200×630 OG image (dark luxury, gold accent, "Talk to a Scent Expert" headline) via the image tool and swap it in.
-
-## 3. End-to-end verification of the booking flow
-
-Using the browser tool, run the full flow against the live preview at `/scent-coaching` at two viewports:
-
-- **Desktop** 1366×768
-- **Mobile** 390×844
-
-For each viewport, verify in order:
-1. Hero + CTA render, "Find a Time" scrolls to booking section.
-2. Week grid renders with weekday slots in gold and weekend/past slots disabled.
-3. Week navigation: Prev disabled on current week, Next advances 7 days.
-4. Clicking an available slot opens the confirmation dialog with the correct date/time label.
-5. Submitting with empty fields shows inline validation errors.
-6. Submitting valid data (test name, throwaway email, `+91 9999999999`, "Midnight Velvet") triggers the `consultation_requests` insert and transitions to the `BookingSuccess` screen.
-7. Success screen shows personalized name, time, and fragrance; "Book another time" returns to the picker.
-
-Capture screenshots at key states (picker, dialog, success) on both viewports. Report any layout/interaction issues found; fix only if they're trivial CSS issues, otherwise list them for follow-up.
-
-> Note: step 6 writes a real row to `consultation_requests`. That table is the existing B2B/coaching lead store and accepts public inserts by design, so a single test row is expected and acceptable. If you'd prefer I skip the actual submit and stop at validation, say so.
-
----
-
-## Files touched
-
-- `src/components/Header.tsx` — active link styling.
-- `src/pages/ScentCoaching.tsx` — expanded `useSEO` call (title/description/image).
-
-No changes to routing, `index.html`, the booking widget, or the dialog/success components.
+### Open question
+Go with **(a)** generated branded OG image, or **(b)** drop the image and fall back to sitewide?
