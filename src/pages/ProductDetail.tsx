@@ -426,13 +426,13 @@ export default function ProductDetail() {
                   <span tabIndex={isOutOfStock ? 0 : -1} className="block">
                     <Button
                       onClick={handleBuyNow}
-                      disabled={isOutOfStock || buyStatus === 'loading'}
+                      disabled={isOutOfStock || buyStatus === 'loading' || isLaunching}
                       aria-describedby={stockMessage ? 'stock-helper' : undefined}
                       variant="outline"
                       className="w-full rounded-full bg-transparent text-cream hover:bg-gold/10 hover:text-cream"
                       style={{ height: '52px', border: '1px solid hsl(var(--bz-gold))' }}
                     >
-                      {buyStatus === 'loading' ? (
+                      {buyStatus === 'loading' || isLaunching ? (
                         <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing checkout…</>
                       ) : buyStatus === 'error' ? (
                         'Checkout failed — Retry'
