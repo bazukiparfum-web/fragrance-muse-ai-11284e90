@@ -32,7 +32,19 @@ const Header = () => {
   const [user, setUser] = useState<any>(null);
 
   const items = useCartStore((s) => s.items);
+  const openDrawer = useCartStore((s) => s.openDrawer);
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
+  const prevCountRef = useRef(totalItems);
+  const [bump, setBump] = useState(false);
+  useEffect(() => {
+    if (totalItems > prevCountRef.current) {
+      setBump(true);
+      const t = setTimeout(() => setBump(false), 250);
+      prevCountRef.current = totalItems;
+      return () => clearTimeout(t);
+    }
+    prevCountRef.current = totalItems;
+  }, [totalItems]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
