@@ -105,6 +105,7 @@ const AppInner = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      <BazukiCartDrawer />
       <ShopifyDebugPanel />
     </>
   );
