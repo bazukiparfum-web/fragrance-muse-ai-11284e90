@@ -15,11 +15,6 @@ const ITEMS = [
 const STORAGE_KEY = "bz_checkout_checklist";
 
 export default function CheckoutTestChecklist() {
-  if (!import.meta.env.DEV) return null;
-  if (typeof window !== "undefined" && !localStorage.getItem("bz_show_test_panel")) {
-    return null;
-  }
-
   const [checked, setChecked] = useState<boolean[]>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
