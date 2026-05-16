@@ -53,6 +53,11 @@ export const useCartStore = create<CartStore>()(
       checkoutUrl: null,
       isLoading: false,
       isSyncing: false,
+      isDrawerOpen: false,
+
+      openDrawer: () => set({ isDrawerOpen: true }),
+      closeDrawer: () => set({ isDrawerOpen: false }),
+      setDrawerOpen: (open) => set({ isDrawerOpen: open }),
 
       addItem: async (item) => {
         const { items, cartId, clearCart } = get();
@@ -62,37 +67,40 @@ export const useCartStore = create<CartStore>()(
         try {
           if (!cartId) {
             const result = await createShopifyCart({ variantId: item.variantId, quantity: item.quantity });
-            if (result) {
-              set({
-                cartId: result.cartId,
-                checkoutUrl: result.checkoutUrl,
-                items: [{ ...item, lineId: result.lineId }],
-              });
-            }
+            if (!result) return false;
+            set({
+              cartId: result.cartId,
+              checkoutUrl: result.checkoutUrl,
+              items: [{ ...item, lineId: result.lineId }],
+            });
+            return true;
           } else if (existingItem) {
             const newQuantity = existingItem.quantity + item.quantity;
             if (!existingItem.lineId) {
               console.error('Cannot update quantity for item without lineId');
-              return;
+              return false;
             }
             const result = await updateShopifyCartLine(cartId, existingItem.lineId, newQuantity);
             if (result.success) {
               const currentItems = get().items;
               set({ items: currentItems.map(i => i.variantId === item.variantId ? { ...i, quantity: newQuantity } : i) });
-            } else if (result.cartNotFound) {
-              clearCart();
+              return true;
             }
+            if (result.cartNotFound) clearCart();
+            return false;
           } else {
             const result = await addLineToShopifyCart(cartId, { variantId: item.variantId, quantity: item.quantity });
             if (result.success) {
               const currentItems = get().items;
               set({ items: [...currentItems, { ...item, lineId: result.lineId ?? null }] });
-            } else if (result.cartNotFound) {
-              clearCart();
+              return true;
             }
+            if (result.cartNotFound) clearCart();
+            return false;
           }
         } catch (error) {
           console.error('Failed to add item:', error);
+          return false;
         } finally {
           set({ isLoading: false });
         }
