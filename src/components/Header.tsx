@@ -91,22 +91,26 @@ const Header = () => {
 
           {/* Desktop nav links */}
           <nav className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className="relative font-sans uppercase transition-colors hover:text-[color:var(--bz-cream)] after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-px after:w-full after:bg-[#C9A84C] after:origin-left after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-200 after:ease-out"
-                style={{
-                  color: MUTED,
-                  fontSize: '12px',
-                  letterSpacing: '0.12em',
-                  // @ts-ignore – CSS var for hover
-                  ['--bz-cream' as any]: CREAM,
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const active = isActive(link.path);
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  aria-current={active ? 'page' : undefined}
+                  className={`relative font-sans uppercase transition-colors hover:text-[color:var(--bz-cream)] after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-px after:w-full after:bg-[#C9A84C] after:origin-left after:transition-transform after:duration-200 after:ease-out ${active ? 'after:scale-x-100' : 'after:scale-x-0 hover:after:scale-x-100'}`}
+                  style={{
+                    color: active ? CREAM : MUTED,
+                    fontSize: '12px',
+                    letterSpacing: '0.12em',
+                    // @ts-ignore – CSS var for hover
+                    ['--bz-cream' as any]: CREAM,
+                  }}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Right cluster */}
