@@ -558,6 +558,18 @@ const QuizResults = () => {
             </div>
           </div>
 
+          {/* Scent Coaching CTA */}
+          <div className="mt-12 rounded-2xl border border-luxury-gold/30 bg-luxury-black/40 p-6 md:p-8 text-center">
+            <p className="font-cormorant text-2xl md:text-3xl text-cream mb-2">Not sure which match is you?</p>
+            <p className="text-white/70 mb-5">Book a free 15-minute call with a Bazuki scent expert.</p>
+            <a
+              href="/scent-coaching"
+              className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-xs uppercase tracking-[0.2em] text-cream border border-luxury-gold/50 hover:bg-luxury-gold hover:text-luxury-black transition-colors"
+            >
+              Talk to a Scent Expert →
+            </a>
+          </div>
+
           {/* Analytics Section */}
           <div className="mt-12">
             <QuizAnalytics userAnswers={answers} />

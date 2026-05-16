@@ -54,6 +54,7 @@ const Footer = () => {
               <li><a href="/guide/find-your-signature-scent" className="text-white/70 hover:text-luxury-gold transition-colors">Find Your Signature Scent</a></li>
               <li><a href="/guide/perfume-notes-explained" className="text-white/70 hover:text-luxury-gold transition-colors">Perfume Notes Explained</a></li>
               <li><a href="/guide/ai-perfume-vs-traditional" className="text-white/70 hover:text-luxury-gold transition-colors">AI vs Traditional Perfume</a></li>
+              <li><a href="/scent-coaching" className="text-white/70 hover:text-luxury-gold transition-colors">Scent Coaching</a></li>
             </ul>
           </div>
 
