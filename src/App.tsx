@@ -89,6 +89,8 @@ const AppInner = () => {
           <Route path="/guide/find-your-signature-scent" element={<FindYourSignatureScent />} />
           <Route path="/guide/perfume-notes-explained" element={<PerfumeNotesExplained />} />
           <Route path="/guide/ai-perfume-vs-traditional" element={<AIPerfumeVsTraditional />} />
+          <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route path="/scent-library" element={<Navigate to="/collection" replace />} />
           <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
             <Route index element={<AdminDashboard />} />
             <Route path="dashboard" element={<AdminDashboard />} />
