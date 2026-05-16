@@ -20,8 +20,9 @@ const stats = [
 
 type TileData = {
   label: string;
-  color: string;
   descriptor: string;
+  image: string;
+  bgPosition?: string;
 };
 
 const tiles: TileData[] = [
