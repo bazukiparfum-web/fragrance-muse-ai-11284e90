@@ -381,11 +381,14 @@ const BookingDialog = ({
   const [form, setForm] = useState<BookingForm>({ name: "", email: "", whatsapp: "", fragrance: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setForm({ name: "", email: "", whatsapp: "", fragrance: "" });
       setErrors({});
+      setSubmitError(null);
+      setSubmitting(false);
     }
   }, [open]);
 
@@ -395,6 +398,7 @@ const BookingDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     const result = bookingSchema.safeParse(form);
     if (!result.success) {
       const fe: Record<string, string> = {};
@@ -408,18 +412,59 @@ const BookingDialog = ({
     if (!selected) return;
     setSubmitting(true);
     const d = result.data;
-    const { error } = await supabase.from("consultation_requests").insert({
+    const payload = {
       name: d.name,
       email: d.email,
       phone: d.whatsapp,
       comment: `[Scent Coaching · ${intent === "gift" ? "Gift" : "Self"}]\nWhen: ${whenLabel}\nFragrance interest: ${d.fragrance}`,
-    });
-    setSubmitting(false);
-    if (error) {
+    };
+    console.log("[ScentCoaching] Submitting booking", payload);
+
+    const timeoutMs = 12000;
+    const timeoutPromise = new Promise<{ timeout: true }>((resolve) =>
+      setTimeout(() => resolve({ timeout: true }), timeoutMs),
+    );
+
+    try {
+      const insertPromise = supabase.from("consultation_requests").insert(payload);
+      const raced: any = await Promise.race([insertPromise, timeoutPromise]);
+
+      if (raced && raced.timeout) {
+        console.error("[ScentCoaching] Booking insert timed out after", timeoutMs, "ms");
+        setSubmitError(
+          "Booking is taking longer than expected. Please check your connection and try again.",
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      const { error, status, statusText } = raced ?? {};
+      console.log("[ScentCoaching] Booking response", { status, statusText, error });
+
+      if (error) {
+        console.error("[ScentCoaching] Supabase insert error", error);
+        setSubmitError(
+          error.message
+            ? `Couldn't book your session: ${error.message}`
+            : "Couldn't book your session. Please try again.",
+        );
+        toast.error("Couldn't book your session. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+
+      setSubmitting(false);
+      onConfirmed({ name: d.name, whenLabel, fragrance: d.fragrance });
+    } catch (err: any) {
+      console.error("[ScentCoaching] Unexpected booking error", err);
+      setSubmitError(
+        err?.message
+          ? `Something went wrong: ${err.message}`
+          : "Something went wrong. Please try again.",
+      );
       toast.error("Couldn't book your session. Please try again.");
-      return;
+      setSubmitting(false);
     }
-    onConfirmed({ name: d.name, whenLabel, fragrance: d.fragrance });
   };
 
   const setField = <K extends keyof BookingForm>(k: K, v: string) => {
@@ -498,8 +543,16 @@ const BookingDialog = ({
             />
             {errors.fragrance && <p className="text-xs text-destructive mt-1">{errors.fragrance}</p>}
           </div>
+          {submitError && (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+            >
+              {submitError}
+            </div>
+          )}
           <Button type="submit" variant="luxury" className="w-full" disabled={submitting}>
-            {submitting ? "Booking…" : "Confirm Booking"}
+            {submitting ? "Booking…" : submitError ? "Try Again" : "Confirm Booking"}
           </Button>
         </form>
       </DialogContent>
