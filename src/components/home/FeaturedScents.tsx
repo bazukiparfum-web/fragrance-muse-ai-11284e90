@@ -20,7 +20,7 @@ const SCENTS: Scent[] = [
     top: "Bergamot",
     heart: "Rose",
     base: "Oud",
-    price: "From ₹299",
+    price: "From ₹700",
     gradient: "linear-gradient(135deg, #1a0f00 0%, #080808 100%)",
   },
   {
@@ -29,7 +29,7 @@ const SCENTS: Scent[] = [
     top: "Cardamom",
     heart: "Sandalwood",
     base: "Vanilla",
-    price: "From ₹299",
+    price: "From ₹700",
     gradient: "linear-gradient(135deg, #2a1a08 0%, #0a0a0a 100%)",
   },
   {
@@ -38,7 +38,7 @@ const SCENTS: Scent[] = [
     top: "Saffron",
     heart: "Amber",
     base: "Musk",
-    price: "From ₹299",
+    price: "From ₹700",
     gradient: "linear-gradient(135deg, #3a1f08 0%, #0d0d0d 100%)",
   },
   {
@@ -47,7 +47,7 @@ const SCENTS: Scent[] = [
     top: "Bergamot",
     heart: "Neroli",
     base: "Vetiver",
-    price: "From ₹299",
+    price: "From ₹700",
     gradient: "linear-gradient(135deg, #1f1a08 0%, #080808 100%)",
   },
 ];
