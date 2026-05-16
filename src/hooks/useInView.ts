@@ -44,7 +44,15 @@ export function useInView<T extends Element = HTMLDivElement>(
       { threshold, rootMargin }
     );
     obs.observe(node);
-    return () => obs.disconnect();
+
+    // Safety fallback: if IO never fires (e.g. element already in view, layout race),
+    // force reveal after 800ms so content never stays invisible.
+    const fallback = window.setTimeout(() => setInView(true), 800);
+
+    return () => {
+      obs.disconnect();
+      window.clearTimeout(fallback);
+    };
   }, [threshold, rootMargin, once]);
 
   return { ref, inView };

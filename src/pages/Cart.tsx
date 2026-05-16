@@ -30,16 +30,38 @@ const Cart = () => {
       <>
         <JsonLd id="breadcrumbs-cart" data={breadcrumbs} />
         <Header />
-        <div className="min-h-screen pt-24 pb-12">
-          <div className="container mx-auto px-4">
-            <div className="max-w-2xl mx-auto text-center py-16">
-              <h1 className="font-serif text-4xl mb-4">Your Cart is Empty</h1>
-              <p className="text-muted-foreground mb-8">
-                Start shopping to add items to your cart
+        <div className="min-h-screen pt-32 pb-20 bg-bz-primary">
+          <div className="container mx-auto px-6">
+            <div className="max-w-xl mx-auto text-center">
+              <p className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">
+                Your Cart
               </p>
-              <Button onClick={() => navigate('/')}>
-                Continue Shopping
-              </Button>
+              <h1 className="font-display text-cream text-4xl md:text-5xl mb-5">
+                Nothing here — yet.
+              </h1>
+              <p className="font-body text-cream-muted text-base leading-relaxed mb-10">
+                Begin with a 16-question journey and let our AI craft three fragrances made only for you.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mb-14">
+                <Button
+                  onClick={() => navigate('/shop/quiz')}
+                  className="rounded-pill bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md uppercase tracking-[0.18em] text-xs px-8 py-6"
+                >
+                  Take the Scent Quiz
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/collection')}
+                  className="rounded-pill border-gold-strong text-cream hover:bg-gold/10 uppercase tracking-[0.18em] text-xs px-8 py-6"
+                >
+                  Browse the Library
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-4 pt-10 border-t border-gold/15 text-[10px] uppercase tracking-[0.2em] text-cream-muted">
+                <div>Free Pan-India Shipping</div>
+                <div>AI-Matched Formulas</div>
+                <div>Crafted in India</div>
+              </div>
             </div>
           </div>
         </div>

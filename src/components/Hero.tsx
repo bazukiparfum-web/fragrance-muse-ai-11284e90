@@ -151,7 +151,7 @@ const Hero = () => {
                 maxWidth: "420px",
               }}
             >
-              Answer 7 questions. Receive 3 perfumes crafted uniquely for you —
+              A 16-question journey. Receive 3 perfumes crafted uniquely for you —
               no two bottles alike.
             </p>
 

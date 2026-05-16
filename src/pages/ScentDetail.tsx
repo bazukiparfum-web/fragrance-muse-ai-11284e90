@@ -116,7 +116,7 @@ export default function ScentDetail() {
                 },
               })),
             },
-            options: [{ name: 'Size', values: ['10ml', '30ml', '50ml'] }],
+            options: [{ name: 'Size', values: ['30ml', '50ml'] }],
           },
         },
         variantId: variant.id,
