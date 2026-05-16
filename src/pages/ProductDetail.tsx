@@ -355,27 +355,33 @@ export default function ProductDetail() {
               >
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="w-10 h-10 flex items-center justify-center text-gold hover:text-gold-strong transition-colors disabled:opacity-40"
-                  disabled={quantity <= 1}
+                  className="w-10 h-10 flex items-center justify-center text-gold hover:text-gold-strong transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={isOutOfStock || quantity <= 1}
                   aria-label="Decrease quantity"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
                 <span className="w-10 text-center text-cream text-sm">{quantity}</span>
                 <button
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="w-10 h-10 flex items-center justify-center text-gold hover:text-gold-strong transition-colors"
+                  onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                  className="w-10 h-10 flex items-center justify-center text-gold hover:text-gold-strong transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={isOutOfStock || quantity >= maxQuantity}
                   aria-label="Increase quantity"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
+              {!isOutOfStock && typeof (selectedVariant as any)?.quantityAvailable === 'number' && (selectedVariant as any).quantityAvailable > 0 && (selectedVariant as any).quantityAvailable <= 10 && (
+                <p className="mt-2 text-xs text-gold/80">
+                  Only {(selectedVariant as any).quantityAvailable} left in stock
+                </p>
+              )}
             </div>
 
             {/* Add to Cart */}
             <Button
               onClick={handleAddToCart}
-              disabled={!selectedVariant?.availableForSale || addStatus === 'adding'}
+              disabled={isOutOfStock || addStatus === 'adding'}
               className={cn(
                 'w-full rounded-full mb-3 font-medium transition-colors',
                 addStatus === 'added'
@@ -392,7 +398,7 @@ export default function ProductDetail() {
                 <><Check className="h-4 w-4 mr-2" /> Added</>
               ) : addStatus === 'error' ? (
                 'Failed — Retry'
-              ) : !selectedVariant?.availableForSale ? (
+              ) : isOutOfStock ? (
                 'Sold Out'
               ) : (
                 'Add to Cart'
@@ -402,7 +408,7 @@ export default function ProductDetail() {
             {/* Buy Now */}
             <Button
               onClick={handleBuyNow}
-              disabled={!selectedVariant?.availableForSale || buyStatus === 'loading'}
+              disabled={isOutOfStock || buyStatus === 'loading'}
               variant="outline"
               className="w-full rounded-full bg-transparent text-cream hover:bg-gold/10 hover:text-cream"
               style={{ height: '52px', border: '1px solid hsl(var(--bz-gold))' }}
