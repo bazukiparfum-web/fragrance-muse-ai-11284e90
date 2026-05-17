@@ -1,49 +1,72 @@
+# Full QA & Premium Polish Pass — Bazuki Perfumes
 
-# Full QA & Premium Polish Pass — Bazuki
+A previous pass already fixed nav, copy (16-question, 30ml, ₹700), debug-panel gating, empty-cart redesign, and reveal-fallback. This plan covers what remains.
 
-A scope this broad ("audit every page + fix everything + redesign for premium") is too large to do well in one shot — it would burn through credits and produce shallow fixes everywhere instead of meaningful improvements. I'd like to split it into **two coordinated phases**: a structured audit pass, then targeted fix batches you approve.
+## Scope
 
-## Phase 1 — Audit (read-only, ~1 loop)
+Audit every public route in the browser (desktop 1336 + mobile 390), fix issues inline, then re-verify. Keep all changes within the existing black/gold/cream design system (`index.css` tokens, no raw colors).
 
-I'll walk the live preview at desktop + mobile viewports across every key route and produce a single **prioritized issue report** grouped by severity (P0 blocker → P3 polish), with screenshots. Routes covered:
+## Phase 1 — Live audit (browser)
 
-```text
-Public:     /  /collection  /product/:handle  /ingredients  /about
-            /business  /scent-coaching  /gift-cards
-Quiz:       /quiz  /quiz/yourself  /quiz/someone-else  /quiz/results
-Commerce:   /shop/cart  /shop/checkout  /order-confirmation
-Account:    /auth  /shop/account  /shop/account/scents/:id
-Legal:      /legal/privacy  /legal/terms  /legal/shipping
-Guides:     /guides/*
+Walk these routes at desktop + mobile, capture screenshots, log issues:
+
+```
+/                      /shop/quiz              /shop/cart (empty + filled)
+/collection            /shop/quiz/for-yourself /shop/checkout
+/collection/:id        /shop/quiz/results      /shop/account
+/products/:handle      /business               /auth + /reset-password
+/about                 /scent-coaching         /gift-cards
+/ingredients           /guide/* (3 pages)      /legal/* (3 pages)
 ```
 
-For each route I check the 10 areas you listed (layout, mobile, CTAs, forms, contact links, images, spacing, brand consistency, broken links, conversion flow) and log concrete issues — no fixes yet.
+For each: layout overflow, image sizing/aspect, CTA wiring, dead buttons, spacing rhythm, hierarchy, mobile tap targets ≥44px, sticky bars, footer parity.
 
-Deliverable: a single report you can skim and tell me which buckets to fix.
+## Phase 2 — Brand & visual polish
 
-## Phase 2 — Fixes (batched by theme, your pick)
+- **Typography rhythm**: enforce Cormorant Garamond display + Inter body sizes (h1 clamp 2.5→4.5rem, h2 2→3rem, body 15/16px, eyebrows 10px uppercase tracking-[0.3em]) across pages that drift.
+- **Color discipline**: replace any `text-white`/`bg-black`/raw hex with `text-cream`, `bg-bz-primary`, `text-gold`, `border-gold`. Audit `Cart.tsx` filled-state (still uses `bg-secondary/30`, `font-serif` — bring into Bazuki system).
+- **Section spacing**: standardize section padding `py-20 md:py-28`, container `px-6`, max-w-7xl.
+- **Gold accents**: hairline dividers (`border-gold/15`), subtle `glow-gold-sm` on primary cards/CTAs, rounded-pill buttons everywhere.
+- **Imagery**: add `loading="lazy"`, `decoding="async"`, explicit width/height or aspect-ratio wrappers to prevent CLS; fallback placeholder for broken Shopify images.
 
-Once you've seen the report, I batch fixes into themed PR-style passes so each one is reviewable and reversible:
+## Phase 3 — CTAs, links, forms
 
-1. **Brand system pass** — lock the black/white/gold palette in `index.css` + `tailwind.config.ts`, audit every component for hard-coded colors, fix dark-mode contrast, standardize Cormorant Garamond + Inter usage, gold accent rules (where allowed, opacity, hover states).
-2. **Layout & spacing pass** — section padding rhythm, container widths, vertical hierarchy, mobile breakpoints, sticky nav behavior.
-3. **Conversion flow pass** — Hero CTA → Quiz → Results → PDP → Cart → Checkout → Confirmation. Tighten copy, fix dead buttons, ensure every CTA routes correctly, add trust signals at decision points.
-4. **Image & performance pass** — sizing, aspect ratios, `loading="lazy"`, alt text, hero image weight.
-5. **Forms & contact pass** — validation states, WhatsApp links (`wa.me` format + prefilled message), consultation form, auth forms, error/success states.
-6. **Premium polish pass** — micro-interactions, hover states, loading overlays, empty states, the small details that make it feel luxury.
+- **CTA audit**: every button leads somewhere meaningful; replace any `onClick` no-ops; primary CTA per section uses gold pill, secondary uses outline.
+- **WhatsApp/contact**: verify `wa.me/...` links open new tab with `rel="noopener"`; confirm number is consistent in Footer, Business, Contact, ScentCoaching.
+- **Forms**: Business lead form, consultation, auth, checkout — add inline validation states, disabled-during-submit, success toast in brand colors, error fallback copy.
+- **Reset password**: surface friendlier "Failed to fetch" message + retry (carry-over from prior thread).
 
-You can pick any subset (e.g., "do 1, 3, 6 only") or run them all sequentially.
+## Phase 4 — Mobile responsiveness
 
-## What I will NOT do without explicit approval
+- Header drawer: confirm 5-item nav + auth + cart all reachable at 360px.
+- Hero: clamp headline, stack CTAs vertically <640px.
+- Quiz: sticky bottom nav already in place — verify safe-area-inset padding.
+- Cart filled state: stack summary below items <lg.
+- Tables in admin not in scope (admin polish done separately).
 
-- Restructure information architecture (page order, nav, removing/adding pages).
-- Rewrite long-form copy beyond CTA microcopy.
-- Touch backend logic, RLS, edge functions, or the cart/Shopify integration (last session stabilized this — out of scope for QA).
-- Mass-regenerate images.
+## Phase 5 — Conversion flow
 
-## My ask
+- Homepage → Quiz CTA above the fold + repeated mid-page + final band.
+- Collection → product card → PDP → Add to cart → cart drawer → checkout: smoke-test end-to-end.
+- Trust strip (Pan-India shipping · AI-matched · Crafted in India) on Home, Cart, Checkout, PDP.
+- Footer: ensure Gift Cards + Scent Library + Legal + WhatsApp present everywhere.
 
-Reply with either:
-- **"Run Phase 1"** — I produce the audit report.
-- **"Skip audit, just do passes X, Y, Z"** — I jump straight to specific themed fixes.
-- Or narrow the scope (e.g., "just homepage + PDP + cart, brand + polish only").
+## Phase 6 — Verification
+
+- Re-screenshot each route at 1336 + 390 after fixes.
+- Console must be free of new errors (existing Supabase auth-refresh errors are network/extension-related, out of scope).
+- Build passes.
+
+## Technical notes
+
+- All edits in `src/components/**` and `src/pages/**`; no schema, no edge functions.
+- Use `code--line_replace` for targeted edits; only rewrite `Cart.tsx` filled-state and any page with >40% of its body needing changes.
+- Reuse existing primitives (`Button`, `Card`, `Reveal`, `TrustStrip`) — do not introduce new components unless a pattern repeats 3+ times.
+
+## Deliverable
+
+A single batched implementation pass with before/after screenshots of the worst offenders (Home hero, Cart filled, Business form, Mobile header, Checkout), plus a short changelog grouped by file.
+
+---
+
+**Approve to run the audit + fixes**, or tell me to narrow scope (e.g. "homepage + checkout only", "skip guides", "mobile only").

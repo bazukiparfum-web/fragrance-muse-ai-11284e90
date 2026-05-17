@@ -1,92 +1,123 @@
-import { Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
+import { Instagram, Facebook, Mail, Phone, MapPin, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+
+const WHATSAPP_NUMBER = "917990097922"; // E.164 without +
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-luxury-black text-white py-16">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
+    <footer className="bg-bz-primary pt-20 pb-10 border-t border-gold/15">
+      <div className="container mx-auto px-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10 lg:gap-12 mb-16">
           {/* Brand */}
-          <div>
-            <h3 className="font-serif text-2xl font-bold mb-4 text-luxury-gold">Bazuki</h3>
-            <p className="text-white/70 mb-6">
-              AI-crafted luxury fragrances and 360° aroma solutions for discerning individuals and businesses.
+          <div className="col-span-2 lg:col-span-1">
+            <Link
+              to="/"
+              className="font-display text-3xl text-cream tracking-[0.25em] inline-block mb-5"
+              aria-label="Bazuki home"
+            >
+              BAZUKI
+            </Link>
+            <p className="text-cream-muted text-sm leading-relaxed mb-6 max-w-xs">
+              AI-crafted luxury fragrances and 360° aroma solutions, made in India for discerning individuals and brands.
             </p>
-            <div className="flex gap-4">
-              <a href="https://www.instagram.com/bazukiperfume/" target="_blank" rel="noopener noreferrer" aria-label="Bazuki on Instagram" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-luxury-gold transition-colors">
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a href="https://www.facebook.com/Bazukiperfume" target="_blank" rel="noopener noreferrer" aria-label="Bazuki on Facebook" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-luxury-gold transition-colors">
-                <Facebook className="w-5 h-5" />
-              </a>
+            <div className="flex gap-3">
+              {[
+                { href: "https://www.instagram.com/bazukiperfume/", label: "Instagram", Icon: Instagram },
+                { href: "https://www.facebook.com/Bazukiperfume", label: "Facebook", Icon: Facebook },
+                { href: `https://wa.me/${WHATSAPP_NUMBER}`, label: "WhatsApp", Icon: MessageCircle },
+              ].map(({ href, label, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Bazuki on ${label}`}
+                  className="w-9 h-9 rounded-full border border-gold/30 text-cream-muted hover:text-bz-primary hover:bg-gold hover:border-gold flex items-center justify-center transition-colors"
+                >
+                  <Icon strokeWidth={1.25} className="w-4 h-4" />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Products */}
+          {/* Shop */}
           <div>
-            <h4 className="font-semibold text-lg mb-4 uppercase tracking-wider">Products</h4>
-            <ul className="space-y-3">
-              <li><a href="/collection" className="text-white/70 hover:text-luxury-gold transition-colors">Signature Collection</a></li>
-              <li><a href="/shop/quiz" className="text-white/70 hover:text-luxury-gold transition-colors">AI Fragrance Quiz</a></li>
-              <li><a href="/collection" className="text-white/70 hover:text-luxury-gold transition-colors">Gift Sets</a></li>
-              <li><a href="/collection" className="text-white/70 hover:text-luxury-gold transition-colors">Sample Kits</a></li>
+            <h4 className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">Shop</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link to="/collection" className="text-cream-muted hover:text-gold transition-colors">Signature Collection</Link></li>
+              <li><Link to="/shop/quiz" className="text-cream-muted hover:text-gold transition-colors">AI Scent Quiz</Link></li>
+              <li><Link to="/gift-cards" className="text-cream-muted hover:text-gold transition-colors">Gift Cards</Link></li>
+              <li><Link to="/collection" className="text-cream-muted hover:text-gold transition-colors">Discovery Sets</Link></li>
             </ul>
           </div>
 
           {/* Business */}
           <div>
-            <h4 className="font-semibold text-lg mb-4 uppercase tracking-wider">Business</h4>
-            <ul className="space-y-3">
-              <li><a href="/business" className="text-white/70 hover:text-luxury-gold transition-colors">360° Aroma Solutions</a></li>
-              <li><a href="/business" className="text-white/70 hover:text-luxury-gold transition-colors">Custom Fragrances</a></li>
-              <li><a href="/business#consultation" className="text-white/70 hover:text-luxury-gold transition-colors">Consultation</a></li>
-              <li><a href="/business" className="text-white/70 hover:text-luxury-gold transition-colors">Case Studies</a></li>
+            <h4 className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">Business</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link to="/business" className="text-cream-muted hover:text-gold transition-colors">360° Aroma Solutions</Link></li>
+              <li><Link to="/business" className="text-cream-muted hover:text-gold transition-colors">Custom Fragrances</Link></li>
+              <li><Link to="/business#consultation" className="text-cream-muted hover:text-gold transition-colors">Book a Consultation</Link></li>
+              <li><Link to="/scent-coaching" className="text-cream-muted hover:text-gold transition-colors">Scent Coaching</Link></li>
             </ul>
           </div>
 
           {/* Discover */}
           <div>
-            <h4 className="font-semibold text-lg mb-4 uppercase tracking-wider">Discover</h4>
-            <ul className="space-y-3">
-              <li><a href="/ingredients" className="text-white/70 hover:text-luxury-gold transition-colors">Ingredients</a></li>
-              <li><a href="/about" className="text-white/70 hover:text-luxury-gold transition-colors">Science & Technology</a></li>
-              <li><a href="/guide/find-your-signature-scent" className="text-white/70 hover:text-luxury-gold transition-colors">Find Your Signature Scent</a></li>
-              <li><a href="/guide/perfume-notes-explained" className="text-white/70 hover:text-luxury-gold transition-colors">Perfume Notes Explained</a></li>
-              <li><a href="/guide/ai-perfume-vs-traditional" className="text-white/70 hover:text-luxury-gold transition-colors">AI vs Traditional Perfume</a></li>
-              <li><a href="/scent-coaching" className="text-white/70 hover:text-luxury-gold transition-colors">Scent Coaching</a></li>
+            <h4 className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">Discover</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link to="/about" className="text-cream-muted hover:text-gold transition-colors">Our Story</Link></li>
+              <li><Link to="/ingredients" className="text-cream-muted hover:text-gold transition-colors">Ingredient Library</Link></li>
+              <li><Link to="/guide/find-your-signature-scent" className="text-cream-muted hover:text-gold transition-colors">Find Your Scent</Link></li>
+              <li><Link to="/guide/perfume-notes-explained" className="text-cream-muted hover:text-gold transition-colors">Perfume Notes 101</Link></li>
+              <li><Link to="/guide/ai-perfume-vs-traditional" className="text-cream-muted hover:text-gold transition-colors">AI vs Traditional</Link></li>
             </ul>
           </div>
 
           {/* Contact */}
-          <div>
-            <h4 className="font-semibold text-lg mb-4 uppercase tracking-wider">Contact</h4>
-            <ul className="space-y-3">
-              <li className="flex gap-3 text-white/70">
-                <MapPin className="w-5 h-5 flex-shrink-0" />
+          <div className="col-span-2 md:col-span-3 lg:col-span-1">
+            <h4 className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">Contact</h4>
+            <ul className="space-y-3 text-sm">
+              <li className="flex gap-3 text-cream-muted">
+                <MapPin strokeWidth={1.25} className="w-4 h-4 mt-0.5 flex-shrink-0 text-gold" />
                 <span>Ahmedabad, Gujarat, India</span>
               </li>
-              <li className="flex gap-3 text-white/70">
-                <Phone className="w-5 h-5 flex-shrink-0" />
-                <a href="tel:+917990097922" className="hover:text-luxury-gold transition-colors">+91 79900 97922</a>
+              <li className="flex gap-3 text-cream-muted">
+                <Phone strokeWidth={1.25} className="w-4 h-4 mt-0.5 flex-shrink-0 text-gold" />
+                <a href="tel:+917990097922" className="hover:text-gold transition-colors">+91 79900 97922</a>
               </li>
-              <li className="flex gap-3 text-white/70">
-                <Mail className="w-5 h-5 flex-shrink-0" />
-                <a href="mailto:business@bazuki360aroma.com" className="hover:text-luxury-gold transition-colors break-all">business@bazuki360aroma.com</a>
+              <li className="flex gap-3 text-cream-muted">
+                <MessageCircle strokeWidth={1.25} className="w-4 h-4 mt-0.5 flex-shrink-0 text-gold" />
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gold transition-colors"
+                >
+                  Chat on WhatsApp
+                </a>
+              </li>
+              <li className="flex gap-3 text-cream-muted">
+                <Mail strokeWidth={1.25} className="w-4 h-4 mt-0.5 flex-shrink-0 text-gold" />
+                <a href="mailto:business@bazuki360aroma.com" className="hover:text-gold transition-colors break-all">
+                  business@bazuki360aroma.com
+                </a>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-8">
+        <div className="border-t border-gold/15 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-white/50 text-sm">
-              © {currentYear} Bazuki Perfumes. All rights reserved.
+            <p className="font-body text-dim text-xs tracking-wide">
+              © {currentYear} Bazuki Perfumes · Crafted in India
             </p>
-            <div className="flex gap-6 text-sm">
-              <a href="/legal/privacy" className="text-white/50 hover:text-luxury-gold transition-colors">Privacy Policy</a>
-              <a href="/legal/terms" className="text-white/50 hover:text-luxury-gold transition-colors">Terms of Service</a>
-              <a href="/legal/shipping" className="text-white/50 hover:text-luxury-gold transition-colors">Shipping Policy</a>
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs">
+              <Link to="/legal/privacy" className="text-dim hover:text-gold transition-colors">Privacy</Link>
+              <Link to="/legal/terms" className="text-dim hover:text-gold transition-colors">Terms</Link>
+              <Link to="/legal/shipping" className="text-dim hover:text-gold transition-colors">Shipping</Link>
             </div>
           </div>
         </div>
