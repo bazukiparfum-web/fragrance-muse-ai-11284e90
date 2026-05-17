@@ -6,7 +6,7 @@ import { WordReveal } from "@/components/anim/WordReveal";
 const QuizCTABanner = () => {
   return (
     <section
-      className="w-full py-20 md:py-28"
+      className="w-full py-16 md:py-20"
       style={{ background: "linear-gradient(90deg, #1A0F00 0%, #080808 100%)" }}
     >
       <div className="container mx-auto px-6">

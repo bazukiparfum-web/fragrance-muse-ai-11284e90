@@ -113,7 +113,9 @@ const AppInner = () => {
         </Routes>
       </BrowserRouter>
       <BazukiCartDrawer />
-      {import.meta.env.DEV && (
+      {(import.meta.env.DEV ||
+        (typeof window !== 'undefined' &&
+          new URLSearchParams(window.location.search).get('debug') === '1')) && (
         <>
           <ShopifyDebugPanel />
           <CheckoutTestChecklist />
