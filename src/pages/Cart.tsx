@@ -73,129 +73,126 @@ const Cart = () => {
     <>
       <JsonLd id="breadcrumbs-cart" data={breadcrumbs} />
       <Header />
-      <div className="min-h-screen pt-24 pb-12 bg-secondary/30">
-        <div className="container mx-auto px-4">
+      <div className="min-h-screen pt-28 pb-20 bg-bz-primary">
+        <div className="container mx-auto px-6 max-w-6xl">
           <Button
             variant="ghost"
-            onClick={() => navigate('/')}
-            className="mb-6"
+            onClick={() => navigate('/collection')}
+            className="mb-8 text-cream-muted hover:text-gold hover:bg-transparent uppercase tracking-[0.18em] text-[11px]"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="mr-2 h-3 w-3" />
             Continue Shopping
           </Button>
+
+          <div className="mb-10">
+            <p className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-3">Your Cart</p>
+            <h1 className="font-display text-cream text-4xl md:text-5xl">Review your selection</h1>
+          </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              <h1 className="font-serif text-4xl mb-6">Shopping Cart</h1>
-              
               {cartItems.map((item) => (
-                <Card key={item.id} className="p-6">
-                  <div className="flex gap-6">
-                    <img
-                      src={item.product_image}
-                      alt={item.product_name}
-                      className="w-24 h-24 object-cover rounded"
-                    />
-                    
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-semibold text-lg">{item.product_name}</h3>
-                          <p className="text-sm text-muted-foreground">Size: {item.size}</p>
-                        </div>
-                        <p className="font-semibold text-lg">₹{(item.price * item.quantity).toFixed(2)}</p>
-                      </div>
-                      
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            disabled={loading || item.quantity <= 1}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="w-8 text-center font-semibold">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            disabled={loading}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFromCart(item.id)}
-                          disabled={loading}
-                          className="text-destructive hover:text-destructive"
+                <div
+                  key={item.id}
+                  className="bg-bz-card border border-gold/15 rounded-xl p-5 md:p-6 flex gap-5 md:gap-6"
+                >
+                  <img
+                    src={item.product_image}
+                    alt={item.product_name}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-lg border border-gold/10 flex-shrink-0"
+                  />
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-4 mb-1">
+                      <h3 className="font-display text-cream text-lg md:text-xl leading-tight truncate">
+                        {item.product_name}
+                      </h3>
+                      <p className="font-body text-gold text-base md:text-lg whitespace-nowrap">
+                        ₹{(item.price * item.quantity).toFixed(0)}
+                      </p>
+                    </div>
+                    <p className="text-cream-muted text-xs uppercase tracking-[0.18em] mb-4">
+                      {item.size}
+                    </p>
+
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-2 border border-gold/20 rounded-full px-1 py-1">
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          disabled={loading || item.quantity <= 1}
+                          aria-label="Decrease quantity"
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-cream-muted hover:text-gold disabled:opacity-40 transition-colors"
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Remove
-                        </Button>
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="w-6 text-center text-cream text-sm">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          disabled={loading}
+                          aria-label="Increase quantity"
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-cream-muted hover:text-gold transition-colors"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
                       </div>
+
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        disabled={loading}
+                        className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-cream-muted hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Remove
+                      </button>
                     </div>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
 
             {/* Order Summary */}
             <div>
-              <Card className="p-6 sticky top-24">
-                <h2 className="font-serif text-2xl mb-6">Order Summary</h2>
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
+              <div className="bg-bz-card border border-gold/15 rounded-xl p-6 sticky top-28">
+                <p className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-3">Order Summary</p>
+                <h2 className="font-display text-cream text-2xl mb-6">Total</h2>
+
+                <div className="space-y-4 text-sm">
+                  <div className="flex justify-between text-cream-muted">
+                    <span>Subtotal</span>
+                    <span className="text-cream">₹{subtotal.toFixed(0)}</span>
                   </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Delivery</span>
-                    <span className="font-semibold text-accent">
-                      {deliveryFee === 0 ? 'FREE' : `₹${deliveryFee.toFixed(2)}`}
+
+                  <div className="flex justify-between text-cream-muted">
+                    <span>Delivery</span>
+                    <span className="text-gold uppercase tracking-wider text-xs">
+                      {deliveryFee === 0 ? 'Free · Pan-India' : `₹${deliveryFee.toFixed(0)}`}
                     </span>
                   </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex justify-between text-lg">
-                    <span className="font-semibold">Total</span>
-                    <span className="font-bold">₹{total.toFixed(2)}</span>
+
+                  <Separator className="bg-gold/15" />
+
+                  <div className="flex justify-between items-baseline">
+                    <span className="font-display text-cream text-lg">Total</span>
+                    <span className="font-display text-gold text-2xl">₹{total.toFixed(0)}</span>
                   </div>
                 </div>
-                
+
                 <Button
-                  className="w-full mt-6"
-                  size="lg"
+                  className="w-full mt-6 rounded-pill bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md uppercase tracking-[0.18em] text-xs py-6"
                   onClick={() => navigate('/shop/checkout')}
                 >
                   Proceed to Checkout
                 </Button>
 
-                {/* Upsell Section */}
-                <div className="mt-8 pt-6 border-t">
-                  <h3 className="font-semibold mb-4">You May Also Like</h3>
-                  <div className="space-y-3">
-                    <div className="text-sm">
-                      <p className="font-medium">Premium Gift Wrapping</p>
-                      <p className="text-muted-foreground">₹199</p>
-                    </div>
-                    <div className="text-sm">
-                      <p className="font-medium">Fragrance Travel Set</p>
-                      <p className="text-muted-foreground">₹899</p>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-3 gap-2 mt-6 pt-6 border-t border-gold/15 text-[9px] uppercase tracking-[0.18em] text-cream-muted text-center">
+                  <div>Free Shipping</div>
+                  <div>Secure Pay</div>
+                  <div>Made in India</div>
                 </div>
-              </Card>
+              </div>
             </div>
           </div>
         </div>

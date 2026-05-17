@@ -155,9 +155,13 @@ const Auth = () => {
       setShowResetDialog(false);
       setResetEmail('');
     } catch (error: any) {
+      const msg = String(error?.message || '');
+      const isNetwork = msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network');
       toast({
-        title: 'Error',
-        description: error.message,
+        title: isNetwork ? 'Connection blocked' : 'Could not send reset link',
+        description: isNetwork
+          ? 'Your browser blocked the request. Try disabling ad-blockers / privacy extensions, or open bazukifragrance.com in a fresh tab and retry.'
+          : msg || 'Please try again in a moment.',
         variant: 'destructive',
       });
     } finally {

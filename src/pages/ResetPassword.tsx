@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 
@@ -17,33 +16,26 @@ const ResetPassword = () => {
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.includes('type=recovery')) {
-      setIsRecovery(true);
-    }
+    if (hash.includes('type=recovery')) setIsRecovery(true);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsRecovery(true);
-      }
+      if (event === 'PASSWORD_RECOVERY') setIsRecovery(true);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-
-      toast({ title: 'Password updated successfully!' });
+      toast({ title: 'Password updated', description: 'You are signed in. Welcome back.' });
       navigate('/');
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message,
+        title: 'Could not update password',
+        description: error?.message || 'Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -51,48 +43,67 @@ const ResetPassword = () => {
     }
   };
 
+  const Frame = ({ children }: { children: React.ReactNode }) => (
+    <>
+      <Header />
+      <div className="min-h-screen pt-32 pb-20 bg-bz-primary flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-6">
+          <div className="bg-bz-card border border-gold/15 rounded-xl p-8 md:p-10">
+            {children}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
   if (!isRecovery) {
     return (
-      <>
-        <Header />
-        <div className="min-h-screen pt-24 flex items-center justify-center bg-secondary/30">
-          <Card className="max-w-md p-8 text-center">
-            <h1 className="font-serif text-2xl mb-4">Invalid Link</h1>
-            <p className="text-muted-foreground mb-4">This password reset link is invalid or has expired.</p>
-            <Button onClick={() => navigate('/auth')}>Back to Sign In</Button>
-          </Card>
-        </div>
-      </>
+      <Frame>
+        <p className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-3 text-center">Reset Link</p>
+        <h1 className="font-display text-cream text-3xl mb-4 text-center">Link expired</h1>
+        <p className="text-cream-muted text-sm leading-relaxed mb-8 text-center">
+          This password reset link is invalid or has expired. Request a fresh one from the sign-in screen.
+        </p>
+        <Button
+          onClick={() => navigate('/auth')}
+          className="w-full rounded-pill bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md uppercase tracking-[0.18em] text-xs py-6"
+        >
+          Back to Sign In
+        </Button>
+      </Frame>
     );
   }
 
   return (
-    <>
-      <Header />
-      <div className="min-h-screen pt-24 flex items-center justify-center bg-secondary/30">
-        <Card className="max-w-md w-full p-8">
-          <h1 className="font-serif text-2xl text-center mb-6">Set New Password</h1>
-          <form onSubmit={handleReset} className="space-y-4">
-            <div>
-              <Label htmlFor="new-password">New Password</Label>
-              <Input
-                id="new-password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-              <p className="text-xs text-muted-foreground mt-1">Must be at least 6 characters</p>
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Updating...' : 'Update Password'}
-            </Button>
-          </form>
-        </Card>
-      </div>
-    </>
+    <Frame>
+      <p className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-3 text-center">Account</p>
+      <h1 className="font-display text-cream text-3xl mb-6 text-center">Set a new password</h1>
+      <form onSubmit={handleReset} className="space-y-5">
+        <div>
+          <Label htmlFor="new-password" className="text-cream-muted text-xs uppercase tracking-[0.18em]">
+            New Password
+          </Label>
+          <Input
+            id="new-password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            className="mt-2 bg-bz-primary border-gold/20 text-cream"
+          />
+          <p className="text-[11px] text-cream-muted mt-2">Use at least 6 characters.</p>
+        </div>
+        <Button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-pill bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md uppercase tracking-[0.18em] text-xs py-6"
+        >
+          {loading ? 'Updating…' : 'Update Password'}
+        </Button>
+      </form>
+    </Frame>
   );
 };
 
