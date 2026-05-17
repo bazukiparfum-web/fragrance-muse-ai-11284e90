@@ -38,8 +38,12 @@ export default function ShopifyDebugPanel() {
     (import.meta.env.VITE_SHOPIFY_STORE_DOMAIN as string | undefined) ||
     SHOPIFY_STORE_PERMANENT_DOMAIN;
 
+  const debugEnabled =
+    import.meta.env.DEV ||
+    (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "1");
+
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
+    if (!debugEnabled) return;
     let cancelled = false;
     (async () => {
       try {
@@ -67,7 +71,7 @@ export default function ShopifyDebugPanel() {
     };
   }, []);
 
-  if (!import.meta.env.DEV || dismissed) return null;
+  if (!debugEnabled || dismissed) return null;
 
   return (
     <div
@@ -75,7 +79,10 @@ export default function ShopifyDebugPanel() {
       style={{ lineHeight: 1.45 }}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <strong className="text-[12px]">Shopify Debug</strong>
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+          <strong className="text-[12px]">Testing Mode Active</strong>
+        </div>
         <button
           onClick={() => setDismissed(true)}
           className="text-white/60 hover:text-white"
