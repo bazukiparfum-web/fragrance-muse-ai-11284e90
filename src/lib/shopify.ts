@@ -181,10 +181,16 @@ export async function storefrontApiRequest(query: string, variables: any = {}) {
   return data;
 }
 
-export async function fetchShopifyProducts(): Promise<ShopifyProduct[]> {
-  const data = await storefrontApiRequest(STOREFRONT_QUERY, { first: 10 });
-  if (!data) return [];
-  return data.data.products.edges;
+export async function fetchShopifyProducts(first: number = 10): Promise<ShopifyProduct[]> {
+  try {
+    const data = await storefrontApiRequest(STOREFRONT_QUERY, { first });
+    if (!data) return [];
+    const edges = data?.data?.products?.edges ?? [];
+    return edges;
+  } catch (err) {
+    console.error("[Shopify] fetchShopifyProducts failed:", err);
+    return [];
+  }
 }
 
 export const PRODUCT_BY_HANDLE_QUERY = `
