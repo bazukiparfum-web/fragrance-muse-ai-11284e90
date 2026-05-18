@@ -12,6 +12,7 @@ import { Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/cartStore";
 import type { LibraryItem } from "@/lib/libraryMapper";
+import ProductImage from "@/components/library/ProductImage";
 
 interface Props {
   item: LibraryItem;
