@@ -87,20 +87,13 @@ export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
       )}
       style={{ animationDelay: `${Math.min(index, 12) * 50}ms` }}
     >
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-bz-secondary/60">
-        {image ? (
-          <img
-            src={image.url}
-            alt={image.altText || raw.node.title}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-gold-muted text-xs uppercase tracking-widest">
-            No image
-          </div>
-        )}
-      </div>
+      <ProductImage
+        src={image?.url}
+        alt={image?.altText || raw.node.title}
+        aspect="aspect-[4/5]"
+        eager={index < 3}
+        imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
+      />
 
       <div className="flex flex-col gap-3 p-5">
         <div className="flex items-start justify-between gap-3">
