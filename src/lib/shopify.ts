@@ -174,6 +174,11 @@ export async function storefrontApiRequest(query: string, variables: any = {}) {
   const data = await response.json();
 
   if (data.errors) {
+    // If we still got usable data (partial response), warn and return it.
+    if (data.data) {
+      console.warn("[Shopify] Partial response with errors:", data.errors);
+      return data;
+    }
     throw new Error(`Error calling Shopify: ${data.errors.map((e: any) => e.message).join(', ')}`);
   }
 
