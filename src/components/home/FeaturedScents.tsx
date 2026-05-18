@@ -4,6 +4,7 @@ import { Loader2, Check } from "lucide-react";
 import { Reveal } from "@/components/anim/Reveal";
 import { fetchShopifyProducts, type ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
+import ProductImage from "@/components/library/ProductImage";
 
 const formatINR = (amount: string | number) => {
   const n = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -129,22 +130,13 @@ const ShopifyMiniCard = ({ product, index }: { product: ShopifyProduct; index: n
       onClick={() => navigate(`/products/${node.handle}`)}
       className="group cursor-pointer rounded-xl overflow-hidden bg-bz-card border border-gold/15 transition-all duration-200 hover:-translate-y-1 hover:glow-gold-sm h-full flex flex-col"
     >
-      <div className="aspect-[4/5] w-full overflow-hidden bg-bz-secondary/60 relative">
-        {image ? (
-          <img
-            src={image.url}
-            alt={image.altText || node.title}
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-            style={{ animationDelay: `${index * 50}ms` }}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-gold-muted text-xs uppercase tracking-widest">
-            No image
-          </div>
-        )}
-      </div>
+      <ProductImage
+        src={image?.url}
+        alt={image?.altText || node.title}
+        aspect="aspect-[4/5]"
+        eager={index < 2}
+        imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
+      />
       <div className="p-5 flex flex-col flex-1">
         <h3 className="font-display text-cream text-xl mb-1 leading-tight">{node.title}</h3>
         <div className="flex items-center justify-between mb-4 mt-auto">
