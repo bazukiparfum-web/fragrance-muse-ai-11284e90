@@ -213,7 +213,6 @@ export const PRODUCT_BY_HANDLE_QUERY = `
             title
             price { amount currencyCode }
             availableForSale
-            quantityAvailable
             selectedOptions { name value }
           }
         }
