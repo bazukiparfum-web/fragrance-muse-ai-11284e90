@@ -4,6 +4,7 @@ import { Loader2, Check } from "lucide-react";
 import { Reveal } from "@/components/anim/Reveal";
 import { fetchShopifyProducts, type ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
+import ProductImage from "@/components/library/ProductImage";
 
 const formatINR = (amount: string | number) => {
   const n = typeof amount === "string" ? parseFloat(amount) : amount;
