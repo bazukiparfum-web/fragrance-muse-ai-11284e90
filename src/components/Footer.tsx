@@ -17,7 +17,7 @@ const Footer = () => {
               className="font-display text-3xl text-cream tracking-[0.25em] inline-block mb-5"
               aria-label="Bazuki home"
             >
-              BAZUKI
+              BAZUKI<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
             </Link>
             <p className="text-cream-muted text-sm leading-relaxed mb-6 max-w-xs">
               AI-crafted luxury fragrances and 360° aroma solutions, made in India for discerning individuals and brands.

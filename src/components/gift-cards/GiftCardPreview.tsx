@@ -42,7 +42,7 @@ export const GiftCardPreview = ({
           className="font-cormorant text-xl tracking-[0.4em] text-primary"
           style={{ textShadow: "0 0 12px hsl(var(--primary) / 0.6)" }}
         >
-          BAZUKI
+          BAZUKI<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
         </span>
         <span className="text-[10px] uppercase tracking-[0.2em] text-primary/70">
           Gift Card · {t.name}

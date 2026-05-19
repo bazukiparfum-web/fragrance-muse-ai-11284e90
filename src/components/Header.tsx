@@ -95,7 +95,7 @@ const Header = () => {
             className="font-cormorant text-xl md:text-2xl font-medium hover:opacity-80 transition-opacity"
             style={{ color: CREAM, letterSpacing: '0.25em' }}
           >
-            BAZUKI
+            BAZUKI<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
           </Link>
 
           {/* Desktop nav links */}
@@ -226,7 +226,7 @@ const Header = () => {
               className="font-cormorant text-xl font-medium"
               style={{ color: CREAM, letterSpacing: '0.25em' }}
             >
-              BAZUKI
+              BAZUKI<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
             </span>
             <button
               onClick={() => setMobileOpen(false)}
