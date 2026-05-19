@@ -191,7 +191,7 @@ const Auth = () => {
           )}
           
           <Card className="max-w-md mx-auto p-8">
-            <h1 className="font-serif text-3xl text-center mb-2">Welcome to BAZUKI</h1>
+            <h1 className="font-serif text-3xl text-center mb-2">Welcome to BAZUKI<sup className="text-[0.45em] align-top ml-0.5">®</sup></h1>
             <p className="text-center text-sm text-muted-foreground mb-6">
               Sign in or create your account in seconds.
             </p>
