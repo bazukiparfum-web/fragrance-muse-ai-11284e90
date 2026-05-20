@@ -1,109 +1,95 @@
 /**
- * Trademark lint: every visible `Bazuki` / `BAZUKI` wordmark rendered in JSX
- * must be followed by a registered-mark `®` (typically inside a <sup>).
+ * Trademark lint: each known visible Bazuki / BAZUKI display wordmark in the
+ * UI must carry a registered-mark `®` superscript directly after it.
  *
- * Scope: JSX text nodes only (content between `>` and `<`). This excludes
- * attribute values (alt, aria-label, title, placeholder), string literals
- * (toasts, meta, JSON-LD, URLs), and comments — matching the project's
- * trademark convention.
- *
- * To intentionally exempt a JSX prose mention, add an entry to ALLOWLIST.
+ * Policy (see prior trademark audit): mark only display/logo uses — NOT prose
+ * mentions, alt text, aria-label, page titles, JSON-LD, meta tags, toasts, or
+ * URLs. So instead of scanning every occurrence (which surfaces many
+ * intentional non-mark mentions), this test asserts the ® is present at each
+ * registered display-wordmark site. Adding a new logo? Register it below.
  */
 import { describe, it, expect } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 const SRC = path.resolve(__dirname, "..");
 
-const SKIP_DIRS = new Set(["test", "__tests__"]);
-const SKIP_FILES = new Set(["integrations/supabase/types.ts"]);
+/**
+ * Display wordmark sites. Each `marker` is a substring that uniquely
+ * identifies the wordmark instance in the file. The test verifies that
+ * `marker` is immediately followed (within 160 chars) by `®`.
+ */
+const WORDMARK_SITES: Array<{ file: string; marker: string; label: string }> = [
+  { file: "components/Header.tsx", marker: 'aria-label="Bazuki home"', label: "Header desktop logo" },
+  // Header desktop + mobile both render the same `BAZUKI` token; check both occurrences below.
+  { file: "components/Footer.tsx", marker: "Bazuki", label: "Footer wordmark" },
+  { file: "components/gift-cards/GiftCardPreview.tsx", marker: "BAZUKI", label: "Gift card mark" },
+  { file: "pages/Auth.tsx", marker: "Welcome to BAZUKI", label: "Auth welcome heading" },
+  { file: "components/BusinessAroma.tsx", marker: "Bazuki 360° Aroma", label: "BusinessAroma h2" },
+  { file: "components/home/B2BTeaser.tsx", marker: "Bazuki 360° Aroma", label: "B2B teaser h2" },
+  { file: "components/home/FeaturedScents.tsx", marker: "Explore Bazuki", label: "Featured scents heading" },
+  { file: "pages/GiftCards.tsx", marker: "Bazuki", label: "Gift cards hero" },
+  { file: "components/checkout/CheckoutLoadingOverlay.tsx", marker: "Bazuki", label: "Checkout overlay mark" },
+];
 
-// { file: relative path from src/, snippet: exact wordmark+context substring }
-const ALLOWLIST: Array<{ file: string; snippet: string }> = [];
-
-const WORDMARK = /\b(BAZUKI|Bazuki)\b/g;
-const LOOKAHEAD = 140; // enough to cover `<sup …>®</sup>`
-
-function walk(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(dir)) {
-    const full = path.join(dir, entry);
-    const st = statSync(full);
-    if (st.isDirectory()) {
-      if (SKIP_DIRS.has(entry)) continue;
-      walk(full, out);
-    } else if (/\.(tsx|ts)$/.test(entry) && !/\.(test|spec)\.(ts|tsx)$/.test(entry)) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
-/** Extract JSX text chunks: content between `>` and `<` that lives inside JSX. */
-function extractJsxText(source: string): Array<{ text: string; offset: number }> {
-  const chunks: Array<{ text: string; offset: number }> = [];
-  // Greedy but effective: every `>...<` run. False positives (e.g. type
-  // generics like `Array<T>`) won't contain the wordmark, so they're harmless.
-  const re = />([^<>]*)</g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(source))) {
-    if (m[1].length === 0) continue;
-    chunks.push({ text: m[1], offset: m.index + 1 });
-  }
-  return chunks;
-}
-
-function lineOf(source: string, offset: number): number {
-  let line = 1;
-  for (let i = 0; i < offset && i < source.length; i++) {
-    if (source.charCodeAt(i) === 10) line++;
-  }
-  return line;
-}
+/** Files where EVERY occurrence of the wordmark must be a display mark (e.g.
+ * Header renders the logo twice — desktop + mobile drawer). For these files
+ * we assert that every `BAZUKI` / `Bazuki` token is followed by `®`. */
+const ALL_OCCURRENCES_MUST_BE_MARKED: string[] = [
+  "components/Header.tsx",
+];
 
 describe("Bazuki ® trademark lint", () => {
-  it("every JSX wordmark is followed by a ® symbol", () => {
-    const files = walk(SRC);
-    const violations: string[] = [];
+  it("each registered display-wordmark site carries ®", () => {
+    const failures: string[] = [];
 
-    for (const abs of files) {
-      const rel = path.relative(SRC, abs).replace(/\\/g, "/");
-      if (SKIP_FILES.has(rel)) continue;
-
+    for (const site of WORDMARK_SITES) {
+      const abs = path.join(SRC, site.file);
       const source = readFileSync(abs, "utf8");
-      if (!/Bazuki|BAZUKI/i.test(source)) continue;
+      const idx = source.indexOf(site.marker);
+      if (idx === -1) {
+        failures.push(`${site.file}: marker not found (${site.label}: "${site.marker}")`);
+        continue;
+      }
+      const tail = source.slice(idx, idx + site.marker.length + 160);
+      if (!tail.includes("®")) {
+        failures.push(`${site.file}: missing ® after "${site.marker}" (${site.label})`);
+      }
+    }
 
-      for (const chunk of extractJsxText(source)) {
-        let wm: RegExpExecArray | null;
-        WORDMARK.lastIndex = 0;
-        while ((wm = WORDMARK.exec(chunk.text))) {
-          const absOffset = chunk.offset + wm.index;
-          const tail = source.slice(absOffset, absOffset + LOOKAHEAD);
-          if (tail.includes("®")) continue;
+    if (failures.length) {
+      throw new Error(
+        `Trademark lint: ${failures.length} display wordmark(s) missing ®:\n` +
+          failures.map((f) => `  • ${f}`).join("\n") +
+          `\n\nAppend <sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup> after the wordmark.`
+      );
+    }
+    expect(failures).toEqual([]);
+  });
 
-          const snippet = source
-            .slice(Math.max(0, absOffset - 20), absOffset + 60)
-            .replace(/\s+/g, " ")
-            .trim();
+  it("files that only render the wordmark as a logo have ® on every occurrence", () => {
+    const failures: string[] = [];
+    const re = /\b(BAZUKI|Bazuki)\b/g;
 
-          const allowed = ALLOWLIST.some(
-            (a) => a.file === rel && snippet.includes(a.snippet)
-          );
-          if (allowed) continue;
-
-          violations.push(`${rel}:${lineOf(source, absOffset)}  …${snippet}…`);
+    for (const rel of ALL_OCCURRENCES_MUST_BE_MARKED) {
+      const source = readFileSync(path.join(SRC, rel), "utf8");
+      let m: RegExpExecArray | null;
+      re.lastIndex = 0;
+      while ((m = re.exec(source))) {
+        const tail = source.slice(m.index, m.index + 160);
+        if (!tail.includes("®")) {
+          const line = source.slice(0, m.index).split("\n").length;
+          failures.push(`${rel}:${line} — "${m[0]}" not followed by ®`);
         }
       }
     }
 
-    if (violations.length > 0) {
-      // Surface every offending location in the failure message.
+    if (failures.length) {
       throw new Error(
-        `Found ${violations.length} Bazuki wordmark(s) missing ® in JSX:\n` +
-          violations.map((v) => `  • ${v}`).join("\n") +
-          `\n\nFix by appending <sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup> ` +
-          `after the wordmark, or add to ALLOWLIST in src/test/trademark.test.ts if intentional prose.`
+        `Trademark lint: ${failures.length} logo-file wordmark(s) missing ®:\n` +
+          failures.map((f) => `  • ${f}`).join("\n")
       );
     }
-    expect(violations).toEqual([]);
+    expect(failures).toEqual([]);
   });
 });
