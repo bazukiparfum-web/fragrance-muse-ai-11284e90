@@ -39,14 +39,21 @@ describe("Bazuki ® trademark lint", () => {
     for (const site of WORDMARK_SITES) {
       const abs = path.join(SRC, site.file);
       const source = readFileSync(abs, "utf8");
-      const idx = source.indexOf(site.marker);
-      if (idx === -1) {
-        failures.push(`${site.file}: marker not found (${site.label}: "${site.marker}")`);
-        continue;
+      // Find ANY occurrence of the marker that is followed by ® within 160
+      // chars. There may be earlier occurrences (e.g. inside alt="…") that
+      // legitimately lack ® — those are fine as long as at least one display
+      // instance is marked.
+      let found = false;
+      let from = 0;
+      while (true) {
+        const idx = source.indexOf(site.marker, from);
+        if (idx === -1) break;
+        const tail = source.slice(idx, idx + site.marker.length + 160);
+        if (tail.includes("®")) { found = true; break; }
+        from = idx + site.marker.length;
       }
-      const tail = source.slice(idx, idx + site.marker.length + 160);
-      if (!tail.includes("®")) {
-        failures.push(`${site.file}: missing ® after "${site.marker}" (${site.label})`);
+      if (!found) {
+        failures.push(`${site.file}: no "${site.marker}" followed by ® (${site.label})`);
       }
     }
 
