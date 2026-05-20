@@ -1,41 +1,47 @@
-## Add ® to BAZUKI Wordmark
+## Audit Result: BAZUKI / BAZUKI 360° Aroma Wordmark ®
 
-Add the registered trademark symbol (®) next to every visible BAZUKI brand wordmark / logo, styled as a small superscript so it doesn't disrupt the premium typography.
+Audited every visible "Bazuki" / "Bazuki 360° Aroma" usage across `src/` and `index.html`. Visible **wordmark / display** occurrences need ®. Inline body prose mentions, alt text, aria-labels, toasts, SEO metadata, JSON-LD, URLs, storage keys, and component identifiers stay as-is (trademark convention: mark the logo/display use, not every sentence).
 
-### Where to add ®
+### Already done (from previous turn)
 
-Visible wordmark/logo usages only — not body copy, toasts, aria-labels, or social handles.
+- `src/components/Header.tsx` — desktop + mobile logo
+- `src/components/Footer.tsx` line 20 — footer brand wordmark
+- `src/components/gift-cards/GiftCardPreview.tsx` — gift-card mark
+- `src/pages/Auth.tsx` — "Welcome to BAZUKI" heading
 
-1. `src/components/Header.tsx`
-   - Line 98 — desktop logo `BAZUKI`
-   - Line 229 — mobile logo `BAZUKI`
-2. `src/components/Footer.tsx`
-   - Line 20 — footer brand wordmark
-3. `src/components/gift-cards/GiftCardPreview.tsx`
-   - Line 45 — gift card brand mark
-4. `src/pages/Auth.tsx`
-   - Line 194 — `Welcome to BAZUKI` heading (displayed as brand)
+### Wordmarks still missing ® — to fix
 
-### Styling
+| File | Line | Current | Change |
+|---|---|---|---|
+| `src/components/BusinessAroma.tsx` | 121 | `Bazuki 360° Aroma` (h2 wordmark) | append ® after "Aroma" |
+| `src/components/home/B2BTeaser.tsx` | 22 | `Scent Your Space with Bazuki 360° Aroma` (h2) | append ® after "Aroma" |
+| `src/components/home/FeaturedScents.tsx` | 41 | `Explore Bazuki Signature Scents` (display heading) | ® after "Bazuki" |
+| `src/pages/GiftCards.tsx` | 23 | `Bazuki Gift Cards` (page hero) | ® after "Bazuki" |
+| `src/components/checkout/CheckoutLoadingOverlay.tsx` | 53 | `Bazuki` (40px brand mark) | ® after "Bazuki" |
+| `src/components/Footer.tsx` | 115 | `© {year} Bazuki Perfumes · Crafted in India` (copyright wordmark) | ® after "Bazuki" |
 
-Render as:
+### Styling (consistent with existing pattern)
+
 ```tsx
-BAZUKI<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
+Bazuki<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
 ```
 
-- `text-[0.45em]` keeps the symbol visually small relative to wordmark
-- `tracking-normal` cancels the wide `tracking-[0.25em]` on the wordmark so the ® doesn't float far away
-- `align-top` positions it as a true superscript at the top of the cap height
-- Inherits the gold/cream color from the parent
+For occurrences using normal letter-spacing (e.g. checkout overlay, copyright line) the `tracking-normal` class is harmless. For the `Bazuki 360° Aroma` wordmark, place ® at the very end of the full mark (after "Aroma"), not after "Bazuki" — the registered mark is the whole brand line.
 
-### Not changing
+### Explicitly NOT changing (out of scope of "visible wordmark")
 
-- Toasts / share messages / aria-labels / social URLs (text mentions of "Bazuki" in prose — trademark symbol only required on the logo/mark, not every textual mention)
-- Favicon, OG image, `index.html` `<title>` (image assets and SEO metadata — separate asset work)
-- Footer copyright line "© {year} Bazuki Perfumes" (already uses ©; not the logo)
+- Body prose mentions ("Bazuki partners with…", "Take the Bazuki quiz…", FAQ answers, guide articles, testimonials, About copy)
+- `alt=`, `aria-label`, `title`, meta tags, JSON-LD `name`, OG tags, `index.html` `<title>`
+- Toast strings, share-link messages, URLs, email addresses, localStorage keys, component/file names
+- Footer's social link aria-labels and `Bazuki on Instagram/Facebook/WhatsApp` accessible names
 
-### Verification
+If you want ® appended in inline body prose too, say the word and I'll do a second pass — but I recommend against it for typographic and legal-style reasons (registered mark is conventionally shown once per page on the prominent display use).
 
-- Visual check on `/`, `/auth`, `/gift-cards` at desktop (1336) and mobile (390)
-- Confirm ® renders as small superscript next to BAZUKI in header, mobile drawer, footer, gift card preview, and auth heading
-- Confirm no layout shift or wrapping issues
+### Verification after build
+
+- `/` — FeaturedScents heading + B2BTeaser heading + footer copyright
+- `/business` — BusinessAroma h2
+- `/gift-cards` — page hero + gift card preview
+- Checkout overlay (trigger from cart)
+- Header / mobile drawer / Auth heading (already verified)
+- Desktop 1336 and mobile 390 — confirm no wrap / no shifted baseline
