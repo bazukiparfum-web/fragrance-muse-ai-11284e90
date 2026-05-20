@@ -1,47 +1,49 @@
-## Audit Result: BAZUKI / BAZUKI 360° Aroma Wordmark ®
+## Goal
 
-Audited every visible "Bazuki" / "Bazuki 360° Aroma" usage across `src/` and `index.html`. Visible **wordmark / display** occurrences need ®. Inline body prose mentions, alt text, aria-labels, toasts, SEO metadata, JSON-LD, URLs, storage keys, and component identifiers stay as-is (trademark convention: mark the logo/display use, not every sentence).
+Add a lightweight automated check that fails the build (via the test suite) when the **Bazuki** / **BAZUKI** wordmark appears in a visible UI position without an adjacent `®` superscript.
 
-### Already done (from previous turn)
+## Approach
 
-- `src/components/Header.tsx` — desktop + mobile logo
-- `src/components/Footer.tsx` line 20 — footer brand wordmark
-- `src/components/gift-cards/GiftCardPreview.tsx` — gift-card mark
-- `src/pages/Auth.tsx` — "Welcome to BAZUKI" heading
+Add a single Vitest test that scans the source tree with regex — no AST, no new heavy deps. The test runs as part of `vitest run`, which is already the project's test command, so any CI/build pipeline that runs tests will fail when a wordmark is missing its ®.
 
-### Wordmarks still missing ® — to fix
+## What the test does
 
-| File | Line | Current | Change |
-|---|---|---|---|
-| `src/components/BusinessAroma.tsx` | 121 | `Bazuki 360° Aroma` (h2 wordmark) | append ® after "Aroma" |
-| `src/components/home/B2BTeaser.tsx` | 22 | `Scent Your Space with Bazuki 360° Aroma` (h2) | append ® after "Aroma" |
-| `src/components/home/FeaturedScents.tsx` | 41 | `Explore Bazuki Signature Scents` (display heading) | ® after "Bazuki" |
-| `src/pages/GiftCards.tsx` | 23 | `Bazuki Gift Cards` (page hero) | ® after "Bazuki" |
-| `src/components/checkout/CheckoutLoadingOverlay.tsx` | 53 | `Bazuki` (40px brand mark) | ® after "Bazuki" |
-| `src/components/Footer.tsx` | 115 | `© {year} Bazuki Perfumes · Crafted in India` (copyright wordmark) | ® after "Bazuki" |
+File: `src/test/trademark.test.ts`
 
-### Styling (consistent with existing pattern)
+1. Walk `src/**/*.{tsx,ts}` (skip `src/test/**`, `src/integrations/supabase/types.ts`, and `*.test.*`).
+2. For each file, extract **JSX text content only** — substrings that sit between `>` and `<` inside JSX. This automatically excludes:
+   - `alt=`, `aria-label=`, `title=`, `placeholder=` attribute values
+   - Object/string literals (toasts, meta tags, JSON-LD, URLs, localStorage keys)
+   - Comments
+3. Inside each JSX text chunk, find every occurrence of `\bBAZUKI\b` or `\bBazuki\b`.
+4. For each occurrence, look ahead up to ~120 chars (which spans the `<sup>…®…</sup>` markup that immediately follows the wordmark) for a `®` character. If none found → record a violation with file + line + snippet.
+5. Apply a small **allowlist** (file + exact text) for legitimate prose mentions inside JSX that intentionally don't carry ® (e.g. body-copy sentences). Start the allowlist empty; populate only if the initial run surfaces real prose uses we agree to skip.
+6. `expect(violations).toEqual([])` — failing assertion prints a readable list of every offending location so a developer can fix or allowlist it.
 
-```tsx
-Bazuki<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
-```
+## Why this design
 
-For occurrences using normal letter-spacing (e.g. checkout overlay, copyright line) the `tracking-normal` class is harmless. For the `Bazuki 360° Aroma` wordmark, place ® at the very end of the full mark (after "Aroma"), not after "Bazuki" — the registered mark is the whole brand line.
+- **No new dependencies.** Uses Node `fs`, `path`, and the existing Vitest setup.
+- **JSX-text-only scope** matches the trademark convention already established in the codebase (mark logo/display use, not every prose mention, not accessibility strings, not metadata).
+- **Allowlist escape hatch** prevents the test from becoming a blocker for legitimate non-mark prose.
+- **Runs in the normal test command**, so the existing build/CI pipeline picks it up with zero config changes.
 
-### Explicitly NOT changing (out of scope of "visible wordmark")
+## Files to add
 
-- Body prose mentions ("Bazuki partners with…", "Take the Bazuki quiz…", FAQ answers, guide articles, testimonials, About copy)
-- `alt=`, `aria-label`, `title`, meta tags, JSON-LD `name`, OG tags, `index.html` `<title>`
-- Toast strings, share-link messages, URLs, email addresses, localStorage keys, component/file names
-- Footer's social link aria-labels and `Bazuki on Instagram/Facebook/WhatsApp` accessible names
+| File | Purpose |
+|---|---|
+| `src/test/trademark.test.ts` | The scanner + assertion described above |
 
-If you want ® appended in inline body prose too, say the word and I'll do a second pass — but I recommend against it for typographic and legal-style reasons (registered mark is conventionally shown once per page on the prominent display use).
+## Files to (potentially) touch
 
-### Verification after build
+- None expected. If the first run surfaces a wordmark we missed in the prior audit, we add the ® there (preferred) or allowlist it (only for genuine prose).
 
-- `/` — FeaturedScents heading + B2BTeaser heading + footer copyright
-- `/business` — BusinessAroma h2
-- `/gift-cards` — page hero + gift card preview
-- Checkout overlay (trigger from cart)
-- Header / mobile drawer / Auth heading (already verified)
-- Desktop 1336 and mobile 390 — confirm no wrap / no shifted baseline
+## Verification
+
+1. Run `vitest run src/test/trademark.test.ts` — should pass against the current tree (all 10 known wordmark sites already carry ®).
+2. Temporarily remove the `®` `<sup>` from `Header.tsx` and re-run — test should fail with a clear `Header.tsx:98` violation.
+3. Restore and confirm green.
+
+## Out of scope
+
+- Linting non-React contexts (edge functions, markdown, `index.html` `<title>`, meta tags) — trademark policy explicitly excludes those.
+- ESLint custom rule (heavier, requires plugin scaffolding); the Vitest approach gives the same build-failure guarantee with far less code.
