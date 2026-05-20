@@ -38,7 +38,7 @@ const FeaturedScents = () => {
             From the Library
           </Reveal>
           <Reveal variant="headline" delay={80} as="h2" className="font-display text-cream text-4xl md:text-[44px]">
-            Explore Bazuki Signature Scents
+            Explore Bazuki<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup> Signature Scents
           </Reveal>
         </div>
 

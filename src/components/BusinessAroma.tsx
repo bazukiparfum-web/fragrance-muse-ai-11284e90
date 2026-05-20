@@ -118,7 +118,7 @@ const BusinessAroma = ({ showHero = true }: BusinessAromaProps) => {
                   </span>
                 </div>
                 <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">
-                  Bazuki 360° Aroma
+                  Bazuki 360° Aroma<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
                 </h2>
                 <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
                   Transform your space with our premium scent marketing solutions. From luxury hotels to corporate offices, create an unforgettable sensory experience.

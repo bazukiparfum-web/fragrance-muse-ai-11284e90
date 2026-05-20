@@ -20,7 +20,7 @@ const GiftCards = () => {
         {/* Hero */}
         <section className="container mx-auto px-6 text-center max-w-3xl">
           <p className="text-xs uppercase tracking-[0.3em] text-primary mb-4">
-            Bazuki Gift Cards
+            Bazuki<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup> Gift Cards
           </p>
           <h1 className="font-cormorant text-5xl md:text-7xl leading-[1.05] text-foreground">
             Give the Gift of Scent

@@ -112,7 +112,7 @@ const Footer = () => {
         <div className="border-t border-gold/15 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="font-body text-dim text-xs tracking-wide">
-              © {currentYear} Bazuki Perfumes · Crafted in India
+              © {currentYear} Bazuki<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup> Perfumes · Crafted in India
             </p>
             <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs">
               <Link to="/legal/privacy" className="text-dim hover:text-gold transition-colors">Privacy</Link>
