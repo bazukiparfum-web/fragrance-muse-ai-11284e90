@@ -19,7 +19,7 @@ const B2BTeaser = () => {
               For Businesses
             </Reveal>
             <Reveal variant="headline" delay={80} as="h2" className="font-display text-cream text-3xl md:text-[40px] leading-tight mb-4">
-              Scent Your Space with Bazuki 360° Aroma
+              Scent Your Space with Bazuki 360° Aroma<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
             </Reveal>
             <Reveal variant="item" delay={200} as="p" className="font-body text-body text-base leading-relaxed">
               Custom aroma identities for hotels, retail, offices, and events.

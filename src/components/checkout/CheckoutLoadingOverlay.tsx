@@ -50,7 +50,7 @@ export default function CheckoutLoadingOverlay({ open, error, onRetry, onClose }
           className="font-display tracking-wide"
           style={{ color: "hsl(var(--bz-gold))", fontSize: 40, lineHeight: 1.1 }}
         >
-          Bazuki
+          Bazuki<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>
         </div>
 
         {!hasError ? (
