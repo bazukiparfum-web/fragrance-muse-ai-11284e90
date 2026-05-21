@@ -345,6 +345,43 @@ const ScentCoaching = () => {
         </div>
       </section>
 
+      {/* SAMPLE AGENDA */}
+      <section
+        aria-labelledby="agenda-heading"
+        className="py-16 md:py-24 bg-[#0d0d0d] border-t border-luxury-gold/10"
+      >
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="text-center mb-12">
+            <p className="text-luxury-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">
+              What to Expect
+            </p>
+            <h2 id="agenda-heading" className="font-serif text-3xl md:text-4xl font-light text-cream">
+              Inside your 15 minutes
+            </h2>
+          </div>
+
+          <ol className="space-y-4">
+            {AGENDA.map((step) => (
+              <li
+                key={step.title}
+                className="flex flex-col md:flex-row md:items-start gap-2 md:gap-6 rounded-xl border border-luxury-gold/15 bg-luxury-black/60 p-5 md:p-6 border-l-2 border-l-luxury-gold/60"
+              >
+                <div className="flex items-center gap-2 md:w-32 shrink-0">
+                  <Clock className="w-4 h-4 text-luxury-gold" />
+                  <span className="text-luxury-gold text-xs uppercase tracking-[0.18em] font-semibold">
+                    {step.time}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-serif text-lg text-cream">{step.title}</h3>
+                  <p className="text-cream/70 text-[14px] leading-relaxed mt-1">{step.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
       {/* BOOKING PICKER / CONFIRMATION */}
       <section ref={bookingRef} className="py-16 md:py-24 bg-[#0d0d0d] border-t border-luxury-gold/10">
         <div className="container mx-auto px-4 max-w-5xl">
