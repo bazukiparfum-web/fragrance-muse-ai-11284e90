@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar as CalIcon, Check, ChevronLeft, ChevronRight, Clock, Gift, MessagesSquare, Sparkles, User } from "lucide-react";
+import { Calendar as CalIcon, Check, ChevronLeft, ChevronRight, Clock, Gift, MessagesSquare, Sparkles, Star, User } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
