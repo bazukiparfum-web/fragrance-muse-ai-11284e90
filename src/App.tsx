@@ -51,6 +51,9 @@ import CheckoutTestChecklist from "./components/dev/CheckoutTestChecklist";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import PerfumeNotesExplained from "./pages/guides/PerfumeNotesExplained";
 import AIPerfumeVsTraditional from "./pages/guides/AIPerfumeVsTraditional";
+import CustomPerfumeIndia from "./pages/seo/CustomPerfumeIndia";
+import UniquePerfume from "./pages/seo/UniquePerfume";
+import NichePerfumeIndia from "./pages/seo/NichePerfumeIndia";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +93,9 @@ const AppInner = () => {
           <Route path="/guide/find-your-signature-scent" element={<FindYourSignatureScent />} />
           <Route path="/guide/perfume-notes-explained" element={<PerfumeNotesExplained />} />
           <Route path="/guide/ai-perfume-vs-traditional" element={<AIPerfumeVsTraditional />} />
+          <Route path="/custom-perfume-india" element={<CustomPerfumeIndia />} />
+          <Route path="/unique-perfume" element={<UniquePerfume />} />
+          <Route path="/niche-perfume-india" element={<NichePerfumeIndia />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
           <Route path="/scent-library" element={<Navigate to="/collection" replace />} />
           <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
