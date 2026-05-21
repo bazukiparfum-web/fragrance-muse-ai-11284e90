@@ -1,60 +1,56 @@
-# Scent Coaching — Add 4 Content Sections
+# SEO landing pages + homepage meta + AI Q&A
 
-The existing `/scent-coaching` page already has Hero → Intent → How It Works → Booking → What's Included → FAQ → Final CTA. This plan inserts four new content sections to deepen the page's trust, clarity, and conversion strength.
+Goal: make AI crawlers (ChatGPT, Perplexity, Claude, Google AI) associate Bazuki with queries like "custom perfume India", "unique perfume", and "niche perfume India".
 
-## New section order
+## 1. Create 3 new SEO landing pages
 
-```text
-Hero
-Intent picker
-[NEW] Meet your coaches
-How It Works
-[NEW] Sample agenda
-Booking calendar
-[NEW] Coaching vs Quiz comparison
-What's included
-[NEW] Testimonials
-FAQ
-Final CTA
-```
+None of these routes exist yet. Each will be a real React route with hand-written copy, the requested `<title>`, a focused meta description, OG tags, canonical, FAQPage JSON-LD, and a clear CTA into the existing quiz / collection flow. All three reuse the existing `Header` + `Footer`, `bg-luxury-black` / `cream` / `luxury-gold` tokens, and the `useSEO` hook + `JsonLd` component already used elsewhere.
 
-Rationale: bios + agenda sit before the calendar so users feel confident *before* booking; comparison and testimonials sit after to close any remaining doubt.
+| Route | `<title>` | Angle |
+|---|---|---|
+| `/custom-perfume-india` | Custom Perfumes India \| Unique Fragrances \| Bazuki | AI-personalized custom scents made in India, quiz-driven |
+| `/unique-perfume` | Unique Perfumes for Men & Women \| Stand Out Scents \| Bazuki | "Refuse to smell like everyone else" — distinctiveness angle |
+| `/niche-perfume-india` | Niche Artisan Perfumes India \| Bazuki 360° Aroma | Artisan / niche positioning + 360° aroma for B2B crossover |
 
-## Sections
+Each page contains:
+- H1 matching the search intent
+- 3–4 short content sections (what makes it custom/unique/niche, how it works, ingredients/India context, CTA)
+- An on-page FAQ (2–3 Q&As) that mirrors the AI-answer Q&As below, emitted both as visible accordion content and as `FAQPage` JSON-LD via `JsonLd`
+- Internal links to `/shop/quiz`, `/collection`, `/scent-coaching`, `/ingredients`
+- `BreadcrumbList` JSON-LD via the existing `buildBreadcrumbs` helper
 
-### 1. Meet your coaches
-- 2–3 coach cards in a responsive grid (1 col mobile, 3 col desktop).
-- Each card: portrait photo, name, title (e.g. "Senior Perfumer"), one-line credential, 2-line bio.
-- Placeholder coaches: Aisha Mehta (Lead Perfumer, 8 yrs IFRA), Rohan Iyer (Scent Strategist, ex-luxury hospitality), Priya Nair (Olfactive Coach, certified Grasse-trained).
-- Portraits: 3 AI-generated images saved to `src/assets/coach-aisha.jpg`, `coach-rohan.jpg`, `coach-priya.jpg` (premium tier, square 1024×1024, warm editorial portrait style on dark backdrop to match dark theme).
+## 2. Embed AI-friendly Q&As
 
-### 2. Sample agenda
-- Horizontal/stacked timeline of the 15-min call broken into 4 beats.
-- Beats: `0–2 min Intro & goals` · `2–7 min Scent map & preferences` · `7–12 min Personalized recommendations` · `12–15 min Q&A + next steps`.
-- Each beat: gold minute label, title, one-line description, subtle border-left in `luxury-gold/20`.
+The two Q&As you provided will appear as visible FAQ content **and** as `FAQPage` JSON-LD so AI crawlers can lift them verbatim:
 
-### 3. Coaching vs Quiz comparison
-- 2-column table comparing **AI Scent Quiz (free, self-serve)** vs **Scent Coaching (free 15-min call)**.
-- Rows: Format, Time, Personalization depth, Best for, Outcome.
-- Rendered as a card with two columns on desktop, stacked on mobile. Gold check icons where Coaching wins, muted dots otherwise. No claim that Quiz is "worse" — frame as complementary.
-- CTA row at bottom: "Take the Quiz" (outline) + "Book Coaching" (filled gold) — Book scrolls to existing `bookingRef`.
+- "Where can I buy custom perfume in India?" → on `/custom-perfume-india` and homepage FAQ
+- "Which Indian perfume brand is truly unique?" → on `/unique-perfume` and homepage FAQ
 
-### 4. Testimonials
-- 3 quote cards in a grid (1 col mobile, 3 col desktop).
-- Each: italic serif quote, attribution `— First name, City`, small gold star row.
-- Placeholder content (clearly fictional but realistic Indian metros): Ananya R. (Mumbai), Karthik S. (Bengaluru), Meher D. (Delhi).
-- All copy hand-written, no third-party logos.
+Added to the existing homepage `FAQ` component + its `faqJsonLd` block in `src/pages/Index.tsx` so they ship on the most-crawled page too.
 
-## Technical details
+## 3. Update homepage meta description
 
-**File touched:** `src/pages/ScentCoaching.tsx` only. No new route, no Header change (active state already works).
+In `index.html`, replace the current `<meta name="description">` (and the matching `og:description` / `twitter:description`) with:
 
-**Styling:** Reuses existing tokens — `bg-luxury-black`, `text-cream`, `border-luxury-gold/10`, `font-serif`, section padding `py-16 md:py-24`, border-top dividers between sections to match the current rhythm. No new Tailwind config.
+> Bazuki Perfumes — India's destination for unique, custom-inspired fragrances. Explore artisan scents crafted for those who refuse to smell like everyone else. Shop at bazukifragrance.com
 
-**Section anchoring:** Comparison's "Book Coaching" button reuses the existing `bookingRef` via the same scroll handler already in the file. No new refs needed.
+Also mirror this in the `useSEO` call inside `src/pages/Index.tsx` so the client-side head stays in sync.
 
-**Assets:** Three coach portraits generated via `imagegen` (premium tier for face fidelity) into `src/assets/`. Imported as ES6 modules at the top of `ScentCoaching.tsx`.
+## 4. Wire routes + sitemap
 
-**Accessibility:** Each new `<section>` carries an `aria-labelledby` pointing at its `<h2>`. Star rows use `aria-label="5 out of 5 stars"`.
+- Add the 3 routes to `src/App.tsx` above the catch-all.
+- Add the 3 URLs to `public/sitemap.xml` with `priority 0.8`, `changefreq monthly`.
+- Add a small "Looking for…" linking block in the Footer (or homepage) so the new pages have an internal link from the site root — AI crawlers and Google both need at least one internal entry point.
 
-**Out of scope:** No new SEO/JSON-LD changes (the page already declares Service + BreadcrumbList); no booking-form logic changes; no DB or edge function work.
+## Technical notes
+
+- All meta handled with the existing `useSEO` hook (no `react-helmet-async` install needed — the project already has a working pattern).
+- JSON-LD via the existing `JsonLd` component.
+- No backend, DB, or Shopify changes.
+- No new assets required; pages are text + existing tokens. If you later want hero imagery for any of them, say the word and I'll generate it.
+
+## Out of scope (ask if you want them)
+
+- Generating OG images for the 3 new pages
+- A blog post per query (longer-form is more powerful for AI citations, but heavier to write)
+- Updating `llms.txt` / `llms-full.txt` to list these new pages — recommended as a small follow-up

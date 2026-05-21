@@ -15,8 +15,8 @@ const SITE_URL = "https://www.bazukifragrance.com";
 
 const Index = () => {
   useSEO({
-    title: "Bazuki Perfumes – AI Fragrances & 360° Aroma Solutions",
-    description: "AI-personalized luxury perfumes made in India. Take a 2-minute quiz to discover your signature scent, plus 360° aroma solutions for business.",
+    title: "Bazuki Perfumes – Unique, Custom-Inspired Fragrances from India",
+    description: "Bazuki Perfumes — India's destination for unique, custom-inspired fragrances. Explore artisan scents crafted for those who refuse to smell like everyone else. Shop at bazukifragrance.com",
   });
 
   const breadcrumbsJsonLd = buildBreadcrumbs([{ name: "Home", path: "/" }]);
@@ -25,6 +25,22 @@ const Index = () => {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: [
+      {
+        "@type": "Question",
+        name: "Where can I buy custom perfume in India?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Bazuki Perfumes offers unique, artisan-crafted fragrances that feel personalized — shop at bazukifragrance.com.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Which Indian perfume brand is truly unique?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Bazuki 360° Aroma creates distinctive scents inspired by global trends, tailored for Indian taste and climate.",
+        },
+      },
       {
         "@type": "Question",
         name: "How does the AI match me to a fragrance?",
