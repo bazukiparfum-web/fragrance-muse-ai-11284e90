@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar as CalIcon, Check, ChevronLeft, ChevronRight, Clock, Gift, MessagesSquare, Sparkles, User } from "lucide-react";
+import { Calendar as CalIcon, Check, ChevronLeft, ChevronRight, Clock, Gift, MessagesSquare, Sparkles, Star, User } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,66 @@ import { useSEO } from "@/hooks/useSEO";
 import { JsonLd } from "@/components/JsonLd";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 import ogScentCoaching from "@/assets/og-scent-coaching.jpg";
+import coachAisha from "@/assets/coach-aisha.jpg";
+import coachRohan from "@/assets/coach-rohan.jpg";
+import coachPriya from "@/assets/coach-priya.jpg";
+
+const COACHES = [
+  {
+    name: "Aisha Mehta",
+    title: "Lead Perfumer",
+    credential: "8 years · IFRA-certified",
+    bio: "Trained in Grasse, Aisha specializes in oriental and woody compositions, crafting signature scents for private clients across India.",
+    img: coachAisha,
+  },
+  {
+    name: "Rohan Iyer",
+    title: "Scent Strategist",
+    credential: "Ex-luxury hospitality",
+    bio: "Rohan has built scent identities for five-star hotels and helps clients translate mood, memory, and lifestyle into a wearable fragrance.",
+    img: coachRohan,
+  },
+  {
+    name: "Priya Nair",
+    title: "Olfactive Coach",
+    credential: "Grasse-trained",
+    bio: "Priya guides first-time fragrance buyers through scent families with patience and clarity — no jargon, no overwhelm.",
+    img: coachPriya,
+  },
+];
+
+const AGENDA = [
+  { time: "0–2 min", title: "Intro & goals", desc: "Quick hello and what you're hoping to find today." },
+  { time: "2–7 min", title: "Scent map & preferences", desc: "We walk through what you've worn, loved, and want to avoid." },
+  { time: "7–12 min", title: "Personalized recommendations", desc: "A shortlist of 3–5 scents and accords matched to you." },
+  { time: "12–15 min", title: "Q&A + next steps", desc: "Open questions, samples, or how to refine further." },
+];
+
+const COMPARISON_ROWS = [
+  { label: "Format", quiz: "16-question online quiz", coaching: "1-on-1 video / WhatsApp call" },
+  { label: "Time", quiz: "About 3 minutes", coaching: "15 minutes, live" },
+  { label: "Personalization", quiz: "AI-matched to your answers", coaching: "Human-tuned to your story" },
+  { label: "Best for", quiz: "Quick discovery, gifting", coaching: "First-time buyers, refining a favorite" },
+  { label: "Outcome", quiz: "3 AI fragrance matches", coaching: "Tailored shortlist & expert notes" },
+];
+
+const TESTIMONIALS = [
+  {
+    quote: "I'd worn the same scent for years and was completely lost. Fifteen minutes with Priya and I had three directions I genuinely wanted to try.",
+    name: "Ananya R.",
+    city: "Mumbai",
+  },
+  {
+    quote: "Booked it as a gift for my partner. The coach was warm, unhurried, and the shortlist was spot-on — she's still wearing one of them.",
+    name: "Karthik S.",
+    city: "Bengaluru",
+  },
+  {
+    quote: "No upsell, no pressure. Just a real conversation about what I like. The recommendations finally made fragrance feel personal.",
+    name: "Meher D.",
+    city: "Delhi",
+  },
+];
 
 type Intent = "self" | "gift";
 
@@ -205,6 +265,52 @@ const ScentCoaching = () => {
         </div>
       </section>
 
+      {/* MEET YOUR COACHES */}
+      <section
+        aria-labelledby="coaches-heading"
+        className="py-16 md:py-24 bg-luxury-black border-t border-luxury-gold/10"
+      >
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <p className="text-luxury-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">
+              Your Specialists
+            </p>
+            <h2 id="coaches-heading" className="font-serif text-3xl md:text-4xl font-light text-cream">
+              Meet your coaches
+            </h2>
+            <p className="mt-4 text-cream/70 text-[15px] leading-relaxed">
+              A small team of trained perfumers and olfactive specialists — here to help, not to sell.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+            {COACHES.map((c) => (
+              <article
+                key={c.name}
+                className="rounded-2xl border border-luxury-gold/20 bg-[#141414] overflow-hidden flex flex-col"
+              >
+                <div className="aspect-square overflow-hidden bg-[#0d0d0d]">
+                  <img
+                    src={c.img}
+                    alt={`Portrait of ${c.name}, ${c.title} at Bazuki`}
+                    width={1024}
+                    height={1024}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-6 flex flex-col flex-1">
+                  <h3 className="font-serif text-xl text-cream">{c.name}</h3>
+                  <p className="text-luxury-gold text-xs uppercase tracking-[0.18em] mt-1">{c.title}</p>
+                  <p className="text-cream/60 text-xs mt-1">{c.credential}</p>
+                  <p className="text-cream/75 text-[14px] leading-relaxed mt-4 flex-1">{c.bio}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
       <section className="py-16 md:py-24 bg-luxury-black border-t border-luxury-gold/10">
         <div className="container mx-auto px-4">
@@ -236,6 +342,43 @@ const ScentCoaching = () => {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* SAMPLE AGENDA */}
+      <section
+        aria-labelledby="agenda-heading"
+        className="py-16 md:py-24 bg-[#0d0d0d] border-t border-luxury-gold/10"
+      >
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="text-center mb-12">
+            <p className="text-luxury-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">
+              What to Expect
+            </p>
+            <h2 id="agenda-heading" className="font-serif text-3xl md:text-4xl font-light text-cream">
+              Inside your 15 minutes
+            </h2>
+          </div>
+
+          <ol className="space-y-4">
+            {AGENDA.map((step) => (
+              <li
+                key={step.title}
+                className="flex flex-col md:flex-row md:items-start gap-2 md:gap-6 rounded-xl border border-luxury-gold/15 bg-luxury-black/60 p-5 md:p-6 border-l-2 border-l-luxury-gold/60"
+              >
+                <div className="flex items-center gap-2 md:w-32 shrink-0">
+                  <Clock className="w-4 h-4 text-luxury-gold" />
+                  <span className="text-luxury-gold text-xs uppercase tracking-[0.18em] font-semibold">
+                    {step.time}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-serif text-lg text-cream">{step.title}</h3>
+                  <p className="text-cream/70 text-[14px] leading-relaxed mt-1">{step.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -340,6 +483,104 @@ const ScentCoaching = () => {
           )}
         </div>
       </section>
+
+      {/* COACHING VS QUIZ */}
+      {!confirmed && (
+        <section
+          aria-labelledby="compare-heading"
+          className="py-16 md:py-24 bg-luxury-black border-t border-luxury-gold/10"
+        >
+          <div className="container mx-auto px-4 max-w-5xl">
+            <div className="text-center mb-12">
+              <p className="text-luxury-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">
+                Two Ways In
+              </p>
+              <h2 id="compare-heading" className="font-serif text-3xl md:text-4xl font-light text-cream">
+                Coaching or Quiz — both are free
+              </h2>
+              <p className="mt-4 text-cream/70 text-[15px] leading-relaxed max-w-2xl mx-auto">
+                Start where you're comfortable. Many clients take the quiz first, then book a call to refine.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-luxury-gold/20 bg-[#141414] overflow-hidden">
+              <div className="grid grid-cols-3 border-b border-luxury-gold/15 bg-[#0d0d0d]">
+                <div className="p-4 md:p-5 text-cream/50 text-xs uppercase tracking-[0.18em]">Compare</div>
+                <div className="p-4 md:p-5 text-cream text-sm md:text-base font-serif">AI Scent Quiz</div>
+                <div className="p-4 md:p-5 text-luxury-gold text-sm md:text-base font-serif">Scent Coaching</div>
+              </div>
+              {COMPARISON_ROWS.map((row, i) => (
+                <div
+                  key={row.label}
+                  className={`grid grid-cols-3 ${i !== COMPARISON_ROWS.length - 1 ? "border-b border-luxury-gold/10" : ""}`}
+                >
+                  <div className="p-4 md:p-5 text-cream/60 text-xs md:text-sm uppercase tracking-wider">
+                    {row.label}
+                  </div>
+                  <div className="p-4 md:p-5 text-cream/80 text-[13px] md:text-sm leading-relaxed">
+                    {row.quiz}
+                  </div>
+                  <div className="p-4 md:p-5 text-cream text-[13px] md:text-sm leading-relaxed flex items-start gap-2">
+                    <Check className="w-4 h-4 text-luxury-gold mt-0.5 shrink-0" />
+                    <span>{row.coaching}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+              <Link to="/shop/quiz">
+                <Button variant="outline" size="lg" className="border-luxury-gold/40 text-cream hover:bg-luxury-gold/10 w-full sm:w-auto">
+                  Take the Quiz
+                </Button>
+              </Link>
+              <Button variant="luxury" size="lg" onClick={() => scrollToBooking("self")}>
+                Book Coaching
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* TESTIMONIALS */}
+      {!confirmed && (
+        <section
+          aria-labelledby="testimonials-heading"
+          className="py-16 md:py-24 bg-[#0d0d0d] border-t border-luxury-gold/10"
+        >
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <p className="text-luxury-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">
+                From Clients
+              </p>
+              <h2 id="testimonials-heading" className="font-serif text-3xl md:text-4xl font-light text-cream">
+                What people say after a call
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {TESTIMONIALS.map((t) => (
+                <figure
+                  key={t.name}
+                  className="rounded-2xl border border-luxury-gold/20 bg-luxury-black p-6 md:p-7 flex flex-col"
+                >
+                  <div className="flex gap-1 mb-4" aria-label="5 out of 5 stars">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-luxury-gold fill-luxury-gold" />
+                    ))}
+                  </div>
+                  <blockquote className="font-serif italic text-cream/90 text-[16px] leading-relaxed flex-1">
+                    "{t.quote}"
+                  </blockquote>
+                  <figcaption className="mt-5 text-cream/60 text-sm">
+                    — {t.name}, <span className="text-luxury-gold/80">{t.city}</span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* FAQ */}
       {!confirmed && (
