@@ -16,6 +16,66 @@ import { useSEO } from "@/hooks/useSEO";
 import { JsonLd } from "@/components/JsonLd";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 import ogScentCoaching from "@/assets/og-scent-coaching.jpg";
+import coachAisha from "@/assets/coach-aisha.jpg";
+import coachRohan from "@/assets/coach-rohan.jpg";
+import coachPriya from "@/assets/coach-priya.jpg";
+
+const COACHES = [
+  {
+    name: "Aisha Mehta",
+    title: "Lead Perfumer",
+    credential: "8 years · IFRA-certified",
+    bio: "Trained in Grasse, Aisha specializes in oriental and woody compositions, crafting signature scents for private clients across India.",
+    img: coachAisha,
+  },
+  {
+    name: "Rohan Iyer",
+    title: "Scent Strategist",
+    credential: "Ex-luxury hospitality",
+    bio: "Rohan has built scent identities for five-star hotels and helps clients translate mood, memory, and lifestyle into a wearable fragrance.",
+    img: coachRohan,
+  },
+  {
+    name: "Priya Nair",
+    title: "Olfactive Coach",
+    credential: "Grasse-trained",
+    bio: "Priya guides first-time fragrance buyers through scent families with patience and clarity — no jargon, no overwhelm.",
+    img: coachPriya,
+  },
+];
+
+const AGENDA = [
+  { time: "0–2 min", title: "Intro & goals", desc: "Quick hello and what you're hoping to find today." },
+  { time: "2–7 min", title: "Scent map & preferences", desc: "We walk through what you've worn, loved, and want to avoid." },
+  { time: "7–12 min", title: "Personalized recommendations", desc: "A shortlist of 3–5 scents and accords matched to you." },
+  { time: "12–15 min", title: "Q&A + next steps", desc: "Open questions, samples, or how to refine further." },
+];
+
+const COMPARISON_ROWS = [
+  { label: "Format", quiz: "16-question online quiz", coaching: "1-on-1 video / WhatsApp call" },
+  { label: "Time", quiz: "About 3 minutes", coaching: "15 minutes, live" },
+  { label: "Personalization", quiz: "AI-matched to your answers", coaching: "Human-tuned to your story" },
+  { label: "Best for", quiz: "Quick discovery, gifting", coaching: "First-time buyers, refining a favorite" },
+  { label: "Outcome", quiz: "3 AI fragrance matches", coaching: "Tailored shortlist & expert notes" },
+];
+
+const TESTIMONIALS = [
+  {
+    quote: "I'd worn the same scent for years and was completely lost. Fifteen minutes with Priya and I had three directions I genuinely wanted to try.",
+    name: "Ananya R.",
+    city: "Mumbai",
+  },
+  {
+    quote: "Booked it as a gift for my partner. The coach was warm, unhurried, and the shortlist was spot-on — she's still wearing one of them.",
+    name: "Karthik S.",
+    city: "Bengaluru",
+  },
+  {
+    quote: "No upsell, no pressure. Just a real conversation about what I like. The recommendations finally made fragrance feel personal.",
+    name: "Meher D.",
+    city: "Delhi",
+  },
+];
 
 type Intent = "self" | "gift";
 
