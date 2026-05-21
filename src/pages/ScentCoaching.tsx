@@ -484,6 +484,104 @@ const ScentCoaching = () => {
         </div>
       </section>
 
+      {/* COACHING VS QUIZ */}
+      {!confirmed && (
+        <section
+          aria-labelledby="compare-heading"
+          className="py-16 md:py-24 bg-luxury-black border-t border-luxury-gold/10"
+        >
+          <div className="container mx-auto px-4 max-w-5xl">
+            <div className="text-center mb-12">
+              <p className="text-luxury-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">
+                Two Ways In
+              </p>
+              <h2 id="compare-heading" className="font-serif text-3xl md:text-4xl font-light text-cream">
+                Coaching or Quiz — both are free
+              </h2>
+              <p className="mt-4 text-cream/70 text-[15px] leading-relaxed max-w-2xl mx-auto">
+                Start where you're comfortable. Many clients take the quiz first, then book a call to refine.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-luxury-gold/20 bg-[#141414] overflow-hidden">
+              <div className="grid grid-cols-3 border-b border-luxury-gold/15 bg-[#0d0d0d]">
+                <div className="p-4 md:p-5 text-cream/50 text-xs uppercase tracking-[0.18em]">Compare</div>
+                <div className="p-4 md:p-5 text-cream text-sm md:text-base font-serif">AI Scent Quiz</div>
+                <div className="p-4 md:p-5 text-luxury-gold text-sm md:text-base font-serif">Scent Coaching</div>
+              </div>
+              {COMPARISON_ROWS.map((row, i) => (
+                <div
+                  key={row.label}
+                  className={`grid grid-cols-3 ${i !== COMPARISON_ROWS.length - 1 ? "border-b border-luxury-gold/10" : ""}`}
+                >
+                  <div className="p-4 md:p-5 text-cream/60 text-xs md:text-sm uppercase tracking-wider">
+                    {row.label}
+                  </div>
+                  <div className="p-4 md:p-5 text-cream/80 text-[13px] md:text-sm leading-relaxed">
+                    {row.quiz}
+                  </div>
+                  <div className="p-4 md:p-5 text-cream text-[13px] md:text-sm leading-relaxed flex items-start gap-2">
+                    <Check className="w-4 h-4 text-luxury-gold mt-0.5 shrink-0" />
+                    <span>{row.coaching}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+              <Link to="/shop/quiz">
+                <Button variant="outline" size="lg" className="border-luxury-gold/40 text-cream hover:bg-luxury-gold/10 w-full sm:w-auto">
+                  Take the Quiz
+                </Button>
+              </Link>
+              <Button variant="luxury" size="lg" onClick={() => scrollToBooking("self")}>
+                Book Coaching
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* TESTIMONIALS */}
+      {!confirmed && (
+        <section
+          aria-labelledby="testimonials-heading"
+          className="py-16 md:py-24 bg-[#0d0d0d] border-t border-luxury-gold/10"
+        >
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <p className="text-luxury-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">
+                From Clients
+              </p>
+              <h2 id="testimonials-heading" className="font-serif text-3xl md:text-4xl font-light text-cream">
+                What people say after a call
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {TESTIMONIALS.map((t) => (
+                <figure
+                  key={t.name}
+                  className="rounded-2xl border border-luxury-gold/20 bg-luxury-black p-6 md:p-7 flex flex-col"
+                >
+                  <div className="flex gap-1 mb-4" aria-label="5 out of 5 stars">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-luxury-gold fill-luxury-gold" />
+                    ))}
+                  </div>
+                  <blockquote className="font-serif italic text-cream/90 text-[16px] leading-relaxed flex-1">
+                    "{t.quote}"
+                  </blockquote>
+                  <figcaption className="mt-5 text-cream/60 text-sm">
+                    — {t.name}, <span className="text-luxury-gold/80">{t.city}</span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* FAQ */}
       {!confirmed && (
         <section className="py-16 md:py-24 bg-luxury-black border-t border-luxury-gold/10">
