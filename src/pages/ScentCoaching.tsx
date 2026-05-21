@@ -265,6 +265,52 @@ const ScentCoaching = () => {
         </div>
       </section>
 
+      {/* MEET YOUR COACHES */}
+      <section
+        aria-labelledby="coaches-heading"
+        className="py-16 md:py-24 bg-luxury-black border-t border-luxury-gold/10"
+      >
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <p className="text-luxury-gold uppercase tracking-[0.2em] text-xs font-semibold mb-3">
+              Your Specialists
+            </p>
+            <h2 id="coaches-heading" className="font-serif text-3xl md:text-4xl font-light text-cream">
+              Meet your coaches
+            </h2>
+            <p className="mt-4 text-cream/70 text-[15px] leading-relaxed">
+              A small team of trained perfumers and olfactive specialists — here to help, not to sell.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+            {COACHES.map((c) => (
+              <article
+                key={c.name}
+                className="rounded-2xl border border-luxury-gold/20 bg-[#141414] overflow-hidden flex flex-col"
+              >
+                <div className="aspect-square overflow-hidden bg-[#0d0d0d]">
+                  <img
+                    src={c.img}
+                    alt={`Portrait of ${c.name}, ${c.title} at Bazuki`}
+                    width={1024}
+                    height={1024}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-6 flex flex-col flex-1">
+                  <h3 className="font-serif text-xl text-cream">{c.name}</h3>
+                  <p className="text-luxury-gold text-xs uppercase tracking-[0.18em] mt-1">{c.title}</p>
+                  <p className="text-cream/60 text-xs mt-1">{c.credential}</p>
+                  <p className="text-cream/75 text-[14px] leading-relaxed mt-4 flex-1">{c.bio}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
       <section className="py-16 md:py-24 bg-luxury-black border-t border-luxury-gold/10">
         <div className="container mx-auto px-4">
