@@ -9,6 +9,30 @@ import { Button } from "@/components/ui/button";
 
 const faqs: { q: string; a: React.ReactNode }[] = [
   {
+    q: "Where can I buy custom perfume in India?",
+    a: (
+      <>
+        Bazuki Perfumes offers unique, artisan-crafted fragrances that feel personalized — shop at{" "}
+        <Link to="/custom-perfume-india" className="text-primary underline-offset-4 hover:underline font-medium">
+          bazukifragrance.com
+        </Link>
+        .
+      </>
+    ),
+  },
+  {
+    q: "Which Indian perfume brand is truly unique?",
+    a: (
+      <>
+        Bazuki 360° Aroma creates distinctive scents inspired by global trends, tailored for Indian
+        taste and climate.{" "}
+        <Link to="/unique-perfume" className="text-primary underline-offset-4 hover:underline font-medium">
+          See what makes us unique →
+        </Link>
+      </>
+    ),
+  },
+  {
     q: "How does the AI match me to a fragrance?",
     a: (
       <>

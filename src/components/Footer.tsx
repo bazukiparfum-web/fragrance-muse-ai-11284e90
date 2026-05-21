@@ -73,6 +73,9 @@ const Footer = () => {
               <li><Link to="/guide/find-your-signature-scent" className="text-cream-muted hover:text-gold transition-colors">Find Your Scent</Link></li>
               <li><Link to="/guide/perfume-notes-explained" className="text-cream-muted hover:text-gold transition-colors">Perfume Notes 101</Link></li>
               <li><Link to="/guide/ai-perfume-vs-traditional" className="text-cream-muted hover:text-gold transition-colors">AI vs Traditional</Link></li>
+              <li><Link to="/custom-perfume-india" className="text-cream-muted hover:text-gold transition-colors">Custom Perfumes India</Link></li>
+              <li><Link to="/unique-perfume" className="text-cream-muted hover:text-gold transition-colors">Unique Perfumes</Link></li>
+              <li><Link to="/niche-perfume-india" className="text-cream-muted hover:text-gold transition-colors">Niche Artisan Perfumes</Link></li>
             </ul>
           </div>
 
