@@ -376,7 +376,14 @@ export default function ScentDetail() {
               )}
             </Button>
 
-            <Button onClick={handleTweak} variant="outline" size="lg" className="md:w-auto w-full">
+            <Button
+              onClick={handleTweak}
+              variant="outline"
+              size="lg"
+              className="md:w-auto w-full"
+              disabled={!hasFormula}
+              title={!hasFormula ? 'No formula to tweak' : undefined}
+            >
               <Wand2 className="mr-2 h-4 w-4" />
               Tweak Formula
             </Button>
