@@ -33,6 +33,7 @@ interface Props {
   faqs: SeoLandingFaq[];
   breadcrumbName: string;
   idPrefix: string;
+  image?: string;
 }
 
 const SeoLandingPage = ({
@@ -46,8 +47,9 @@ const SeoLandingPage = ({
   faqs,
   breadcrumbName,
   idPrefix,
+  image = "/og-image.jpg",
 }: Props) => {
-  useSEO({ title, description });
+  useSEO({ title, description, image });
 
   const breadcrumbsJsonLd = buildBreadcrumbs([
     { name: "Home", path: "/" },
