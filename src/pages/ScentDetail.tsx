@@ -277,7 +277,7 @@ export default function ScentDetail() {
                 {topNotes.map((note: any, idx: number) => (
                   <div key={idx}>
                     <div className="flex justify-between mb-1">
-                      <span className="font-medium">{note.name}</span>
+                      <span className="font-medium">{note.name ?? note.note}</span>
                       <span className="text-muted-foreground">{note.percentage}%</span>
                     </div>
                     <Progress value={note.percentage} className="h-2" />
