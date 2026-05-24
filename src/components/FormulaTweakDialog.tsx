@@ -164,7 +164,7 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
           user_id: user.id,
           name: newName.trim(),
           fragrance_code: fragranceCode,
-          formula: formula,
+          formula: formula as any,
           intensity: originalScent.intensity,
           longevity: originalScent.longevity,
           match_score: originalScent.match_score,
