@@ -183,6 +183,10 @@ const QuizResults = () => {
   };
 
   const handleAddToCart = async (scent: Recommendation) => {
+    if (!isValidFormula(scent.formula)) {
+      toast.error(EMPTY_FORMULA_MESSAGE);
+      return;
+    }
     const size = selectedSize[scent.id] || '30ml';
     setAddingToCart(prev => ({ ...prev, [scent.id]: true }));
     
