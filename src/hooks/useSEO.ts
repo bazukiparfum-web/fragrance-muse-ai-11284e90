@@ -74,13 +74,23 @@ export function useSEO({ title, description, image, type = "website" }: SEOOptio
     trackMeta(upsertMeta('meta[property="og:description"]', "property", "og:description", description));
     trackMeta(upsertMeta('meta[property="og:type"]', "property", "og:type", type));
     trackMeta(upsertMeta('meta[property="og:url"]', "property", "og:url", url));
+    trackMeta(upsertMeta('meta[property="og:site_name"]', "property", "og:site_name", "Bazuki Perfumes"));
+    trackMeta(upsertMeta('meta[property="og:locale"]', "property", "og:locale", "en_IN"));
     if (absImage) {
       trackMeta(upsertMeta('meta[property="og:image"]', "property", "og:image", absImage));
+      trackMeta(upsertMeta('meta[property="og:image:width"]', "property", "og:image:width", "1200"));
+      trackMeta(upsertMeta('meta[property="og:image:height"]', "property", "og:image:height", "630"));
+      trackMeta(upsertMeta('meta[property="og:image:alt"]', "property", "og:image:alt", title));
     }
 
     trackMeta(upsertMeta('meta[name="twitter:card"]', "name", "twitter:card", absImage ? "summary_large_image" : "summary"));
+    trackMeta(upsertMeta('meta[name="twitter:site"]', "name", "twitter:site", "@bazukiperfume"));
     trackMeta(upsertMeta('meta[name="twitter:title"]', "name", "twitter:title", title));
     trackMeta(upsertMeta('meta[name="twitter:description"]', "name", "twitter:description", description));
+    if (absImage) {
+      trackMeta(upsertMeta('meta[name="twitter:image"]', "name", "twitter:image", absImage));
+      trackMeta(upsertMeta('meta[name="twitter:image:alt"]', "name", "twitter:image:alt", title));
+    }
     if (absImage) {
       trackMeta(upsertMeta('meta[name="twitter:image"]', "name", "twitter:image", absImage));
     }
