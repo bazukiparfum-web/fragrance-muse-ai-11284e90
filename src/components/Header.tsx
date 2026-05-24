@@ -52,20 +52,33 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
-    const check = async () => {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      setUser(currentUser);
-      if (!currentUser) return setIsAdmin(false);
+    const loadAdmin = async (uid: string) => {
       const { data } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', currentUser.id)
+        .eq('user_id', uid)
         .eq('role', 'admin')
         .maybeSingle();
       setIsAdmin(!!data);
     };
-    check();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => check());
+
+    // Set up listener FIRST (sync only — defer async work to avoid deadlocks)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setTimeout(() => { loadAdmin(session.user.id); }, 0);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    // Then seed the initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) loadAdmin(session.user.id);
+      else setIsAdmin(false);
+    });
+
     return () => subscription.unsubscribe();
   }, []);
 
