@@ -60,20 +60,45 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
   };
 
   const handleLevelTo100 = () => {
-    const total = totalPercentage;
-    if (total === 0) return;
+    const lockedTotal = formula.reduce(
+      (sum, n) => sum + (n.locked ? n.percentage : 0),
+      0
+    );
 
-    const scaleFactor = 100 / total;
-    const leveledFormula = formula.map(note => ({
-      ...note,
-      percentage: Math.round(note.percentage * scaleFactor * 100) / 100
-    }));
+    if (lockedTotal >= 100) {
+      toast.error("Locked notes already total 100% or more");
+      return;
+    }
 
-    // Adjust for rounding errors
-    const newTotal = leveledFormula.reduce((sum, note) => sum + note.percentage, 0);
-    if (newTotal !== 100 && leveledFormula.length > 0) {
-      leveledFormula[0].percentage += (100 - newTotal);
-      leveledFormula[0].percentage = Math.round(leveledFormula[0].percentage * 100) / 100;
+    const unlockedNotes = formula.filter((n) => !n.locked);
+    const unlockedTotal = unlockedNotes.reduce((sum, n) => sum + n.percentage, 0);
+
+    if (unlockedNotes.length === 0 || unlockedTotal === 0) {
+      toast.error("No unlocked notes to rescale");
+      return;
+    }
+
+    const remaining = 100 - lockedTotal;
+    const scale = remaining / unlockedTotal;
+
+    const leveledFormula = formula.map((note) =>
+      note.locked
+        ? note
+        : { ...note, percentage: Math.round(note.percentage * scale * 100) / 100 }
+    );
+
+    // Fix rounding drift on first unlocked note so total === 100
+    const newTotal = leveledFormula.reduce((sum, n) => sum + n.percentage, 0);
+    const drift = Math.round((100 - newTotal) * 100) / 100;
+    if (drift !== 0) {
+      const firstUnlockedIdx = leveledFormula.findIndex((n) => !n.locked);
+      if (firstUnlockedIdx >= 0) {
+        leveledFormula[firstUnlockedIdx] = {
+          ...leveledFormula[firstUnlockedIdx],
+          percentage:
+            Math.round((leveledFormula[firstUnlockedIdx].percentage + drift) * 100) / 100,
+        };
+      }
     }
 
     setFormula(leveledFormula);
