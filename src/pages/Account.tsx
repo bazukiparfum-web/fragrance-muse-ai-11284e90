@@ -193,9 +193,18 @@ const Account = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success('Logged out successfully');
-    navigate('/');
+    try {
+      // 'local' scope avoids the global revoke call that can fail with "Failed to fetch"
+      await supabase.auth.signOut({ scope: 'local' });
+      setProfile(null);
+      setCurrentUserId(null);
+      toast.success('Logged out successfully');
+    } catch (err) {
+      console.error('Sign out error:', err);
+      toast.success('Signed out');
+    } finally {
+      navigate('/');
+    }
   };
 
   const formatDate = (dateString: string) => {
