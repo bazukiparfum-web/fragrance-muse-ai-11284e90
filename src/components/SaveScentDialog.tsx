@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { generateFragranceCode } from "@/lib/fragranceCodeGenerator";
 import { generateVisualData } from "@/lib/fragranceColorMapper";
 import { useNavigate } from "react-router-dom";
+import { isValidFormula, EMPTY_FORMULA_MESSAGE } from "@/lib/formulaValidation";
 
 interface SaveScentDialogProps {
   open: boolean;
