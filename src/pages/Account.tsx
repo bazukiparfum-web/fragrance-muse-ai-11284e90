@@ -1052,7 +1052,9 @@ const Account = () => {
             <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleChangePassword}>Change Password</Button>
+            <Button onClick={handleChangePassword} disabled={changingPassword}>
+              {changingPassword ? 'Updating…' : 'Change Password'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
