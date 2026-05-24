@@ -161,6 +161,13 @@ export default function ScentDetailDrawer({ item, open, onOpenChange }: Props) {
           </Button>
         </div>
       </SheetContent>
+      {item.scent && (
+        <FormulaTweakDialog
+          open={tweakOpen}
+          onOpenChange={setTweakOpen}
+          originalScent={item.scent}
+        />
+      )}
     </Sheet>
   );
 }
