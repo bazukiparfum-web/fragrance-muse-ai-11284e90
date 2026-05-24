@@ -117,6 +117,11 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
       return;
     }
 
+    if (!isValidFormula(formula)) {
+      toast.error(EMPTY_FORMULA_MESSAGE);
+      return;
+    }
+
     if (totalPercentage === 0) {
       toast.error("Formula cannot be empty");
       return;
