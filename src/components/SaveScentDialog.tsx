@@ -22,6 +22,10 @@ export function SaveScentDialog({ open, onOpenChange, recommendation }: SaveScen
   const navigate = useNavigate();
 
   const handleSave = async () => {
+    if (!isValidFormula(recommendation?.formula)) {
+      toast.error(EMPTY_FORMULA_MESSAGE);
+      return;
+    }
     setIsLoading(true);
     try {
       // Get current user
