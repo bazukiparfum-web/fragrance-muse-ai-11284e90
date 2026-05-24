@@ -191,6 +191,7 @@ export default function ScentDetail() {
   const topNotes = scent.formula?.filter((n: any) => n.category === 'top') || [];
   const heartNotes = scent.formula?.filter((n: any) => n.category === 'heart') || [];
   const baseNotes = scent.formula?.filter((n: any) => n.category === 'base') || [];
+  const hasFormula = Array.isArray(scent.formula) && scent.formula.length > 0;
 
   const breadcrumbs = buildBreadcrumbs([
     { name: "Home", path: "/" },
