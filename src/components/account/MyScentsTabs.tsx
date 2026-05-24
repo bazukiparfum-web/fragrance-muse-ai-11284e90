@@ -9,7 +9,7 @@ import { CreationCard } from './CreationCard';
 import { SavedScentCard } from './SavedScentCard';
 import { QuizResultsPanel } from './QuizResultsPanel';
 import { ReorderModal } from './ReorderModal';
-import { TweakSlidersDrawer } from './TweakSlidersDrawer';
+
 
 const BOOKMARK_KEY = 'bazuki:bookmarks';
 
@@ -22,7 +22,6 @@ interface Props {
 export function MyScentsTabs({ savedScents, lastQuiz, onScentCreated }: Props) {
   const navigate = useNavigate();
   const [reorderScent, setReorderScent] = useState<any | null>(null);
-  const [tweakScent, setTweakScent] = useState<any | null>(null);
   const [bookmarkIds, setBookmarkIds] = useState<string[]>([]);
   const [bookmarkedScents, setBookmarkedScents] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -102,8 +101,8 @@ export function MyScentsTabs({ savedScents, lastQuiz, onScentCreated }: Props) {
                 <CreationCard
                   key={s.id}
                   scent={s}
-                  onReorder={setReorderScent}
-                  onTweak={setTweakScent}
+                  onAddToCart={setReorderScent}
+                  onView={(scent) => navigate(`/shop/account/scents/${scent.id}`)}
                 />
               ))}
             </div>
@@ -149,12 +148,6 @@ export function MyScentsTabs({ savedScents, lastQuiz, onScentCreated }: Props) {
         open={!!reorderScent}
         onOpenChange={(o) => !o && setReorderScent(null)}
         scent={reorderScent}
-      />
-      <TweakSlidersDrawer
-        open={!!tweakScent}
-        onOpenChange={(o) => !o && setTweakScent(null)}
-        scent={tweakScent}
-        onSaved={onScentCreated}
       />
     </>
   );

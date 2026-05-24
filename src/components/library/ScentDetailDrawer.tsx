@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { FragrancePyramid } from "@/components/FragrancePyramid";
+import { FormulaTweakDialog } from "@/components/FormulaTweakDialog";
 import { toNotes } from "@/lib/noteDescriptions";
 import { useCartStore } from "@/stores/cartStore";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +29,7 @@ export default function ScentDetailDrawer({ item, open, onOpenChange }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const isLoading = useCartStore((s) => s.isLoading);
   const [size, setSize] = useState<SizeKey>("ml30");
+  const [tweakOpen, setTweakOpen] = useState(false);
 
   useEffect(() => {
     if (item) setSize(item.prices.ml30 ? "ml30" : "ml50");
@@ -69,7 +71,21 @@ export default function ScentDetailDrawer({ item, open, onOpenChange }: Props) {
     toast.success(`Added to cart`, { description: `${item.name} · ${sizeLabel}` });
   };
 
+  const hasEditableFormula =
+    item.source === "scent" &&
+    item.scent?.formula &&
+    (Array.isArray(item.scent.formula)
+      ? item.scent.formula.length > 0
+      : Array.isArray(item.scent.formula?.notes) && item.scent.formula.notes.length > 0);
+
   const handleTweak = () => {
+    if (hasEditableFormula) {
+      setTweakOpen(true);
+      return;
+    }
+    toast.info("This signature's formula is private", {
+      description: "Take the quiz to craft a similar scent with our AI.",
+    });
     onOpenChange(false);
     navigate(`/shop/quiz?seed=${encodeURIComponent(item.id)}`);
   };
@@ -145,6 +161,13 @@ export default function ScentDetailDrawer({ item, open, onOpenChange }: Props) {
           </Button>
         </div>
       </SheetContent>
+      {item.scent && (
+        <FormulaTweakDialog
+          open={tweakOpen}
+          onOpenChange={setTweakOpen}
+          originalScent={item.scent}
+        />
+      )}
     </Sheet>
   );
 }
