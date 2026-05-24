@@ -91,9 +91,6 @@ export function useSEO({ title, description, image, type = "website" }: SEOOptio
       trackMeta(upsertMeta('meta[name="twitter:image"]', "name", "twitter:image", absImage));
       trackMeta(upsertMeta('meta[name="twitter:image:alt"]', "name", "twitter:image:alt", title));
     }
-    if (absImage) {
-      trackMeta(upsertMeta('meta[name="twitter:image"]', "name", "twitter:image", absImage));
-    }
 
     return () => {
       document.title = prevTitle;
