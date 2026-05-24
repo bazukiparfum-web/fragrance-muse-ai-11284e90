@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 import { Lock, Trash2 } from "lucide-react";
+import { isValidFormula, EMPTY_FORMULA_MESSAGE } from "@/lib/formulaValidation";
 
 interface FormulaTweakDialogProps {
   open: boolean;
