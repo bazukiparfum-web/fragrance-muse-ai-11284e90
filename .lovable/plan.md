@@ -1,58 +1,42 @@
-## Goal
+## 1. Create a test admin account
 
-Ensure the three new SEO landing pages (`/custom-perfume-india`, `/unique-perfume`, `/niche-perfume-india`) and the homepage emit clean, consistent canonical + Open Graph + Twitter Card metadata so shared links preview well and Google doesn't see duplicates.
+Seed a confirmed admin user directly in `auth.users` so you can log in immediately — no email verification needed.
 
-## Current state
+**Credentials**
 
-- `useSEO` already injects per-route `<link rel="canonical">`, `og:title/description/type/url`, and `twitter:card/title/description` on mount, and restores prior values on unmount.
-- `index.html` ships sitewide canonical + OG + Twitter tags pointing at `https://www.bazukifragrance.com/` with `og:image = /og-image.jpg`.
-- `SeoLandingPage` calls `useSEO({ title, description })` but does **not** pass an `image`, so the three new pages currently inherit no `og:image` / `twitter:image` after navigation (the static one from `index.html` gets overwritten as the user navigates between routes only for title/desc/canonical — image stays as whatever was last set).
-- The three SEO pages render fine but their share previews will fall back to no image or a stale one.
+- Email: `modivishvam007@gmail.com` 
+- Password: `BazukiAdmin@2026`
 
-## Changes
+Steps (single migration):
 
-### 1. Canonicals — verify + harden
+- Insert user into `auth.users` with `email_confirmed_at = now()` and a bcrypt-hashed password (uses `crypt()` from pgcrypto).
+- Insert matching row in `public.profiles`.
+- Insert `('admin')` row in `public.user_roles` for that user.
 
-`useSEO` already writes a per-route canonical using `window.location.origin + pathname`. That's correct for the three SEO routes. No code change needed beyond confirming they render — but to be explicit and avoid any race with the static `index.html` canonical, keep the static `<link rel="canonical" href="https://www.bazukifragrance.com/">` in `index.html` (it's the homepage canonical fallback for non-JS crawlers) and rely on `useSEO` to overwrite per route. No edit required here.
+You can log in at `/auth` → "More login options" → Sign In tab → email/password, then access `/admin`.
 
-### 2. Add a shared OG image to the SEO landing pages
+## 2. Fix "Forgot Password"
 
-- Extend `SeoLandingPage` props with an optional `image?: string` (defaults to `/og-image.jpg`).
-- Pass it through to `useSEO` so each SEO page emits `og:image` and `twitter:image` (large card).
-- The three landing page components (`CustomPerfumeIndia`, `UniquePerfume`, `NichePerfumeIndia`) don't need changes unless we want page-specific images later — they'll inherit the default `/og-image.jpg`.
+Investigate why the reset flow fails. Likely causes based on the current code:
 
-### 3. Extend `useSEO` with richer OG/Twitter coverage
+1. **No custom auth-email-hook deployed** — Lovable Cloud sends default reset emails, but the redirect target `${origin}/reset-password` may land on the wrong domain (preview vs custom domain), making the link look "broken". Confirm Site URL + Redirect URLs are correct in Cloud → Auth settings.
+2. `**/reset-password` page only renders the form when `type=recovery` is detected in URL hash** — if Supabase strips the hash before `useEffect` runs (e.g. when the session is already auto-exchanged), users see "Link expired". Fix by also accepting `?code=` query param and calling `supabase.auth.exchangeCodeForSession()` when present, plus a more lenient recovery detection (any active session arriving on this route).
+3. **Network errors** in `handleResetPassword` already surface a "Connection blocked" toast — verify whether the failure is actually at `resetPasswordForEmail` (network) or after clicking the email link (token handling).
 
-Add the following meta tags to the upsert list in `src/hooks/useSEO.ts`:
+### Implementation
 
-- `og:site_name` = "Bazuki Perfumes"
-- `og:locale` = "en_IN"
-- `og:image:width` = "1200", `og:image:height` = "630" (only when image is set)
-- `twitter:site` = "@bazukiperfume" (only if we want it — will include since brand has social presence)
-- `twitter:image:alt` = same as title (only when image is set)
-
-All are restored on unmount via the existing `restorers` pattern.
-
-### 4. Homepage parity
-
-`src/pages/Index.tsx` already calls `useSEO`. After the hook gains the extra fields above, the homepage automatically benefits. Confirm `Index.tsx` passes `image="/og-image.jpg"` (or add it if missing) so `og:image` is set explicitly rather than inherited from the static head.
-
-### 5. `index.html` cleanup
-
-- Keep the sitewide canonical, OG, and Twitter tags as fallbacks for non-JS social crawlers (LinkedIn, Slack, Facebook) — they only ever see the static head.
-- Add the two missing static tags so first-paint previews are complete: `og:image:width`, `og:image:height`, `og:locale`, `twitter:site` (mirroring what `useSEO` will set per route).
+- Update `src/pages/ResetPassword.tsx`:
+  - Detect recovery from hash (`type=recovery`), query (`?code=...&type=recovery`), or `PASSWORD_RECOVERY` auth event.
+  - If `?code=` present, call `supabase.auth.exchangeCodeForSession(code)` before showing the form.
+  - Only show "Link expired" after a short grace period (e.g. 1.5s) to avoid false negatives during async exchange.
+- No DB changes for the fix itself.
 
 ## Files touched
 
-- `src/hooks/useSEO.ts` — add og:site_name, og:locale, og:image dimensions, twitter:site, twitter:image:alt to the upsert + restore list.
-- `src/pages/seo/SeoLandingPage.tsx` — accept optional `image` prop (default `/og-image.jpg`), pass to `useSEO`.
-- `src/pages/Index.tsx` — ensure `useSEO({ ..., image: "/og-image.jpg" })` is set explicitly.
-- `index.html` — add `og:image:width`, `og:image:height`, `og:locale`, `twitter:site` static tags.
-
-No new assets, no routing changes, no backend, no design tokens.
+- New migration (seed test admin)
+- `src/pages/ResetPassword.tsx`
 
 ## Out of scope
 
-- Generating per-page custom OG images (can be done later via `imagegen` if you want unique share cards per landing page).
-- Updating `sitemap.xml` / `robots.txt` (already done in the previous turn).
-- Adding `react-helmet-async` — current `useSEO` hook is sufficient.
+- Custom branded auth emails (separate scaffolding step)
+- Changing Supabase Site URL / Redirect URLs (must be done by you in Cloud → Auth settings if links point to the wrong domain)

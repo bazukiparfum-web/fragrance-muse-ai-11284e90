@@ -13,15 +13,54 @@ const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes('type=recovery')) setIsRecovery(true);
+    let cancelled = false;
+
+    const init = async () => {
+      const hash = window.location.hash || '';
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+      const qsType = url.searchParams.get('type');
+      const hashType = hash.match(/type=([^&]+)/)?.[1];
+
+      // PKCE-style link: ?code=...
+      if (code) {
+        try {
+          await supabase.auth.exchangeCodeForSession(code);
+          if (!cancelled) setIsRecovery(true);
+        } catch (e) {
+          console.error('exchangeCodeForSession failed', e);
+        }
+      }
+
+      // Implicit/hash-style link
+      if (hashType === 'recovery' || qsType === 'recovery') {
+        if (!cancelled) setIsRecovery(true);
+      }
+
+      // Fallback: if a session exists and we arrived with any auth params, allow reset
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && (code || hash.includes('access_token') || qsType)) {
+        if (!cancelled) setIsRecovery(true);
+      }
+
+      if (!cancelled) setChecking(false);
+    };
+
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setIsRecovery(true);
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecovery(true);
+        setChecking(false);
+      }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {
@@ -55,6 +94,14 @@ const ResetPassword = () => {
       </div>
     </>
   );
+
+  if (checking) {
+    return (
+      <Frame>
+        <p className="text-cream-muted text-sm text-center">Verifying your reset link…</p>
+      </Frame>
+    );
+  }
 
   if (!isRecovery) {
     return (
