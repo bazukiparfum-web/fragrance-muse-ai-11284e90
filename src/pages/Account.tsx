@@ -112,7 +112,30 @@ const Account = () => {
   const [savingShipping, setSavingShipping] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    // Listener FIRST (sync only)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setCurrentUserId(null);
+        setProfile(null);
+        navigate('/auth');
+        return;
+      }
+      setCurrentUserId(session.user.id);
+      setTimeout(() => { fetchData(); }, 0);
+    });
+
+    // Seed initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) {
+        setLoading(false);
+        navigate('/auth');
+        return;
+      }
+      fetchData();
+    });
+
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
@@ -170,9 +193,18 @@ const Account = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success('Logged out successfully');
-    navigate('/');
+    try {
+      // 'local' scope avoids the global revoke call that can fail with "Failed to fetch"
+      await supabase.auth.signOut({ scope: 'local' });
+      setProfile(null);
+      setCurrentUserId(null);
+      toast.success('Logged out successfully');
+    } catch (err) {
+      console.error('Sign out error:', err);
+      toast.success('Signed out');
+    } finally {
+      navigate('/');
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -312,31 +344,51 @@ const Account = () => {
     }
   };
 
+  const [changingPassword, setChangingPassword] = useState(false);
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       toast.error("Passwords don't match");
       return;
     }
-
     if (newPassword.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
     }
 
+    setChangingPassword(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
+      // Ensure session is restored before mutating the user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Your session expired. Please sign in again.');
+        navigate('/auth');
+        return;
+      }
 
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
 
       setShowPasswordDialog(false);
       setNewPassword('');
       setConfirmPassword('');
       toast.success('Password changed successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error changing password:', error);
-      toast.error('Failed to change password');
+      const msg = String(error?.message || '').toLowerCase();
+      const code = String(error?.code || error?.name || '').toLowerCase();
+
+      if (code.includes('authsessionmissing') || msg.includes('auth session missing')) {
+        toast.error('Your session expired. Please sign in again.');
+        navigate('/auth');
+      } else if (code === 'same_password' || msg.includes('should be different')) {
+        toast.error('New password must be different from your current password');
+      } else if (code === 'weak_password' || msg.includes('weak')) {
+        toast.error(error?.message || 'Password is too weak');
+      } else {
+        toast.error(error?.message || 'Failed to change password');
+      }
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -1000,7 +1052,9 @@ const Account = () => {
             <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleChangePassword}>Change Password</Button>
+            <Button onClick={handleChangePassword} disabled={changingPassword}>
+              {changingPassword ? 'Updating…' : 'Change Password'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

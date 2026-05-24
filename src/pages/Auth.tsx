@@ -57,12 +57,28 @@ const Auth = () => {
 
       if (error) throw error;
 
+      // Make sure the session is fully persisted before navigating away
+      await supabase.auth.getSession();
+
       toast({ title: 'Welcome back!' });
       navigate('/');
     } catch (error: any) {
+      const msg = String(error?.message || '');
+      const code = String(error?.code || '').toLowerCase();
+      const lower = msg.toLowerCase();
+
+      let friendly = msg || 'Could not sign in. Please try again.';
+      if (code === 'invalid_credentials' || lower.includes('invalid login credentials')) {
+        friendly = 'Wrong email or password.';
+      } else if (code === 'email_not_confirmed' || lower.includes('not confirmed')) {
+        friendly = 'Please confirm your email before signing in.';
+      } else if (lower.includes('failed to fetch') || lower.includes('network')) {
+        friendly = 'Connection blocked. Disable ad-blockers / privacy extensions and try again.';
+      }
+
       toast({
         title: 'Error signing in',
-        description: error.message,
+        description: friendly,
         variant: 'destructive',
       });
     } finally {
