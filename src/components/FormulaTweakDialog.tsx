@@ -28,11 +28,16 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
 
   useEffect(() => {
     if (open && originalScent) {
+      if (!isValidFormula(originalScent.formula)) {
+        toast.error("This scent has no editable formula.");
+        onOpenChange(false);
+        return;
+      }
       setNewName(`${originalScent.name} v2`);
       setFormula([...originalScent.formula]);
       setStep('name');
     }
-  }, [open, originalScent]);
+  }, [open, originalScent, onOpenChange]);
 
   const totalPercentage = formula.reduce((sum, note) => sum + note.percentage, 0);
   const visualData = generateVisualData(formula);
