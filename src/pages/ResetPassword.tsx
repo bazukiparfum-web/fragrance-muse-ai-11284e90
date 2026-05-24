@@ -95,6 +95,14 @@ const ResetPassword = () => {
     </>
   );
 
+  if (checking) {
+    return (
+      <Frame>
+        <p className="text-cream-muted text-sm text-center">Verifying your reset link…</p>
+      </Frame>
+    );
+  }
+
   if (!isRecovery) {
     return (
       <Frame>
