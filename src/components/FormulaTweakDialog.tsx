@@ -287,7 +287,7 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
                     <Button 
                       variant="outline" 
                       onClick={handleLevelTo100}
-                      disabled={totalPercentage === 0}
+                      disabled={formula.every((n) => n.locked) || formula.filter((n) => !n.locked).reduce((s, n) => s + n.percentage, 0) === 0}
                     >
                       Level to 100%
                     </Button>
