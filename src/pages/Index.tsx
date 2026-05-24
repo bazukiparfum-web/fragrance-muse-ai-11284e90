@@ -17,6 +17,7 @@ const Index = () => {
   useSEO({
     title: "Bazuki Perfumes – Unique, Custom-Inspired Fragrances from India",
     description: "Bazuki Perfumes — India's destination for unique, custom-inspired fragrances. Explore artisan scents crafted for those who refuse to smell like everyone else. Shop at bazukifragrance.com",
+    image: "/og-image.jpg",
   });
 
   const breadcrumbsJsonLd = buildBreadcrumbs([{ name: "Home", path: "/" }]);
