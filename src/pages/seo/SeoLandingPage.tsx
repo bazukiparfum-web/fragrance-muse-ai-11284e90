@@ -33,6 +33,7 @@ interface Props {
   faqs: SeoLandingFaq[];
   breadcrumbName: string;
   idPrefix: string;
+  image?: string;
 }
 
 const SeoLandingPage = ({
