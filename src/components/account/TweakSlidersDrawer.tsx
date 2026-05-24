@@ -101,6 +101,11 @@ export function TweakSlidersDrawer({ open, onOpenChange, scent, onSaved }: Props
   };
 
   const handleSave = async () => {
+    const newFormulaPreview = buildNewFormula();
+    if (!isValidFormula(newFormulaPreview)) {
+      toast.error(EMPTY_FORMULA_MESSAGE);
+      return;
+    }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
