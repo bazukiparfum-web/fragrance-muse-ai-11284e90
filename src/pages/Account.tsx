@@ -112,7 +112,30 @@ const Account = () => {
   const [savingShipping, setSavingShipping] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    // Listener FIRST (sync only)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setCurrentUserId(null);
+        setProfile(null);
+        navigate('/auth');
+        return;
+      }
+      setCurrentUserId(session.user.id);
+      setTimeout(() => { fetchData(); }, 0);
+    });
+
+    // Seed initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) {
+        setLoading(false);
+        navigate('/auth');
+        return;
+      }
+      fetchData();
+    });
+
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
