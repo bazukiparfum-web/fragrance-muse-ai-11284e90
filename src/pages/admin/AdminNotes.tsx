@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import { Card } from '@/components/ui/card';
@@ -20,13 +20,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const AdminNotes = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(true);
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
   // Filter & Search State
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') ?? '');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [familyFilter, setFamilyFilter] = useState<string>('all');
   const [activeOnly, setActiveOnly] = useState(true);

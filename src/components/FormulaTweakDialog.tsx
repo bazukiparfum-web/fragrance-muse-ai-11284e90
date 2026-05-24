@@ -9,7 +9,7 @@ import { generateVisualData } from "@/lib/fragranceColorMapper";
 import { generateFragranceCode } from "@/lib/fragranceCodeGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Lock, Trash2 } from "lucide-react";
 
 interface FormulaTweakDialogProps {
@@ -214,7 +214,14 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-lg">{note.percentage}%</span>
-                        <span className="font-medium">{note.name}</span>
+                        <Link
+                          to={`/admin/notes?search=${encodeURIComponent(note.name ?? note.note ?? '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-primary hover:underline underline-offset-4"
+                        >
+                          {note.name ?? note.note}
+                        </Link>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
