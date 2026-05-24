@@ -217,7 +217,7 @@ export default function SharedFragrance() {
                         {notes.map((note: any, idx: number) => (
                           <div key={idx}>
                             <div className="flex justify-between text-sm mb-1">
-                              <span>{note.name}</span>
+                              <span>{note.name ?? note.note}</span>
                               <span className="text-muted-foreground">{note.percentage}%</span>
                             </div>
                             <Progress value={note.percentage} className="h-2" />
