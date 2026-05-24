@@ -18,6 +18,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { buildBreadcrumbs } from '@/lib/breadcrumbs';
 import { FragrancePyramid } from '@/components/FragrancePyramid';
 import { toNotes } from '@/lib/noteDescriptions';
+import { isValidFormula, EMPTY_FORMULA_MESSAGE } from '@/lib/formulaValidation';
 
 const quizResultsBreadcrumbs = buildBreadcrumbs([
   { name: 'Home', path: '/' },
