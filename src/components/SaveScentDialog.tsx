@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { generateFragranceCode } from "@/lib/fragranceCodeGenerator";
 import { generateVisualData } from "@/lib/fragranceColorMapper";
 import { useNavigate } from "react-router-dom";
+import { isValidFormula, EMPTY_FORMULA_MESSAGE } from "@/lib/formulaValidation";
 
 interface SaveScentDialogProps {
   open: boolean;
@@ -21,6 +22,10 @@ export function SaveScentDialog({ open, onOpenChange, recommendation }: SaveScen
   const navigate = useNavigate();
 
   const handleSave = async () => {
+    if (!isValidFormula(recommendation?.formula)) {
+      toast.error(EMPTY_FORMULA_MESSAGE);
+      return;
+    }
     setIsLoading(true);
     try {
       // Get current user

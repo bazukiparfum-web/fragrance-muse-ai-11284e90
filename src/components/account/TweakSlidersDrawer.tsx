@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateFragranceCode } from '@/lib/fragranceCodeGenerator';
 import { generateVisualData } from '@/lib/fragranceColorMapper';
 import { toast } from 'sonner';
+import { isValidFormula, EMPTY_FORMULA_MESSAGE } from '@/lib/formulaValidation';
 
 interface Props {
   open: boolean;
@@ -100,6 +101,11 @@ export function TweakSlidersDrawer({ open, onOpenChange, scent, onSaved }: Props
   };
 
   const handleSave = async () => {
+    const newFormulaPreview = buildNewFormula();
+    if (!isValidFormula(newFormulaPreview)) {
+      toast.error(EMPTY_FORMULA_MESSAGE);
+      return;
+    }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();

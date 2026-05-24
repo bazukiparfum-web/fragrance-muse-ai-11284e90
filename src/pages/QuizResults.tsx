@@ -18,6 +18,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { buildBreadcrumbs } from '@/lib/breadcrumbs';
 import { FragrancePyramid } from '@/components/FragrancePyramid';
 import { toNotes } from '@/lib/noteDescriptions';
+import { isValidFormula, EMPTY_FORMULA_MESSAGE } from '@/lib/formulaValidation';
 
 const quizResultsBreadcrumbs = buildBreadcrumbs([
   { name: 'Home', path: '/' },
@@ -182,6 +183,10 @@ const QuizResults = () => {
   };
 
   const handleAddToCart = async (scent: Recommendation) => {
+    if (!isValidFormula(scent.formula)) {
+      toast.error(EMPTY_FORMULA_MESSAGE);
+      return;
+    }
     const size = selectedSize[scent.id] || '30ml';
     setAddingToCart(prev => ({ ...prev, [scent.id]: true }));
     

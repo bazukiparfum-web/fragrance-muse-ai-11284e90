@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
 import { Lock, Trash2 } from "lucide-react";
+import { isValidFormula, EMPTY_FORMULA_MESSAGE } from "@/lib/formulaValidation";
 
 interface FormulaTweakDialogProps {
   open: boolean;
@@ -27,11 +28,16 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
 
   useEffect(() => {
     if (open && originalScent) {
+      if (!isValidFormula(originalScent.formula)) {
+        toast.error("This scent has no editable formula.");
+        onOpenChange(false);
+        return;
+      }
       setNewName(`${originalScent.name} v2`);
       setFormula([...originalScent.formula]);
       setStep('name');
     }
-  }, [open, originalScent]);
+  }, [open, originalScent, onOpenChange]);
 
   const totalPercentage = formula.reduce((sum, note) => sum + note.percentage, 0);
   const visualData = generateVisualData(formula);
@@ -111,6 +117,11 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
       return;
     }
 
+    if (!isValidFormula(formula)) {
+      toast.error(EMPTY_FORMULA_MESSAGE);
+      return;
+    }
+
     if (totalPercentage === 0) {
       toast.error("Formula cannot be empty");
       return;
@@ -153,7 +164,7 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
           user_id: user.id,
           name: newName.trim(),
           fragrance_code: fragranceCode,
-          formula: formula,
+          formula: formula as any,
           intensity: originalScent.intensity,
           longevity: originalScent.longevity,
           match_score: originalScent.match_score,

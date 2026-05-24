@@ -191,6 +191,7 @@ export default function ScentDetail() {
   const topNotes = scent.formula?.filter((n: any) => n.category === 'top') || [];
   const heartNotes = scent.formula?.filter((n: any) => n.category === 'heart') || [];
   const baseNotes = scent.formula?.filter((n: any) => n.category === 'base') || [];
+  const hasFormula = Array.isArray(scent.formula) && scent.formula.length > 0;
 
   const breadcrumbs = buildBreadcrumbs([
     { name: "Home", path: "/" },
@@ -268,6 +269,17 @@ export default function ScentDetail() {
         {/* Ingredients Section */}
         <Card className="p-6 md:p-8 mb-8">
           <h2 className="text-2xl font-bold mb-6">Fragrance Formula</h2>
+
+          {!hasFormula && (
+            <div className="rounded-md border border-dashed border-border bg-muted/30 p-6 text-center">
+              <p className="font-medium mb-1">Incomplete formula</p>
+              <p className="text-sm text-muted-foreground">
+                This fragrance has no recorded notes, so it can't be ordered or tweaked.
+                Take the quiz again to generate a new recommendation.
+              </p>
+            </div>
+          )}
+          
           
           {/* Top Notes */}
           {topNotes.length > 0 && (
@@ -364,7 +376,14 @@ export default function ScentDetail() {
               )}
             </Button>
 
-            <Button onClick={handleTweak} variant="outline" size="lg" className="md:w-auto w-full">
+            <Button
+              onClick={handleTweak}
+              variant="outline"
+              size="lg"
+              className="md:w-auto w-full"
+              disabled={!hasFormula}
+              title={!hasFormula ? 'No formula to tweak' : undefined}
+            >
               <Wand2 className="mr-2 h-4 w-4" />
               Tweak Formula
             </Button>
