@@ -1,29 +1,25 @@
 ## Problem
 
-On the saved scent detail page (`/shop/account/scents/:id`), the "Fragrance Formula" section renders only the progress bars and percentages — note names are blank.
+In the "Tweak Formula" dialog (`FormulaTweakDialog`), the ingredient rows show only the percentage — the note name is missing. Same root cause as before: the saved formula stores the note under `note.note`, but the UI reads `note.name`.
 
-Cause: saved formulas store the note name under the `note` field (e.g. `{ "note": "Black Pepper", "category": "top", "percentage": 15, ... }`), but the UI reads `note.name`, which is undefined, so the label renders as an empty string.
-
-Verified against the current row:
-```
-[{ "note": "Black Pepper", "family": "spicy", "category": "top", "percentage": 15 }, ...]
-```
+Additionally, the user wants each note name to link to the backend `/admin/notes` page for the matching note.
 
 ## Fix
 
-Render `note.name ?? note.note` everywhere a saved-scent formula is displayed. This is purely a presentation fix — no DB migration, no edge function changes, no rewrite of the saving pipeline.
+### 1. `src/components/FormulaTweakDialog.tsx`
+- Replace the bare `{note.name}` span with `note.name ?? note.note`.
+- Wrap that label in a `Link` to `/admin/notes?search=<encoded note name>`, `target="_blank" rel="noopener noreferrer"`, styled subtly (underline on hover, `text-primary`).
+- No other behavior changes (slider, lock, delete unchanged).
 
-### Files to update
-
-1. **`src/pages/ScentDetail.tsx`** — three spots (Top / Heart / Base notes) at lines 280, 298, 316. Replace `{note.name}` with `{note.name ?? note.note}`.
-2. **`src/pages/SharedFragrance.tsx`** — same pattern in the Fragrance Formula block.
+### 2. `src/pages/admin/AdminNotes.tsx`
+- On mount, read `useSearchParams()` and if `?search=` is present, seed `searchTerm` with it so the linked note is filtered/highlighted immediately.
+- Existing search input continues to work as before.
 
 ### Out of scope
-
-- Normalising saved formulas in the database.
-- Changing how `quiz-recommendations` / `SaveScentDialog` write the formula.
-- Any other section of the page.
+- DB normalisation of `note` vs `name` keys.
+- Other dialogs/pages that already show note names correctly.
+- Building a per-note detail route under `/admin/notes/:id` (current admin UI is a single searchable list).
 
 ## Verification
-
-Reload `/shop/account/scents/bb1b55be-...` and confirm each progress bar now shows its note name (Black Pepper, Rose, Jasmine, Amber, Sandalwood, Oud).
+- Open a saved scent → Tweak Formula → confirm each row shows the note name (Black Pepper, Rose, Jasmine, Amber, Sandalwood, Oud).
+- Click a note name → new tab opens at `/admin/notes` with the search box pre-filled and the row visible.
