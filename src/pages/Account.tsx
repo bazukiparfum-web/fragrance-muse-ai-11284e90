@@ -344,31 +344,51 @@ const Account = () => {
     }
   };
 
+  const [changingPassword, setChangingPassword] = useState(false);
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       toast.error("Passwords don't match");
       return;
     }
-
     if (newPassword.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
     }
 
+    setChangingPassword(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
+      // Ensure session is restored before mutating the user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Your session expired. Please sign in again.');
+        navigate('/auth');
+        return;
+      }
 
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
 
       setShowPasswordDialog(false);
       setNewPassword('');
       setConfirmPassword('');
       toast.success('Password changed successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error changing password:', error);
-      toast.error('Failed to change password');
+      const msg = String(error?.message || '').toLowerCase();
+      const code = String(error?.code || error?.name || '').toLowerCase();
+
+      if (code.includes('authsessionmissing') || msg.includes('auth session missing')) {
+        toast.error('Your session expired. Please sign in again.');
+        navigate('/auth');
+      } else if (code === 'same_password' || msg.includes('should be different')) {
+        toast.error('New password must be different from your current password');
+      } else if (code === 'weak_password' || msg.includes('weak')) {
+        toast.error(error?.message || 'Password is too weak');
+      } else {
+        toast.error(error?.message || 'Failed to change password');
+      }
+    } finally {
+      setChangingPassword(false);
     }
   };
 
