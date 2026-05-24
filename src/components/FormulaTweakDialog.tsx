@@ -9,7 +9,7 @@ import { generateVisualData } from "@/lib/fragranceColorMapper";
 import { generateFragranceCode } from "@/lib/fragranceCodeGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Lock, Trash2 } from "lucide-react";
 
 interface FormulaTweakDialogProps {
