@@ -7,8 +7,8 @@ import { useCartStore } from '@/stores/cartStore';
 import { toast } from 'sonner';
 
 const SIZES = [
-  { size: '30ml', price: 899 },
-  { size: '50ml', price: 1299 },
+  { size: '50ml', price: 1099 },
+  { size: '100ml', price: 1899 },
 ];
 
 interface Props {
