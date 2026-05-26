@@ -25,7 +25,7 @@ export default function ScentDetail() {
   const [scent, setScent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [selectedSize, setSelectedSize] = useState('30ml');
+  const [selectedSize, setSelectedSize] = useState('50ml');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [tweakDialogOpen, setTweakDialogOpen] = useState(false);
 
