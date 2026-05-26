@@ -191,7 +191,7 @@ const QuizResults = () => {
       toast.error(EMPTY_FORMULA_MESSAGE);
       return;
     }
-    const size = selectedSize[scent.id] || '30ml';
+    const size = selectedSize[scent.id] || '50ml';
     setAddingToCart(prev => ({ ...prev, [scent.id]: true }));
     
     try {
