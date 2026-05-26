@@ -133,7 +133,8 @@ const QuizResults = () => {
       totalCost: '100',
       prices: {
         '30ml': 700,
-        '50ml': 1099
+        '50ml': 1099,
+        '100ml': 1899
       }
     },
     {
