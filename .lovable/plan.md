@@ -1,56 +1,60 @@
 ## Goal
 
-For **custom (AI/quiz) scents only**: customers can no longer buy a single 30ml bottle. The only way to get 30ml is the **3-bottle Custom Discovery Set** (mix 3 different custom scents) at **₹1,500** (existing Discovery Set). They can still buy a single **50ml** or a new single **100ml**. Signature Collection products are untouched.
+On `/shop/quiz/results`, after the 3 matched perfumes are revealed, the **primary purchase action** should be the **3 × 30ml Discovery Set (₹1,500)**. Individual **50ml / 100ml** purchases per scent become the secondary action shown below it.
 
-## Scope of changes (UI only — no pricing or product changes besides adding 100ml)
+## Changes (UI-only, single file: `src/pages/QuizResults.tsx`)
 
-### 1. Add 100ml as a custom-scent size
+### 1. New page order after the header
 
-- `src/pages/QuizResults.tsx` — extend the `prices` object on each recommended scent to include `'100ml'` (suggested price to confirm: **₹1,899**, currently 30ml=₹700, 50ml=₹1,099). Add `100ml` option to the size `Select`.
-- `src/pages/ScentDetail.tsx` — add `100ml` to size options, default selection logic, and the `addItem` mapping (`options.values` array becomes `['30ml','50ml','100ml']`, but 30ml row is rendered disabled — see step 2).
-- `src/components/account/ReorderModal.tsx` — add a 3rd `SIZES` entry `{ size: '100ml', price: 1899 }`.
-- `src/components/library/ScentDetailDrawer.tsx` — when item is a custom scent, render 50ml/100ml only (30ml hidden/disabled). When item is a Signature Shopify product, behavior unchanged.
-- `supabase/functions/create-shopify-product-from-scent/index.ts` — add a 100ml variant alongside the existing 30ml/50ml variants so Shopify cart resolves the new size.
+```
+Hero ("Your Perfect Matches")
+  │
+  ├─ Section A — Your 3 matches (visual summary only)
+  │     3 cards side-by-side, each showing:
+  │       • Name + match %
+  │       • Story
+  │       • Fragrance pyramid
+  │       • Intensity / Longevity bars
+  │       • Small "Save" icon button (top-right or footer of card)
+  │     No size selector, no Add-to-Cart button in this section.
+  │
+  ├─ Section B — PRIMARY CTA: Discovery Set (3 × 30ml @ ₹1,500)
+  │     Promoted, larger card immediately under the matches.
+  │     Existing copy + price + "Add 30ml Discovery Set to Cart".
+  │     Add line: "Try all three of your matches in travel-friendly 30ml bottles."
+  │
+  ├─ Section C — SECONDARY: Want a full bottle of just one?
+  │     Heading: "Prefer a single full-size bottle?"
+  │     Sub-copy: "Choose 50ml or 100ml of any single match."
+  │     A compact row/list (one row per scent) with:
+  │       • Scent name
+  │       • Size select (50ml / 100ml)
+  │       • Price for selected size
+  │       • "Add to Cart" button (reuses existing handleAddToCart)
+  │     Helper microcopy: "30ml is only available in the Discovery Set above."
+  │
+  └─ Learn-more guides + Scent Coaching + Analytics (unchanged)
+```
 
-### 2. Disable single 30ml purchase for custom scents
+### 2. Concrete edits in `QuizResults.tsx`
 
-In each entry point that lets a user add a **custom** scent to cart:
+- Split the current single `.map()` (lines 398–506) into:
+  - **Section A** — same `grid md:grid-cols-3` but render only name, match badge, story, `FragrancePyramid`, intensity/longevity bars, and a small `Save` button. Remove the price list, size `Select`, and Add-to-Cart button from inside each card.
+- Move the **Discovery Set card** (lines 508–543) so it appears **immediately after Section A**, and visually elevate it (slightly larger heading, primary border, keep existing pricing + Save ₹500 badge). This becomes the dominant CTA.
+- Add **Section C** below the Discovery Set card:
+  - A `Card` titled "Prefer a single full-size bottle?" with sub-copy.
+  - Inside, render `recommendations.map(...)` as compact rows (stacked on mobile, `md:flex` row on desktop) containing: scent name, the existing 50ml/100ml `Select`, displayed price, and the existing "Add to Cart" button (reuse `handleAddToCart`, `selectedSize`, `addingToCart` state as-is).
+  - Keep the "30ml is sold only as the 3-bottle Discovery Set above" helper line at the bottom of this section.
+- Keep guide links, Scent Coaching CTA, Analytics, and `SaveScentDialog` exactly where they are.
 
-- `src/pages/QuizResults.tsx`:
-  - Remove the standalone 30ml option from the per-scent size `Select` (only `50ml` and `100ml`).
-  - Keep the "Get All 3 as 30ml Discovery Set" CTA — this remains the only way to get 30ml.
-  - Default `selectedSize` becomes `'50ml'`.
-- `src/pages/ScentDetail.tsx`:
-  - Render the 30ml size button as disabled with helper copy "Only available in the 3-bottle Discovery Set".
-  - Add a secondary CTA "Add to Discovery Set" that links back to `/shop/quiz/results` (or opens the discovery-set flow) when the user wants 30ml.
-- `src/components/account/ReorderModal.tsx`:
-  - Detect custom scent (default-true here since reorder targets user's own saved scents). Hide the 30ml tile; default to 50ml.
-- `src/components/library/ScentDetailDrawer.tsx`:
-  - For custom scents (`item.source === 'scent'`), hide 30ml from size buttons.
-  - Signature collection items (`item.source === 'shopify'` for signature handles): no change.
+### 3. Out of scope
 
-### 3. Cart-side safety net
+- No changes to pricing, Shopify products, edge functions, cart store, or any other page.
+- No changes to the matched-scent data, formulas, or save/share flows.
+- No new components — all edits stay inside `src/pages/QuizResults.tsx`.
 
-`src/stores/cartStore.ts` — add a guard in `addItem`: if `selectedOptions` contains `{ name: 'Size', value: '30ml' }` AND the product handle starts with `custom-scent-` (custom scents use this handle prefix per `ReorderModal.tsx`), reject with a toast "30ml custom scents are sold only as a Discovery Set of 3". This catches any missed entry point.
+## Acceptance
 
-### 4. Discovery Set composition rule (mix 3 different)
-
-Today the "Get All 3 as 30ml Discovery Set" button on `/shop/quiz/results` already adds the **pre-made `discovery-set-30ml` Shopify product** (single line item, single variant). Since the answer is "mix 3 different custom scents", we need the set to actually carry the 3 generated scents:
-
-- Update `handleAddDiscoverySet` in `QuizResults.tsx` to call `create-shopify-product-from-scent` for each of the 3 recommended scents (parallel), then add **3 separate 30ml line items** to the cart (one per custom scent) instead of the generic discovery-set product. Total still presents as ₹1,500 by applying a fixed discount code or by using Shopify bundle pricing.
-- Simpler interim approach (recommended for this iteration): keep the existing `discovery-set-30ml` Shopify product as the single cart line, but attach the 3 scent IDs / fragrance codes as line-item properties so production-queue and the webhook handler can still produce the right 3 bottles. This avoids needing a discount rule and matches the existing webhook flow.
-
-### 5. Out of scope
-
-- No DB schema changes.
-- No new Shopify discount codes.
-- No changes to Signature Collection products or signature 30ml purchases.
-- 100ml machine production support (assumed handled by the existing `machine_formulas.total_volume_ml` parameter; just pass 100 instead of 30).
-
-## Open items needing your confirmation
-
-1. **100ml price** for custom scents — I proposed ₹1,899; confirm or override.
-2. **Discovery Set composition** — go with the simpler "line-item properties on existing discovery-set-30ml product" approach (faster, no discount engineering) or the "3 separate line items + bundle discount" approach (cleaner cart UX)?
-3. Should the disabled 30ml button on `ScentDetail` say something specific, or just hide it entirely?
-
-Once you confirm, I'll implement.
+- After completing the quiz, users see the 3 matches → then the prominent ₹1,500 Discovery Set CTA as the next thing → then a secondary "buy a single 50ml/100ml" section below it.
+- Single 30ml is nowhere on the page (already enforced).
+- All existing handlers (`handleAddToCart`, `handleAddDiscoverySet`, `handleSaveScent`) continue to work without modification.
