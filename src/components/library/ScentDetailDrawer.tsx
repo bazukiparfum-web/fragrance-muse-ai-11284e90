@@ -32,7 +32,12 @@ export default function ScentDetailDrawer({ item, open, onOpenChange }: Props) {
   const [tweakOpen, setTweakOpen] = useState(false);
 
   useEffect(() => {
-    if (item) setSize(item.prices.ml30 ? "ml30" : "ml50");
+    if (item) {
+      // Custom scents (source === 'scent') cannot be bought as single 30ml.
+      const allow30 = item.source === 'shopify';
+      if (allow30 && item.prices.ml30) setSize('ml30');
+      else setSize('ml50');
+    }
   }, [item]);
 
   if (!item) return null;
