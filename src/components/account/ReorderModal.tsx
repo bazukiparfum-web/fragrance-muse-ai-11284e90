@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function ReorderModal({ open, onOpenChange, scent }: Props) {
-  const [size, setSize] = useState<string>('30ml');
+  const [size, setSize] = useState<string>('50ml');
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(false);
   const { addItem } = useCartStore();
