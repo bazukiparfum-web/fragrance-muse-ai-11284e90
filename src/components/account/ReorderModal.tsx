@@ -25,7 +25,7 @@ export function ReorderModal({ open, onOpenChange, scent }: Props) {
 
   useEffect(() => {
     if (open) {
-      setSize('30ml');
+      setSize('50ml');
       setQty(1);
     }
   }, [open]);
