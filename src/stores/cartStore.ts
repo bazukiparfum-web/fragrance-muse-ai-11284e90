@@ -60,6 +60,19 @@ export const useCartStore = create<CartStore>()(
       setDrawerOpen: (open) => set({ isDrawerOpen: open }),
 
       addItem: async (item) => {
+        // Safety net: prevent purchasing a single 30ml custom scent.
+        // 30ml custom scents are sold only as the 3-bottle Custom Discovery Set.
+        const handle = item.product?.node?.handle || '';
+        const isCustomScent = handle.startsWith('custom-scent-') || handle.startsWith('custom-');
+        const is30ml = item.selectedOptions?.some(
+          (o) => o.name === 'Size' && /^30\s?ml$/i.test(o.value)
+        );
+        if (isCustomScent && is30ml) {
+          const { toast } = await import('sonner');
+          toast.error('30ml custom scents are sold only as the 3-bottle Discovery Set.');
+          return false;
+        }
+
         const { items, cartId, clearCart } = get();
         const existingItem = items.find(i => i.variantId === item.variantId);
 
