@@ -395,6 +395,7 @@ const QuizResults = () => {
             </p>
           </div>
 
+          {/* Section A — Your 3 matches (visual summary) */}
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             {recommendations.map((scent) => (
               <Card key={scent.id} className="overflow-hidden hover-lift">
@@ -427,103 +428,54 @@ const QuizResults = () => {
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Intensity</h4>
                       <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-accent"
-                          style={{ width: `${scent.intensity * 10}%` }}
-                        />
+                        <div className="h-full bg-accent" style={{ width: `${scent.intensity * 10}%` }} />
                       </div>
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Longevity</h4>
                       <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-accent"
-                          style={{ width: `${scent.longevity * 10}%` }}
-                        />
+                        <div className="h-full bg-accent" style={{ width: `${scent.longevity * 10}%` }} />
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-3 mb-4">
-                    <div className="flex justify-between items-center text-sm">
-                      <span>50ml</span>
-                      <span className="font-semibold">₹{scent.prices['50ml']}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span>100ml</span>
-                      <span className="font-semibold">₹{scent.prices['100ml'] ?? 1899}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground italic pt-1">
-                      30ml is sold only as the 3-bottle Discovery Set below.
-                    </p>
-                  </div>
-
-                  <div className="mb-4">
-                    <Select
-                      value={selectedSize[scent.id] || '50ml'}
-                      onValueChange={(value) => setSelectedSize(prev => ({ ...prev, [scent.id]: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="50ml">50ml - ₹{scent.prices['50ml']}</SelectItem>
-                        <SelectItem value="100ml">100ml - ₹{scent.prices['100ml'] ?? 1899}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleSaveScent(scent)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <Save className="mr-1 h-4 w-4" />
-                      Save
-                    </Button>
-                    <Button
-                      onClick={() => handleAddToCart(scent)}
-                      size="sm"
-                      disabled={addingToCart[scent.id]}
-                    >
-                      {addingToCart[scent.id] ? (
-                        <>
-                          <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                          Adding...
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingCart className="mr-1 h-4 w-4" />
-                          Add to Cart
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => handleSaveScent(scent)}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <Save className="mr-1 h-4 w-4" />
+                    Save
+                  </Button>
                 </div>
               </Card>
             ))}
           </div>
 
-          <Card className="p-8 text-center bg-accent/5 border-accent/20">
-            <h3 className="font-serif text-2xl font-bold mb-4 heading-luxury">
+          {/* Section B — PRIMARY CTA: Discovery Set */}
+          <Card className="p-8 md:p-10 text-center bg-accent/5 border-2 border-accent/40 shadow-lg">
+            <div className="inline-block bg-accent text-accent-foreground px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4">
+              Recommended
+            </div>
+            <h3 className="font-serif text-3xl md:text-4xl font-bold mb-3 heading-luxury">
               Get All 3 as 30ml Discovery Set
             </h3>
-            <p className="text-muted-foreground mb-4">
-              Get all three custom fragrances in full-size 30ml bottles at an exclusive price
+            <p className="text-muted-foreground mb-2">
+              Try all three of your matches in travel-friendly 30ml bottles.
             </p>
             <p className="text-sm text-muted-foreground mb-6">
               Worth ₹2,100 if bought separately
             </p>
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <span className="text-3xl font-bold text-accent">₹1,500</span>
-              <span className="text-xl text-muted-foreground line-through">₹2,000</span>
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
+              <span className="text-4xl font-bold text-accent">₹1,500</span>
+              <span className="text-xl text-muted-foreground line-through">₹2,100</span>
               <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-semibold">
-                Save ₹500 (25% OFF)
+                Save ₹600
               </span>
             </div>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-accent hover:bg-accent/90"
               onClick={handleAddDiscoverySet}
               disabled={addingDiscoverySet}
@@ -540,6 +492,75 @@ const QuizResults = () => {
                 </>
               )}
             </Button>
+          </Card>
+
+          {/* Section C — SECONDARY: single full-size bottle */}
+          <Card className="mt-10 p-6 md:p-8">
+            <div className="mb-6 text-center">
+              <h3 className="font-serif text-2xl font-bold mb-2 heading-luxury">
+                Prefer a single full-size bottle?
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Choose 50ml or 100ml of any single match.
+              </p>
+            </div>
+
+            <div className="divide-y divide-border">
+              {recommendations.map((scent) => {
+                const size = selectedSize[scent.id] || '50ml';
+                const price = size === '100ml'
+                  ? (scent.prices['100ml'] ?? 1899)
+                  : scent.prices['50ml'];
+                return (
+                  <div
+                    key={scent.id}
+                    className="py-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-4"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-serif text-lg font-semibold truncate">{scent.name}</div>
+                      <div className="text-xs text-muted-foreground">{scent.matchScore}% Match</div>
+                    </div>
+                    <div className="w-full md:w-44">
+                      <Select
+                        value={size}
+                        onValueChange={(value) => setSelectedSize(prev => ({ ...prev, [scent.id]: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="50ml">50ml - ₹{scent.prices['50ml']}</SelectItem>
+                          <SelectItem value="100ml">100ml - ₹{scent.prices['100ml'] ?? 1899}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-24 text-right font-semibold">₹{price}</div>
+                    <Button
+                      onClick={() => handleAddToCart(scent)}
+                      size="sm"
+                      disabled={addingToCart[scent.id]}
+                      className="w-full md:w-auto"
+                    >
+                      {addingToCart[scent.id] ? (
+                        <>
+                          <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="mr-1 h-4 w-4" />
+                          Add to Cart
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-muted-foreground italic text-center mt-4">
+              30ml is only available in the Discovery Set above.
+            </p>
           </Card>
 
 
