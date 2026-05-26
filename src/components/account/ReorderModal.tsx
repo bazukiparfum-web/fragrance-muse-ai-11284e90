@@ -7,8 +7,8 @@ import { useCartStore } from '@/stores/cartStore';
 import { toast } from 'sonner';
 
 const SIZES = [
-  { size: '30ml', price: 899 },
-  { size: '50ml', price: 1299 },
+  { size: '50ml', price: 1099 },
+  { size: '100ml', price: 1899 },
 ];
 
 interface Props {
@@ -18,14 +18,14 @@ interface Props {
 }
 
 export function ReorderModal({ open, onOpenChange, scent }: Props) {
-  const [size, setSize] = useState<string>('30ml');
+  const [size, setSize] = useState<string>('50ml');
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(false);
   const { addItem } = useCartStore();
 
   useEffect(() => {
     if (open) {
-      setSize('30ml');
+      setSize('50ml');
       setQty(1);
     }
   }, [open]);

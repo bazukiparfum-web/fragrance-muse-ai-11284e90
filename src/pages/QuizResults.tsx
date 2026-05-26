@@ -43,6 +43,7 @@ interface Recommendation {
   prices: {
     '30ml': number;
     '50ml': number;
+    '100ml'?: number;
   };
 }
 
@@ -104,7 +105,8 @@ const QuizResults = () => {
       totalCost: '100',
       prices: {
         '30ml': 700,
-        '50ml': 1099
+        '50ml': 1099,
+        '100ml': 1899
       }
     },
     {
@@ -131,7 +133,8 @@ const QuizResults = () => {
       totalCost: '100',
       prices: {
         '30ml': 700,
-        '50ml': 1099
+        '50ml': 1099,
+        '100ml': 1899
       }
     },
     {
@@ -158,7 +161,8 @@ const QuizResults = () => {
       totalCost: '116',
       prices: {
         '30ml': 700,
-        '50ml': 1099
+        '50ml': 1099,
+        '100ml': 1899
       }
     }
   ];
@@ -187,7 +191,7 @@ const QuizResults = () => {
       toast.error(EMPTY_FORMULA_MESSAGE);
       return;
     }
-    const size = selectedSize[scent.id] || '30ml';
+    const size = selectedSize[scent.id] || '50ml';
     setAddingToCart(prev => ({ ...prev, [scent.id]: true }));
     
     try {
@@ -442,26 +446,29 @@ const QuizResults = () => {
 
                   <div className="space-y-3 mb-4">
                     <div className="flex justify-between items-center text-sm">
-                      <span>30ml</span>
-                      <span className="font-semibold">₹{scent.prices['30ml']}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
                       <span>50ml</span>
                       <span className="font-semibold">₹{scent.prices['50ml']}</span>
                     </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>100ml</span>
+                      <span className="font-semibold">₹{scent.prices['100ml'] ?? 1899}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground italic pt-1">
+                      30ml is sold only as the 3-bottle Discovery Set below.
+                    </p>
                   </div>
 
                   <div className="mb-4">
                     <Select
-                      value={selectedSize[scent.id] || '30ml'}
+                      value={selectedSize[scent.id] || '50ml'}
                       onValueChange={(value) => setSelectedSize(prev => ({ ...prev, [scent.id]: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select size" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="30ml">30ml - ₹{scent.prices['30ml']}</SelectItem>
                         <SelectItem value="50ml">50ml - ₹{scent.prices['50ml']}</SelectItem>
+                        <SelectItem value="100ml">100ml - ₹{scent.prices['100ml'] ?? 1899}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

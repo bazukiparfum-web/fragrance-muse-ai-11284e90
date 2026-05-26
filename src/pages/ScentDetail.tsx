@@ -25,7 +25,7 @@ export default function ScentDetail() {
   const [scent, setScent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [selectedSize, setSelectedSize] = useState('30ml');
+  const [selectedSize, setSelectedSize] = useState('50ml');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [tweakDialogOpen, setTweakDialogOpen] = useState(false);
 
@@ -348,13 +348,24 @@ export default function ScentDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {scent.prices && Object.entries(scent.prices).map(([size, price]: [string, any]) => (
-                    <SelectItem key={size} value={size}>
-                      {size} - ₹{(price / 100).toFixed(2)}
-                    </SelectItem>
-                  ))}
+                  {(() => {
+                    const basePrices = scent.prices && Object.keys(scent.prices).length > 0
+                      ? scent.prices
+                      : { '50ml': 1099, '100ml': 1899 };
+                    // Custom scents: 30ml only sold as Discovery Set
+                    return Object.entries(basePrices)
+                      .filter(([size]) => size !== '30ml' && size !== 'ml30')
+                      .map(([size, price]: [string, any]) => (
+                        <SelectItem key={size} value={size}>
+                          {size} - ₹{(price / 100).toFixed(2)}
+                        </SelectItem>
+                      ));
+                  })()}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground italic mt-2">
+                30ml is sold only as a 3-bottle Custom Discovery Set.
+              </p>
             </div>
 
             <Button 

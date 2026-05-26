@@ -32,7 +32,12 @@ export default function ScentDetailDrawer({ item, open, onOpenChange }: Props) {
   const [tweakOpen, setTweakOpen] = useState(false);
 
   useEffect(() => {
-    if (item) setSize(item.prices.ml30 ? "ml30" : "ml50");
+    if (item) {
+      // Custom scents (source === 'scent') cannot be bought as single 30ml.
+      const allow30 = item.source === 'shopify';
+      if (allow30 && item.prices.ml30) setSize('ml30');
+      else setSize('ml50');
+    }
   }, [item]);
 
   if (!item) return null;
@@ -119,6 +124,8 @@ export default function ScentDetailDrawer({ item, open, onOpenChange }: Props) {
             {(["ml30", "ml50"] as SizeKey[]).map((k) => {
               const p = item.prices[k];
               if (!p) return null;
+              // Custom scents: 30ml not available as a single bottle.
+              if (k === "ml30" && item.source === "scent") return null;
               const label = k === "ml30" ? "30ml" : "50ml";
               const active = size === k;
               return (
@@ -140,6 +147,11 @@ export default function ScentDetailDrawer({ item, open, onOpenChange }: Props) {
               );
             })}
           </div>
+          {item.source === "scent" && (
+            <p className="text-xs text-cream-muted italic">
+              30ml is sold only as a 3-bottle Custom Discovery Set.
+            </p>
+          )}
         </div>
 
         <div className="mt-8 flex flex-col gap-3">
