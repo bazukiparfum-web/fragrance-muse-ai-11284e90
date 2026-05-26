@@ -109,7 +109,7 @@ export const QuestionRenderer = ({
     case 'personality_sliders':
       return wrap(
         <PersonalitySliders
-          traits={question.traits || []}
+          traits={question.traits || question.options || []}
           values={answers.personalityTraits || {}}
           onChange={(traitId, value) => {
             updateAnswer('personalityTraits', {

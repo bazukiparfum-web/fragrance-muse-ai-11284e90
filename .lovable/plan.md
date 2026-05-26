@@ -1,64 +1,65 @@
-# Prevent Saving Fragrances Without a Formula
+# Quiz questions configuration audit
 
-## Problem
+## The bug you spotted
 
-The "Amber Ember v2" scent was saved with an empty Fragrance Formula. Because there are no notes, the Tweak Formula dialog has nothing to render or rescale, making the scent useless. Multiple code paths can insert into `saved_scents` without verifying that `formula` is a non-empty array.
+Question **"I see myself as someone who..."** (key `personalityTraits1`, step 5/14) renders only the heading — the four sliders (Is talkative / Is reserved / Tends to be quiet / Is sometimes shy) never appear.
 
-## Root Cause
+**Root cause:** in `src/components/quiz/QuestionRenderer.tsx` (line 112), the `personality_sliders` case reads traits from `question.traits`:
 
-Four call sites insert into `saved_scents`:
-1. `src/components/FormulaTweakDialog.tsx` — only blocks when `totalPercentage === 0`, but allows an empty array if somehow opened that way.
-2. `src/components/SaveScentDialog.tsx` — no formula validation at all.
-3. `src/components/account/TweakSlidersDrawer.tsx` — no formula validation.
-4. `src/pages/QuizResults.tsx` (Add to Cart path) — no formula validation; silently saves whatever recommendation arrived.
+```tsx
+<PersonalitySliders traits={question.traits || []} ... />
+```
 
-The database column `formula` is `jsonb` with no constraint, so an empty `[]` or `null` is accepted.
+But the database stores the trait array in the `options` column (same as radio questions). So `traits` is always `undefined` → empty array → nothing renders. The heading shows, the body is blank — exactly the screenshot.
 
-## Plan
+## Other issues found during the audit
 
-### 1. Client-side guard (helper)
-Add `src/lib/formulaValidation.ts` exporting `isValidFormula(formula): boolean` — true when formula is an array with ≥1 note that has a name/note field and percentages summing to > 0. Also export `assertValidFormula(formula)` that throws a user-friendly Error.
+Running through every active row in `quiz_questions`:
 
-### 2. Apply the guard at every insert site
-- **SaveScentDialog.handleSave** — early-return with `toast.error("This fragrance has no formula and cannot be saved.")`.
-- **FormulaTweakDialog.handleSave** — replace `totalPercentage === 0` check with `isValidFormula`. Also block opening the dialog: if `originalScent.formula` is empty, surface a toast from the caller (already in place for ScentDetailDrawer); add the same guard inside the dialog effect as a safety net.
-- **TweakSlidersDrawer.handleSave** — same guard.
-- **QuizResults.handleAddToCart** — guard before insert; abort add-to-cart with a clear toast if the recommendation has no formula (this is the path that likely produced the bad row).
+| # | Key | Type | Status |
+|---|---|---|---|
+| 0 | setting | radio | OK |
+| 1 | currentCity | city_search | OK |
+| 2 | gender | radio | OK |
+| 3 | colorHue | color_picker | OK |
+| 4 | personalityTraits1 | personality_sliders | **BROKEN — empty body** |
+| 6 | ageRange | radio | OK (order_index 5 is skipped — harmless gap) |
+| 7 | personality | radio | OK |
+| 8 | scentFamily | scent_family | OK (renderer uses a hard-coded list and ignores DB `options` — by design, but worth noting) |
+| 9 | intensity | slider | OK |
+| 10 | longevity | radio | OK |
+| 11 | occasion | occasion | OK |
+| 12 | climate | radio | OK |
+| 13 | dreamWord | text | OK |
+| gift-0 | friendName | text | OK |
+| gift-1 | recipientGender | radio | OK |
 
-### 3. ScentDetail UI hardening
-In `src/pages/ScentDetail.tsx`:
-- When `scent.formula` is empty/missing, render an "Incomplete formula" empty state in the Fragrance Formula card instead of a blank panel.
-- Disable the "Tweak Formula" button with a tooltip "No formula to tweak" when empty.
+Counts: 13 active "myself + both" questions, but the progress bar shows "STEP 5 OF 14". Off by one — likely the quiz appends an implicit final/results step. Not a bug, just FYI.
 
-### 4. Database constraint (defense in depth)
-Migration on `public.saved_scents`:
-- Add a CHECK constraint: `formula IS NOT NULL AND jsonb_typeof(formula) = 'array' AND jsonb_array_length(formula) > 0`.
-- Keep it as a NOT VALID constraint first, then `VALIDATE` — but only after we clean the existing bad row(s). Plan includes a one-time cleanup step:
-  - Identify rows where the constraint would fail.
-  - Either delete them or mark them (decision deferred to user; default = delete since they are unusable).
+## Fix
 
-### 5. Verification
-- Open `/shop/account/scents/e042f82f-...` after migration — confirm it's gone (or shows empty-state UI if kept).
-- Re-run quiz → Add to Cart with a valid recommendation → row saved with non-empty formula.
-- Attempt insert via SQL with `formula = '[]'::jsonb` → rejected.
-- Tweak This Scent on a community scent with formula → opens dialog. On one without → toast + redirect (already implemented).
+Single-line change in `src/components/quiz/QuestionRenderer.tsx`:
 
-## Files Touched
+```tsx
+case 'personality_sliders':
+  return wrap(
+    <PersonalitySliders
+      traits={question.traits || question.options || []}
+      ...
+    />
+  );
+```
 
-- new: `src/lib/formulaValidation.ts`
-- edit: `src/components/SaveScentDialog.tsx`
-- edit: `src/components/FormulaTweakDialog.tsx`
-- edit: `src/components/account/TweakSlidersDrawer.tsx`
-- edit: `src/pages/QuizResults.tsx`
-- edit: `src/pages/ScentDetail.tsx`
-- migration: add CHECK constraint on `saved_scents.formula` (+ cleanup of existing empty rows)
+Fallback to `options` keeps backward compatibility if any newer question rows ever use a `traits` field.
 
-## Out of Scope
+## Verification
 
-- Quiz recommendation engine itself (only validating its output before persistence).
-- Shopify product creation flow beyond the pre-save guard.
-- Auth/RLS changes.
+1. Reload `/shop/quiz` → reach step 5 → confirm four sliders render with labels Is talkative / Is reserved / Tends to be quiet / Is sometimes shy.
+2. Move a slider → "Next" becomes enabled → progresses to step 6 (ageRange).
+3. Re-check the remaining 9 steps render correctly (they already do per the audit, but quick smoke test).
 
-## Question for you
+## Out of scope
 
-Before I run the migration: the existing empty row(s) like "Amber Ember v2" — **delete them** outright, or **keep and just show the empty-state UI**? Default if you don't answer: delete.
+- Admin form for editing `personality_sliders` options (works today via the JSON options textarea).
+- Hard-coded `SCENT_FAMILIES` in the renderer — leaving as-is unless you want it data-driven.
+- Filling the `order_index = 5` gap.
