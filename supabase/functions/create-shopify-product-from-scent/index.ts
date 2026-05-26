@@ -178,7 +178,9 @@ async function createShopifyProduct(scent: SavedScent) {
   const prices = scent.prices || {
     '30ml': 700,
     '50ml': 1099,
+    '100ml': 1899,
   };
+  const price100 = prices['100ml'] ?? 1899;
 
   const product = {
     product: {
@@ -207,11 +209,17 @@ async function createShopifyProduct(scent: SavedScent) {
           sku: `${scent.fragrance_code}-50ML`,
           inventory_management: null,
         },
+        {
+          option1: '100ml',
+          price: price100.toFixed(2),
+          sku: `${scent.fragrance_code}-100ML`,
+          inventory_management: null,
+        },
       ],
       options: [
         {
           name: 'Size',
-          values: ['30ml', '50ml'],
+          values: ['30ml', '50ml', '100ml'],
         },
       ],
       metafields: [
