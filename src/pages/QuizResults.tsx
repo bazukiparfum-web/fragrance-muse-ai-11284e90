@@ -43,6 +43,7 @@ interface Recommendation {
   prices: {
     '30ml': number;
     '50ml': number;
+    '100ml'?: number;
   };
 }
 
