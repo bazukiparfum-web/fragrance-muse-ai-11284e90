@@ -398,33 +398,33 @@ const QuizResults = () => {
           {/* Section A — Your 3 matches (visual summary) */}
           <div className="grid md:grid-cols-3 gap-8 mb-12">
             {recommendations.map((scent) => (
-              <Card key={scent.id} className="overflow-hidden hover-lift">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
+              <Card key={scent.id} className="overflow-hidden hover-lift h-full flex flex-col">
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="flex items-center justify-between mb-4 gap-2">
                     <h3 className="font-serif text-2xl font-bold heading-luxury">{scent.name}</h3>
-                    <div className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-semibold">
+                    <div className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-semibold shrink-0">
                       {scent.matchScore}% Match
                     </div>
                   </div>
 
                   <p className="text-muted-foreground mb-6 italic">{scent.story}</p>
 
-                  <div className="mb-6">
+                  <div className="mb-6 flex justify-center">
                     <FragrancePyramid
-                      size="md"
+                      size="sm"
                       topNotes={toNotes(getNotesByCategory(scent.formula, 'top'))}
                       heartNotes={toNotes(getNotesByCategory(scent.formula, 'heart'))}
                       baseNotes={toNotes(getNotesByCategory(scent.formula, 'base'))}
                     />
-
-                    {scent.formulationNotes && (
-                      <div className="text-xs text-muted-foreground italic pt-4 mt-4 border-t">
-                        {scent.formulationNotes}
-                      </div>
-                    )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-6">
+                  {scent.formulationNotes && (
+                    <div className="text-xs text-muted-foreground italic pt-4 mt-2 mb-6 border-t">
+                      {scent.formulationNotes}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4 mb-6 mt-auto">
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Intensity</h4>
                       <div className="h-2 bg-secondary rounded-full overflow-hidden">
