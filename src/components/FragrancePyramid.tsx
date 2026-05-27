@@ -260,8 +260,8 @@ export const FragrancePyramid = ({
                         fill={layer.textColor}
                         style={{
                           fontFamily: "'Cormorant Garamond', Georgia, serif",
-                          fontSize: layer.key === "top" ? 11 : 14,
-                          letterSpacing: "0.18em",
+                          fontSize: layer.key === "top" ? 9 : 14,
+                          letterSpacing: layer.key === "top" ? "0.14em" : "0.18em",
                           textTransform: "uppercase",
                           fontWeight: 500,
                           pointerEvents: "none",
@@ -276,7 +276,7 @@ export const FragrancePyramid = ({
                         fill={layer.textColor}
                         style={{
                           fontFamily: "'Inter', system-ui, sans-serif",
-                          fontSize: layer.key === "top" ? 8 : 10,
+                          fontSize: layer.key === "top" ? 7 : 10,
                           opacity: isEmpty ? 0.55 : 0.85,
                           fontStyle: isEmpty ? "italic" : "normal",
                           pointerEvents: "none",
@@ -284,9 +284,11 @@ export const FragrancePyramid = ({
                       >
                         {isEmpty
                           ? "— undisclosed —"
-                          : noteNames.length > 38
-                            ? noteNames.slice(0, 36) + "…"
-                            : noteNames}
+                          : layer.key === "top" && noteNames.length > 22
+                            ? noteNames.slice(0, 20) + "…"
+                            : noteNames.length > 38
+                              ? noteNames.slice(0, 36) + "…"
+                              : noteNames}
                       </text>
                       {/* Focusable, clickable hit target on top */}
                       <rect
