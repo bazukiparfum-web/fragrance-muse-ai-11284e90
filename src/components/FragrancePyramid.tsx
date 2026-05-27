@@ -125,8 +125,8 @@ export const FragrancePyramid = ({
       delay: 400,
       points: top.points,
       bbox: top.bbox,
-      labelY: 30,
-      notesY: 50,
+      labelY: 32,
+      notesY: 48,
       emptyCopy:
         "This composition keeps its top accord private — a quiet opening that lets the heart speak first.",
     },
