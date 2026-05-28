@@ -61,8 +61,8 @@ export function SaveScentDialog({ open, onOpenChange, recommendation }: SaveScen
           .eq('id', user.id);
       }
 
-      // Generate unique code
-      const fragranceCode = await generateFragranceCode(user.id, userName);
+      // Generate unique code from the fragrance name
+      const fragranceCode = await generateFragranceCode(customName);
 
       // Generate visual data
       const visualData = generateVisualData(recommendation.formula);

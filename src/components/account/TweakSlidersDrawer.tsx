@@ -121,8 +121,8 @@ export function TweakSlidersDrawer({ open, onOpenChange, scent, onSaved }: Props
       const userName = profile?.full_name || 'User';
 
       const newFormula = buildNewFormula();
-      const fragranceCode = await generateFragranceCode(user.id, userName);
       const newName = `${scent.name} v2`;
+      const fragranceCode = await generateFragranceCode(newName);
 
       const { data: saved, error } = await supabase
         .from('saved_scents')

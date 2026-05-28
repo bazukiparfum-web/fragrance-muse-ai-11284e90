@@ -153,8 +153,8 @@ export function FormulaTweakDialog({ open, onOpenChange, originalScent }: Formul
           .eq('id', user.id);
       }
 
-      // Generate unique code
-      const fragranceCode = await generateFragranceCode(user.id, userName);
+      // Generate unique code from the fragrance name
+      const fragranceCode = await generateFragranceCode(newName.trim());
       const newVisualData = generateVisualData(formula);
 
       // Save to database

@@ -19,7 +19,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Loader2, Download, Upload, Sparkles, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Download, Upload, Sparkles, AlertTriangle, Search, Clock, Beaker, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   computePumpDispense,
@@ -50,6 +51,8 @@ const AdminProductionQueue = () => {
   const [selected, setSelected] = useState<QueueItem | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [seedCount, setSeedCount] = useState(5);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
@@ -179,6 +182,61 @@ const AdminProductionQueue = () => {
     }
   };
 
+  const requeue = async (it: QueueItem) => {
+    setBusy(it.id);
+    try {
+      const { error } = await supabase.functions.invoke('admin-manage-formulas', {
+        body: { action: 'requeue', fragrance_code: it.fragrance_code, size: it.size, quantity: it.quantity },
+      });
+      if (error) throw error;
+      toast.success(`Re-queued ${it.fragrance_code}`);
+    } catch (e: any) {
+      toast.error(e.message ?? 'Re-queue failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const counts = useMemo(() => {
+    const c = { all: items.length, pending: 0, in_progress: 0, completed: 0, failed: 0 };
+    for (const it of items) (c as any)[it.status] = ((c as any)[it.status] ?? 0) + 1;
+    return c;
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return items.filter((it) => {
+      if (statusFilter !== 'all' && it.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        it.fragrance_code.toLowerCase().includes(q) ||
+        it.size.toLowerCase().includes(q) ||
+        it.status.toLowerCase().includes(q)
+      );
+    });
+  }, [items, statusFilter, search]);
+
+  const totals = useMemo(() => {
+    const pending = items.filter((it) => it.status === 'pending' || it.status === 'in_progress');
+    let totalSeconds = 0;
+    let solventMl = 0;
+    const pumpUsage = new Map<string, number>();
+    for (const it of pending) {
+      const plan = plans.get(it.id);
+      if (!plan) continue;
+      totalSeconds += plan.totalSeconds * it.quantity;
+      solventMl += plan.solventMl * it.quantity;
+      for (const r of plan.perPump) {
+        if (r.is_solvent) continue;
+        pumpUsage.set(r.pump_id, (pumpUsage.get(r.pump_id) ?? 0) + r.ml * it.quantity);
+      }
+    }
+    const topPumps = Array.from(pumpUsage.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    return { pendingCount: pending.length, totalSeconds, solventMl, topPumps };
+  }, [items, plans]);
+
   const selectedPlan = selected ? plans.get(selected.id) : undefined;
 
   return (
@@ -219,13 +277,65 @@ const AdminProductionQueue = () => {
         </div>
       </Card>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground">Active jobs</div>
+          <div className="text-2xl font-semibold">{totals.pendingCount}</div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3"/> Est. machine time</div>
+          <div className="text-2xl font-semibold">
+            {totals.totalSeconds < 60
+              ? `${totals.totalSeconds.toFixed(0)}s`
+              : `${(totals.totalSeconds / 60).toFixed(1)}m`}
+          </div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground flex items-center gap-1"><Beaker className="h-3 w-3"/> Solvent needed</div>
+          <div className="text-2xl font-semibold">{totals.solventMl.toFixed(0)} ml</div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground">Top pumps in queue</div>
+          <div className="text-xs mt-1 space-y-0.5">
+            {totals.topPumps.length === 0 ? (
+              <span className="text-muted-foreground">—</span>
+            ) : (
+              totals.topPumps.map(([id, ml]) => (
+                <div key={id} className="font-mono">{id.replace('PUMP-', 'P')}: {ml.toFixed(1)}ml</div>
+              ))
+            )}
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-3 mb-4 flex flex-wrap items-center gap-3">
+        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+          <TabsList>
+            <TabsTrigger value="all">All <Badge variant="secondary" className="ml-2">{counts.all}</Badge></TabsTrigger>
+            <TabsTrigger value="pending">Pending <Badge variant="secondary" className="ml-2">{counts.pending}</Badge></TabsTrigger>
+            <TabsTrigger value="in_progress">In progress <Badge variant="secondary" className="ml-2">{counts.in_progress}</Badge></TabsTrigger>
+            <TabsTrigger value="completed">Completed <Badge variant="secondary" className="ml-2">{counts.completed}</Badge></TabsTrigger>
+            <TabsTrigger value="failed">Failed <Badge variant="secondary" className="ml-2">{counts.failed}</Badge></TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="flex items-center gap-1 ml-auto">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search code or size…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-64"
+          />
+        </div>
+      </Card>
+
       <Card>
         {loading ? (
           <div className="p-12 flex justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : items.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground">Queue is empty.</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-12 text-center text-muted-foreground">No jobs match.</div>
         ) : (
           <Table>
             <TableHeader>
@@ -234,13 +344,15 @@ const AdminProductionQueue = () => {
                 <TableHead>Size</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>ETA</TableHead>
                 <TableHead className="min-w-[320px]">Dispense plan</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((it) => {
+              {filtered.map((it) => {
                 const plan = plans.get(it.id);
+                const eta = plan ? plan.totalSeconds * it.quantity : 0;
                 return (
                   <TableRow key={it.id}>
                     <TableCell className="font-mono text-xs align-top">{it.fragrance_code}</TableCell>
@@ -248,6 +360,9 @@ const AdminProductionQueue = () => {
                     <TableCell className="align-top">{it.quantity}</TableCell>
                     <TableCell className="align-top">
                       <Badge variant={statusColor(it.status) as any}>{it.status}</Badge>
+                    </TableCell>
+                    <TableCell className="align-top text-xs text-muted-foreground">
+                      {eta ? (eta < 60 ? `${eta.toFixed(0)}s` : `${(eta / 60).toFixed(1)}m`) : '—'}
                     </TableCell>
                     <TableCell className="align-top">
                       {plan && plan.perPump.length ? (
@@ -304,6 +419,16 @@ const AdminProductionQueue = () => {
                             Fail
                           </Button>
                         </>
+                      )}
+                      {(it.status === 'completed' || it.status === 'failed') && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy === it.id}
+                          onClick={() => requeue(it)}
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" /> Re-queue
+                        </Button>
                       )}
                     </TableCell>
                   </TableRow>
