@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -20,7 +22,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Download, Upload, Sparkles, AlertTriangle, Search, Clock, Beaker, RotateCcw } from 'lucide-react';
+import { Loader2, Download, Upload, Sparkles, AlertTriangle, Search, Clock, Beaker, RotateCcw, Play, Check, Trash2, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   computePumpDispense,
@@ -53,6 +55,7 @@ const AdminProductionQueue = () => {
   const [seedCount, setSeedCount] = useState(5);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
@@ -197,6 +200,51 @@ const AdminProductionQueue = () => {
     }
   };
 
+  const bulkUpdate = async (status: string) => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBusy('bulk');
+    try {
+      const { error } = await supabase.functions.invoke('admin-manage-production', {
+        body: { ids, status },
+      });
+      if (error) throw error;
+      toast.success(`Updated ${ids.length} job(s) → ${status}`);
+      setSelectedIds(new Set());
+    } catch (e: any) {
+      toast.error(e.message ?? 'Bulk update failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const bulkDeleteDummy = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBusy('bulk');
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-manage-production', {
+        body: { ids, action: 'delete_dummy' },
+      });
+      if (error) throw error;
+      toast.success(`Deleted ${data?.deleted ?? 0} dummy job(s)`);
+      setSelectedIds(new Set());
+    } catch (e: any) {
+      toast.error(e.message ?? 'Delete failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const counts = useMemo(() => {
     const c = { all: items.length, pending: 0, in_progress: 0, completed: 0, failed: 0 };
     for (const it of items) (c as any)[it.status] = ((c as any)[it.status] ?? 0) + 1;
@@ -309,7 +357,7 @@ const AdminProductionQueue = () => {
       </div>
 
       <Card className="p-3 mb-4 flex flex-wrap items-center gap-3">
-        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+        <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setSelectedIds(new Set()); }}>
           <TabsList>
             <TabsTrigger value="all">All <Badge variant="secondary" className="ml-2">{counts.all}</Badge></TabsTrigger>
             <TabsTrigger value="pending">Pending <Badge variant="secondary" className="ml-2">{counts.pending}</Badge></TabsTrigger>
@@ -329,6 +377,35 @@ const AdminProductionQueue = () => {
         </div>
       </Card>
 
+      {selectedIds.size > 0 && (() => {
+        const selectedItems = items.filter((it) => selectedIds.has(it.id));
+        const allDummy = selectedItems.every((it) => it.fragrance_code.startsWith('DUMMY-'));
+        return (
+          <Card className="p-3 mb-4 flex flex-wrap items-center gap-2 border-primary/50 bg-primary/5">
+            <Badge variant="secondary">{selectedIds.size} selected</Badge>
+            <Button size="sm" variant="outline" onClick={() => bulkUpdate('in_progress')} disabled={busy === 'bulk'}>
+              <Play className="h-3 w-3 mr-1" /> Start selected
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => bulkUpdate('completed')} disabled={busy === 'bulk'}>
+              <Check className="h-3 w-3 mr-1" /> Mark completed
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={bulkDeleteDummy}
+              disabled={busy === 'bulk' || !allDummy}
+              title={allDummy ? 'Delete selected dummy jobs' : 'Only enabled when every selected row is a DUMMY- job'}
+            >
+              <Trash2 className="h-3 w-3 mr-1" /> Delete dummy jobs
+            </Button>
+            <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setSelectedIds(new Set())}>
+              Clear
+            </Button>
+          </Card>
+        );
+      })()}
+
+
       <Card>
         {loading ? (
           <div className="p-12 flex justify-center">
@@ -340,6 +417,20 @@ const AdminProductionQueue = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={filtered.length > 0 && filtered.every((it) => selectedIds.has(it.id))}
+                    onCheckedChange={(checked) => {
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (checked) filtered.forEach((it) => next.add(it.id));
+                        else filtered.forEach((it) => next.delete(it.id));
+                        return next;
+                      });
+                    }}
+                    aria-label="Select all"
+                  />
+                </TableHead>
                 <TableHead>Code</TableHead>
                 <TableHead>Size</TableHead>
                 <TableHead>Qty</TableHead>
@@ -354,8 +445,24 @@ const AdminProductionQueue = () => {
                 const plan = plans.get(it.id);
                 const eta = plan ? plan.totalSeconds * it.quantity : 0;
                 return (
-                  <TableRow key={it.id}>
-                    <TableCell className="font-mono text-xs align-top">{it.fragrance_code}</TableCell>
+                  <TableRow key={it.id} data-state={selectedIds.has(it.id) ? 'selected' : undefined}>
+                    <TableCell className="align-top">
+                      <Checkbox
+                        checked={selectedIds.has(it.id)}
+                        onCheckedChange={() => toggleRow(it.id)}
+                        aria-label={`Select ${it.fragrance_code}`}
+                      />
+                    </TableCell>
+                    <TableCell className="font-mono text-xs align-top">
+                      <Link
+                        to={`/admin/formulas?code=${encodeURIComponent(it.fragrance_code)}`}
+                        className="inline-flex items-center gap-1 hover:text-primary hover:underline"
+                        title="Open in Formula Library"
+                      >
+                        {it.fragrance_code}
+                        <BookOpen className="h-3 w-3 opacity-50" />
+                      </Link>
+                    </TableCell>
                     <TableCell className="align-top">{it.size}</TableCell>
                     <TableCell className="align-top">{it.quantity}</TableCell>
                     <TableCell className="align-top">

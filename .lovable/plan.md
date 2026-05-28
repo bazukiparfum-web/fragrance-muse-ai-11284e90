@@ -1,63 +1,51 @@
 
-## 1. Fragrance code = name + unique suffix
+## Decisions locked in
 
-Today `fragrance_code` is `{USERNAME}-{NNN}` (e.g. `VISHVAM-001`). Reorders work, but the code carries no scent identity, and different users can't share the same formula.
+1. **Fragrance code format: `{NAME-SLUG}-{4CHAR_HASH}`** (e.g. `MIDNIGHT-VELVET-7K4Q`).
+   - Deterministic from `(name, saved_scent_id)` — same scent always resolves to same code, so reorders reliably pull the exact `machine_formulas` row.
+   - No transaction/lock needed (sequential codes would require coordination per name).
+   - Already implemented in `src/lib/fragranceCodeGenerator.ts`; keep as-is.
 
-Change the generator to: **`{FRAGRANCE_NAME_SLUG}-{SHORT_HASH}`**, e.g. `MIDNIGHT-VELVET-7K4Q`.
+2. **Production Queue: ship all four enhancements in one pass** — tabs, search, bulk actions, totals strip. They share state (filtered rows, selection) and shipping together avoids reworking the same component twice.
 
-- `FRAGRANCE_NAME_SLUG`: uppercase, alphanumerics + dashes, max 24 chars, trimmed.
-- `SHORT_HASH`: 4-char base36 derived from the saved_scent UUID (deterministic, collision-checked against `saved_scents.fragrance_code`).
-- Deterministic from `(name, saved_scent_id)` so the same scent always resolves to the same code — reorders pull the exact stored `machine_formulas` row.
-- Update `src/lib/fragranceCodeGenerator.ts` signature to `(scentName, scentId)` and update all callers (`SaveScentDialog`, `account/ReorderModal`, `FormulaTweakDialog`, `admin-simulate-order`, `create-shopify-product-from-scent`).
-- Existing `saved_scents.fragrance_code` rows stay untouched (they remain valid lookup keys); only new saves get the new format.
+3. **Re-queue available in BOTH places**:
+   - **Formula Library** = "produce this *formula* again" (pick a bottle size).
+   - **Production Queue completed/failed rows** = "redo this *job*" (one-click, same bottle size).
+   - Both call the same `admin-manage-formulas` re-queue endpoint.
 
-## 2. Admin Formula Library page
+## Implementation scope
 
-The `machine_formulas` table already stores every generated formula keyed by unique `fragrance_code` with versioning, pump instructions, and ingredient breakdown — perfect backing store. **No new table needed.**
+### Formula Library (`/admin/formulas`) — already built
+No changes needed; keep existing `AdminFormulas.tsx` + `admin-manage-formulas` edge function.
 
-New page **`/admin/formulas`** (`AdminFormulas.tsx`), admin-only via `AdminRoute`:
+### Production Queue (`AdminProductionQueue.tsx`) — polish pass
 
-- Table columns: Fragrance code · Name · Version · Total volume · Source (saved_scent owner email) · Times produced · Updated.
-- Filters: search by code/name, version > 1 only, has pending queue jobs.
-- Row click → side sheet with:
-  - Pump dispense plan rendered via existing `computePumpDispense()` (so the library shows the same per-pump ml table as Production Queue).
-  - Raw `notes_formula`, `ingredients_formula`, `pump_instructions` JSON (collapsible, copy buttons).
-  - Linked saved_scent + creator profile.
-  - Recent `production_queue` jobs for this code (status timeline).
-  - "Re-queue" button → inserts a new `production_queue` row using this formula + chosen size/qty (admin shortcut for reorder/QA).
-- Sidebar: add **"Formula Library"** under Operations (icon `BookOpen`), route in `App.tsx` wrapped in `AdminRoute`.
-- All reads/writes go through a new `admin-manage-formulas` edge function (service role; verifies admin via `has_role`) so RLS doesn't block cross-user formula browsing.
+- **Status tabs**: All · Pending · In Progress · Completed · Failed, with count badges. Tab state filters the rows.
+- **Search bar**: filter by fragrance code, size, or saved-scent name. Combined with active tab.
+- **Bulk actions**: row checkboxes + header checkbox. Action bar appears when ≥1 selected:
+  - "Start selected" → bulk update status `pending → in_progress`.
+  - "Mark completed" → bulk update `in_progress → completed`.
+  - "Delete dummy jobs" → only enabled when every selected row has `DUMMY-` code prefix.
+- **Totals strip** (sticky above table): pending count · est. total minutes (sum of `DispensePlan.totalSeconds`) · solvent ml needed · top 3 most-used pumps right now.
+- **Per-row ETA badge** from `DispensePlan.totalSeconds`.
+- **Re-queue button** on completed/failed rows → opens small popover to pick size (30/50/100ml) then calls `admin-manage-formulas`.
+- **Fragrance code → Formula Library link** (click code opens the library sheet for that code; reuse the existing sheet by lifting it or navigating with a query param).
 
-## 3. Production Queue improvements
+Keep existing dummy-seed, Excel import/export, and per-row dispense-plan chips.
 
-Same page (`AdminProductionQueue.tsx`), additive UX polish:
-
-- **Status tabs** at top: All · Pending · In Progress · Completed · Failed (counts in badges).
-- **Search bar**: fragrance code / size / status.
-- **Bulk actions**: row checkboxes + "Start selected" / "Mark completed" / "Delete dummy jobs" (only `DUMMY-` codes).
-- **Totals strip**: pending count, est. total minutes (sum of `totalSeconds`), solvent ml needed, top 3 most-used pumps right now — useful for the operator before pressing Start.
-- **Per-row ETA** badge from `DispensePlan.totalSeconds`.
-- **Link to Formula Library** from each row's fragrance code (click code → opens library sheet).
-- **"Re-queue"** button on completed rows.
-- Keep the existing dummy-seed, Excel import/export, and dispense-plan chips.
-
-## 4. Suggestions for other admin pages (not built unless approved)
-
-- `/admin/pumps`: add a "Test prime" button per pump that posts a 1ml dispense to `machine-production-api` for hardware sanity check.
-- `/admin/ingredients`: show stock alert chip when `stock_level` < threshold; auto-calc "bottles remaining" per ingredient from current pumps & average usage.
-- `/admin/dashboard`: surface a "Production today" card (counts by status) and "Low-stock ingredients".
-- `/admin/scents`: add a column linking to the formula library row so admins can jump from creator → formula.
+### Backing edge function changes
+`admin-manage-formulas` already supports `requeue`. Add bulk-status update support to existing `admin-manage-production` (or use direct service-role call from a small extension) for the bulk actions.
 
 ## Technical notes
 
-- New file: `src/pages/admin/AdminFormulas.tsx`.
-- New edge function: `supabase/functions/admin-manage-formulas/index.ts` (list / get / re-queue actions); `verify_jwt = false`, validates admin in-code via JWT + `has_role`.
-- Update `src/lib/fragranceCodeGenerator.ts` + every import site (5 files).
-- Update `src/components/admin/AdminSidebar.tsx` and `src/App.tsx` routing.
-- No schema migration needed; `machine_formulas` already has unique `fragrance_code`, `version`, and the trigger that auto-fills it from `saved_scents`.
+- No schema migration needed.
+- All admin writes continue to route through edge functions (service-role) to bypass RLS — pattern already in use.
+- New UI uses existing shadcn primitives (Tabs, Checkbox, Popover, Badge).
+- Selection state lives in component-local `Set<string>`; cleared on tab change.
 
-## Open questions
+## Out of scope (deferred — propose later)
 
-1. Code style: prefer **`MIDNIGHT-VELVET-7K4Q`** (4-char hash) or **`MIDNIGHT-VELVET-001`** (sequential per name)?
-2. For the Production Queue improvements — do all four (tabs, search, bulk actions, totals strip) in one pass, or only tabs + search now and bulk/totals later?
-3. Should "Re-queue" be available on the Formula Library only, or also on completed Production Queue rows?
+- `/admin/pumps` "Test prime" button.
+- `/admin/ingredients` stock alerts + bottles-remaining calc.
+- `/admin/dashboard` production-today + low-stock cards.
+- `/admin/scents` formula-library link column.

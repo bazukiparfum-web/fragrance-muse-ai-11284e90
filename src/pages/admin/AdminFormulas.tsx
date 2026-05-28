@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,18 @@ export default function AdminFormulas() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    const code = params.get('code');
+    if (code && data) {
+      const match = data.formulas.find((f) => f.fragrance_code === code);
+      if (match) {
+        setSelected(match);
+        setSearch(code);
+      }
+    }
+  }, [params, data]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
