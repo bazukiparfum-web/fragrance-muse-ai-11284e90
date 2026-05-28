@@ -71,3 +71,9 @@ verify_jwt = false
 
 [functions.whatsapp-verify-otp]
 verify_jwt = false
+
+[functions.admin-seed-production-queue]
+verify_jwt = false
+
+[functions.admin-bulk-import-queue]
+verify_jwt = false
