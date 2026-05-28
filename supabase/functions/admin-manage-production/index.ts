@@ -46,14 +46,47 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { id, status } = await req.json();
+    const body = await req.json();
+    const { id, ids, status, action } = body ?? {};
     const allowed = ['pending', 'in_progress', 'completed', 'failed'];
-    if (!id || !allowed.includes(status)) throw new Error('Invalid input');
+
+    // Bulk delete dummy jobs
+    if (action === 'delete_dummy') {
+      const targetIds: string[] = Array.isArray(ids) ? ids : [];
+      if (!targetIds.length) throw new Error('No ids provided');
+      const { data: rows, error: fetchErr } = await admin
+        .from('production_queue')
+        .select('id, fragrance_code')
+        .in('id', targetIds);
+      if (fetchErr) throw fetchErr;
+      const dummyIds = (rows ?? [])
+        .filter((r: any) => typeof r.fragrance_code === 'string' && r.fragrance_code.startsWith('DUMMY-'))
+        .map((r: any) => r.id);
+      if (dummyIds.length) {
+        const { error: delErr } = await admin.from('production_queue').delete().in('id', dummyIds);
+        if (delErr) throw delErr;
+      }
+      return new Response(JSON.stringify({ ok: true, deleted: dummyIds.length }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!allowed.includes(status)) throw new Error('Invalid status');
 
     const update: any = { status };
     if (status === 'in_progress') update.started_at = new Date().toISOString();
     if (status === 'completed' || status === 'failed') update.completed_at = new Date().toISOString();
 
+    // Bulk status update
+    if (Array.isArray(ids) && ids.length) {
+      const { error } = await admin.from('production_queue').update(update).in('id', ids);
+      if (error) throw error;
+      return new Response(JSON.stringify({ ok: true, updated: ids.length }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!id) throw new Error('Missing id');
     const { error } = await admin.from('production_queue').update(update).eq('id', id);
     if (error) throw error;
 
