@@ -417,6 +417,20 @@ const AdminProductionQueue = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={filtered.length > 0 && filtered.every((it) => selectedIds.has(it.id))}
+                    onCheckedChange={(checked) => {
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (checked) filtered.forEach((it) => next.add(it.id));
+                        else filtered.forEach((it) => next.delete(it.id));
+                        return next;
+                      });
+                    }}
+                    aria-label="Select all"
+                  />
+                </TableHead>
                 <TableHead>Code</TableHead>
                 <TableHead>Size</TableHead>
                 <TableHead>Qty</TableHead>
@@ -431,8 +445,24 @@ const AdminProductionQueue = () => {
                 const plan = plans.get(it.id);
                 const eta = plan ? plan.totalSeconds * it.quantity : 0;
                 return (
-                  <TableRow key={it.id}>
-                    <TableCell className="font-mono text-xs align-top">{it.fragrance_code}</TableCell>
+                  <TableRow key={it.id} data-state={selectedIds.has(it.id) ? 'selected' : undefined}>
+                    <TableCell className="align-top">
+                      <Checkbox
+                        checked={selectedIds.has(it.id)}
+                        onCheckedChange={() => toggleRow(it.id)}
+                        aria-label={`Select ${it.fragrance_code}`}
+                      />
+                    </TableCell>
+                    <TableCell className="font-mono text-xs align-top">
+                      <Link
+                        to={`/admin/formulas?code=${encodeURIComponent(it.fragrance_code)}`}
+                        className="inline-flex items-center gap-1 hover:text-primary hover:underline"
+                        title="Open in Formula Library"
+                      >
+                        {it.fragrance_code}
+                        <BookOpen className="h-3 w-3 opacity-50" />
+                      </Link>
+                    </TableCell>
                     <TableCell className="align-top">{it.size}</TableCell>
                     <TableCell className="align-top">{it.quantity}</TableCell>
                     <TableCell className="align-top">
