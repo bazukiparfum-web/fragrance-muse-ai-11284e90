@@ -1,97 +1,63 @@
-## Goal
 
-Make the Production Queue machine-ready by showing exactly how many ml each pump should dispense, including a dedicated ethanol-solvent pump whose volume is derived from quiz answers (intensity + longevity) and bottle size.
+## 1. Fragrance code = name + unique suffix
 
-## 1. Pump configuration (data model)
+Today `fragrance_code` is `{USERNAME}-{NNN}` (e.g. `VISHVAM-001`). Reorders work, but the code carries no scent identity, and different users can't share the same formula.
 
-New table `public.pumps` to make pump count flexible (add/remove pumps without code changes):
+Change the generator to: **`{FRAGRANCE_NAME_SLUG}-{SHORT_HASH}`**, e.g. `MIDNIGHT-VELVET-7K4Q`.
 
-```
-id uuid pk
-pump_id text unique           -- e.g. PUMP-01 … PUMP-11
-position int unique           -- display order
-label text                    -- e.g. "Rose", "Ethanol Solvent"
-note_name text null           -- FK-by-name to fragrance_notes / ingredient_mappings
-ingredient_code text null     -- e.g. ING-ROSE or ING-ETHANOL
-ml_per_second numeric default 2.0
-is_solvent bool default false -- exactly one row is the ethanol pump
-is_active bool default true
-created_at / updated_at
-```
+- `FRAGRANCE_NAME_SLUG`: uppercase, alphanumerics + dashes, max 24 chars, trimmed.
+- `SHORT_HASH`: 4-char base36 derived from the saved_scent UUID (deterministic, collision-checked against `saved_scents.fragrance_code`).
+- Deterministic from `(name, saved_scent_id)` so the same scent always resolves to the same code — reorders pull the exact stored `machine_formulas` row.
+- Update `src/lib/fragranceCodeGenerator.ts` signature to `(scentName, scentId)` and update all callers (`SaveScentDialog`, `account/ReorderModal`, `FormulaTweakDialog`, `admin-simulate-order`, `create-shopify-product-from-scent`).
+- Existing `saved_scents.fragrance_code` rows stay untouched (they remain valid lookup keys); only new saves get the new format.
 
-Seed: PUMP-01…PUMP-10 from the 10 active `ingredient_mappings`, plus PUMP-11 = Ethanol Solvent (`is_solvent=true`, `note_name=null`). RLS: admin full access, authenticated read; standard GRANTs.
+## 2. Admin Formula Library page
 
-Keep `ingredient_mappings` as the source of truth for which fragrance note sits on which pump (already has `pump_id`). The new `pumps` table just adds: ordering, `is_solvent`, and lets us list pumps that have no note yet (empty slots, or the solvent).
+The `machine_formulas` table already stores every generated formula keyed by unique `fragrance_code` with versioning, pump instructions, and ingredient breakdown — perfect backing store. **No new table needed.**
 
-## 2. New admin page `/admin/pumps`
+New page **`/admin/formulas`** (`AdminFormulas.tsx`), admin-only via `AdminRoute`:
 
-Sidebar item "Pumps". Page shows a table of all pumps in `position` order:
+- Table columns: Fragrance code · Name · Version · Total volume · Source (saved_scent owner email) · Times produced · Updated.
+- Filters: search by code/name, version > 1 only, has pending queue jobs.
+- Row click → side sheet with:
+  - Pump dispense plan rendered via existing `computePumpDispense()` (so the library shows the same per-pump ml table as Production Queue).
+  - Raw `notes_formula`, `ingredients_formula`, `pump_instructions` JSON (collapsible, copy buttons).
+  - Linked saved_scent + creator profile.
+  - Recent `production_queue` jobs for this code (status timeline).
+  - "Re-queue" button → inserts a new `production_queue` row using this formula + chosen size/qty (admin shortcut for reorder/QA).
+- Sidebar: add **"Formula Library"** under Operations (icon `BookOpen`), route in `App.tsx` wrapped in `AdminRoute`.
+- All reads/writes go through a new `admin-manage-formulas` edge function (service role; verifies admin via `has_role`) so RLS doesn't block cross-user formula browsing.
 
-| # | Pump ID | Assigned Note | Ingredient Code | ml/sec | Solvent | Active | Actions |
+## 3. Production Queue improvements
 
-- Inline edit pump_id, label, note_name (select from `fragrance_notes` / `ingredient_mappings`), ml_per_second, is_solvent toggle, is_active.
-- "Add pump" button → appends next PUMP-XX at next position.
-- "Remove pump" with confirm (blocked if it's the only `is_solvent` pump).
-- Validation: exactly one `is_solvent=true` pump required; warn if zero or multiple.
-- Links to `/admin/notes` and `/admin/ingredients` for note management.
+Same page (`AdminProductionQueue.tsx`), additive UX polish:
 
-## 3. Concentration logic (frontend helper)
+- **Status tabs** at top: All · Pending · In Progress · Completed · Failed (counts in badges).
+- **Search bar**: fragrance code / size / status.
+- **Bulk actions**: row checkboxes + "Start selected" / "Mark completed" / "Delete dummy jobs" (only `DUMMY-` codes).
+- **Totals strip**: pending count, est. total minutes (sum of `totalSeconds`), solvent ml needed, top 3 most-used pumps right now — useful for the operator before pressing Start.
+- **Per-row ETA** badge from `DispensePlan.totalSeconds`.
+- **Link to Formula Library** from each row's fragrance code (click code → opens library sheet).
+- **"Re-queue"** button on completed rows.
+- Keep the existing dummy-seed, Excel import/export, and dispense-plan chips.
 
-New `src/lib/productionFormula.ts` with pure function:
+## 4. Suggestions for other admin pages (not built unless approved)
 
-```ts
-computePumpDispense({
-  formula,                  // {top,heart,base:[{note,percentage}]}, percentages sum to 100 of fragrance
-  size,                     // '30ml' | '50ml' | '100ml' | custom
-  intensity,                // 'low' | 'medium' | 'high' | quiz value
-  longevity,                // '2-4 hours' | '6-8 hours' | '12+ hours'
-  pumps,                    // from public.pumps
-}) => {
-  fragrancePct,             // 0.20 / 0.30 / 0.40 derived
-  totalVolumeMl,
-  fragranceMl,
-  solventMl,
-  perPump: [{ pump_id, label, note, ml, seconds }]
-}
-```
+- `/admin/pumps`: add a "Test prime" button per pump that posts a 1ml dispense to `machine-production-api` for hardware sanity check.
+- `/admin/ingredients`: show stock alert chip when `stock_level` < threshold; auto-calc "bottles remaining" per ingredient from current pumps & average usage.
+- `/admin/dashboard`: surface a "Production today" card (counts by status) and "Low-stock ingredients".
+- `/admin/scents`: add a column linking to the formula library row so admins can jump from creator → formula.
 
-Rules:
+## Technical notes
 
-- Longevity → base fragrance %: `2-4 hours` = 20%, `6-8 hours` = 30%, `12+ hours` = 40%.
-- Intensity = `high` and formula has no oud/woody note → flag a warning ("High intensity recommended with oud/woody base"). Does not auto-mutate the formula; surfaced as a badge on the row.
-- Each note's ml = `fragranceMl * (note.percentage / 100)`.
-- Solvent ml = `totalVolumeMl - fragranceMl`, dispensed by the `is_solvent` pump.
-- Seconds = `ml / pump.ml_per_second`.
-- Notes whose name doesn't match any active pump → listed as `unmapped` (red badge), not silently dropped.
+- New file: `src/pages/admin/AdminFormulas.tsx`.
+- New edge function: `supabase/functions/admin-manage-formulas/index.ts` (list / get / re-queue actions); `verify_jwt = false`, validates admin in-code via JWT + `has_role`.
+- Update `src/lib/fragranceCodeGenerator.ts` + every import site (5 files).
+- Update `src/components/admin/AdminSidebar.tsx` and `src/App.tsx` routing.
+- No schema migration needed; `machine_formulas` already has unique `fragrance_code`, `version`, and the trigger that auto-fills it from `saved_scents`.
 
-## 4. Production Queue table changes (`src/pages/admin/AdminProductionQueue.tsx`)
+## Open questions
 
-Add columns derived from `computePumpDispense`, rendered as a compact horizontal strip per row:
-
-```
-Pump 01 (Rose) 2.0 ml · Pump 02 (Bergamot) 1.0 ml · … · Pump 11 (Ethanol) 20.0 ml
-```
-
-Implementation:
-
-- Load `pumps` once on mount alongside the queue.
-- Each row stores intensity/longevity inside `formula` already (seed function will include them); for existing rows missing them, default to `6-8 hours` / `medium` and show a subtle "defaults" hint.
-- Row "View" sheet gains a **Pump dispense plan** section: table of pump → ml → seconds → total time, plus fragrance vs solvent ratio (e.g. "Fragrance 30% · Solvent 70%").
-- Excel download/upload extended with new columns: `intensity`, `longevity`, and one column per pump (`pump_01_ml`, …). Upload still accepts files without pump columns (recomputed from formula).
-- Seed function (`admin-seed-production-queue`) updated to pick a random intensity + longevity per job and persist them in `formula.intensity` / `formula.longevity`. Dummy notes continue to be picked only from non-solvent active pumps.
-
-## 5. Sidebar + routing
-
-- `src/App.tsx`: add `/admin/pumps` route → `AdminPumps`.
-- `src/components/admin/AdminSidebar.tsx`: add "Pumps" entry between "Ingredients" and "Production Queue".
-
-## Out of scope
-
-- No changes to the quiz or recommendation engine; intensity/longevity are read from quiz answers when an order is enqueued, but the existing enqueue paths can be wired up in a follow-up — this change focuses on (a) storage model, (b) admin tooling, (c) dispense math, (d) UI surfaces.
-- No changes to `machine-production-api` payload yet (machine still reads `formula`); we can extend it once you confirm the per-pump JSON shape you want the firmware to consume.
-
-## Open question
-
-Do you want the per-pump ml shown **inline as columns** in the main table (wide, one column per pump — gets crowded past ~6 pumps), or as a **single "Dispense plan" cell** with a compact chip list per row that expands in the side sheet? My recommendation is the chip list in the row + full table in the side sheet, since pump count is variable.  
-  
-Answer: based on your recommendation is the chip list in the row + full table in the side sheet, since pump count is variable. 
+1. Code style: prefer **`MIDNIGHT-VELVET-7K4Q`** (4-char hash) or **`MIDNIGHT-VELVET-001`** (sequential per name)?
+2. For the Production Queue improvements — do all four (tabs, search, bulk actions, totals strip) in one pass, or only tabs + search now and bulk/totals later?
+3. Should "Re-queue" be available on the Formula Library only, or also on completed Production Queue rows?
