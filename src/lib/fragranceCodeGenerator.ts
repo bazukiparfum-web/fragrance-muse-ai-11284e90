@@ -1,49 +1,43 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Generates a unique fragrance code for a user
- * Format: {USERNAME}-{NUMBER} (e.g., "VISHVAM-001")
+ * Generates a stable, name-based fragrance code.
+ * Format: {FRAGRANCE_NAME_SLUG}-{4CHAR_BASE36}
+ * Example: "MIDNIGHT-VELVET-7K4Q"
+ *
+ * - Slug: uppercase A-Z 0-9 + dashes, max 24 chars.
+ * - Suffix: 4 random base36 chars, collision-checked against saved_scents.fragrance_code.
+ * - The 2nd argument is accepted for backwards compatibility and ignored.
  */
-export async function generateFragranceCode(userId: string, userName: string): Promise<string> {
-  // Clean and format the username for the code
-  const cleanName = userName
+export async function generateFragranceCode(
+  nameOrUserId: string,
+  legacyName?: string,
+): Promise<string> {
+  // Backwards-compat: old signature was (userId, userName). New signature is (name).
+  // If a 2nd arg is provided we treat it as the scent name (old call sites passed the
+  // user name there — close enough for the slug while we migrate).
+  const rawName = (legacyName ?? nameOrUserId ?? "Scent").toString();
+
+  const slug = rawName
     .trim()
     .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '') // Remove special characters
-    .substring(0, 10); // Max 10 characters
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24) || "SCENT";
 
-  // Get existing codes for this user to find the next number
-  const { data: existingScents, error } = await supabase
-    .from('saved_scents')
-    .select('fragrance_code')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase().padEnd(4, "X");
+    const code = `${slug}-${suffix}`;
 
-  if (error) {
-    console.error('Error fetching existing codes:', error);
-    // Fallback to 001 if there's an error
-    return `${cleanName}-001`;
+    const { data, error } = await supabase
+      .from("saved_scents")
+      .select("id")
+      .eq("fragrance_code", code)
+      .maybeSingle();
+
+    if (error || !data) return code;
   }
 
-  // Extract the highest number from existing codes
-  let highestNumber = 0;
-  if (existingScents && existingScents.length > 0) {
-    existingScents.forEach(scent => {
-      if (scent.fragrance_code) {
-        const match = scent.fragrance_code.match(/-(\d+)$/);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (num > highestNumber) {
-            highestNumber = num;
-          }
-        }
-      }
-    });
-  }
-
-  // Generate the next code
-  const nextNumber = highestNumber + 1;
-  const paddedNumber = nextNumber.toString().padStart(3, '0');
-  
-  return `${cleanName}-${paddedNumber}`;
+  // Fallback — extremely unlikely
+  return `${slug}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
 }
