@@ -1,51 +1,61 @@
+## Bulk download & upload on /admin/formulas
 
-## Decisions locked in
+Add XLSX-based bulk export/import to the Formula Library, with a dry-run preview before any writes.
 
-1. **Fragrance code format: `{NAME-SLUG}-{4CHAR_HASH}`** (e.g. `MIDNIGHT-VELVET-7K4Q`).
-   - Deterministic from `(name, saved_scent_id)` — same scent always resolves to same code, so reorders reliably pull the exact `machine_formulas` row.
-   - No transaction/lock needed (sequential codes would require coordination per name).
-   - Already implemented in `src/lib/fragranceCodeGenerator.ts`; keep as-is.
+### UI additions (`src/pages/admin/AdminFormulas.tsx`)
 
-2. **Production Queue: ship all four enhancements in one pass** — tabs, search, bulk actions, totals strip. They share state (filtered rows, selection) and shipping together avoids reworking the same component twice.
+Header toolbar gets two new buttons next to the search bar:
 
-3. **Re-queue available in BOTH places**:
-   - **Formula Library** = "produce this *formula* again" (pick a bottle size).
-   - **Production Queue completed/failed rows** = "redo this *job*" (one-click, same bottle size).
-   - Both call the same `admin-manage-formulas` re-queue endpoint.
+- **Download all (.xlsx)** — exports the entire library regardless of current search filter.
+- **Upload (.xlsx)** — opens a hidden file input, then a preview dialog.
 
-## Implementation scope
+### Export format — multi-sheet workbook
 
-### Formula Library (`/admin/formulas`) — already built
-No changes needed; keep existing `AdminFormulas.tsx` + `admin-manage-formulas` edge function.
+Built client-side with `xlsx` (SheetJS, ~400KB, already widely used). One file: `formula-library-YYYY-MM-DD.xlsx`.
 
-### Production Queue (`AdminProductionQueue.tsx`) — polish pass
+Sheets:
+1. **Formulas** — one row per formula: `fragrance_code`, `formula_name`, `version`, `total_volume_ml`, `saved_scent_id`, `creator_email`, `created_at`, `updated_at`.
+2. **Notes** — long-format, one row per note: `fragrance_code`, `layer` (top/heart/base), `note`, `percentage`.
+3. **Pumps** — one row per pump step: `fragrance_code`, `pump_id`, `ingredient_code`, `duration_sec`.
+4. **README** — fixed sheet explaining the format, which columns are editable on re-upload, and the `fragrance_code` rule (immutable join key).
 
-- **Status tabs**: All · Pending · In Progress · Completed · Failed, with count badges. Tab state filters the rows.
-- **Search bar**: filter by fragrance code, size, or saved-scent name. Combined with active tab.
-- **Bulk actions**: row checkboxes + header checkbox. Action bar appears when ≥1 selected:
-  - "Start selected" → bulk update status `pending → in_progress`.
-  - "Mark completed" → bulk update `in_progress → completed`.
-  - "Delete dummy jobs" → only enabled when every selected row has `DUMMY-` code prefix.
-- **Totals strip** (sticky above table): pending count · est. total minutes (sum of `DispensePlan.totalSeconds`) · solvent ml needed · top 3 most-used pumps right now.
-- **Per-row ETA badge** from `DispensePlan.totalSeconds`.
-- **Re-queue button** on completed/failed rows → opens small popover to pick size (30/50/100ml) then calls `admin-manage-formulas`.
-- **Fragrance code → Formula Library link** (click code opens the library sheet for that code; reuse the existing sheet by lifting it or navigating with a query param).
+### Import flow — dry-run preview, then apply
 
-Keep existing dummy-seed, Excel import/export, and per-row dispense-plan chips.
+1. Admin picks a `.xlsx`. Parsed client-side.
+2. Client validates: required columns present, percentages per layer sum to ~100, every pump's `ingredient_code` exists in current pumps list, `total_volume_ml` in {30, 50, 100}.
+3. Client posts parsed rows to `admin-manage-formulas` with `action: 'import_preview'`. Edge function compares to DB and returns:
+   - `new[]` — codes not in DB (will insert)
+   - `updated[]` — codes in DB with diffs (per-field old → new, version will bump)
+   - `unchanged[]` — codes identical to DB
+   - `invalid[]` — validation errors with row + reason
+4. Preview dialog (`ImportPreviewDialog`) shows the four buckets with counts and expandable diff rows. Per-conflict admin can:
+   - Toggle each `updated` row to **Apply**, **Skip**, or **Keep DB version** (default: Apply).
+   - Bulk actions: "Apply all updates", "Skip all updates".
+   - `new[]` rows always insert (toggle to skip individually if desired).
+   - `invalid[]` rows are blocked and listed read-only.
+5. On confirm, client posts the resolved set with `action: 'import_apply'`. Edge function upserts only the selected rows, bumping `version` on updates. Returns `{ inserted, updated, skipped, failed }`.
+6. Toast summary + auto-reload list.
 
-### Backing edge function changes
-`admin-manage-formulas` already supports `requeue`. Add bulk-status update support to existing `admin-manage-production` (or use direct service-role call from a small extension) for the bulk actions.
+### Edge function changes (`supabase/functions/admin-manage-formulas/index.ts`)
 
-## Technical notes
+Add two new actions to the existing function (no new function needed):
 
-- No schema migration needed.
-- All admin writes continue to route through edge functions (service-role) to bypass RLS — pattern already in use.
-- New UI uses existing shadcn primitives (Tabs, Checkbox, Popover, Badge).
-- Selection state lives in component-local `Set<string>`; cleared on tab change.
+- `import_preview` — accepts `{ formulas: [{ fragrance_code, formula_name, total_volume_ml, notes_formula, pump_instructions }] }`. Fetches matching codes from `machine_formulas`, computes per-field diffs, returns buckets.
+- `import_apply` — accepts the same shape plus a `resolutions: Record<code, 'apply' | 'skip'>` map. For each apply: upsert into `machine_formulas` (existing `ON CONFLICT (fragrance_code)` in `generate_machine_formula` already handles version bump, but here we write directly so we mirror that — set `version = current + 1` on update).
 
-## Out of scope (deferred — propose later)
+No DB schema changes required — `machine_formulas` already has everything needed and `fragrance_code` is the unique key.
 
-- `/admin/pumps` "Test prime" button.
-- `/admin/ingredients` stock alerts + bottles-remaining calc.
-- `/admin/dashboard` production-today + low-stock cards.
-- `/admin/scents` formula-library link column.
+### New file
+- `src/components/admin/FormulaImportPreviewDialog.tsx` — the preview/confirm dialog.
+
+### Out of scope
+- CSV/JSON formats (XLSX only, per choice).
+- Editing `fragrance_code` itself via upload — it's the join key; rows with codes not in DB always insert as new.
+- Bulk delete via upload (would need a separate destructive flow).
+- Pump/ingredient autocreation — uploads referencing unknown pumps fail validation.
+
+### Files touched
+- `src/pages/admin/AdminFormulas.tsx` (toolbar buttons, file input, wire-up)
+- `src/components/admin/FormulaImportPreviewDialog.tsx` (new)
+- `supabase/functions/admin-manage-formulas/index.ts` (+ `import_preview`, `import_apply` actions)
+- `package.json` (add `xlsx` if not already present)
