@@ -420,6 +420,16 @@ const AdminProductionQueue = () => {
                           </Button>
                         </>
                       )}
+                      {(it.status === 'completed' || it.status === 'failed') && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy === it.id}
+                          onClick={() => requeue(it)}
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" /> Re-queue
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 );
