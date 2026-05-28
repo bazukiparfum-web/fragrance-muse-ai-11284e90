@@ -266,13 +266,11 @@ const AdminProductionQueue = () => {
 
   const totals = useMemo(() => {
     const pending = items.filter((it) => it.status === 'pending' || it.status === 'in_progress');
-    let totalSeconds = 0;
     let solventMl = 0;
     const pumpUsage = new Map<string, number>();
     for (const it of pending) {
       const plan = plans.get(it.id);
       if (!plan) continue;
-      totalSeconds += plan.totalSeconds * it.quantity;
       solventMl += plan.solventMl * it.quantity;
       for (const r of plan.perPump) {
         if (r.is_solvent) continue;
@@ -282,7 +280,7 @@ const AdminProductionQueue = () => {
     const topPumps = Array.from(pumpUsage.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
-    return { pendingCount: pending.length, totalSeconds, solventMl, topPumps };
+    return { pendingCount: pending.length, solventMl, topPumps };
   }, [items, plans]);
 
   const selectedPlan = selected ? plans.get(selected.id) : undefined;
@@ -329,14 +327,6 @@ const AdminProductionQueue = () => {
         <Card className="p-3">
           <div className="text-xs text-muted-foreground">Active jobs</div>
           <div className="text-2xl font-semibold">{totals.pendingCount}</div>
-        </Card>
-        <Card className="p-3">
-          <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3"/> Est. machine time</div>
-          <div className="text-2xl font-semibold">
-            {totals.totalSeconds < 60
-              ? `${totals.totalSeconds.toFixed(0)}s`
-              : `${(totals.totalSeconds / 60).toFixed(1)}m`}
-          </div>
         </Card>
         <Card className="p-3">
           <div className="text-xs text-muted-foreground flex items-center gap-1"><Beaker className="h-3 w-3"/> Solvent needed</div>
