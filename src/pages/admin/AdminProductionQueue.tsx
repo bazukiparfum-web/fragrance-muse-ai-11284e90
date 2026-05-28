@@ -277,6 +277,58 @@ const AdminProductionQueue = () => {
         </div>
       </Card>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground">Active jobs</div>
+          <div className="text-2xl font-semibold">{totals.pendingCount}</div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3"/> Est. machine time</div>
+          <div className="text-2xl font-semibold">
+            {totals.totalSeconds < 60
+              ? `${totals.totalSeconds.toFixed(0)}s`
+              : `${(totals.totalSeconds / 60).toFixed(1)}m`}
+          </div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground flex items-center gap-1"><Beaker className="h-3 w-3"/> Solvent needed</div>
+          <div className="text-2xl font-semibold">{totals.solventMl.toFixed(0)} ml</div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground">Top pumps in queue</div>
+          <div className="text-xs mt-1 space-y-0.5">
+            {totals.topPumps.length === 0 ? (
+              <span className="text-muted-foreground">—</span>
+            ) : (
+              totals.topPumps.map(([id, ml]) => (
+                <div key={id} className="font-mono">{id.replace('PUMP-', 'P')}: {ml.toFixed(1)}ml</div>
+              ))
+            )}
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-3 mb-4 flex flex-wrap items-center gap-3">
+        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+          <TabsList>
+            <TabsTrigger value="all">All <Badge variant="secondary" className="ml-2">{counts.all}</Badge></TabsTrigger>
+            <TabsTrigger value="pending">Pending <Badge variant="secondary" className="ml-2">{counts.pending}</Badge></TabsTrigger>
+            <TabsTrigger value="in_progress">In progress <Badge variant="secondary" className="ml-2">{counts.in_progress}</Badge></TabsTrigger>
+            <TabsTrigger value="completed">Completed <Badge variant="secondary" className="ml-2">{counts.completed}</Badge></TabsTrigger>
+            <TabsTrigger value="failed">Failed <Badge variant="secondary" className="ml-2">{counts.failed}</Badge></TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="flex items-center gap-1 ml-auto">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search code or size…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-64"
+          />
+        </div>
+      </Card>
+
       <Card>
         {loading ? (
           <div className="p-12 flex justify-center">
