@@ -369,19 +369,6 @@ const AdminIngredients = () => {
                           {editingId === ingredient.id ? (
                             <Input
                               type="number"
-                              step="0.01"
-                              value={editValues.density ?? ''}
-                              onChange={(e) => setEditValues({ ...editValues, density: parseFloat(e.target.value) || 0 })}
-                              className="w-20 text-right"
-                            />
-                          ) : (
-                            ingredient.density?.toFixed(2) || '-'
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {editingId === ingredient.id ? (
-                            <Input
-                              type="number"
                               value={editValues.stock_level ?? ''}
                               onChange={(e) => setEditValues({ ...editValues, stock_level: parseInt(e.target.value) || 0 })}
                               className="w-20 text-right"
