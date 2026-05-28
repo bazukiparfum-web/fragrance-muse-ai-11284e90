@@ -168,7 +168,7 @@ const AdminPumps = () => {
                 <TableHead>Pump ID</TableHead>
                 <TableHead>Assigned Note</TableHead>
                 <TableHead>Ingredient Code</TableHead>
-                <TableHead className="text-right">ml/sec</TableHead>
+                
                 <TableHead className="text-center">Solvent</TableHead>
                 <TableHead className="text-center">Active</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -230,19 +230,6 @@ const AdminPumps = () => {
                         />
                       ) : (
                         p.ingredient_code ?? '—'
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {editing ? (
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={edit.ml_per_second ?? ''}
-                          onChange={(e) => setEdit({ ...edit, ml_per_second: parseFloat(e.target.value) || 0 })}
-                          className="w-20 h-8 text-right"
-                        />
-                      ) : (
-                        (p.ml_per_second ?? 0).toFixed(1)
                       )}
                     </TableCell>
                     <TableCell className="text-center">
