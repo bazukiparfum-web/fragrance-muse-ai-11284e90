@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -20,7 +22,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Download, Upload, Sparkles, AlertTriangle, Search, Clock, Beaker, RotateCcw } from 'lucide-react';
+import { Loader2, Download, Upload, Sparkles, AlertTriangle, Search, Clock, Beaker, RotateCcw, Play, Check, Trash2, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   computePumpDispense,
