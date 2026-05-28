@@ -43,6 +43,10 @@ const AdminProductionQueue = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<QueueItem | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [seedCount, setSeedCount] = useState(5);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+
 
   const load = async () => {
     setLoading(true);
