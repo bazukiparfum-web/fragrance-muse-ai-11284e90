@@ -420,7 +420,7 @@ const AdminIngredients = () => {
             <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
               <div><strong>Ingredient Code:</strong> Machine-readable code (e.g., ING-001)</div>
               <div><strong>Pump ID:</strong> Physical pump assignment (e.g., PUMP-A1)</div>
-              <div><strong>ml/sec:</strong> Dispensing rate in milliliters per second</div>
+              
               <div><strong>Density:</strong> Ingredient density for volume calculations</div>
               <div><strong>Stock:</strong> Current stock level (low stock &lt;20 highlighted)</div>
               <div><strong>Active:</strong> Whether this ingredient is available for production</div>
