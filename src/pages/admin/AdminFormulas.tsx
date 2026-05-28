@@ -49,6 +49,10 @@ export default function AdminFormulas() {
   const [search, setSearch] = useState('');
   const [requeueSize, setRequeueSize] = useState('30ml');
   const [busy, setBusy] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<PreviewBuckets | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [applying, setApplying] = useState(false);
 
   const load = async () => {
     setLoading(true);
