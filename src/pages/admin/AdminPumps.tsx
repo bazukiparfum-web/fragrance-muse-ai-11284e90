@@ -18,7 +18,6 @@ import type { Pump } from '@/lib/productionFormula';
 interface IngredientOption {
   note_name: string;
   ingredient_code: string;
-  ml_per_second: number | null;
 }
 
 const emptyEdit = (): Partial<Pump> => ({});
@@ -37,7 +36,7 @@ const AdminPumps = () => {
       supabase.from('pumps' as any).select('*').order('position'),
       supabase
         .from('ingredient_mappings')
-        .select('note_name, ingredient_code, ml_per_second')
+        .select('note_name, ingredient_code')
         .eq('is_active', true)
         .order('note_name'),
     ]);
@@ -73,7 +72,6 @@ const AdminPumps = () => {
         label: edit.label,
         note_name: edit.note_name || null,
         ingredient_code: edit.ingredient_code || null,
-        ml_per_second: edit.ml_per_second,
         is_solvent: edit.is_solvent,
         is_active: edit.is_active,
       })
@@ -93,7 +91,6 @@ const AdminPumps = () => {
       pump_id: pumpId,
       position: nextPos,
       label: `Pump ${nextPos}`,
-      ml_per_second: 2.0,
       is_solvent: false,
       is_active: true,
     });
@@ -120,7 +117,6 @@ const AdminPumps = () => {
       ...e,
       note_name: noteName === '__none__' ? null : noteName,
       ingredient_code: match?.ingredient_code ?? e.ingredient_code ?? null,
-      ml_per_second: match?.ml_per_second ?? e.ml_per_second ?? 2.0,
       label: noteName === '__none__' ? e.label : (match?.note_name ?? e.label),
     }));
   };
@@ -172,7 +168,7 @@ const AdminPumps = () => {
                 <TableHead>Pump ID</TableHead>
                 <TableHead>Assigned Note</TableHead>
                 <TableHead>Ingredient Code</TableHead>
-                <TableHead className="text-right">ml/sec</TableHead>
+                
                 <TableHead className="text-center">Solvent</TableHead>
                 <TableHead className="text-center">Active</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -234,19 +230,6 @@ const AdminPumps = () => {
                         />
                       ) : (
                         p.ingredient_code ?? '—'
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {editing ? (
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={edit.ml_per_second ?? ''}
-                          onChange={(e) => setEdit({ ...edit, ml_per_second: parseFloat(e.target.value) || 0 })}
-                          className="w-20 h-8 text-right"
-                        />
-                      ) : (
-                        (p.ml_per_second ?? 0).toFixed(1)
                       )}
                     </TableCell>
                     <TableCell className="text-center">

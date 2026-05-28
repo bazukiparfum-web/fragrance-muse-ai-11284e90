@@ -85,7 +85,6 @@ const AdminIngredients = () => {
     setEditValues({
       ingredient_code: ingredient.ingredient_code,
       pump_id: ingredient.pump_id,
-      ml_per_second: ingredient.ml_per_second,
       density: ingredient.density,
       stock_level: ingredient.stock_level,
       is_active: ingredient.is_active
@@ -106,7 +105,6 @@ const AdminIngredients = () => {
         .update({
           ingredient_code: editValues.ingredient_code,
           pump_id: editValues.pump_id,
-          ml_per_second: editValues.ml_per_second,
           density: editValues.density,
           stock_level: editValues.stock_level,
           is_active: editValues.is_active,
@@ -302,7 +300,7 @@ const AdminIngredients = () => {
                     >
                       Pump ID {sortColumn === 'pump_id' && (sortDirection === 'asc' ? '↑' : '↓')}
                     </TableHead>
-                    <TableHead className="text-right">ml/sec</TableHead>
+                    
                     <TableHead className="text-right">Density</TableHead>
                     <TableHead className="text-right">Stock</TableHead>
                     <TableHead className="text-center">Active</TableHead>
@@ -352,19 +350,6 @@ const AdminIngredients = () => {
                             <Badge variant="secondary" className="font-mono">
                               {ingredient.pump_id || 'N/A'}
                             </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {editingId === ingredient.id ? (
-                            <Input
-                              type="number"
-                              step="0.1"
-                              value={editValues.ml_per_second ?? ''}
-                              onChange={(e) => setEditValues({ ...editValues, ml_per_second: parseFloat(e.target.value) || 0 })}
-                              className="w-20 text-right"
-                            />
-                          ) : (
-                            ingredient.ml_per_second?.toFixed(1) || '-'
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -435,7 +420,7 @@ const AdminIngredients = () => {
             <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
               <div><strong>Ingredient Code:</strong> Machine-readable code (e.g., ING-001)</div>
               <div><strong>Pump ID:</strong> Physical pump assignment (e.g., PUMP-A1)</div>
-              <div><strong>ml/sec:</strong> Dispensing rate in milliliters per second</div>
+              
               <div><strong>Density:</strong> Ingredient density for volume calculations</div>
               <div><strong>Stock:</strong> Current stock level (low stock &lt;20 highlighted)</div>
               <div><strong>Active:</strong> Whether this ingredient is available for production</div>

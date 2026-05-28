@@ -84,7 +84,6 @@ export interface PumpDispenseRow {
   note: string | null;
   is_solvent: boolean;
   ml: number;
-  seconds: number;
 }
 
 export interface DispensePlan {
@@ -95,7 +94,6 @@ export interface DispensePlan {
   perPump: PumpDispenseRow[];
   unmapped: { note: string; percentage: number; ml: number }[];
   warnings: string[];
-  totalSeconds: number;
 }
 
 export function computePumpDispense(args: {
@@ -149,7 +147,6 @@ export function computePumpDispense(args: {
       note: pump.note_name,
       is_solvent: false,
       ml: total,
-      seconds: +(total / (pump.ml_per_second || 2)).toFixed(2),
     });
   }
 
@@ -161,12 +158,10 @@ export function computePumpDispense(args: {
       note: null,
       is_solvent: true,
       ml: solventMl,
-      seconds: +(solventMl / (solventPump.ml_per_second || 3)).toFixed(2),
     });
   }
 
   const perPump = Array.from(dispenseMap.values()).sort((a, b) => a.position - b.position);
-  const totalSeconds = +perPump.reduce((s, r) => s + r.seconds, 0).toFixed(2);
 
   const warnings: string[] = [];
   if (!solventPump) warnings.push('No solvent pump configured — solvent volume will not be dispensed.');
@@ -177,5 +172,5 @@ export function computePumpDispense(args: {
     warnings.push(`${unmapped.length} note(s) have no pump mapping: ${unmapped.map((u) => u.note).join(', ')}`);
   }
 
-  return { totalVolumeMl, fragranceMl, solventMl, fragrancePct, perPump, unmapped, warnings, totalSeconds };
+  return { totalVolumeMl, fragranceMl, solventMl, fragrancePct, perPump, unmapped, warnings };
 }
