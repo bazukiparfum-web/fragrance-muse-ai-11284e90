@@ -425,7 +425,7 @@ const AdminProductionQueue = () => {
                 <TableHead>Size</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>ETA</TableHead>
+                
                 <TableHead className="min-w-[320px]">Dispense plan</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -433,7 +433,6 @@ const AdminProductionQueue = () => {
             <TableBody>
               {filtered.map((it) => {
                 const plan = plans.get(it.id);
-                const eta = plan ? plan.totalSeconds * it.quantity : 0;
                 return (
                   <TableRow key={it.id} data-state={selectedIds.has(it.id) ? 'selected' : undefined}>
                     <TableCell className="align-top">
@@ -457,9 +456,6 @@ const AdminProductionQueue = () => {
                     <TableCell className="align-top">{it.quantity}</TableCell>
                     <TableCell className="align-top">
                       <Badge variant={statusColor(it.status) as any}>{it.status}</Badge>
-                    </TableCell>
-                    <TableCell className="align-top text-xs text-muted-foreground">
-                      {eta ? (eta < 60 ? `${eta.toFixed(0)}s` : `${(eta / 60).toFixed(1)}m`) : '—'}
                     </TableCell>
                     <TableCell className="align-top">
                       {plan && plan.perPump.length ? (
