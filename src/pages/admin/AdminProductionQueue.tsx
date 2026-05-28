@@ -90,9 +90,102 @@ const AdminProductionQueue = () => {
     }
   };
 
+  const seedDummy = async () => {
+    setBusy('seed');
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-seed-production-queue', {
+        body: { count: seedCount },
+      });
+      if (error) throw error;
+      toast.success(`Seeded ${data?.inserted ?? 0} dummy job(s)`);
+    } catch (e: any) {
+      toast.error(e.message ?? 'Seed failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const downloadExcel = () => {
+    const rows = items.map((it) => ({
+      fragrance_code: it.fragrance_code,
+      size: it.size,
+      quantity: it.quantity,
+      status: it.status,
+      created_at: it.created_at,
+      started_at: it.started_at ?? '',
+      completed_at: it.completed_at ?? '',
+      machine_notes: it.machine_notes ?? '',
+      formula: JSON.stringify(it.formula ?? {}),
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Queue');
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `production-queue-${stamp}.xlsx`);
+  };
+
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setBusy('upload');
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<any>(ws);
+      if (!rows.length) throw new Error('Sheet is empty');
+      const { data, error } = await supabase.functions.invoke('admin-bulk-import-queue', {
+        body: { rows },
+      });
+      if (error) throw error;
+      const errs = data?.errors ?? [];
+      toast.success(`Imported ${data?.inserted ?? 0} row(s)${errs.length ? `, ${errs.length} skipped` : ''}`);
+      if (errs.length) console.warn('Import errors', errs);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Upload failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <h1 className="font-serif text-3xl font-bold mb-6">Production Queue</h1>
+
+      <Card className="p-4 mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={1}
+            max={50}
+            value={seedCount}
+            onChange={(e) => setSeedCount(parseInt(e.target.value, 10) || 1)}
+            className="w-20"
+          />
+          <Button onClick={seedDummy} disabled={busy === 'seed'} variant="secondary">
+            <Sparkles className="h-4 w-4 mr-2" />
+            {busy === 'seed' ? 'Seeding…' : 'Generate dummy jobs'}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <Button onClick={downloadExcel} variant="outline" disabled={!items.length}>
+            <Download className="h-4 w-4 mr-2" />
+            Download Excel
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={onUpload}
+          />
+          <Button onClick={() => fileRef.current?.click()} variant="outline" disabled={busy === 'upload'}>
+            <Upload className="h-4 w-4 mr-2" />
+            {busy === 'upload' ? 'Uploading…' : 'Upload Excel'}
+          </Button>
+        </div>
+      </Card>
 
       <Card>
         {loading ? (
