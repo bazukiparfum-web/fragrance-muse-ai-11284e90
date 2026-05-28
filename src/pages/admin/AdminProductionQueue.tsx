@@ -182,6 +182,61 @@ const AdminProductionQueue = () => {
     }
   };
 
+  const requeue = async (it: QueueItem) => {
+    setBusy(it.id);
+    try {
+      const { error } = await supabase.functions.invoke('admin-manage-formulas', {
+        body: { action: 'requeue', fragrance_code: it.fragrance_code, size: it.size, quantity: it.quantity },
+      });
+      if (error) throw error;
+      toast.success(`Re-queued ${it.fragrance_code}`);
+    } catch (e: any) {
+      toast.error(e.message ?? 'Re-queue failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const counts = useMemo(() => {
+    const c = { all: items.length, pending: 0, in_progress: 0, completed: 0, failed: 0 };
+    for (const it of items) (c as any)[it.status] = ((c as any)[it.status] ?? 0) + 1;
+    return c;
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return items.filter((it) => {
+      if (statusFilter !== 'all' && it.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        it.fragrance_code.toLowerCase().includes(q) ||
+        it.size.toLowerCase().includes(q) ||
+        it.status.toLowerCase().includes(q)
+      );
+    });
+  }, [items, statusFilter, search]);
+
+  const totals = useMemo(() => {
+    const pending = items.filter((it) => it.status === 'pending' || it.status === 'in_progress');
+    let totalSeconds = 0;
+    let solventMl = 0;
+    const pumpUsage = new Map<string, number>();
+    for (const it of pending) {
+      const plan = plans.get(it.id);
+      if (!plan) continue;
+      totalSeconds += plan.totalSeconds * it.quantity;
+      solventMl += plan.solventMl * it.quantity;
+      for (const r of plan.perPump) {
+        if (r.is_solvent) continue;
+        pumpUsage.set(r.pump_id, (pumpUsage.get(r.pump_id) ?? 0) + r.ml * it.quantity);
+      }
+    }
+    const topPumps = Array.from(pumpUsage.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    return { pendingCount: pending.length, totalSeconds, solventMl, topPumps };
+  }, [items, plans]);
+
   const selectedPlan = selected ? plans.get(selected.id) : undefined;
 
   return (
