@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,9 +15,10 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Search, Copy, BookOpen, Send, AlertTriangle } from 'lucide-react';
+import { Loader2, Search, Copy, BookOpen, Send, AlertTriangle, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { computePumpDispense, type Pump } from '@/lib/productionFormula';
+import { FormulaImportPreviewDialog, type PreviewBuckets } from '@/components/admin/FormulaImportPreviewDialog';
 
 interface Formula {
   id: string;
