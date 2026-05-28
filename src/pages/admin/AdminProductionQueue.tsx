@@ -334,8 +334,8 @@ const AdminProductionQueue = () => {
           <div className="p-12 flex justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : items.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground">Queue is empty.</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-12 text-center text-muted-foreground">No jobs match.</div>
         ) : (
           <Table>
             <TableHeader>
@@ -344,13 +344,15 @@ const AdminProductionQueue = () => {
                 <TableHead>Size</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>ETA</TableHead>
                 <TableHead className="min-w-[320px]">Dispense plan</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((it) => {
+              {filtered.map((it) => {
                 const plan = plans.get(it.id);
+                const eta = plan ? plan.totalSeconds * it.quantity : 0;
                 return (
                   <TableRow key={it.id}>
                     <TableCell className="font-mono text-xs align-top">{it.fragrance_code}</TableCell>
