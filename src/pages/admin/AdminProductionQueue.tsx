@@ -22,7 +22,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Download, Upload, Sparkles, AlertTriangle, Search, Clock, Beaker, RotateCcw, Play, Check, Trash2, BookOpen } from 'lucide-react';
+import { Loader2, Download, Upload, Sparkles, AlertTriangle, Search, Beaker, RotateCcw, Play, Check, Trash2, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   computePumpDispense,
