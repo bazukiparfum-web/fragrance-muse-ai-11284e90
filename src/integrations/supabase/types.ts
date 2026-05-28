@@ -703,6 +703,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pumps: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_code: string | null
+          is_active: boolean
+          is_solvent: boolean
+          label: string
+          ml_per_second: number
+          note_name: string | null
+          position: number
+          pump_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_code?: string | null
+          is_active?: boolean
+          is_solvent?: boolean
+          label: string
+          ml_per_second?: number
+          note_name?: string | null
+          position: number
+          pump_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_code?: string | null
+          is_active?: boolean
+          is_solvent?: boolean
+          label?: string
+          ml_per_second?: number
+          note_name?: string | null
+          position?: number
+          pump_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quiz_progress: {
         Row: {
           answers: Json

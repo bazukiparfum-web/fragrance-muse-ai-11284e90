@@ -84,6 +84,13 @@ Deno.serve(async (req) => {
         total_volume_ml: totalVolume,
       };
 
+      const intensities = ['low', 'medium', 'high'];
+      const longevities = ['2-4 hours', '6-8 hours', '12+ hours'];
+      const intensity = intensities[Math.floor(Math.random() * intensities.length)];
+      const longevity = longevities[Math.floor(Math.random() * longevities.length)];
+      (formula as any).intensity = intensity;
+      (formula as any).longevity = longevity;
+
       rows.push({
         fragrance_code: `DUMMY-${shortCode()}`,
         size,
