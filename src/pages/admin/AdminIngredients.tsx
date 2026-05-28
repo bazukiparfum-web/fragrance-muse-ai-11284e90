@@ -85,7 +85,6 @@ const AdminIngredients = () => {
     setEditValues({
       ingredient_code: ingredient.ingredient_code,
       pump_id: ingredient.pump_id,
-      ml_per_second: ingredient.ml_per_second,
       density: ingredient.density,
       stock_level: ingredient.stock_level,
       is_active: ingredient.is_active
@@ -106,7 +105,6 @@ const AdminIngredients = () => {
         .update({
           ingredient_code: editValues.ingredient_code,
           pump_id: editValues.pump_id,
-          ml_per_second: editValues.ml_per_second,
           density: editValues.density,
           stock_level: editValues.stock_level,
           is_active: editValues.is_active,
@@ -302,7 +300,7 @@ const AdminIngredients = () => {
                     >
                       Pump ID {sortColumn === 'pump_id' && (sortDirection === 'asc' ? '↑' : '↓')}
                     </TableHead>
-                    <TableHead className="text-right">ml/sec</TableHead>
+                    
                     <TableHead className="text-right">Density</TableHead>
                     <TableHead className="text-right">Stock</TableHead>
                     <TableHead className="text-center">Active</TableHead>
@@ -358,13 +356,13 @@ const AdminIngredients = () => {
                           {editingId === ingredient.id ? (
                             <Input
                               type="number"
-                              step="0.1"
-                              value={editValues.ml_per_second ?? ''}
-                              onChange={(e) => setEditValues({ ...editValues, ml_per_second: parseFloat(e.target.value) || 0 })}
+                              step="0.01"
+                              value={editValues.density ?? ''}
+                              onChange={(e) => setEditValues({ ...editValues, density: parseFloat(e.target.value) || 0 })}
                               className="w-20 text-right"
                             />
                           ) : (
-                            ingredient.ml_per_second?.toFixed(1) || '-'
+                            ingredient.density?.toFixed(2) || '-'
                           )}
                         </TableCell>
                         <TableCell className="text-right">
