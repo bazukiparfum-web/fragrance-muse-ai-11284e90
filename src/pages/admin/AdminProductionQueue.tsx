@@ -554,7 +554,7 @@ const AdminProductionQueue = () => {
                 <div>
                   <h3 className="font-semibold mb-2">Pump dispense plan</h3>
                   <div className="text-xs text-muted-foreground mb-2">
-                    Fragrance {(selectedPlan.fragrancePct * 100).toFixed(0)}% ({selectedPlan.fragranceMl} ml) · Solvent {selectedPlan.solventMl} ml · Total {selectedPlan.totalVolumeMl} ml · ~{selectedPlan.totalSeconds.toFixed(1)}s
+                    Fragrance {(selectedPlan.fragrancePct * 100).toFixed(0)}% ({selectedPlan.fragranceMl} ml) · Solvent {selectedPlan.solventMl} ml · Total {selectedPlan.totalVolumeMl} ml
                   </div>
                   <div className="border rounded">
                     <Table>
@@ -563,7 +563,6 @@ const AdminProductionQueue = () => {
                           <TableHead className="h-8">Pump</TableHead>
                           <TableHead className="h-8">Contents</TableHead>
                           <TableHead className="h-8 text-right">ml</TableHead>
-                          <TableHead className="h-8 text-right">sec</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -578,7 +577,6 @@ const AdminProductionQueue = () => {
                               )}
                             </TableCell>
                             <TableCell className="py-1.5 text-right">{r.ml.toFixed(2)}</TableCell>
-                            <TableCell className="py-1.5 text-right text-muted-foreground">{r.seconds.toFixed(1)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
