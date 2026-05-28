@@ -51,6 +51,8 @@ const AdminProductionQueue = () => {
   const [selected, setSelected] = useState<QueueItem | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [seedCount, setSeedCount] = useState(5);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
