@@ -293,7 +293,34 @@ export default function AdminFormulas() {
           className="border-0 focus-visible:ring-0"
         />
         <Badge variant="outline">{filtered.length} formulas</Badge>
+        <Button size="sm" variant="outline" onClick={handleDownload} disabled={!data || loading}>
+          <Download className="h-4 w-4 mr-2" /> Download all
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={busy === 'preview'}
+        >
+          {busy === 'preview' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+          Upload
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={handleFilePicked}
+        />
       </Card>
+
+      <FormulaImportPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        preview={preview}
+        applying={applying}
+        onApply={handleApplyImport}
+      />
 
       <Card>
         {loading ? (
