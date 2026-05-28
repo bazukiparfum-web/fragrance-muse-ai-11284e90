@@ -200,6 +200,51 @@ const AdminProductionQueue = () => {
     }
   };
 
+  const bulkUpdate = async (status: string) => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBusy('bulk');
+    try {
+      const { error } = await supabase.functions.invoke('admin-manage-production', {
+        body: { ids, status },
+      });
+      if (error) throw error;
+      toast.success(`Updated ${ids.length} job(s) → ${status}`);
+      setSelectedIds(new Set());
+    } catch (e: any) {
+      toast.error(e.message ?? 'Bulk update failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const bulkDeleteDummy = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBusy('bulk');
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-manage-production', {
+        body: { ids, action: 'delete_dummy' },
+      });
+      if (error) throw error;
+      toast.success(`Deleted ${data?.deleted ?? 0} dummy job(s)`);
+      setSelectedIds(new Set());
+    } catch (e: any) {
+      toast.error(e.message ?? 'Delete failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const counts = useMemo(() => {
     const c = { all: items.length, pending: 0, in_progress: 0, completed: 0, failed: 0 };
     for (const it of items) (c as any)[it.status] = ((c as any)[it.status] ?? 0) + 1;
