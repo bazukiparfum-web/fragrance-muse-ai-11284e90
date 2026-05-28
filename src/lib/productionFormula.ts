@@ -84,7 +84,6 @@ export interface PumpDispenseRow {
   note: string | null;
   is_solvent: boolean;
   ml: number;
-  seconds: number;
 }
 
 export interface DispensePlan {
@@ -95,7 +94,6 @@ export interface DispensePlan {
   perPump: PumpDispenseRow[];
   unmapped: { note: string; percentage: number; ml: number }[];
   warnings: string[];
-  totalSeconds: number;
 }
 
 export function computePumpDispense(args: {
