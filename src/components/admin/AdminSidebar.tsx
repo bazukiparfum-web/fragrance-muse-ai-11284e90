@@ -12,6 +12,7 @@ import {
   Star,
   Users,
   FlaskConical,
+  Droplets,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const groups = [
     label: 'Operations',
     items: [
       { title: 'Orders', url: '/admin/orders', icon: ShoppingBag },
+      { title: 'Pumps', url: '/admin/pumps', icon: Droplets },
       { title: 'Production Queue', url: '/admin/production-queue', icon: Factory },
       { title: 'Consultations', url: '/admin/consultations', icon: MessageSquare },
       { title: 'Reviews', url: '/admin/reviews', icon: Star },
