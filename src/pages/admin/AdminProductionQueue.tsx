@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -19,8 +19,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Loader2, Download, Upload, Sparkles } from 'lucide-react';
+import { Loader2, Download, Upload, Sparkles, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  computePumpDispense,
+  type Pump,
+  type DispensePlan,
+} from '@/lib/productionFormula';
 
 interface QueueItem {
   id: string;
@@ -40,23 +45,27 @@ const statusColor = (s: string) =>
 
 const AdminProductionQueue = () => {
   const [items, setItems] = useState<QueueItem[]>([]);
+  const [pumps, setPumps] = useState<Pump[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<QueueItem | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [seedCount, setSeedCount] = useState(5);
   const fileRef = useRef<HTMLInputElement>(null);
 
-
-
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('production_queue')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
-    if (error) toast.error(error.message);
-    setItems((data as any) ?? []);
+    const [queueRes, pumpsRes] = await Promise.all([
+      supabase
+        .from('production_queue')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabase.from('pumps' as any).select('*').order('position'),
+    ]);
+    if (queueRes.error) toast.error(queueRes.error.message);
+    if (pumpsRes.error) toast.error(pumpsRes.error.message);
+    setItems((queueRes.data as any) ?? []);
+    setPumps(((pumpsRes.data as unknown as Pump[]) ?? []));
     setLoading(false);
   };
 
@@ -74,6 +83,14 @@ const AdminProductionQueue = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const plans = useMemo(() => {
+    const map = new Map<string, DispensePlan>();
+    for (const it of items) {
+      map.set(it.id, computePumpDispense({ formula: it.formula, size: it.size, pumps }));
+    }
+    return map;
+  }, [items, pumps]);
 
   const advance = async (id: string, status: string) => {
     setBusy(id);
@@ -106,17 +123,30 @@ const AdminProductionQueue = () => {
   };
 
   const downloadExcel = () => {
-    const rows = items.map((it) => ({
-      fragrance_code: it.fragrance_code,
-      size: it.size,
-      quantity: it.quantity,
-      status: it.status,
-      created_at: it.created_at,
-      started_at: it.started_at ?? '',
-      completed_at: it.completed_at ?? '',
-      machine_notes: it.machine_notes ?? '',
-      formula: JSON.stringify(it.formula ?? {}),
-    }));
+    const rows = items.map((it) => {
+      const plan = plans.get(it.id);
+      const pumpCols: Record<string, number | string> = {};
+      for (const pump of pumps) {
+        const row = plan?.perPump.find((r) => r.pump_id === pump.pump_id);
+        pumpCols[`${pump.pump_id}_ml`] = row?.ml ?? 0;
+      }
+      return {
+        fragrance_code: it.fragrance_code,
+        size: it.size,
+        quantity: it.quantity,
+        status: it.status,
+        intensity: it.formula?.intensity ?? '',
+        longevity: it.formula?.longevity ?? '',
+        fragrance_ml: plan?.fragranceMl ?? '',
+        solvent_ml: plan?.solventMl ?? '',
+        ...pumpCols,
+        created_at: it.created_at,
+        started_at: it.started_at ?? '',
+        completed_at: it.completed_at ?? '',
+        machine_notes: it.machine_notes ?? '',
+        formula: JSON.stringify(it.formula ?? {}),
+      };
+    });
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Queue');
@@ -148,6 +178,8 @@ const AdminProductionQueue = () => {
       setBusy(null);
     }
   };
+
+  const selectedPlan = selected ? plans.get(selected.id) : undefined;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -202,57 +234,81 @@ const AdminProductionQueue = () => {
                 <TableHead>Size</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead className="min-w-[320px]">Dispense plan</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((it) => (
-                <TableRow key={it.id}>
-                  <TableCell className="font-mono text-xs">{it.fragrance_code}</TableCell>
-                  <TableCell>{it.size}</TableCell>
-                  <TableCell>{it.quantity}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusColor(it.status) as any}>{it.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {new Date(it.created_at).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button size="sm" variant="ghost" onClick={() => setSelected(it)}>
-                      View
-                    </Button>
-                    {it.status === 'pending' && (
-                      <Button
-                        size="sm"
-                        disabled={busy === it.id}
-                        onClick={() => advance(it.id, 'in_progress')}
-                      >
-                        Start
+              {items.map((it) => {
+                const plan = plans.get(it.id);
+                return (
+                  <TableRow key={it.id}>
+                    <TableCell className="font-mono text-xs align-top">{it.fragrance_code}</TableCell>
+                    <TableCell className="align-top">{it.size}</TableCell>
+                    <TableCell className="align-top">{it.quantity}</TableCell>
+                    <TableCell className="align-top">
+                      <Badge variant={statusColor(it.status) as any}>{it.status}</Badge>
+                    </TableCell>
+                    <TableCell className="align-top">
+                      {plan && plan.perPump.length ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {plan.perPump.map((r) => (
+                            <Badge
+                              key={r.pump_id}
+                              variant={r.is_solvent ? 'secondary' : 'outline'}
+                              className="font-mono text-[10px]"
+                              title={r.label}
+                            >
+                              {r.pump_id.replace('PUMP-', 'P')}
+                              {r.is_solvent ? ' (Eth)' : r.note ? ` ${r.note.slice(0, 8)}` : ''}: {r.ml.toFixed(1)}ml
+                            </Badge>
+                          ))}
+                          {plan.warnings.length > 0 && (
+                            <Badge variant="destructive" className="text-[10px] gap-1">
+                              <AlertTriangle className="h-3 w-3" /> {plan.warnings.length}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">No plan</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2 align-top">
+                      <Button size="sm" variant="ghost" onClick={() => setSelected(it)}>
+                        View
                       </Button>
-                    )}
-                    {it.status === 'in_progress' && (
-                      <>
+                      {it.status === 'pending' && (
                         <Button
                           size="sm"
                           disabled={busy === it.id}
-                          onClick={() => advance(it.id, 'completed')}
+                          onClick={() => advance(it.id, 'in_progress')}
                         >
-                          Complete
+                          Start
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={busy === it.id}
-                          onClick={() => advance(it.id, 'failed')}
-                        >
-                          Fail
-                        </Button>
-                      </>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+                      )}
+                      {it.status === 'in_progress' && (
+                        <>
+                          <Button
+                            size="sm"
+                            disabled={busy === it.id}
+                            onClick={() => advance(it.id, 'completed')}
+                          >
+                            Complete
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={busy === it.id}
+                            onClick={() => advance(it.id, 'failed')}
+                          >
+                            Fail
+                          </Button>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -264,33 +320,88 @@ const AdminProductionQueue = () => {
             <SheetTitle>Job {selected?.fragrance_code}</SheetTitle>
           </SheetHeader>
           {selected && (
-            <div className="mt-6 space-y-4 text-sm">
-              <div>
-                <h3 className="font-semibold mb-1">Status</h3>
+            <div className="mt-6 space-y-5 text-sm">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={statusColor(selected.status) as any}>{selected.status}</Badge>
+                <Badge variant="outline">{selected.size}</Badge>
+                {selected.formula?.intensity && (
+                  <Badge variant="outline">Intensity: {selected.formula.intensity}</Badge>
+                )}
+                {selected.formula?.longevity && (
+                  <Badge variant="outline">Longevity: {selected.formula.longevity}</Badge>
+                )}
               </div>
+
+              {selectedPlan && (
+                <div>
+                  <h3 className="font-semibold mb-2">Pump dispense plan</h3>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    Fragrance {(selectedPlan.fragrancePct * 100).toFixed(0)}% ({selectedPlan.fragranceMl} ml) · Solvent {selectedPlan.solventMl} ml · Total {selectedPlan.totalVolumeMl} ml · ~{selectedPlan.totalSeconds.toFixed(1)}s
+                  </div>
+                  <div className="border rounded">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="h-8">Pump</TableHead>
+                          <TableHead className="h-8">Contents</TableHead>
+                          <TableHead className="h-8 text-right">ml</TableHead>
+                          <TableHead className="h-8 text-right">sec</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedPlan.perPump.map((r) => (
+                          <TableRow key={r.pump_id}>
+                            <TableCell className="font-mono text-xs py-1.5">{r.pump_id}</TableCell>
+                            <TableCell className="py-1.5">
+                              {r.is_solvent ? (
+                                <Badge variant="secondary">Ethanol Solvent</Badge>
+                              ) : (
+                                r.note ?? r.label
+                              )}
+                            </TableCell>
+                            <TableCell className="py-1.5 text-right">{r.ml.toFixed(2)}</TableCell>
+                            <TableCell className="py-1.5 text-right text-muted-foreground">{r.seconds.toFixed(1)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {selectedPlan.warnings.length > 0 && (
+                    <ul className="mt-3 space-y-1">
+                      {selectedPlan.warnings.map((w, i) => (
+                        <li key={i} className="text-xs text-destructive flex items-start gap-1.5">
+                          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {w}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               <div>
                 <h3 className="font-semibold mb-1">Timing</h3>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Created: {new Date(selected.created_at).toLocaleString()}
                 </p>
                 {selected.started_at && (
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Started: {new Date(selected.started_at).toLocaleString()}
                   </p>
                 )}
                 {selected.completed_at && (
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Completed: {new Date(selected.completed_at).toLocaleString()}
                   </p>
                 )}
               </div>
+
               <div>
-                <h3 className="font-semibold mb-1">Formula</h3>
-                <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-96">
+                <h3 className="font-semibold mb-1">Formula JSON</h3>
+                <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-72">
                   {JSON.stringify(selected.formula, null, 2)}
                 </pre>
               </div>
+
               {selected.machine_notes && (
                 <div>
                   <h3 className="font-semibold mb-1">Machine Notes</h3>
