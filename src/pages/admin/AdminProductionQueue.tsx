@@ -19,7 +19,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Loader2, Download, Upload, Sparkles, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Download, Upload, Sparkles, AlertTriangle, Search, Clock, Beaker, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   computePumpDispense,
