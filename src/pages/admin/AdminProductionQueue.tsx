@@ -361,6 +361,9 @@ const AdminProductionQueue = () => {
                     <TableCell className="align-top">
                       <Badge variant={statusColor(it.status) as any}>{it.status}</Badge>
                     </TableCell>
+                    <TableCell className="align-top text-xs text-muted-foreground">
+                      {eta ? (eta < 60 ? `${eta.toFixed(0)}s` : `${(eta / 60).toFixed(1)}m`) : '—'}
+                    </TableCell>
                     <TableCell className="align-top">
                       {plan && plan.perPump.length ? (
                         <div className="flex flex-wrap gap-1.5">
