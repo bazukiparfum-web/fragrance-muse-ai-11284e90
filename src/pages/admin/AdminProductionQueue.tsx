@@ -357,7 +357,7 @@ const AdminProductionQueue = () => {
       </div>
 
       <Card className="p-3 mb-4 flex flex-wrap items-center gap-3">
-        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+        <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setSelectedIds(new Set()); }}>
           <TabsList>
             <TabsTrigger value="all">All <Badge variant="secondary" className="ml-2">{counts.all}</Badge></TabsTrigger>
             <TabsTrigger value="pending">Pending <Badge variant="secondary" className="ml-2">{counts.pending}</Badge></TabsTrigger>
@@ -376,6 +376,35 @@ const AdminProductionQueue = () => {
           />
         </div>
       </Card>
+
+      {selectedIds.size > 0 && (() => {
+        const selectedItems = items.filter((it) => selectedIds.has(it.id));
+        const allDummy = selectedItems.every((it) => it.fragrance_code.startsWith('DUMMY-'));
+        return (
+          <Card className="p-3 mb-4 flex flex-wrap items-center gap-2 border-primary/50 bg-primary/5">
+            <Badge variant="secondary">{selectedIds.size} selected</Badge>
+            <Button size="sm" variant="outline" onClick={() => bulkUpdate('in_progress')} disabled={busy === 'bulk'}>
+              <Play className="h-3 w-3 mr-1" /> Start selected
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => bulkUpdate('completed')} disabled={busy === 'bulk'}>
+              <Check className="h-3 w-3 mr-1" /> Mark completed
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={bulkDeleteDummy}
+              disabled={busy === 'bulk' || !allDummy}
+              title={allDummy ? 'Delete selected dummy jobs' : 'Only enabled when every selected row is a DUMMY- job'}
+            >
+              <Trash2 className="h-3 w-3 mr-1" /> Delete dummy jobs
+            </Button>
+            <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setSelectedIds(new Set())}>
+              Clear
+            </Button>
+          </Card>
+        );
+      })()}
+
 
       <Card>
         {loading ? (
