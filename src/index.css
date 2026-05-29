@@ -2156,15 +2156,12 @@
   animation: age-card-in 500ms ease-out both;
 }
 @keyframes age-burst-dot {
-  0% { transform: translate(-50%, -50%) translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0)) scale(0); opacity: 1; }
-  100% { opacity: 0; }
+  0% { transform: translateY(0) scale(0); opacity: 1; }
+  100% { transform: translateY(-22px) scale(1.8); opacity: 0; }
 }
 .age-burst-dot {
-  animation: age-burst-ring 500ms ease-out forwards;
-}
-@keyframes age-burst-ring {
-  0% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--bx, 0), var(--by, 0)) scale(2); }
+  animation: age-burst-dot 550ms ease-out forwards;
+  transform-origin: center;
 }
 @keyframes age-digit-float {
   0% { opacity: 0; transform: translateY(0); }
