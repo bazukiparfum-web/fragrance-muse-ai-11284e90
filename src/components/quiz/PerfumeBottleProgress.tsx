@@ -114,14 +114,14 @@ export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressP
                 width="20"
                 height={liquidHeight}
                 fill="url(#bottle-liquid)"
-                style={{ transition: 'y 400ms ease-in-out, height 400ms ease-in-out' }}
+                style={{ transition: forcedFull ? 'y 500ms ease-out, height 500ms ease-out' : 'y 400ms ease-in-out, height 400ms ease-in-out' }}
               />
               {/* Wavy top edge */}
               <path
                 className="bottle-wave"
                 d={`M10,${liquidY} Q15,${liquidY - 1.5} 20,${liquidY} T30,${liquidY} L30,${liquidY + 2} L10,${liquidY + 2} Z`}
                 fill="url(#bottle-liquid)"
-                style={{ transition: 'd 400ms ease-in-out' }}
+                style={{ transition: forcedFull ? 'd 500ms ease-out' : 'd 400ms ease-in-out' }}
               />
               {/* Bubbles */}
               <g key={bubbleKey}>
