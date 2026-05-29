@@ -14,6 +14,7 @@ export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressP
   const pct = Math.max(0, Math.min(1, current / Math.max(total, 1)));
   const [bubbleKey, setBubbleKey] = useState(0);
   const [glow, setGlow] = useState(false);
+  const [flashColor, setFlashColor] = useState<string | null>(null);
   const prev = useRef(current);
 
   useEffect(() => {
@@ -25,6 +26,18 @@ export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressP
       return () => clearTimeout(t);
     }
   }, [current]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ hex: string }>).detail;
+      if (!detail?.hex) return;
+      setFlashColor(detail.hex);
+      const t = window.setTimeout(() => setFlashColor(null), 800);
+      return () => window.clearTimeout(t);
+    };
+    window.addEventListener('bz:color-locked', handler as EventListener);
+    return () => window.removeEventListener('bz:color-locked', handler as EventListener);
+  }, []);
 
   // Bottle interior bounds (SVG coords). Liquid fills from bottom = y=60 up to y=18.
   const INTERIOR_TOP = 18;
@@ -50,8 +63,13 @@ export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressP
         width="40"
         height="70"
         viewBox="0 0 40 70"
-        className={`bottle-breathe ${glow ? 'bottle-glow-pulse' : ''}`}
-        style={{ filter: 'drop-shadow(0 0 2px hsl(var(--bz-gold) / 0.5))' }}
+        className={`bottle-breathe ${glow ? 'bottle-glow-pulse' : ''} ${flashColor ? 'is-color-flash' : ''}`}
+        style={{
+          filter: flashColor
+            ? `drop-shadow(0 0 6px ${flashColor})`
+            : 'drop-shadow(0 0 2px hsl(var(--bz-gold) / 0.5))',
+          transition: 'filter 400ms ease',
+        }}
       >
         <defs>
           <clipPath id="bottle-interior">
