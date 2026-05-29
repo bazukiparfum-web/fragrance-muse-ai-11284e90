@@ -395,6 +395,9 @@ const AdminProductionQueue = () => {
         );
       })()}
 
+      <p className="text-xs text-muted-foreground italic mb-2">
+        Note: Dispensing duration is no longer calculated. The system sends only the required ml per pump; the machine handles timing internally based on volume.
+      </p>
 
       <Card>
         {loading ? (
@@ -425,7 +428,6 @@ const AdminProductionQueue = () => {
                 <TableHead>Size</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Status</TableHead>
-                
                 <TableHead className="min-w-[320px]">Dispense plan</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>

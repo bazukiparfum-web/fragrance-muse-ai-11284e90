@@ -278,6 +278,7 @@ const AdminPumps = () => {
       <Card className="p-4 mt-6 bg-muted/30 text-sm text-muted-foreground space-y-1">
         <p><strong>Tip:</strong> Notes come from <code>/admin/ingredients</code>. Edit the ingredient there to change density/stock.</p>
         <p>Fragrance concentration is derived from the customer's quiz answers (longevity + intensity) at production time.</p>
+        <p><strong>Note:</strong> Dispensing duration is no longer calculated here. The system sends only the required ml per pump; the machine handles timing internally based on volume.</p>
       </Card>
     </div>
   );
