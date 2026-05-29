@@ -7,6 +7,7 @@ import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
 import { NostalgiaSettingOptions } from '@/components/quiz/NostalgiaSettingOptions';
 import { IdentityOptions } from '@/components/quiz/IdentityOptions';
+import { FinaleTextInput } from '@/components/quiz/FinaleTextInput';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
 interface QuestionRendererProps {
@@ -14,7 +15,9 @@ interface QuestionRendererProps {
   answers: QuizAnswers;
   updateAnswer: (key: keyof QuizAnswers, value: any) => void;
   keyField: 'answer_key' | 'question_key';
+  isLastStep?: boolean;
 }
+
 
 const SCENT_FAMILIES = [
   { value: 'Floral', emoji: '🌸' },
@@ -31,7 +34,9 @@ export const QuestionRenderer = ({
   answers,
   updateAnswer,
   keyField,
+  isLastStep,
 }: QuestionRendererProps) => {
+
   if (!question) return null;
 
   const answerKey = question[keyField] as keyof QuizAnswers;
@@ -231,6 +236,17 @@ export const QuestionRenderer = ({
     }
 
     case 'text':
+      if (isLastStep) {
+        return (
+          <FinaleTextInput
+            value={(currentAnswer as string) || ''}
+            onChange={(v) => updateAnswer(answerKey, v)}
+            placeholder={question.placeholder || ''}
+            questionText={question.question_text}
+            helperText={helper}
+          />
+        );
+      }
       return wrap(
         <Input
           type="text"
@@ -241,6 +257,7 @@ export const QuestionRenderer = ({
           className="text-lg md:text-xl p-6 bg-bz-card/60 border-gold text-cream placeholder:text-cream-muted/60"
         />
       );
+
 
     default:
       return wrap(

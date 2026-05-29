@@ -1842,3 +1842,307 @@
   .pds-particle { animation: none; display: none; }
   .pds-crystallize, .pds-release-ripple, .pds-trail-dot { animation: none; display: none; }
 }
+
+/* ============ Grand Finale (Quiz Last Step) ============ */
+
+/* Typewriter caret */
+.finale-caret {
+  display: inline-block;
+  margin-left: 2px;
+  color: hsl(var(--bz-gold, 42 64% 58%));
+  animation: finale-caret-blink 800ms steps(2, start) infinite;
+}
+@keyframes finale-caret-blink { 50% { opacity: 0; } }
+
+/* Glowing input field */
+.finale-input {
+  box-shadow:
+    inset 0 0 22px hsl(var(--bz-gold, 42 80% 60%) / 0.28),
+    0 0 24px hsl(var(--bz-gold, 42 80% 60%) / 0.18);
+  animation: finale-input-breath 3.2s ease-in-out infinite;
+}
+@keyframes finale-input-breath {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 22px hsl(var(--bz-gold, 42 80% 60%) / 0.28),
+      0 0 24px hsl(var(--bz-gold, 42 80% 60%) / 0.18);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 32px hsl(var(--bz-gold, 42 80% 60%) / 0.45),
+      0 0 36px hsl(var(--bz-gold, 42 80% 60%) / 0.32);
+  }
+}
+
+/* Word echo */
+.finale-echo-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 5;
+}
+.finale-word-echo {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: hsl(var(--bz-gold, 42 90% 70%) / 0.7);
+  white-space: nowrap;
+  animation: finale-word-echo 1.2s ease-out forwards;
+}
+@keyframes finale-word-echo {
+  0% { opacity: 0.7; transform: translateY(-50%) scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: translateY(calc(-50% - 70px)) scale(1.1); filter: blur(6px); }
+}
+
+/* Keystroke sparkle */
+.finale-sparkle-portal {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.finale-keystroke-sparkle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: hsl(var(--bz-gold, 42 95% 70%));
+  box-shadow: 0 0 10px hsl(var(--bz-gold, 42 95% 70%) / 0.8);
+  animation: finale-keystroke 900ms ease-out forwards;
+}
+@keyframes finale-keystroke {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--ks-dx, 0px), -45px) scale(0.4); }
+}
+
+/* Anticipation atmosphere */
+.finale-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.finale-atmos-particle {
+  position: absolute;
+  bottom: -8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: hsl(var(--bz-gold, 42 90% 70%) / 0.55);
+  box-shadow: 0 0 8px hsl(var(--bz-gold, 42 90% 70%) / 0.45);
+  animation-name: finale-atmos-rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes finale-atmos-rise {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  15% { opacity: 0.7; }
+  100% { transform: translateY(-105vh) scale(1); opacity: 0; }
+}
+
+/* Reveal button breathing + halo */
+.quiz-next-btn.is-finale-breathing {
+  animation: finale-btn-breath 2s ease-in-out infinite;
+}
+@keyframes finale-btn-breath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+.quiz-next-btn.is-finale-halo {
+  box-shadow:
+    0 0 0 0 hsl(var(--bz-gold, 42 95% 65%) / 0.5),
+    0 0 24px hsl(var(--bz-gold, 42 95% 65%) / 0.5);
+  animation: finale-btn-breath 2s ease-in-out infinite, finale-btn-halo 2s ease-in-out infinite;
+}
+@keyframes finale-btn-halo {
+  0%, 100% { box-shadow: 0 0 16px hsl(var(--bz-gold, 42 95% 65%) / 0.4); }
+  50% { box-shadow: 0 0 36px hsl(var(--bz-gold, 42 95% 65%) / 0.8); }
+}
+
+/* Button shimmer during click finale */
+.is-finale-shimmer {
+  background: linear-gradient(
+    90deg,
+    currentColor 0%,
+    hsl(var(--bz-gold, 42 100% 92%)) 50%,
+    currentColor 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: finale-btn-shimmer 400ms linear;
+}
+@keyframes finale-btn-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Sparkle rain */
+.finale-sparkle-rain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 38;
+}
+.finale-rain-drop {
+  position: absolute;
+  top: -20px;
+  border-radius: 50%;
+  background: hsl(var(--bz-gold, 42 95% 72%));
+  box-shadow: 0 0 10px hsl(var(--bz-gold, 42 95% 72%) / 0.9);
+  animation: finale-rain linear forwards;
+}
+@keyframes finale-rain {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(110vh) scale(1); opacity: 0; }
+}
+
+/* Click burst */
+.finale-burst-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 45;
+}
+.finale-burst-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: hsl(var(--bz-gold, 42 95% 70%));
+  box-shadow: 0 0 14px hsl(var(--bz-gold, 42 95% 70%) / 0.9);
+  animation: finale-burst 900ms ease-out forwards;
+}
+.finale-burst-particle.is-ivory {
+  background: #F5F0E8;
+  box-shadow: 0 0 14px rgba(245, 240, 232, 0.9);
+}
+@keyframes finale-burst {
+  0% {
+    transform: rotate(var(--angle)) translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--angle)) translateX(var(--dist)) scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* Flash overlay */
+.finale-flash-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 44;
+  background: radial-gradient(
+    circle at center,
+    hsl(var(--bz-gold, 42 95% 75%) / 0.6) 0%,
+    hsl(var(--bz-gold, 42 95% 75%) / 0.2) 40%,
+    transparent 80%
+  );
+  opacity: 0;
+  animation: finale-flash 600ms ease-out forwards;
+}
+@keyframes finale-flash {
+  0% { opacity: 0; }
+  40% { opacity: 0.15; }
+  100% { opacity: 0; }
+}
+
+/* Mist exit */
+.mist-exit-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+.mist-layer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    hsl(var(--bz-primary, 30 25% 8%) / 0.85) 0%,
+    hsl(var(--bz-primary, 30 25% 8%) / 0.4) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transform: translateY(0);
+  filter: blur(0);
+  animation: mist-rise var(--mist-duration, 800ms) ease-out forwards;
+}
+.mist-layer-0 { animation-duration: calc(var(--mist-duration, 800ms) * 1); }
+.mist-layer-1 {
+  animation-duration: calc(var(--mist-duration, 800ms) * 0.85);
+  background: radial-gradient(
+    ellipse at 30% 60%,
+    hsl(var(--bz-gold, 42 60% 30%) / 0.4) 0%,
+    transparent 70%
+  );
+}
+.mist-layer-2 {
+  animation-duration: calc(var(--mist-duration, 800ms) * 1.1);
+  background: radial-gradient(
+    ellipse at 70% 40%,
+    hsl(var(--bz-primary, 30 25% 8%) / 0.7) 0%,
+    transparent 75%
+  );
+}
+.mist-layer-3 {
+  animation-duration: calc(var(--mist-duration, 800ms) * 0.95);
+  background: radial-gradient(
+    ellipse at 50% 80%,
+    hsl(var(--bz-gold, 42 80% 50%) / 0.3) 0%,
+    hsl(var(--bz-primary, 30 25% 8%) / 0.6) 50%,
+    transparent 100%
+  );
+}
+@keyframes mist-rise {
+  0% { opacity: 0; transform: translateY(0); filter: blur(0); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-30%); filter: blur(12px); }
+}
+
+/* Bottle happy pulse + finale fill */
+.bottle-happy-pulse {
+  animation: bottle-happy-pulse 750ms ease-out;
+}
+@keyframes bottle-happy-pulse {
+  0% { transform: scale(1); filter: drop-shadow(0 0 2px hsl(var(--bz-gold) / 0.5)); }
+  40% { transform: scale(1.18); filter: drop-shadow(0 0 16px hsl(var(--bz-gold) / 0.9)); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 2px hsl(var(--bz-gold) / 0.5)); }
+}
+.is-finale-fill {
+  filter: drop-shadow(0 0 14px hsl(var(--bz-gold) / 0.9)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finale-caret { display: none; }
+  .finale-input { animation: none; }
+  .finale-word-echo,
+  .finale-keystroke-sparkle,
+  .finale-atmos-particle,
+  .finale-rain-drop,
+  .finale-burst-particle,
+  .finale-flash-overlay,
+  .mist-layer,
+  .bottle-happy-pulse {
+    animation: none;
+    display: none;
+  }
+  .quiz-next-btn.is-finale-breathing,
+  .quiz-next-btn.is-finale-halo {
+    animation: none;
+  }
+  .is-finale-shimmer { animation: none; }
+}

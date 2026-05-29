@@ -11,10 +11,13 @@ interface PerfumeBottleProgressProps {
  * Bubbles spawn on each fill change. Idle breathing + ambient glow.
  */
 export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressProps) => {
-  const pct = Math.max(0, Math.min(1, current / Math.max(total, 1)));
+  const [forcedFull, setForcedFull] = useState(false);
+  const rawPct = Math.max(0, Math.min(1, current / Math.max(total, 1)));
+  const pct = forcedFull ? 1 : rawPct;
   const [bubbleKey, setBubbleKey] = useState(0);
   const [glow, setGlow] = useState(false);
   const [flashColor, setFlashColor] = useState<string | null>(null);
+  const [happyPulse, setHappyPulse] = useState(false);
   const prev = useRef(current);
 
   useEffect(() => {
@@ -39,11 +42,31 @@ export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressP
     return () => window.removeEventListener('bz:color-locked', handler as EventListener);
   }, []);
 
+  useEffect(() => {
+    const onHappy = () => {
+      setHappyPulse(true);
+      window.setTimeout(() => setHappyPulse(false), 750);
+    };
+    const onFill = () => {
+      setForcedFull(true);
+      setBubbleKey((k) => k + 1);
+      setGlow(true);
+      window.setTimeout(() => setGlow(false), 600);
+    };
+    window.addEventListener('bz:bottle-happy-pulse', onHappy);
+    window.addEventListener('bz:finale-fill', onFill);
+    return () => {
+      window.removeEventListener('bz:bottle-happy-pulse', onHappy);
+      window.removeEventListener('bz:finale-fill', onFill);
+    };
+  }, []);
+
   // Bottle interior bounds (SVG coords). Liquid fills from bottom = y=60 up to y=18.
   const INTERIOR_TOP = 18;
   const INTERIOR_BOTTOM = 60;
   const liquidHeight = (INTERIOR_BOTTOM - INTERIOR_TOP) * pct;
   const liquidY = INTERIOR_BOTTOM - liquidHeight;
+
 
   return (
     <div
@@ -63,7 +86,7 @@ export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressP
         width="40"
         height="70"
         viewBox="0 0 40 70"
-        className={`bottle-breathe ${glow ? 'bottle-glow-pulse' : ''} ${flashColor ? 'is-color-flash' : ''}`}
+        className={`bottle-breathe ${glow ? 'bottle-glow-pulse' : ''} ${flashColor ? 'is-color-flash' : ''} ${happyPulse ? 'bottle-happy-pulse' : ''} ${forcedFull ? 'is-finale-fill' : ''}`}
         style={{
           filter: flashColor
             ? `drop-shadow(0 0 6px ${flashColor})`
@@ -91,14 +114,14 @@ export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressP
                 width="20"
                 height={liquidHeight}
                 fill="url(#bottle-liquid)"
-                style={{ transition: 'y 400ms ease-in-out, height 400ms ease-in-out' }}
+                style={{ transition: forcedFull ? 'y 500ms ease-out, height 500ms ease-out' : 'y 400ms ease-in-out, height 400ms ease-in-out' }}
               />
               {/* Wavy top edge */}
               <path
                 className="bottle-wave"
                 d={`M10,${liquidY} Q15,${liquidY - 1.5} 20,${liquidY} T30,${liquidY} L30,${liquidY + 2} L10,${liquidY + 2} Z`}
                 fill="url(#bottle-liquid)"
-                style={{ transition: 'd 400ms ease-in-out' }}
+                style={{ transition: forcedFull ? 'd 500ms ease-out' : 'd 400ms ease-in-out' }}
               />
               {/* Bubbles */}
               <g key={bubbleKey}>
