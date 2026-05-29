@@ -7,6 +7,7 @@ import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
 import { NostalgiaSettingOptions } from '@/components/quiz/NostalgiaSettingOptions';
 import { IdentityOptions } from '@/components/quiz/IdentityOptions';
+import { FinaleTextInput } from '@/components/quiz/FinaleTextInput';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
 interface QuestionRendererProps {
@@ -14,7 +15,9 @@ interface QuestionRendererProps {
   answers: QuizAnswers;
   updateAnswer: (key: keyof QuizAnswers, value: any) => void;
   keyField: 'answer_key' | 'question_key';
+  isLastStep?: boolean;
 }
+
 
 const SCENT_FAMILIES = [
   { value: 'Floral', emoji: '🌸' },
