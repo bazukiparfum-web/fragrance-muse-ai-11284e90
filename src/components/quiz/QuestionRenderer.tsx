@@ -132,10 +132,12 @@ export const QuestionRenderer = ({
       );
 
     case 'personality_sliders':
-      return wrap(
+      return (
         <PersonalitySliders
           traits={question.traits || question.options || []}
           values={answers.personalityTraits || {}}
+          questionText={question.question_text}
+          helperText={helper}
           onChange={(traitId, value) => {
             updateAnswer('personalityTraits', {
               ...(answers.personalityTraits || {}),
@@ -144,6 +146,7 @@ export const QuestionRenderer = ({
           }}
         />
       );
+
 
     case 'scent_family': {
       const selected = Array.isArray(currentAnswer)
