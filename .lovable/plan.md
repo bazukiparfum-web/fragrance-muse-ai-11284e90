@@ -1,52 +1,70 @@
-# Personality DNA — Slider Showstopper
+# Grand Finale — Flow 1 Step 10 + Flow 2 Step 13
 
-Transform the 4-trait personality question into an animated "perfumer's bench" where each slider is an ingredient and the background reacts to the combined values.
+Both quiz flows (`QuizForYourself`, `QuizForSomeoneElse`) share `ImmersiveQuizShell` and end with a `text` question. I'll build one parameterized finale that scales with `totalSteps`, so Flow 1 (10 steps) gets 20 sparkles / 3 mist layers / 800ms / bottle 90→100%, and Flow 2 (13 steps) gets 26 sparkles / 4 mist layers / 1000ms / bottle 92→100%.
 
-## Files to change
+## Scaling rule
+```
+sparkles      = round(totalSteps * 2)          // 10→20, 13→26
+mistLayers    = totalSteps > 10 ? 4 : 3
+mistDurationMs= totalSteps > 10 ? 1000 : 800
+```
 
-### 1. `src/components/quiz/QuestionRenderer.tsx`
-- In the `personality_sliders` case, render `<PersonalitySliders>` without the shared `wrap()` (which provides the static `<h2>`). Pass `questionText` and `helperText` props so the component can own the typewriter heading.
-- All other question types keep using `wrap()` unchanged.
+## Files
 
-### 2. `src/components/quiz/PersonalitySliders.tsx` (full rewrite)
-- **Typewriter heading**: new `useTypewriter(text, 40)` hook reveals the question text char-by-char; trailing caret (`▎`) blinks until done. Falls back to full text under `prefers-reduced-motion`.
-- **Cascading row entry**: each row gets `.pds-row` with `style={{ animationDelay: `${300 + i*150}ms` }}` (heading-finish delay + 150ms stagger). Keyframe `pds-slide-in` does `translateX(-30px) → 0`, opacity `0 → 1`.
-- **State refs**:
-  - `draggingId: string | null` (set on `onPointerDown` of slider root, cleared on `onPointerUp`/`onLostPointerCapture`).
-  - `touched: Set<traitId>` (added on first change). When `touched.size === traits.length` AND not yet crystallized, trigger crystallize flag for 900ms → triggers `.pds-crystallize` class on each track with `animationDelay: i*100ms`.
-  - `releaseBurstKey` map per trait — bumped on pointer up to remount a `.pds-release-ripple` span.
-  - `trailKey` per trait — bumped during `onValueChange` while dragging to mount up to 3 short-lived `.pds-trail-dot` spans behind the thumb (auto-clean via `setTimeout`).
-- **Per-row markup**:
-  - `<label class="pds-label" data-active={draggingId===id}>` — gold glow when active.
-  - `<div class="pds-track-wrap" data-touched=...>`:
-    - Slider with custom `[&_[role=slider]]:` classes for idle pulse (`.pds-thumb-idle` with `animation-delay: ${i*0.4}s`), drag-grow (`data-dragging` selector → scale 1.2), release ripple span overlay.
-    - Filled range gets `.pds-fill-shimmer` (gold gloss sweep, 2.5s infinite).
-    - Crystallize sweep overlay activated by parent flag.
-  - End labels `<span class="pds-end pds-end-left" data-glow={value<50}>Not at all</span>` and `<span class="pds-end pds-end-right" data-glow={value>=50}>Very much</span>` — cool silver vs warm amber glow via CSS.
-- **Atmosphere dispatch**: `useEffect` on `values` computes:
-  - `talkative`, `reserved`, `quiet`, `shy` (look up by trait id; fall back to traits[0..3] order).
-  - `energy = (talkative - reserved - quiet)/100` clamped, drives **count** (10–50) and **speed**.
-  - `containment = (reserved + shy)/200` drives **spread** (centered ↔ wide).
-  - Dispatches `window.dispatchEvent(new CustomEvent('bz:personality-atmos', { detail: { count, speed, spread, energy, shy } }))` (debounced via `rAF`).
-- **Local atmosphere portal**: a fixed `.pds-atmosphere` layer (rendered via `createPortal` into `document.body`, behind quiz content with `z-index: 0`, `pointer-events: none`) renders N=`count` particle spans. Each particle uses CSS vars `--pds-speed`, `--pds-spread`, `--pds-shy` to modulate drift duration, lateral range, and inward bias. Re-render only when bucketed count changes (round to 5) to avoid thrash.
+### 1. `src/components/quiz/FinaleTextInput.tsx` (new)
+Used by `QuestionRenderer` for the `'text'` question type **only when the question is the last step**. Renders:
+- **Typewriter heading** (30ms/char) — reuses pattern from `PersonalitySliders`. Heading text comes from `question.question_text`.
+- **Glowing input field** with constant inner gold glow (`.finale-input` class) and `autoFocus`.
+- **Per-keystroke sparkle burst (3 sparkles each)** — spawned at the right edge of the input, drifting up and fading (auto-cleaned after 900ms).
+- **Word echo**: every ~200ms during typing, push a ghost copy `<span class="finale-word-echo">{currentValue}</span>` that floats upward + fades (1.2s).
+- **Anticipation atmosphere**: a CSS variable `--finale-intensity` set to `clamp(value.length / 12, 0, 1)` on the root element; background particles in `.finale-atmosphere` portal scale count/speed from it.
+- Forwards `value` + `onChange` to parent (same API as the current `Input` branch).
 
-### 3. `src/index.css` (append)
-- Keyframes: `pds-slide-in`, `pds-caret-blink`, `pds-thumb-pulse` (scale 1→1.08→1, 2s), `pds-fill-shimmer` (background-position sweep), `pds-release-ripple` (scale 0→2.4, opacity 0.7→0, 300ms), `pds-trail-fade` (opacity 1→0, translate small offset, 500ms), `pds-crystallize-sweep` (gradient mask left→right, 600ms), `pds-particle-drift` (translate + sway using `--pds-spread`/`--pds-shy`), `pds-label-glow`.
-- Utility classes:
-  - `.pds-row` (opacity:0, applies `pds-slide-in` 500ms ease-out forwards).
-  - `.pds-heading` font-display sizing matching shared heading.
-  - `.pds-caret` blink 800ms.
-  - `.pds-label[data-active="true"]` → `text-shadow: 0 0 12px hsl(var(--gold)/0.8); color: hsl(var(--gold));`.
-  - `.pds-thumb-idle` (applied to Slider thumb) → `animation: pds-thumb-pulse 2s ease-in-out infinite`; `[data-dragging="true"] .pds-thumb-idle` → `transform: scale(1.2); animation: none;`.
-  - `.pds-fill-shimmer` overlays gradient on `[data-orientation=horizontal] > .relative` (the Range). Implement by adding a child `<span class="pds-fill-shimmer" />` absolutely positioned inside the slider track using `[&_[data-orientation]]` selectors, or just add a sibling pseudo via class on the Slider root.
-  - `.pds-end[data-glow="true"].pds-end-left` → silver glow; `.pds-end-right` → amber glow.
-  - `.pds-atmosphere`, `.pds-particle` with CSS variable-driven animation.
-- All animations gated by `@media (prefers-reduced-motion: reduce)` → disable transforms/loops, keep static styles.
+Props: `value`, `onChange`, `placeholder`, `questionText`.
 
-## Technical notes
-- Use the existing `Slider` component; wrap with a div carrying `data-dragging`, `onPointerDown/Up` to capture drag state without modifying shadcn primitive.
-- `bz:personality-atmos` is namespaced like the existing `bz:color-locked` event so other components could optionally subscribe later — no consumer required now.
-- No backend, schema, or quiz-flow logic changes.
+### 2. `src/components/quiz/QuestionRenderer.tsx`
+Extend the `text` case to render `<FinaleTextInput>` instead of the plain `Input` when `question.is_last_step === true` (we'll pass a new `isLastStep` prop from the renderer's caller — see step 3). Falls back to existing `Input` otherwise. Add `isLastStep?: boolean` to `QuestionRendererProps`.
+
+### 3. `src/pages/QuizForYourself.tsx` + `src/pages/QuizForSomeoneElse.tsx`
+Pass `isLastStep={currentStep === totalSteps}` to `<QuestionRenderer>` so the finale input only renders on the actual final question.
+
+### 4. `src/components/quiz/ImmersiveQuizShell.tsx`
+Add **finale orchestration** gated by `isLast`:
+- **Entry celebration** (once per mount when `isLast` becomes true): render a `<FinaleSparkleRain count={sparkles} />` portal — `sparkles` gold dots rain from `top:-20px` to `100vh` over 1.6s with random horizontal offsets, sizes, and delays; auto-unmounts after 2s. Also dispatch `window.dispatchEvent(new CustomEvent('bz:bottle-happy-pulse'))` so the bottle does a one-shot bouncy pulse (`.bottle-happy-pulse` keyframe).
+- **Reveal-button breathing + halo**: when `isLast && canNext`, add classes `is-finale-breathing` and `is-finale-halo` to the next button (CSS handles scale 1↔1.04 over 2s and a pulsing gold box-shadow halo).
+- **Click finale sequence**: replace `handleNextClick` body when `isLast`:
+  1. Dispatch `bz:finale-fill` `{ from: pct, to: 1 }` — bottle component animates fill to 100% over 500ms (CSS transition already exists; we just push the bottle to a forced `current = total` via event).
+  2. Render `<FinaleBurstParticles count={42} />` portal: 40+ gold + ivory particles exploding from screen center (radial trajectories using CSS custom properties for angle/distance, 900ms ease-out).
+  3. Render `<span className="finale-flash-overlay" />` (fixed full-screen, opacity 0→0.15→0 over 600ms, gold gradient).
+  4. Add `is-finale-shimmer` to button label for 400ms — gold gradient sweeps across text.
+  5. Apply `is-mist-exit` class to the `main.canvasRef` parent — triggers `MistExitOverlay` with `layers={mistLayers}` and `duration={mistDurationMs}`; each layer is a positioned `<span>` with `mist-rise-${i}` keyframe (translateY 0→-30%, blur 0→10px, opacity 1→0, durations staggered).
+  6. After `mistDurationMs`, call `onNext()`.
+- All animations gated by `prefers-reduced-motion` → skip celebration, just call `onNext()`.
+
+### 5. `src/components/quiz/PerfumeBottleProgress.tsx`
+- Listen for `bz:bottle-happy-pulse` → toggle `.bottle-happy-pulse` class for 700ms (keyframe: scale 1→1.15→0.95→1, soft gold halo).
+- Listen for `bz:finale-fill` → set internal `forcedPct = 1` state used in lieu of `pct` (so liquid rises to 100% with the existing 400ms transition; will read as 500ms via a `--bottle-fill-dur` override during the event). Auto-resets after 1.2s (not needed since page transitions).
+
+### 6. `src/index.css` (append)
+New keyframes/classes:
+- `@keyframes finale-sparkle-rain` (translateY -20→110vh, opacity 0→1→0).
+- `@keyframes finale-burst` (translate `var(--angle)` × `var(--dist)`, opacity 1→0, scale 1→0.4).
+- `@keyframes finale-flash` (opacity 0→0.15→0).
+- `@keyframes finale-btn-breath` (scale 1→1.04→1, 2s).
+- `@keyframes finale-btn-halo` (box-shadow pulse 2s).
+- `@keyframes finale-btn-shimmer` (background-position sweep, 400ms).
+- `@keyframes finale-word-echo` (translateY 0→-60px, opacity 0.8→0, blur 0→6px, 1.2s).
+- `@keyframes finale-keystroke-sparkle` (translateY 0→-40px, opacity 1→0, 900ms).
+- `@keyframes mist-rise-a/b/c/d` (per-layer staggered drift+blur+fade).
+- `@keyframes bottle-happy-pulse` (scale + gold halo, 700ms).
+- Utility classes: `.finale-input` (constant inner gold glow `box-shadow: inset 0 0 18px hsl(var(--bz-gold)/0.35)`), `.finale-sparkle-rain`, `.finale-burst`, `.finale-flash-overlay`, `.finale-word-echo`, `.is-finale-breathing`, `.is-finale-halo`, `.is-finale-shimmer`, `.mist-exit-overlay`, `.mist-layer-{0..3}`, `.bottle-happy-pulse`, `.finale-atmosphere`, `.finale-particle`.
+- `@media (prefers-reduced-motion: reduce)` disables all of the above.
 
 ## Out of scope
-- Other question types, quiz navigation, scoring, recommendations.
+- Quiz flow logic, scoring, question fetching, navigation routing.
+- Other question types' presentation.
+- Backend/DB changes.
+
+## Test path
+- `/shop/quiz/for-yourself` → answer through step 10/10 → see 20 sparkles, bottle at 90%, click Reveal → fill 90→100%, particle burst, gold flash, 3-layer 800ms mist → results.
+- `/shop/quiz/for-someone-else` → step 13/13 → 26 sparkles, bottle 92%, fill 92→100%, 4-layer 1000ms mist → results.
