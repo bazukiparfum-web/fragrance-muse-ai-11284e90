@@ -173,6 +173,25 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ===========================================================
+   Luxury Atelier animation tokens
+   =========================================================== */
+:root {
+  --anim-gold: #C9A84C;
+  --anim-gold-bright: #F0C040;
+  --anim-ivory: #F5F0E8;
+  --anim-bg: #0D0C0A;
+  --anim-amber: #1A1408;
+  --anim-dim-gold: #8B6914;
+
+  --ease-out-soft: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-in-soft: cubic-bezier(0.4, 0.0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ===========================================================
+   Background container + mist blobs + particles
+   =========================================================== */
 .quiz-bg {
   position: absolute;
   inset: 0;
@@ -180,60 +199,316 @@
   pointer-events: none;
   z-index: 0;
 }
-.quiz-bg::before,
-.quiz-bg::after {
-  content: '';
+.quiz-particles {
   position: absolute;
-  width: 70vmax;
-  height: 70vmax;
-  border-radius: 50%;
-  filter: blur(80px);
-  will-change: transform, opacity;
-}
-.quiz-bg::before {
-  top: -20%;
-  left: -15%;
-  background: radial-gradient(circle, hsl(var(--bz-gold) / 0.18), transparent 60%);
-  animation: quiz-smoke-drift-a 28s ease-in-out infinite;
-}
-.quiz-bg::after {
-  bottom: -25%;
-  right: -20%;
-  background: radial-gradient(circle, hsl(var(--bz-gold-muted) / 0.22), transparent 65%);
-  animation: quiz-smoke-drift-b 36s ease-in-out infinite;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
 }
 
+/* Mist blobs */
+.quiz-mist {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  will-change: transform, opacity;
+  z-index: 0;
+}
+.quiz-mist-1 {
+  width: 900px; height: 900px;
+  top: -200px; left: -200px;
+  background: radial-gradient(circle, rgba(201, 168, 76, 0.04), transparent 65%);
+  animation: mist-drift-pulse 25s ease-in-out infinite;
+}
+.quiz-mist-2 {
+  width: 1100px; height: 1100px;
+  bottom: -300px; right: -250px;
+  background: radial-gradient(circle, rgba(245, 240, 232, 0.03), transparent 65%);
+  animation: mist-rotate-drift 60s linear infinite;
+}
+.quiz-mist-3 {
+  width: 700px; height: 700px;
+  top: 30%; right: -150px;
+  background: radial-gradient(circle, rgba(201, 168, 76, 0.05), transparent 65%);
+  animation: mist-scale-pulse 18s ease-in-out infinite;
+  animation-delay: -8s;
+}
+
+@keyframes mist-drift-pulse {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(40px, 30px, 0) scale(1.15); }
+}
+@keyframes mist-rotate-drift {
+  from { transform: rotate(0deg) translate3d(0, 0, 0); }
+  to   { transform: rotate(360deg) translate3d(0, 0, 0); }
+}
+@keyframes mist-scale-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.2); }
+}
+
+/* Particles */
 .quiz-particle {
   position: absolute;
   bottom: -10vh;
-  width: 4px;
-  height: 4px;
   border-radius: 50%;
-  background: hsl(var(--bz-gold) / 0.7);
-  box-shadow: 0 0 8px hsl(var(--bz-gold) / 0.8);
-  animation: quiz-particle-rise linear infinite;
+  will-change: transform, opacity;
+  animation:
+    particle-rise var(--p-dur, 12s) linear infinite,
+    particle-drift var(--drift-dur, 5s) ease-in-out infinite;
+}
+@keyframes particle-rise {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-120vh); }
+}
+@keyframes particle-drift {
+  0%, 100% { margin-left: 0; }
+  50%      { margin-left: var(--drift-amp, 20px); }
+}
+/* Combine via nested wrapper: use one keyframe that does both via composite */
+.quiz-particle {
+  animation: particle-float var(--p-dur, 12s) linear infinite;
+  animation-duration: var(--p-dur);
+}
+@keyframes particle-float {
+  0%   { transform: translate3d(0, 0, 0); }
+  25%  { transform: translate3d(var(--drift-amp, 20px), -25vh, 0); }
+  50%  { transform: translate3d(0, -55vh, 0); }
+  75%  { transform: translate3d(calc(var(--drift-amp, 20px) * -1), -85vh, 0); }
+  100% { transform: translate3d(0, -120vh, 0); opacity: 0; }
+}
+/* The component sets animationDuration via inline style on each span. */
+
+/* ===========================================================
+   Page enter cascade
+   =========================================================== */
+@keyframes quiz-step-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.quiz-step-in {
+  animation: quiz-step-in 0.5s var(--ease-out-soft) both;
+}
+/* Stagger direct children of [data-stagger]: heading, subtitle, then options. */
+[data-stagger] > *:nth-child(1) { animation: quiz-enter 0.5s var(--ease-out-soft) both; animation-delay: 50ms; }
+[data-stagger] > *:nth-child(2) { animation: quiz-enter 0.5s var(--ease-out-soft) both; animation-delay: 200ms; }
+[data-stagger] > *:nth-child(3) { animation: quiz-enter 0.5s var(--ease-out-soft) both; animation-delay: 350ms; }
+[data-stagger] > *:nth-child(4) { animation: quiz-enter 0.5s var(--ease-out-soft) both; animation-delay: 450ms; }
+[data-stagger] > *:nth-child(5) { animation: quiz-enter 0.5s var(--ease-out-soft) both; animation-delay: 550ms; }
+[data-stagger] > *:nth-child(n+6) { animation: quiz-enter 0.5s var(--ease-out-soft) both; animation-delay: 650ms; }
+
+@keyframes quiz-enter {
+  from { opacity: 0; transform: translateY(15px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+[data-stagger][data-dir="back"] > * {
+  animation-name: quiz-enter-back;
+}
+@keyframes quiz-enter-back {
+  from { opacity: 0; transform: translateY(-15px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.quiz-nav-in {
+  animation: quiz-enter 0.3s var(--ease-out-soft) both;
+  animation-delay: 600ms;
+}
+
+/* ===========================================================
+   Progress bar shimmer + step counter flip
+   =========================================================== */
+.bar-fill-transition {
+  transition: width 600ms var(--ease-out-soft);
+}
+.bar-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.22) 50%, transparent 100%);
+  transform: translateX(-100%);
+  animation: bar-shimmer 2.5s linear infinite;
+  pointer-events: none;
+}
+@keyframes bar-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.bar-sparkle {
+  position: absolute;
+  left: 0; top: 0;
+  color: var(--anim-gold-bright);
+  text-shadow: 0 0 4px var(--anim-gold);
+  pointer-events: none;
+  animation: bar-sparkle-burst 700ms ease-out forwards;
   will-change: transform, opacity;
 }
-
-.quiz-orb {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, hsl(var(--bz-cream)), hsl(var(--bz-gold)) 55%, hsl(var(--bz-gold-muted)) 100%);
-  animation: quiz-orb-pulse 2.4s ease-in-out infinite;
+@keyframes bar-sparkle-burst {
+  0%   { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(var(--sx, 0), var(--sy, -20px)) scale(1); opacity: 0; }
 }
 
-.quiz-step-in {
-  animation: quiz-step-in 0.45s ease-out both;
+.step-counter-flip {
+  animation: step-flip 250ms var(--ease-spring) both;
+  transform-origin: center;
+}
+@keyframes step-flip {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(1.15); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
+/* ===========================================================
+   Perfume bottle indicator
+   =========================================================== */
+.bottle-breathe {
+  animation: bottle-breathe 3s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+@keyframes bottle-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.03); }
+}
+.bottle-glow-pulse {
+  animation: bottle-breathe 3s ease-in-out infinite,
+             bottle-glow 600ms ease-out;
+}
+@keyframes bottle-glow {
+  0%   { filter: drop-shadow(0 0 2px hsl(var(--bz-gold) / 0.5)); }
+  50%  { filter: drop-shadow(0 0 10px hsl(var(--bz-gold) / 0.9)); }
+  100% { filter: drop-shadow(0 0 2px hsl(var(--bz-gold) / 0.5)); }
+}
+.bottle-wave {
+  animation: bottle-wave 2s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes bottle-wave {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+.bottle-bubble {
+  animation: bubble-rise 1.2s ease-out forwards;
+  opacity: 0;
+}
+.bottle-bubble-1 { animation-delay: 0ms; }
+.bottle-bubble-2 { animation-delay: 150ms; }
+.bottle-bubble-3 { animation-delay: 280ms; }
+@keyframes bubble-rise {
+  0%   { transform: translateY(0); opacity: 0; }
+  20%  { opacity: 0.8; }
+  100% { transform: translateY(-30px); opacity: 0; }
+}
+
+/* ===========================================================
+   Next / Back / Skip button states
+   =========================================================== */
+.quiz-next-btn.is-idle {
+  opacity: 0.75;
+  animation: btn-idle-breathe 3s ease-in-out infinite;
+}
+.quiz-next-btn.is-active {
+  opacity: 1;
+  animation: btn-active-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.5);
+}
+.quiz-next-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 18px rgba(201, 168, 76, 0.65);
+}
+.quiz-next-btn.is-clicked {
+  animation: btn-click-pulse 200ms var(--ease-spring);
+}
+.btn-shimmer-layer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+  transform: translateX(-100%);
+  pointer-events: none;
+  opacity: 0;
+}
+.quiz-next-btn.is-clicked .btn-shimmer-layer {
+  opacity: 1;
+  animation: btn-shimmer-sweep 150ms linear;
+}
+@keyframes btn-idle-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.01); }
+}
+@keyframes btn-active-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(201,168,76,0.5); }
+  50%      { transform: scale(1.04); box-shadow: 0 0 20px rgba(201,168,76,0.75); }
+}
+@keyframes btn-click-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+@keyframes btn-shimmer-sweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+.quiz-back-btn { transition: transform 200ms var(--ease-out-soft), border-color 200ms; }
+.quiz-back-btn:hover { transform: scale(1.03); }
+.quiz-back-btn:active { transform: scale(0.97); }
+
+.quiz-skip-btn { transition: opacity 200ms; position: relative; }
+.quiz-skip-btn::after {
+  content: '';
+  position: absolute;
+  left: 1rem; right: 1rem; bottom: 0.5rem;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 200ms var(--ease-out-soft);
+}
+.quiz-skip-btn:hover::after { transform: scaleX(1); }
+
+/* ===========================================================
+   Auto-saving indicator
+   =========================================================== */
+.autosave-active {
+  animation: autosave-pulse 1.8s ease-in-out infinite;
+}
+.autosave-active svg {
+  animation: autosave-icon-pulse 1.8s ease-in-out infinite;
+}
+@keyframes autosave-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+@keyframes autosave-icon-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.1); }
+}
+
+/* ===========================================================
+   Reduced motion: keep opacity fades only
+   =========================================================== */
 @media (prefers-reduced-motion: reduce) {
-  .quiz-bg::before,
-  .quiz-bg::after,
+  .quiz-mist,
   .quiz-particle,
-  .quiz-orb,
+  .bar-shimmer,
+  .bar-sparkle,
+  .bottle-breathe,
+  .bottle-glow-pulse,
+  .bottle-wave,
+  .bottle-bubble,
+  .quiz-next-btn.is-idle,
+  .quiz-next-btn.is-active,
+  .quiz-next-btn.is-clicked,
+  .btn-shimmer-layer,
+  .autosave-active,
+  .autosave-active svg,
+  .step-counter-flip,
+  [data-stagger] > *,
+  .quiz-nav-in,
   .quiz-step-in {
     animation: none !important;
+    transition: none !important;
+    transform: none !important;
   }
 }
 
