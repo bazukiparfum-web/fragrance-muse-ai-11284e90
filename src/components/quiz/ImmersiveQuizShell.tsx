@@ -57,6 +57,20 @@ export const ImmersiveQuizShell = ({
   // Button click shimmer flag
   const [shimmer, setShimmer] = useState(false);
 
+  // Color-lock flash on the progress bar tip
+  const [colorFlash, setColorFlash] = useState<string | null>(null);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ hex: string }>).detail;
+      if (!detail?.hex) return;
+      setColorFlash(detail.hex);
+      const t = window.setTimeout(() => setColorFlash(null), 800);
+      return () => window.clearTimeout(t);
+    };
+    window.addEventListener('bz:color-locked', handler as EventListener);
+    return () => window.removeEventListener('bz:color-locked', handler as EventListener);
+  }, []);
+
   const handleNextClick = () => {
     setDirection('forward');
     setShimmer(true);
