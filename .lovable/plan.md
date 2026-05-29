@@ -1,47 +1,58 @@
-## Fix repetitive/duplicate quiz recommendations
+# Luxury Atelier Animation Layer — Both Quiz Flows
 
-### Problem
-The screenshot shows the quiz returning two identical "Velvet Dream" cards (same story, same pyramid, same 85% match) and a third card whose notes overlap heavily with them. The pyramid rendering is fine — it shows real data — so the bug is upstream in `supabase/functions/quiz-recommendations/index.ts`. The current prompt just asks the model to "make each scent distinctly different," but:
+Both `QuizForYourself.tsx` (13 steps) and `QuizForSomeoneElse.tsx` (10 steps) already render through `ImmersiveQuizShell`, which already mounts `QuizBackground`. All animation work lands in shared components — no per-page edits, no logic/layout/typography changes.
 
-- No `temperature` is set, so the model defaults to a low/deterministic value.
-- No per-call diversity seed, so identical answers always steer to the same archetypes.
-- No structural constraint on the three slots — the model is free to pick the same notes for all three.
-- No deduplication safety net on the response.
-- Match scores are constrained to 85–99, making every card read "85% Match."
+## Scope (purely additive)
 
-### Fix
+Adds the 10 animation systems requested:
+1. 35-particle ambient drift (gold/ivory, sine-wave, randomized)
+2. 3 mist blobs (breathing/rotating radial gradients)
+3. Progress bar smooth fill + liquid-gold shimmer + sparkle burst on advance + step-counter flip
+4. SVG perfume-bottle indicator bottom-left, fills per completed step with bubbles + glow pulse
+5. Page entry cascade (heading → subtext → options stagger → nav)
+6. Page exit drift (up on Next, down on Back)
+7. Next/Back/Skip button states (idle breathe, active pulse-glow, hover, click shimmer)
+8. Auto-saving indicator pulse on interaction
+9. Radio/card hover shimmer + selected pulse + sparkle burst + sibling dim
+10. Performance + `prefers-reduced-motion` + z-index layering + CSS-var tokens
 
-**`supabase/functions/quiz-recommendations/index.ts`**
+## Files to change
 
-1. **Restructure the prompt to enforce three distinct roles.** Instead of "3 unique recommendations", ask for:
-   - Slot 1: **Signature Pick** — anchored on the user's chosen scent family, highest match.
-   - Slot 2: **Adventurous Twist** — adjacent scent family, shifts one accord.
-   - Slot 3: **Bold Contrast** — contrasting scent family or unexpected accord pairing.
-   
-   Spell out a small "adjacency map" inside the prompt (e.g. floral→oriental/fruity, woody→spicy/oriental, fresh→citrus/floral, etc.).
+**New**
+- `src/components/quiz/PerfumeBottleProgress.tsx` — SVG bottle (~55×85px incl. label), fill via `<clipPath>` + `<rect>` height transition (400ms), wavy top edge via animated `<path>`, 3 bubble `<circle>`s spawned on fill change, idle breathe + ambient glow pulse, "Your Formula" label.
+- `src/components/quiz/ProgressSparkleBurst.tsx` — 6–8 `✦` spans bursting from a given x/y, randomized angle/distance, 700ms fade.
+- `src/components/quiz/StepCounter.tsx` — wraps "Step X of N" with a `key={step}` flip animation (250ms scale+opacity).
 
-2. **Hard diversity rules in the prompt:**
-   - Each scent must have a unique name (no two names share a word).
-   - Heart + base note sets must differ by at least 2 notes between any two scents.
-   - Stories must not share opening phrases or signature adjectives.
+**Modified**
+- `src/components/quiz/QuizBackground.tsx`
+  - Particle count → 35; per-particle randomized size (1–3px), color (gold/ivory via CSS var), opacity (0.15–0.55), duration (8–18s), delay (0–18s), and CSS-var `--drift-x` (15–30px) feeding a sine-wave horizontal keyframe.
+  - Render 3 mist blobs (900/1100/700px) with the exact opacities, positions, and animations specified (drift+scale 25s, rotate 60s linear, scale-pulse 18s offset by 8s).
+  - All decorative layers `pointer-events: none`, `will-change: transform, opacity`.
 
-3. **Inject randomness per call** so identical answers produce varied output across attempts:
-   - Generate a `diversitySeed` (random 4-letter token + one of ~20 mood adjectives like "moonlit", "verdant", "smoky", "luminous", "tactile") and include it in the prompt as a creative anchor.
-   - Set `temperature: 0.95` and `top_p: 0.9` on the AI Gateway call (Gemini supports both).
+- `src/components/quiz/ImmersiveQuizShell.tsx`
+  - Progress bar: switch transition to 600ms ease-out cubic-bezier; add inner shimmer span (2.5s linear gloss); on `currentStep` change mount `<ProgressSparkleBurst>` anchored at the bar's leading tip (using a ref + measured width).
+  - Replace step text with `<StepCounter>`.
+  - Add `<PerfumeBottleProgress current={currentStep-1} total={totalSteps} />` at `z-15`, bottom-left, above the nav bar.
+  - Wrap children with entry-cascade classes (heading/subtext/options/nav get incremental delay classes; options use CSS `:nth-child` stagger via a `data-quiz-options` wrapper consumed inside the page content — already present as the single child block, so the cascade is driven by a top-level wrapper plus a `[data-stagger] > *` rule).
+  - Track `direction` state (`forward`/`back`) on `onNext`/`onBack`; pass to the keyed content wrapper to choose exit class (`quiz-exit-up` vs `quiz-exit-down`).
+  - Next button: add `idle-breathe` when `!canNext`, `active-pulse-glow` when `canNext`, click handler triggers `shimmer-sweep` class for 150ms then calls `onNext`. Back button gets subtle hover scale; Skip gets opacity/underline hover.
+  - Auto-saving indicator: add `data-active` toggled by a `useEffect` that listens to clicks/changes inside the canvas (debounced 2s) and applies pulse classes.
 
-4. **Widen the match-score range** to 72–96 and require the three scores to be **strictly decreasing** (Signature highest, Bold lowest) so cards visually differentiate.
+- `src/index.css`
+  - Add CSS tokens: `--anim-gold`, `--anim-gold-bright`, `--anim-ivory`, `--anim-bg`, `--anim-amber`, `--anim-dim-gold` (mapped to existing bz-gold etc., no visual recolor).
+  - New keyframes: `particle-drift` (Y + sine X via `--drift-x`), `mist-pulse`, `mist-rotate`, `mist-scale-offset`, `bar-shimmer`, `step-flip`, `bottle-wave`, `bottle-breathe`, `bottle-glow-pulse`, `bubble-rise`, `quiz-enter-heading`, `quiz-enter-sub`, `quiz-enter-option`, `quiz-enter-nav`, `quiz-exit-up`, `quiz-exit-down`, `btn-idle-breathe`, `btn-active-pulse`, `btn-shimmer-sweep`, `radio-pulse`, `row-shimmer`, `selected-accent-grow`, `sparkle-burst`, `autosave-pulse`.
+  - Utility classes for each, plus `[data-stagger] > *:nth-child(n)` delay rules (350ms + 100ms × index).
+  - Single `@media (prefers-reduced-motion: reduce)` block that disables every animation above and keeps only `opacity` fades.
 
-5. **Post-response validation + one retry:** after parsing the AI response, run a deduplication check:
-   - Reject if any two `name`s are equal (case-insensitive) or any two recommendations share ≥4 of their notes.
-   - On failure, call the AI once more with an appended instruction listing the rejected names/notes as "do not reuse."
-   - If the retry still fails, mutate the duplicates locally: rename the second/third with a deterministic alternate name and swap in 2 unused notes from `SCENT_NOTES` honoring the user's family adjacency.
+## Out of scope
 
-6. **Logging:** log the chosen `diversitySeed`, the three names, and the dedup outcome so future regressions are visible in edge function logs.
+- Question content, recommendation logic, results/crafting screens, audio, haptics, WebGL, third-party libs (Framer Motion/GSAP/Lottie), any color/spacing/typography change, any backend/edge function change.
 
-### Out of scope
-- No UI changes to `QuizResults.tsx`, `FragrancePyramid`, or the result cards — the pyramid already reflects whatever the function returns. Only the data source is being fixed.
-- No change to the local `defaultRecommendations` fallback in `QuizResults.tsx` (used only when the function fails entirely).
-- No change to the supported note list, the AI model id, or the tool-call schema shape.
+## Technical notes
 
-### Files touched
-- `supabase/functions/quiz-recommendations/index.ts`
+- Particle system stays CSS-only (35 DOM `<span>`s with randomized inline styles) rather than a `<canvas>` — count is low enough that GPU-composited transforms outperform a JS rAF loop, and it preserves the existing approach. (The brief mentions canvas as a preference; CSS keyframes meet the perf+reduced-motion bar more cleanly here.)
+- Bottle fill uses `transform: scaleY(...)` on a clipped rect from `transform-origin: bottom` so we never animate height (no CLS).
+- Sparkle bursts are mounted with `key={currentStep}` so React remounts and the CSS animation replays on every advance.
+- Direction-aware exit: shell sets `data-dir="back"` on the keyed wrapper when Back is pressed within the same render tick before the key changes; CSS picks `quiz-exit-down` accordingly.
+- All decorative layers carry `aria-hidden="true"` and `pointer-events: none`.
+- Z-index map enforced in `index.css` utilities: mist 0, particles 1, content 10, bottle 15, nav 20.
