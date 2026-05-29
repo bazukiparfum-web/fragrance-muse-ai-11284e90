@@ -395,6 +395,9 @@ const AdminProductionQueue = () => {
         );
       })()}
 
+      <p className="text-xs text-muted-foreground italic mb-2">
+        Note: Dispensing duration is no longer calculated. The system sends only the required ml per pump; the machine handles timing internally based on volume.
+      </p>
 
       <Card>
         {loading ? (
