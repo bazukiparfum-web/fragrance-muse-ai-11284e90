@@ -520,3 +520,337 @@
   background: linear-gradient(90deg, transparent 0%, hsl(var(--bz-gold) / 0.05) 50%, transparent 100%);
   animation: shimmer-gold 1.8s linear infinite;
 }
+
+/* ===================================================================
+   Nostalgia & Roots — per-option environmental animations
+   Scoped to .nostalgia-root; layered over the quiz background.
+   =================================================================== */
+
+.nostalgia-root { position: relative; }
+
+/* Heading: word-by-word fade up */
+@keyframes nostalgia-word-rise {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.nostalgia-word {
+  display: inline-block;
+  opacity: 0;
+  animation: nostalgia-word-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Options: cascade in from the left */
+@keyframes nostalgia-option-slide-in {
+  0%   { opacity: 0; transform: translateX(-24px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.nostalgia-option {
+  opacity: 0;
+  animation: nostalgia-option-slide-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  isolation: isolate;
+}
+
+/* Hover shimmer sweep across each card */
+.nostalgia-hover-shimmer {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    hsl(var(--bz-gold) / 0.18) 50%,
+    transparent 80%
+  );
+  transform: translateX(-110%);
+  transition: transform 400ms ease-out;
+  z-index: 0;
+}
+.nostalgia-option:hover .nostalgia-hover-shimmer { transform: translateX(110%); }
+.nostalgia-option:hover { border-color: hsl(var(--bz-gold)) !important; }
+
+/* Per-card inner glow — color tinted per setting */
+.nostalgia-card-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 400ms ease;
+  z-index: 0;
+}
+.nostalgia-option[data-selected='true'] .nostalgia-card-glow { opacity: 1; }
+.nostalgia-option[data-setting='city'] .nostalgia-card-glow {
+  box-shadow: inset 0 0 28px hsl(212 50% 50% / 0.18), inset 0 0 12px hsl(var(--bz-gold) / 0.25);
+}
+.nostalgia-option[data-setting='small-town'] .nostalgia-card-glow {
+  box-shadow: inset 0 0 32px hsl(35 75% 55% / 0.28);
+}
+.nostalgia-option[data-setting='countryside'] .nostalgia-card-glow {
+  box-shadow: inset 0 0 30px hsl(80 35% 50% / 0.22), inset 0 0 14px hsl(var(--bz-gold) / 0.18);
+}
+.nostalgia-option[data-setting='suburbs'] .nostalgia-card-glow {
+  box-shadow: inset 0 0 28px hsl(45 60% 80% / 0.20);
+}
+.nostalgia-option[data-setting='various'] .nostalgia-card-glow {
+  box-shadow: inset 0 0 28px hsl(var(--bz-gold) / 0.22);
+}
+.nostalgia-option[data-setting='metropolis'] .nostalgia-card-glow {
+  box-shadow: inset 0 0 32px hsl(220 25% 70% / 0.18), inset 0 0 14px hsl(var(--bz-gold) / 0.25);
+}
+
+/* Radio ripple */
+@keyframes nostalgia-ring-ripple {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.55; }
+  100% { transform: translate(-50%, -50%) scale(6); opacity: 0; }
+}
+.nostalgia-radio-ripple {
+  pointer-events: none;
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 20px; height: 20px;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--bz-gold) / 0.7);
+  animation: nostalgia-ring-ripple 1200ms ease-out forwards;
+}
+.nostalgia-option[data-setting='suburbs'] .nostalgia-radio-ripple {
+  animation: nostalgia-ring-ripple 900ms ease-out forwards,
+             nostalgia-ring-ripple 900ms ease-out 200ms forwards,
+             nostalgia-ring-ripple 900ms ease-out 400ms forwards;
+}
+
+/* Skyline self-draw (City) */
+.nostalgia-skyline-wrap {
+  pointer-events: none;
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 18px;
+  opacity: 0;
+  animation: nostalgia-skyline-fade 1400ms ease-out forwards;
+}
+.nostalgia-skyline {
+  width: 100%; height: 100%;
+}
+.nostalgia-skyline path {
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  animation: nostalgia-skyline-draw 600ms ease-out forwards;
+}
+@keyframes nostalgia-skyline-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes nostalgia-skyline-fade {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.7; }
+  70%  { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+/* Leaves (Countryside) */
+@keyframes nostalgia-leaf-drift {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  20%  { opacity: 0.85; }
+  100% { transform: translateY(-60px) rotate(140deg); opacity: 0; }
+}
+.nostalgia-leaves {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.nostalgia-leaf {
+  position: absolute;
+  bottom: 8px;
+  width: 7px; height: 10px;
+  background: linear-gradient(135deg, #B8C97A, #C9A84C);
+  clip-path: ellipse(40% 50% at 50% 50%);
+  border-radius: 50% 10% 50% 10%;
+  opacity: 0;
+  animation: nostalgia-leaf-drift 800ms ease-out forwards;
+}
+
+/* Metropolis trails */
+@keyframes nostalgia-metro-trail {
+  0%   { transform: translateY(100%) scaleY(0.6); opacity: 0; }
+  30%  { opacity: 0.55; }
+  100% { transform: translateY(-30%) scaleY(1); opacity: 0; }
+}
+.nostalgia-metro-trails {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.nostalgia-metro-trail {
+  position: absolute;
+  bottom: 0;
+  width: 2px; height: 100%;
+  background: linear-gradient(to top, transparent, hsl(var(--bz-gold) / 0.55), transparent);
+  filter: blur(0.5px);
+  animation: nostalgia-metro-trail 700ms ease-out forwards;
+}
+
+/* Various sparkle burst */
+@keyframes nostalgia-sparkle-fly {
+  0%   { transform: rotate(var(--deg)) translateX(0) scale(0.4); opacity: 0; }
+  30%  { opacity: 1; }
+  100% { transform: rotate(var(--deg)) translateX(32px) scale(0.2); opacity: 0; }
+}
+.nostalgia-sparkles {
+  pointer-events: none;
+  position: absolute;
+  left: 28px; top: 50%;
+  width: 0; height: 0;
+}
+.nostalgia-sparkle {
+  position: absolute;
+  left: -3px; top: -3px;
+  width: 6px; height: 6px;
+  background: radial-gradient(circle, hsl(var(--bz-gold) / 0.9), transparent 70%);
+  border-radius: 50%;
+  animation: nostalgia-sparkle-fly 700ms ease-out forwards;
+}
+
+/* ===== Environmental atmosphere layer ===== */
+.nostalgia-env-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.nostalgia-env {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+/* City — geometric grid */
+.city-grid {
+  background-image:
+    linear-gradient(hsl(var(--bz-gold) / 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--bz-gold) / 0.5) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.nostalgia-env-layer[data-setting='city'] .city-grid {
+  animation: nostalgia-grid-fade 1500ms ease-out forwards;
+}
+@keyframes nostalgia-grid-fade {
+  0%   { opacity: 0; }
+  35%  { opacity: 0.08; }
+  100% { opacity: 0; }
+}
+
+/* Small town — warm amber bloom */
+.town-bloom {
+  background: radial-gradient(
+    circle at 50% 55%,
+    hsl(32 80% 55% / 0.18),
+    hsl(32 80% 55% / 0.06) 30%,
+    transparent 60%
+  );
+}
+.nostalgia-env-layer[data-setting='small-town'] .town-bloom { opacity: 1; }
+
+/* Countryside — drifting mist wisps */
+@keyframes nostalgia-mist-drift {
+  0%   { transform: translateX(-30%); opacity: 0; }
+  50%  { opacity: 0.6; }
+  100% { transform: translateX(130%); opacity: 0; }
+}
+.country-mist {
+  width: 60vw; height: 40vh;
+  border-radius: 50%;
+  filter: blur(80px);
+  background: radial-gradient(circle, hsl(80 40% 55% / 0.30), transparent 70%);
+  top: 30%;
+}
+.country-mist-b {
+  top: 55%;
+  background: radial-gradient(circle, hsl(45 50% 55% / 0.22), transparent 70%);
+}
+.nostalgia-env-layer[data-setting='countryside'] .country-mist-a {
+  opacity: 1;
+  animation: nostalgia-mist-drift 18s linear infinite;
+}
+.nostalgia-env-layer[data-setting='countryside'] .country-mist-b {
+  opacity: 1;
+  animation: nostalgia-mist-drift 24s linear infinite;
+  animation-delay: -9s;
+}
+
+/* Suburbs — even cozy glow */
+.suburbs-glow {
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    hsl(45 70% 60% / 0.10),
+    hsl(45 70% 60% / 0.04) 50%,
+    transparent 80%
+  );
+}
+.nostalgia-env-layer[data-setting='suburbs'] .suburbs-glow { opacity: 1; }
+
+/* Metropolis — denser grid + light streaks */
+.metro-streaks {
+  background-image:
+    linear-gradient(hsl(var(--bz-gold) / 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--bz-gold) / 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, transparent 0, transparent 70%, hsl(var(--bz-gold) / 0.06) 100%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
+}
+.nostalgia-env-layer[data-setting='metropolis'] .metro-streaks { opacity: 0.10; }
+
+/* Various — blend of all */
+.nostalgia-env-layer[data-setting='various'] .city-grid { opacity: 0.03; }
+.nostalgia-env-layer[data-setting='various'] .town-bloom { opacity: 0.5; }
+.nostalgia-env-layer[data-setting='various'] .country-mist-a {
+  opacity: 0.5;
+  animation: nostalgia-mist-drift 22s linear infinite;
+}
+
+/* ===== Particle field ===== */
+.nostalgia-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.np {
+  position: absolute;
+  bottom: -8px;
+  border-radius: 50%;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.np-square { border-radius: 1px; }
+
+@keyframes nostalgia-particle-rise {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: 0.55; }
+  50%  { transform: translate(var(--sway, 8px), -55vh); opacity: 0.45; }
+  100% { transform: translate(0, -110vh); opacity: 0; }
+}
+.np {
+  animation: nostalgia-particle-rise linear infinite;
+}
+
+/* ===== Reduced motion fallback ===== */
+@media (prefers-reduced-motion: reduce) {
+  .nostalgia-word,
+  .nostalgia-option,
+  .nostalgia-hover-shimmer,
+  .nostalgia-radio-ripple,
+  .nostalgia-skyline-wrap,
+  .nostalgia-skyline path,
+  .nostalgia-leaf,
+  .nostalgia-metro-trail,
+  .nostalgia-sparkle,
+  .country-mist,
+  .city-grid,
+  .np {
+    animation: none !important;
+    transition: opacity 200ms ease !important;
+    transform: none !important;
+    opacity: 1;
+  }
+  .nostalgia-particles { display: none; }
+}

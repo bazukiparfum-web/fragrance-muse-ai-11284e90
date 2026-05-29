@@ -1,58 +1,60 @@
-# Luxury Atelier Animation Layer — Both Quiz Flows
+# Nostalgia & Roots — Per-Option Environmental Animations
 
-Both `QuizForYourself.tsx` (13 steps) and `QuizForSomeoneElse.tsx` (10 steps) already render through `ImmersiveQuizShell`, which already mounts `QuizBackground`. All animation work lands in shared components — no per-page edits, no logic/layout/typography changes.
+Scope: only the radio question with `answer_key: 'setting'` ("In what setting did you grow up?") in both quiz flows. Options in the DB: **City, Small town, Countryside, Suburbs, Various, Metropolis** (the screenshot was cut off — Various & Metropolis get matching treatments per note #7). All work is additive — no layout/copy/color-token changes.
 
-## Scope (purely additive)
+## Approach
 
-Adds the 10 animation systems requested:
-1. 35-particle ambient drift (gold/ivory, sine-wave, randomized)
-2. 3 mist blobs (breathing/rotating radial gradients)
-3. Progress bar smooth fill + liquid-gold shimmer + sparkle burst on advance + step-counter flip
-4. SVG perfume-bottle indicator bottom-left, fills per completed step with bubbles + glow pulse
-5. Page entry cascade (heading → subtext → options stagger → nav)
-6. Page exit drift (up on Next, down on Back)
-7. Next/Back/Skip button states (idle breathe, active pulse-glow, hover, click shimmer)
-8. Auto-saving indicator pulse on interaction
-9. Radio/card hover shimmer + selected pulse + sparkle burst + sibling dim
-10. Performance + `prefers-reduced-motion` + z-index layering + CSS-var tokens
+The current "setting" question is rendered by the generic `radio` case in `QuestionRenderer.tsx`. Rather than overload that case with conditional environment effects, introduce a dedicated branch for setting-style questions, keyed off `question.answer_key === 'setting'`, that swaps in a new `NostalgiaSettingOptions` component. The generic radio path stays untouched for every other radio question.
 
-## Files to change
+## Files
 
 **New**
-- `src/components/quiz/PerfumeBottleProgress.tsx` — SVG bottle (~55×85px incl. label), fill via `<clipPath>` + `<rect>` height transition (400ms), wavy top edge via animated `<path>`, 3 bubble `<circle>`s spawned on fill change, idle breathe + ambient glow pulse, "Your Formula" label.
-- `src/components/quiz/ProgressSparkleBurst.tsx` — 6–8 `✦` spans bursting from a given x/y, randomized angle/distance, 700ms fade.
-- `src/components/quiz/StepCounter.tsx` — wraps "Step X of N" with a `key={step}` flip animation (250ms scale+opacity).
+- `src/components/quiz/NostalgiaSettingOptions.tsx` — wraps the 6 radio options, owns per-option overlays, particle bursts, and SVG decoration. Uses the same Label/RadioGroupItem look so the existing layout/border/glow tokens remain identical.
+- `src/components/quiz/nostalgia/EnvironmentLayer.tsx` — fixed, pointer-events-none layer mounted into the quiz shell area that reacts to the currently-selected setting and renders the matching background atmosphere (grid / amber bloom / green mist / cozy glow / etc.). Only active while this question is on-screen.
+- `src/components/quiz/nostalgia/SettingParticleField.tsx` — option-specific upward particle stream (count, color, speed, sway tuned per setting).
+- `src/components/quiz/nostalgia/SkylineTrace.tsx` — small inline SVG with `stroke-dasharray` self-draw animation for the City card.
 
-**Modified**
-- `src/components/quiz/QuizBackground.tsx`
-  - Particle count → 35; per-particle randomized size (1–3px), color (gold/ivory via CSS var), opacity (0.15–0.55), duration (8–18s), delay (0–18s), and CSS-var `--drift-x` (15–30px) feeding a sine-wave horizontal keyframe.
-  - Render 3 mist blobs (900/1100/700px) with the exact opacities, positions, and animations specified (drift+scale 25s, rotate 60s linear, scale-pulse 18s offset by 8s).
-  - All decorative layers `pointer-events: none`, `will-change: transform, opacity`.
+**Edited**
+- `src/components/quiz/QuestionRenderer.tsx` — add a branch before the generic `radio` case: if `question.answer_key === 'setting'`, render `<NostalgiaSettingOptions ... />`. No other changes.
+- `src/components/quiz/ImmersiveQuizShell.tsx` — mount `<EnvironmentLayer />` only when the active question's `answer_key` is `setting`, reading the current value from quiz context.
+- `src/index.css` — add the keyframes & utility classes listed below, all gated by `prefers-reduced-motion`.
 
-- `src/components/quiz/ImmersiveQuizShell.tsx`
-  - Progress bar: switch transition to 600ms ease-out cubic-bezier; add inner shimmer span (2.5s linear gloss); on `currentStep` change mount `<ProgressSparkleBurst>` anchored at the bar's leading tip (using a ref + measured width).
-  - Replace step text with `<StepCounter>`.
-  - Add `<PerfumeBottleProgress current={currentStep-1} total={totalSteps} />` at `z-15`, bottom-left, above the nav bar.
-  - Wrap children with entry-cascade classes (heading/subtext/options/nav get incremental delay classes; options use CSS `:nth-child` stagger via a `data-quiz-options` wrapper consumed inside the page content — already present as the single child block, so the cascade is driven by a top-level wrapper plus a `[data-stagger] > *` rule).
-  - Track `direction` state (`forward`/`back`) on `onNext`/`onBack`; pass to the keyed content wrapper to choose exit class (`quiz-exit-up` vs `quiz-exit-down`).
-  - Next button: add `idle-breathe` when `!canNext`, `active-pulse-glow` when `canNext`, click handler triggers `shimmer-sweep` class for 150ms then calls `onNext`. Back button gets subtle hover scale; Skip gets opacity/underline hover.
-  - Auto-saving indicator: add `data-active` toggled by a `useEffect` that listens to clicks/changes inside the canvas (debounced 2s) and applies pulse classes.
+## Per-option behavior
 
-- `src/index.css`
-  - Add CSS tokens: `--anim-gold`, `--anim-gold-bright`, `--anim-ivory`, `--anim-bg`, `--anim-amber`, `--anim-dim-gold` (mapped to existing bz-gold etc., no visual recolor).
-  - New keyframes: `particle-drift` (Y + sine X via `--drift-x`), `mist-pulse`, `mist-rotate`, `mist-scale-offset`, `bar-shimmer`, `step-flip`, `bottle-wave`, `bottle-breathe`, `bottle-glow-pulse`, `bubble-rise`, `quiz-enter-heading`, `quiz-enter-sub`, `quiz-enter-option`, `quiz-enter-nav`, `quiz-exit-up`, `quiz-exit-down`, `btn-idle-breathe`, `btn-active-pulse`, `btn-shimmer-sweep`, `radio-pulse`, `row-shimmer`, `selected-accent-grow`, `sparkle-burst`, `autosave-pulse`.
-  - Utility classes for each, plus `[data-stagger] > *:nth-child(n)` delay rules (350ms + 100ms × index).
-  - Single `@media (prefers-reduced-motion: reduce)` block that disables every animation above and keeps only `opacity` fades.
+Selection state drives a `data-setting="city|small-town|countryside|suburbs|various|metropolis"` attribute on `EnvironmentLayer`, and a one-shot `data-burst` flag that retriggers card-level decorations on each (re)selection.
 
-## Out of scope
+| Option | Background atmosphere | Particles | Card inner glow | Card-level flourish |
+|---|---|---|---|---|
+| City | Faint geometric grid lines (SVG pattern), fades in to 8% then out over 1.5s | Sharp angular gold dots, fast upward, minimal sway | Cool steel-blue → gold inner shadow | `SkylineTrace` self-draws along card bottom over 600ms then fades |
+| Small town | Warm amber radial-gradient bloom from card center, soft & wide | Slow gold dots in loose clusters, low density | Honey-amber inner shadow | Concentric ring ripple from the radio dot, 3 rings fading at edges |
+| Countryside | Green-gold mist wisps drifting L→R across screen (two slow blurred blobs) | Green-tinted gold, organic side-to-side sway, gentle rise | Earthy green-amber inner shadow | 4–6 leaf/petal clip-path shapes drift upward from card, fade over 800ms |
+| Suburbs | Even, comfortable golden glow (low-intensity full-area gradient) | Medium-paced evenly-spaced gold dots in parallel streams | Soft warm-white gold inner shadow | 3 gentle pulse rings from the radio dot, expanding & fading |
+| Various (note #7) | Slow morphing blend of city grid + amber + green mist at 40% intensity | Mixed-color gold/ivory particles, mixed cadences | Neutral warm-gold inner shadow | Brief radial sparkle burst (4 directions) from radio dot |
+| Metropolis (note #7) | Denser grid + faint vertical light streaks (skyscraper light trails) | Fast dense gold particles, taller upward trajectory | Cool platinum-gold inner shadow | Two parallel vertical light streaks rise behind the card, fade 700ms |
 
-- Question content, recommendation logic, results/crafting screens, audio, haptics, WebGL, third-party libs (Framer Motion/GSAP/Lottie), any color/spacing/typography change, any backend/edge function change.
+All atmospheres mount/unmount via opacity transition (400ms) when selection changes, so switching between options cross-fades cleanly.
 
-## Technical notes
+## Page entry & hover (this question only)
 
-- Particle system stays CSS-only (35 DOM `<span>`s with randomized inline styles) rather than a `<canvas>` — count is low enough that GPU-composited transforms outperform a JS rAF loop, and it preserves the existing approach. (The brief mentions canvas as a preference; CSS keyframes meet the perf+reduced-motion bar more cleanly here.)
-- Bottle fill uses `transform: scaleY(...)` on a clipped rect from `transform-origin: bottom` so we never animate height (no CLS).
-- Sparkle bursts are mounted with `key={currentStep}` so React remounts and the CSS animation replays on every advance.
-- Direction-aware exit: shell sets `data-dir="back"` on the keyed wrapper when Back is pressed within the same render tick before the key changes; CSS picks `quiz-exit-down` accordingly.
-- All decorative layers carry `aria-hidden="true"` and `pointer-events: none`.
-- Z-index map enforced in `index.css` utilities: mist 0, particles 1, content 10, bottle 15, nav 20.
+- Heading: split `question.question_text` into word `<span>`s; each fades up (opacity 0→1, translateY 20→0) on mount with 80ms stagger. Uses the existing `font-display text-cream` heading — wrapping happens in the new component so the generic renderer is unaffected.
+- Options: cascade in from the left (translateX -24→0, opacity 0→1) with 120ms stagger via CSS animation-delay on each Label.
+- Hover: gold shimmer sweep (linear-gradient overlay translated L→R over 400ms) + border brightens from `border-gold` to `border-gold-strong` via CSS — applied through a wrapper class so the existing border tokens stay the source of truth.
+
+## Keyframes / utilities to add in `index.css`
+
+- `@keyframes nostalgia-word-rise` (opacity + translateY)
+- `@keyframes nostalgia-option-slide-in` (translateX + opacity)
+- `@keyframes nostalgia-shimmer-sweep` (background-position L→R)
+- `@keyframes nostalgia-ring-ripple` (scale 0→3, opacity 0.6→0)
+- `@keyframes nostalgia-leaf-drift` (translateY + rotate + opacity)
+- `@keyframes nostalgia-mist-drift` (translateX + opacity bell curve)
+- `@keyframes nostalgia-particle-rise-{city|town|country|suburb|metro}` — variants for speed/sway
+- `@keyframes nostalgia-skyline-draw` (stroke-dashoffset → 0, then opacity fade)
+- `@keyframes nostalgia-grid-fade` (opacity 0 → 0.08 → 0 over 1.5s)
+- `@media (prefers-reduced-motion: reduce)` block forces all of the above to a simple 200ms opacity fade with no transform.
+
+## What does NOT change
+
+- No edits to colors/tokens, copy, question schema, recommendation logic, or other questions.
+- Generic `radio` rendering, layout spacing, border classes, and existing `glow-gold-sm` selected state are preserved verbatim inside `NostalgiaSettingOptions`.
+- Existing global `QuizBackground` / `PerfumeBottleProgress` / shell transitions are untouched; `EnvironmentLayer` sits above them at low opacity.

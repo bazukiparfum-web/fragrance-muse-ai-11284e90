@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { ColorPicker } from '@/components/quiz/ColorPicker';
 import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
+import { NostalgiaSettingOptions } from '@/components/quiz/NostalgiaSettingOptions';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
 interface QuestionRendererProps {
@@ -57,6 +58,18 @@ export const QuestionRenderer = ({
 
   switch (question.question_type) {
     case 'radio':
+      if (question.answer_key === 'setting') {
+        return (
+          <NostalgiaSettingOptions
+            options={question.options || []}
+            value={(currentAnswer as string) || ''}
+            onChange={(val) => updateAnswer(answerKey, val)}
+            heading={heading}
+            helper={helper}
+            questionText={question.question_text}
+          />
+        );
+      }
       return wrap(
         <RadioGroup
           value={(currentAnswer as string) || ''}
