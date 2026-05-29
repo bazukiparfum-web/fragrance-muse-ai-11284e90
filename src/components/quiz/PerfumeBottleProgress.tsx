@@ -11,10 +11,13 @@ interface PerfumeBottleProgressProps {
  * Bubbles spawn on each fill change. Idle breathing + ambient glow.
  */
 export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressProps) => {
-  const pct = Math.max(0, Math.min(1, current / Math.max(total, 1)));
+  const [forcedFull, setForcedFull] = useState(false);
+  const rawPct = Math.max(0, Math.min(1, current / Math.max(total, 1)));
+  const pct = forcedFull ? 1 : rawPct;
   const [bubbleKey, setBubbleKey] = useState(0);
   const [glow, setGlow] = useState(false);
   const [flashColor, setFlashColor] = useState<string | null>(null);
+  const [happyPulse, setHappyPulse] = useState(false);
   const prev = useRef(current);
 
   useEffect(() => {
@@ -39,11 +42,31 @@ export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressP
     return () => window.removeEventListener('bz:color-locked', handler as EventListener);
   }, []);
 
+  useEffect(() => {
+    const onHappy = () => {
+      setHappyPulse(true);
+      window.setTimeout(() => setHappyPulse(false), 750);
+    };
+    const onFill = () => {
+      setForcedFull(true);
+      setBubbleKey((k) => k + 1);
+      setGlow(true);
+      window.setTimeout(() => setGlow(false), 600);
+    };
+    window.addEventListener('bz:bottle-happy-pulse', onHappy);
+    window.addEventListener('bz:finale-fill', onFill);
+    return () => {
+      window.removeEventListener('bz:bottle-happy-pulse', onHappy);
+      window.removeEventListener('bz:finale-fill', onFill);
+    };
+  }, []);
+
   // Bottle interior bounds (SVG coords). Liquid fills from bottom = y=60 up to y=18.
   const INTERIOR_TOP = 18;
   const INTERIOR_BOTTOM = 60;
   const liquidHeight = (INTERIOR_BOTTOM - INTERIOR_TOP) * pct;
   const liquidY = INTERIOR_BOTTOM - liquidHeight;
+
 
   return (
     <div

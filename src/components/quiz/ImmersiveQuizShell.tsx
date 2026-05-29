@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, X, Save, Sparkles } from 'lucide-react';
 import { QuizBackground } from './QuizBackground';
@@ -21,6 +22,10 @@ interface ImmersiveQuizShellProps {
   children: ReactNode;
 }
 
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
 export const ImmersiveQuizShell = ({
   currentStep,
   totalSteps,
@@ -37,15 +42,16 @@ export const ImmersiveQuizShell = ({
 }: ImmersiveQuizShellProps) => {
   const progress = Math.round((currentStep / Math.max(totalSteps, 1)) * 100);
 
-  // Track navigation direction for exit transitions (forward/back).
-  const [direction, setDirection] = useState<'forward' | 'back'>('forward');
+  // Finale scaling
+  const sparkleCount = Math.round(totalSteps * 2);
+  const mistLayers = totalSteps > 10 ? 4 : 3;
+  const mistDuration = totalSteps > 10 ? 1000 : 800;
 
-  // Auto-save indicator pulse on interaction
+  const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [saving, setSaving] = useState(false);
   const saveTimer = useRef<number | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
-  // Sparkle burst anchored at the leading edge of the progress bar
   const barRef = useRef<HTMLDivElement | null>(null);
   const [burstX, setBurstX] = useState(0);
   useEffect(() => {
@@ -54,10 +60,8 @@ export const ImmersiveQuizShell = ({
     }
   }, [progress]);
 
-  // Button click shimmer flag
   const [shimmer, setShimmer] = useState(false);
 
-  // Color-lock flash on the progress bar tip
   const [colorFlash, setColorFlash] = useState<string | null>(null);
   useEffect(() => {
     const handler = (e: Event) => {
@@ -71,10 +75,48 @@ export const ImmersiveQuizShell = ({
     return () => window.removeEventListener('bz:color-locked', handler as EventListener);
   }, []);
 
+  // Finale entry celebration (sparkle rain + bottle happy pulse)
+  const [rainKey, setRainKey] = useState(0);
+  const finaleEnteredRef = useRef(false);
+  useEffect(() => {
+    if (isLast && !finaleEnteredRef.current) {
+      finaleEnteredRef.current = true;
+      if (!prefersReducedMotion()) {
+        setRainKey((k) => k + 1);
+        window.dispatchEvent(new CustomEvent('bz:bottle-happy-pulse'));
+        const t = window.setTimeout(() => setRainKey(0), 2200);
+        return () => window.clearTimeout(t);
+      }
+    }
+    if (!isLast) finaleEnteredRef.current = false;
+  }, [isLast]);
+
+  // Finale click sequence
+  const [finalePlaying, setFinalePlaying] = useState(false);
+  const [burstKey, setBurstKey] = useState(0);
+  const [flashKey, setFlashKey] = useState(0);
+  const [mistKey, setMistKey] = useState(0);
+
   const handleNextClick = () => {
     setDirection('forward');
     setShimmer(true);
     window.setTimeout(() => setShimmer(false), 200);
+
+    if (isLast && !prefersReducedMotion()) {
+      setFinalePlaying(true);
+      // Step 1: bottle fill to 100%
+      window.dispatchEvent(new CustomEvent('bz:finale-fill'));
+      // Step 2 + 3 + 4: particle burst + flash + button shimmer
+      setBurstKey((k) => k + 1);
+      setFlashKey((k) => k + 1);
+      // Step 5: mist exit overlay
+      setMistKey((k) => k + 1);
+      // Step 6: navigate after mist duration
+      window.setTimeout(() => {
+        onNext();
+      }, mistDuration);
+      return;
+    }
     onNext();
   };
   const handleBackClick = () => {
@@ -82,7 +124,6 @@ export const ImmersiveQuizShell = ({
     onBack();
   };
 
-  // Listen for input activity inside the canvas to pulse auto-save
   useEffect(() => {
     const node = canvasRef.current;
     if (!node) return;
@@ -102,7 +143,6 @@ export const ImmersiveQuizShell = ({
     };
   }, []);
 
-  // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -119,7 +159,9 @@ export const ImmersiveQuizShell = ({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, canNext, isLoading]);
+  }, [currentStep, canNext, isLoading, isLast, mistDuration]);
+
+  const finaleBtnClasses = isLast && canNext ? 'is-finale-breathing is-finale-halo' : '';
 
   return (
     <div className="relative min-h-[100dvh] bg-bz-primary text-cream overflow-hidden">
@@ -171,7 +213,6 @@ export const ImmersiveQuizShell = ({
         </div>
       </div>
 
-      {/* Tweak banner */}
       {isTweakMode && tweakName && (
         <div className="relative z-20 px-4 md:px-8 mt-4">
           <div className="max-w-3xl mx-auto flex items-center justify-between gap-3 rounded-pill border border-gold-strong bg-bz-card/70 px-4 py-2 text-sm">
@@ -191,7 +232,6 @@ export const ImmersiveQuizShell = ({
         </div>
       )}
 
-      {/* Question canvas */}
       <main
         ref={canvasRef}
         className="relative z-10 px-4 md:px-8 pt-8 md:pt-16 pb-40"
@@ -206,10 +246,8 @@ export const ImmersiveQuizShell = ({
         </div>
       </main>
 
-      {/* Perfume bottle progress indicator */}
       <PerfumeBottleProgress current={currentStep - 1} total={totalSteps} />
 
-      {/* Sticky bottom nav */}
       <div
         className="fixed bottom-0 left-0 right-0 z-30 border-t border-gold bg-bz-primary/85 backdrop-blur-md quiz-nav-in"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
@@ -219,7 +257,7 @@ export const ImmersiveQuizShell = ({
             onClick={handleBackClick}
             variant="outline"
             size="lg"
-            disabled={currentStep === 1 || isLoading}
+            disabled={currentStep === 1 || isLoading || finalePlaying}
             className="quiz-back-btn border-gold text-cream hover:bg-bz-card"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -230,7 +268,7 @@ export const ImmersiveQuizShell = ({
             onClick={onSkip}
             variant="ghost"
             size="lg"
-            disabled={isLoading}
+            disabled={isLoading || finalePlaying}
             className="quiz-skip-btn text-cream-muted hover:text-cream"
           >
             Skip
@@ -239,12 +277,14 @@ export const ImmersiveQuizShell = ({
           <Button
             onClick={handleNextClick}
             size="lg"
-            disabled={isLoading || !canNext}
+            disabled={isLoading || !canNext || finalePlaying}
             className={`quiz-next-btn relative overflow-hidden bg-gold text-bz-primary hover:bg-gold/90 disabled:opacity-40 ${
               canNext ? 'is-active' : 'is-idle'
-            } ${shimmer ? 'is-clicked' : ''}`}
+            } ${shimmer ? 'is-clicked' : ''} ${finaleBtnClasses}`}
           >
-            <span className="relative z-10 inline-flex items-center">
+            <span
+              className={`relative z-10 inline-flex items-center ${finalePlaying ? 'is-finale-shimmer' : ''}`}
+            >
               {isLast ? 'Reveal My Scents' : 'Next'}
               {!isLast && <ArrowRight className="ml-2 h-4 w-4" />}
             </span>
@@ -252,6 +292,82 @@ export const ImmersiveQuizShell = ({
           </Button>
         </div>
       </div>
+
+      {/* Finale entry sparkle rain */}
+      {rainKey > 0 &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div key={rainKey} className="finale-sparkle-rain" aria-hidden="true">
+            {Array.from({ length: sparkleCount }).map((_, i) => (
+              <span
+                key={i}
+                className="finale-rain-drop"
+                style={{
+                  left: `${(i * 53) % 100}%`,
+                  animationDelay: `${(i * 60) % 800}ms`,
+                  animationDuration: `${1200 + ((i * 137) % 600)}ms`,
+                  width: `${4 + (i % 3)}px`,
+                  height: `${4 + (i % 3)}px`,
+                }}
+              />
+            ))}
+          </div>,
+          document.body
+        )}
+
+      {/* Finale click burst */}
+      {burstKey > 0 &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div key={`burst-${burstKey}`} className="finale-burst-layer" aria-hidden="true">
+            {Array.from({ length: 42 }).map((_, i) => {
+              const angle = (i / 42) * 360;
+              const dist = 180 + (i % 5) * 40;
+              const ivory = i % 3 === 0;
+              return (
+                <span
+                  key={i}
+                  className={`finale-burst-particle ${ivory ? 'is-ivory' : ''}`}
+                  style={{
+                    ['--angle' as any]: `${angle}deg`,
+                    ['--dist' as any]: `${dist}px`,
+                    animationDelay: `${(i % 6) * 15}ms`,
+                  }}
+                />
+              );
+            })}
+          </div>,
+          document.body
+        )}
+
+      {/* Finale flash */}
+      {flashKey > 0 &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <span key={`flash-${flashKey}`} className="finale-flash-overlay" aria-hidden="true" />,
+          document.body
+        )}
+
+      {/* Mist exit */}
+      {mistKey > 0 &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            key={`mist-${mistKey}`}
+            className="mist-exit-overlay"
+            style={{ ['--mist-duration' as any]: `${mistDuration}ms` }}
+            aria-hidden="true"
+          >
+            {Array.from({ length: mistLayers }).map((_, i) => (
+              <span
+                key={i}
+                className={`mist-layer mist-layer-${i}`}
+                style={{ animationDelay: `${i * 80}ms` }}
+              />
+            ))}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
