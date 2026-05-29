@@ -426,8 +426,11 @@ export default function AdminFormulas() {
               {selectedPlan && (
                 <div>
                   <h3 className="font-semibold mb-2">Pump dispense plan</h3>
-                  <div className="text-xs text-muted-foreground mb-2">
+                  <div className="text-xs text-muted-foreground mb-1">
                     Fragrance {(selectedPlan.fragrancePct * 100).toFixed(0)}% ({selectedPlan.fragranceMl} ml) · Solvent {selectedPlan.solventMl} ml
+                  </div>
+                  <div className="text-[11px] text-muted-foreground/80 italic mb-2">
+                    Volumes only — the machine controls dispense timing.
                   </div>
                   <div className="border rounded">
                     <Table>

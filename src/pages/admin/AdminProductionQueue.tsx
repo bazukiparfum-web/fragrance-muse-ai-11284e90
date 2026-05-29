@@ -425,7 +425,6 @@ const AdminProductionQueue = () => {
                 <TableHead>Size</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Status</TableHead>
-                
                 <TableHead className="min-w-[320px]">Dispense plan</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>

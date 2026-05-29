@@ -1,37 +1,30 @@
-## Remove ml/sec from /admin/pumps and hide seconds everywhere
+## Cleanup after removing ml/sec and ETA columns
 
-Flow rate (`ml_per_second`) is no longer meaningful — the machine takes a target volume and handles its own timing. Remove all user-facing references to seconds while leaving DB columns intact (no migration, reversible).
-
-### Changes
-
-**`src/pages/admin/AdminPumps.tsx`**
-- Drop the `ml/sec` column from the table header and body.
-- Remove the inline `<Input type="number">` for `ml_per_second` in edit mode.
-- Stop sending `ml_per_second` in `saveEdit` and `addPump` (DB default of `2.0` stays for legacy rows).
-- Remove the `ml_per_second` auto-fill in `onNoteChange`.
-- Update the footer tip card to drop the density/stock mention if it references flow.
-
-**`src/lib/productionFormula.ts`**
-- Remove `seconds` from `PumpDispenseRow` and `totalSeconds` from `DispensePlan` (or set to 0 if removing breaks too many callers — but check first).
-- Stop computing `seconds = ml / ml_per_second` in `computePumpDispense`.
-
-**`src/pages/admin/AdminFormulas.tsx`** (Formula Library side-sheet)
-- Remove `~Xs` from the dispense plan header line.
+### Fixes
 
 **`src/pages/admin/AdminProductionQueue.tsx`**
-- Remove per-row ETA badges and any `totalSeconds`/minutes in the totals strip that derive from flow rate. Keep counts and ml totals.
+- Remove the empty line (428) between `Status` and `Dispense plan` `<TableHead>`s (leftover from the deleted ETA column). Purely whitespace cleanup; no rendering bug, but tidies the JSX.
 
-**`src/pages/admin/AdminIngredients.tsx`**
-- If it exposes `ml_per_second` as an editable field, hide it too (for consistency with the new model).
+**`src/pages/admin/AdminPumps.tsx`**
+- The current table has no blank `<TableHead>` element, but the footer "Tip" card still mentions density/stock under a flow-rate context. Update it to also include the new admin-facing help note (see below).
+
+### Admin help note
+
+Add a short muted info note on the two pages where dispensing was previously shown in seconds:
+
+1. **`AdminPumps.tsx`** — append a second line to the existing tip card:
+   > Note: Dispensing duration is no longer calculated here. The system sends only the required ml per pump; the machine handles timing internally based on volume.
+
+2. **`AdminProductionQueue.tsx`** — add a small muted note just above the queue table (or inside the totals strip area) with the same message, so machine operators understand why ETA is gone.
+
+3. **`AdminFormulas.tsx`** dispense side-sheet — append a one-line muted hint under the "Pump dispense plan" header:
+   > Volumes only — machine controls dispense timing.
 
 ### Out of scope
-- No DB migration. `pumps.ml_per_second` and `ingredient_mappings.ml_per_second` columns stay (defaults preserved) so we can reintroduce flow-rate tracking later without data loss.
-- No changes to `machine-production-api` payloads — if it emits `duration_sec` from `pump_instructions.sequence`, leave it (the machine ignores it). Can be revisited.
-- Bulk download/upload XLSX: no schema change to the Pumps sheet column set (it currently includes `duration_sec` from `pump_instructions`; leaving for backward compat with previously exported files).
+- No changes to data model, edge functions, or XLSX export schema.
+- No new components; reuse existing `<Card>` / muted-text patterns.
 
 ### Files touched
-- `src/pages/admin/AdminPumps.tsx`
-- `src/lib/productionFormula.ts`
-- `src/pages/admin/AdminFormulas.tsx`
 - `src/pages/admin/AdminProductionQueue.tsx`
-- `src/pages/admin/AdminIngredients.tsx` (only if it surfaces the field)
+- `src/pages/admin/AdminPumps.tsx`
+- `src/pages/admin/AdminFormulas.tsx`
