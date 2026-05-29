@@ -86,7 +86,7 @@ export const PerfumeBottleProgress = ({ current, total }: PerfumeBottleProgressP
         width="40"
         height="70"
         viewBox="0 0 40 70"
-        className={`bottle-breathe ${glow ? 'bottle-glow-pulse' : ''} ${flashColor ? 'is-color-flash' : ''}`}
+        className={`bottle-breathe ${glow ? 'bottle-glow-pulse' : ''} ${flashColor ? 'is-color-flash' : ''} ${happyPulse ? 'bottle-happy-pulse' : ''} ${forcedFull ? 'is-finale-fill' : ''}`}
         style={{
           filter: flashColor
             ? `drop-shadow(0 0 6px ${flashColor})`
