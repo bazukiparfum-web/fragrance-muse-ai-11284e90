@@ -156,6 +156,17 @@ export const ImmersiveQuizShell = ({
               </div>
             </div>
             <ProgressSparkleBurst key={currentStep} x={burstX} />
+            {colorFlash && (
+              <span
+                key={colorFlash + Date.now()}
+                className="progress-tip-flash"
+                style={{
+                  left: `calc(${progress}% - 30px)`,
+                  background: `linear-gradient(90deg, transparent, ${colorFlash})`,
+                }}
+                aria-hidden="true"
+              />
+            )}
           </div>
         </div>
       </div>

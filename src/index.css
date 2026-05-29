@@ -1348,3 +1348,298 @@
   }
   .identity-particles { display: none; }
 }
+
+/* ===================================================================
+   Color Wheel — showstopper atmosphere & interactions
+   =================================================================== */
+
+.color-wheel-root { position: relative; }
+
+/* Wheel entry spring + idle rotation */
+@keyframes cw-wheel-enter {
+  0%   { transform: scale(0.7) rotate(0deg); opacity: 0; }
+  60%  { transform: scale(1.03) rotate(216deg); opacity: 1; }
+  100% { transform: scale(1) rotate(360deg); opacity: 1; }
+}
+@keyframes cw-wheel-idle {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.cw-wheel-wrap {
+  width: 300px; height: 300px;
+  position: relative;
+}
+.cw-wheel {
+  display: block;
+  animation: cw-wheel-enter 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: center center;
+}
+.cw-wheel-wrap[data-entered='true'] .cw-wheel {
+  animation: cw-wheel-idle 30s linear infinite;
+}
+.cw-wheel-wrap[data-entered='true'][data-dragging='true'] .cw-wheel {
+  animation-play-state: paused;
+}
+
+/* HTML thumb */
+.cw-thumb {
+  position: absolute;
+  width: 24px; height: 24px;
+  margin-left: -12px; margin-top: -12px;
+  border-radius: 9999px;
+  pointer-events: none;
+  box-shadow: 0 0 15px var(--cw-color, hsl(43 56% 55%));
+  border: 1.5px solid rgba(0, 0, 0, 0.55);
+  animation: cw-thumb-pulse 1.5s ease-in-out infinite;
+  transition: background 200ms ease;
+  z-index: 2;
+}
+.cw-thumb-core {
+  position: absolute;
+  inset: 5px;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: transparent;
+}
+@keyframes cw-thumb-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--cw-color); }
+  50%      { box-shadow: 0 0 22px var(--cw-color); }
+}
+
+/* Trail */
+.cw-trail {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.cw-trail-dot {
+  position: absolute;
+  width: 10px; height: 10px;
+  margin-left: -5px; margin-top: -5px;
+  border-radius: 9999px;
+  animation: cw-trail-fade 600ms ease-out forwards;
+}
+@keyframes cw-trail-fade {
+  0%   { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.4); }
+}
+
+/* Release burst */
+.cw-burst {
+  position: absolute;
+  width: 0; height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.cw-burst > span {
+  position: absolute;
+  left: -3px; top: -3px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  animation: cw-release-burst 800ms ease-out forwards;
+}
+@keyframes cw-release-burst {
+  0%   { transform: rotate(var(--deg)) translateX(0) scale(0.5); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: rotate(var(--deg)) translateX(var(--dist, 50px)) scale(0.2); opacity: 0; }
+}
+
+/* Saturation slider shimmer + dot */
+.cw-slider-wrap { position: relative; }
+.cw-slider-shimmer {
+  pointer-events: none;
+  position: absolute;
+  left: 16px; right: 16px; top: 0;
+  height: 12px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.25), transparent);
+  background-size: 60% 100%;
+  background-repeat: no-repeat;
+  animation: cw-shimmer-sweep 2.4s linear infinite;
+  mix-blend-mode: overlay;
+}
+@keyframes cw-shimmer-sweep {
+  0%   { background-position: -60% 0; }
+  100% { background-position: 160% 0; }
+}
+.cw-slider-dot {
+  pointer-events: none;
+  position: absolute;
+  top: -2px;
+  width: 8px; height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  animation: cw-release-burst 600ms ease-out forwards;
+  ['--deg']: 270deg;
+  ['--dist']: 18px;
+}
+
+/* ===== Fixed page-wide atmosphere ===== */
+.color-atmosphere-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.cw-blob {
+  position: absolute;
+  width: 60vw; height: 60vw;
+  max-width: 700px; max-height: 700px;
+  border-radius: 50%;
+  filter: blur(100px);
+  background: var(--cw-color, hsl(43 56% 55%));
+  opacity: 0.10;
+  transition: background 400ms ease, opacity 400ms ease;
+  mix-blend-mode: screen;
+}
+.cw-blob-a {
+  top: -20%; left: -15%;
+  animation: cw-blob-drift-a 22s ease-in-out infinite;
+}
+.cw-blob-b {
+  bottom: -25%; right: -15%;
+  animation: cw-blob-drift-b 26s ease-in-out infinite;
+}
+@keyframes cw-blob-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(160px, 90px) scale(1.1); }
+}
+@keyframes cw-blob-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-160px, -90px) scale(1.1); }
+}
+
+.cw-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, var(--cw-color, hsl(43 56% 55%)) 130%);
+  opacity: 0.10;
+  transition: background 400ms ease;
+  mix-blend-mode: multiply;
+}
+
+/* Yellow zone: one-shot sunburst */
+.cw-sunburst {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 200px; height: 200px;
+  margin-left: -100px; margin-top: -100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, hsl(50 100% 70% / 0.4), transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+.color-atmosphere-layer[data-zone='yellow'] .cw-sunburst {
+  animation: cw-sunburst 900ms ease-out;
+}
+@keyframes cw-sunburst {
+  0%   { transform: scale(0.4); opacity: 0; }
+  30%  { opacity: 0.8; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* Cyan zone: icy shimmer overlay */
+.cw-icy {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    hsl(190 80% 80% / 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.color-atmosphere-layer[data-zone='cyan'] .cw-icy {
+  opacity: 1;
+  animation: cw-icy-shimmer 6s linear infinite;
+}
+@keyframes cw-icy-shimmer {
+  0%   { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Particles */
+.cw-particles {
+  position: absolute;
+  inset: 0;
+}
+.cwp {
+  position: absolute;
+  bottom: -8px;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--cw-color, hsl(43 56% 55%));
+  box-shadow: 0 0 6px var(--cw-color);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: cw-particle-rise linear infinite;
+  transition: background 400ms ease, box-shadow 400ms ease;
+}
+@keyframes cw-particle-rise {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: 0.6; }
+  50%  { transform: translate(var(--sway, 0), -55vh); opacity: 0.45; }
+  100% { transform: translate(0, -110vh); opacity: 0; }
+}
+/* Zone tuning */
+.color-atmosphere-layer[data-zone='red']    .cwp { animation-duration: 2.5s; }
+.color-atmosphere-layer[data-zone='orange'] .cwp { animation-duration: 4s; }
+.color-atmosphere-layer[data-zone='yellow'] .cwp { animation-duration: 3s; }
+.color-atmosphere-layer[data-zone='green']  .cwp { animation-duration: 5.5s; }
+.color-atmosphere-layer[data-zone='cyan']   .cwp { animation-duration: 4.5s; }
+.color-atmosphere-layer[data-zone='blue']   .cwp { animation-duration: 7s; }
+.color-atmosphere-layer[data-zone='purple'] .cwp { animation-duration: 6.5s; }
+.color-atmosphere-layer[data-zone='pink']   .cwp { animation-duration: 5s; }
+
+/* ===== Progress bar tip flash ===== */
+.progress-tip-flash {
+  position: absolute;
+  top: -3px; bottom: -3px;
+  width: 60px;
+  border-radius: 9999px;
+  pointer-events: none;
+  opacity: 0;
+  animation: cw-progress-flash 800ms ease-out forwards;
+  filter: blur(2px);
+  z-index: 2;
+}
+@keyframes cw-progress-flash {
+  0%   { opacity: 0; transform: scaleX(0.6); }
+  30%  { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1.2); }
+}
+
+/* ===== Bottle color-flash ===== */
+.bottle-indicator svg.is-color-flash {
+  animation: cw-bottle-color-flash 800ms ease-out;
+}
+@keyframes cw-bottle-color-flash {
+  0%, 100% { transform: scale(1); }
+  40%      { transform: scale(1.15); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cw-wheel,
+  .cw-thumb,
+  .cw-trail-dot,
+  .cw-burst > span,
+  .cw-slider-shimmer,
+  .cw-slider-dot,
+  .cw-blob,
+  .cwp,
+  .cw-sunburst,
+  .cw-icy,
+  .progress-tip-flash,
+  .bottle-indicator svg.is-color-flash {
+    animation: none !important;
+    transition: opacity 200ms ease !important;
+    transform: none !important;
+  }
+  .cw-particles, .cw-trail, .cw-burst { display: none; }
+}
