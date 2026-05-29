@@ -2146,3 +2146,34 @@
   }
   .is-finale-shimmer { animation: none; }
 }
+
+/* Age Range step animations */
+@keyframes age-card-in {
+  0% { opacity: 0; transform: translateX(-30px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.age-card-in {
+  animation: age-card-in 500ms ease-out both;
+}
+@keyframes age-burst-dot {
+  0% { transform: translate(-50%, -50%) translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0)) scale(0); opacity: 1; }
+  100% { opacity: 0; }
+}
+.age-burst-dot {
+  animation: age-burst-ring 500ms ease-out forwards;
+}
+@keyframes age-burst-ring {
+  0% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--bx, 0), var(--by, 0)) scale(2); }
+}
+@keyframes age-digit-float {
+  0% { opacity: 0; transform: translateY(0); }
+  20% { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+.age-digit-float {
+  animation: age-digit-float 900ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .age-card-in, .age-burst-dot, .age-digit-float { animation: none; }
+}
