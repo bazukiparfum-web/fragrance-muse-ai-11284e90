@@ -6,6 +6,7 @@ import { ColorPicker } from '@/components/quiz/ColorPicker';
 import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
 import { NostalgiaSettingOptions } from '@/components/quiz/NostalgiaSettingOptions';
+import { IdentityOptions } from '@/components/quiz/IdentityOptions';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
 interface QuestionRendererProps {
