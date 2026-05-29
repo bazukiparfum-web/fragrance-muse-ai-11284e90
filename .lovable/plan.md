@@ -1,39 +1,58 @@
-# City Search — Map-Focus Animation Layer
+# Identity Question — Per-Option Celebratory Animations
 
-Scope: the `city_search` question (rendered by `CitySearch.tsx`, used by the "What city do you currently live in?" step in both quiz flows). All work is purely additive — no copy, layout, validation, or data changes.
+Scope: the radio question with `answer_key: 'gender'` ("Which gender do you identify with?"). Options: **Woman, Man, Transgender, Non-binary/non-conforming, Prefer not to respond** (the 5th option gets an equally warm treatment per requirement #7). Purely additive — no copy, layout, or data changes.
+
+## Approach
+
+Mirror the nostalgia pattern. Add a `gender` branch to `QuestionRenderer` that swaps in a dedicated component which owns its own option layout, per-option particles, card glow, flourish, and a fixed ambient layer. Generic radio path stays untouched.
 
 ## Files
 
+**New**
+- `src/components/quiz/IdentityOptions.tsx` — wraps the 5 radio options with Label + RadioGroupItem (preserves existing border/glow tokens), word-by-word heading entry, cascade-up option entry, hover shimmer, dim-unselected behavior, per-option particle stream, card inner glow, radio-button flourish, and a fixed `.identity-env-layer` rendering the option-specific atmosphere with 300ms cross-fade.
+
 **Edited**
-- `src/components/quiz/CitySearch.tsx` — wrap output in a `.city-search-root` container; add focus tracking, a typing-burst counter, and decorative layers (ambient drifting gradients, pin-drop particles on focus, diamond sparkles on each keypress, idle radar pulse on the icon).
-- `src/index.css` — append keyframes & utility classes scoped under `.city-search-root` plus a `prefers-reduced-motion` block.
+- `src/components/quiz/QuestionRenderer.tsx` — add `if (question.answer_key === 'gender')` branch before the generic radio case, rendering `<IdentityOptions ... />`.
+- `src/index.css` — append keyframes & utility classes scoped under `.identity-root`, plus a `prefers-reduced-motion` block.
 
-No edits to `QuestionRenderer`, `ImmersiveQuizShell`, or the shared `Auto-saving` indicator — the shell already pulses on input activity (`.autosave-active`), which already satisfies requirement #6.
+## Per-option behavior (all equally rich)
 
-## Behavior
+| Option | Particles | Card inner glow | Radio flourish | Background atmosphere |
+|---|---|---|---|---|
+| Woman | Soft rose-gold dots (#E8A0A0, #F5C7C7, #C9A84C), gentle upward drift with sway | Rose-gold inner shadow (~15% tint) | Gentle pulse-in fill (scale 0.6→1 + opacity) | Wide floral-bloom radial gradient at ~5% opacity, slow rotate |
+| Man | Deep amber-gold dots (#B8862E, #C9A84C, #E0B355), steady upward rise, minimal sway | Rich warm amber inner shadow | Single clean ripple ring | Warm cedar/sandalwood-toned mist wisp drifting L→R |
+| Transgender | Light blue (#5BCEFA), pink (#F5A9B8), white (#F5F0E8) particles in equal mix, gentle upward drift | Multi-tone glow that slowly shifts between blue and pink (8s loop) | Soft 3-color radial pulse | Aurora-like color shift gradient at ~4% opacity (slow blue↔pink hue cycle) |
+| Non-binary/non-conforming | Gold (#C9A84C) + purple (#A78BFA) particles in two interweaving streams | Gold + purple dual-tone inner shadow | Cosmic sparkle burst from the radio dot | Deep purple-gold cosmic mist + 8 floating ✦ stars fading in/out around card edges |
+| Prefer not to respond | Soft cream-gold (#F5F0E8, #C9A84C) particles, calm even cadence | Soft warm-cream inner glow | Gentle 2-ring pulse | Even soft cream glow (low-intensity wide gradient) |
 
-1. **Page entry** — Heading entry is owned by the shell's `quiz-step-in` cascade; we only animate the search field itself: `translateY(15px → 0)` + `opacity 0 → 1`, 400ms, 300ms delay, via `.city-search-field`.
-2. **Idle radar pulse** — When the input value is empty AND not focused, the `Search` icon gets `.city-search-icon-pulse` (scale 1 → 1.1 → 1, opacity 0.7 → 1 → 0.7, 2s loop).
-3. **Focus state** — Local `focused` state on the wrapper toggles `data-focused="true"`:
-   - Field gets a `.city-search-glow` ring: `box-shadow: 0 0 25px hsl(var(--bz-gold) / 0.35)` with a 300ms ease transition, plus brightened gold border.
-   - Icon pulse stops (selector excludes `[data-focused="true"]`), icon holds at full opacity.
-   - On focus event, mounts 4 pin-shaped (📍 style — small SVG-less CSS shape: rounded teardrop) gold particles that rise from the field's bottom edge and fade upward over ~900ms, then unmount.
-4. **Typing sparkles** — `onChange` increments a `burstKey`. A small absolutely-positioned overlay near the cursor approximation (right edge of typed text, fallback to right padding) renders 1 diamond-rotated (`rotate(45deg)`) gold sparkle that floats up and fades over ~700ms. Each keystroke remounts (keyed by `burstKey`) so the animation re-fires. Sparkles are pointer-events-none and absolutely positioned so they don't reflow input.
-5. **Ambient background** — Two large blurred radial gradients (`.city-amber-blob`, `.city-cool-blob`) inside `.city-search-root`'s background layer, drifting diagonally at opposite trajectories on a 20s loop. Plus a `data-density` attribute on the root (incremented as `value.length` grows) that scales blob opacity from 0.25 → 0.45 across the first ~12 characters — fulfilling "background particles populate as you type" without spawning many DOM nodes.
-6. **Auto-saving** — Already handled by `ImmersiveQuizShell.autosave-active` pulse; no change.
+All atmospheres mount/unmount via opacity transitions (300ms) when selection changes, so switching cross-fades cleanly.
 
-## Keyframes / utilities to add in `index.css`
+## Page entry & global states
 
-- `@keyframes city-field-rise` (translateY + opacity)
-- `@keyframes city-icon-radar` (scale + opacity 2s loop)
-- `@keyframes city-pin-drop-rise` (translateY upward + opacity in→out, 900ms)
-- `@keyframes city-type-sparkle` (translateY up + scale + opacity, 700ms)
-- `@keyframes city-blob-drift-a` and `city-blob-drift-b` (translate + slight scale, 20s linear infinite, opposite directions)
-- `.city-search-root`, `.city-search-field`, `.city-search-glow`, `.city-search-icon-pulse`, `.city-pin`, `.city-type-sparkle`, `.city-amber-blob`, `.city-cool-blob` utility classes.
-- `@media (prefers-reduced-motion: reduce)` disables animations and hides decorative particle layers.
+- Heading: split `question.question_text` into word spans; each fades up (opacity 0→1, translateY 20→0) with 80ms stagger.
+- Options: cascade up from bottom (translateY +20→0, opacity 0→1) with 120ms stagger per option.
+- Hover (all options): gold shimmer sweep L→R (400ms) + border brightens from `border-gold` to `border-gold-strong`.
+- Dim non-selected: when any option is selected, the others transition to `opacity: 0.6` (300ms); selected option stays at 1.
+
+## Keyframes to add in `index.css`
+
+- `identity-word-rise` (opacity + translateY)
+- `identity-option-rise` (translateY +20→0 + opacity)
+- `identity-shimmer-sweep` (linear-gradient sweep)
+- `identity-particle-rise` (generic upward drift with `--sway` var)
+- `identity-radio-pulse-in` (scale 0.6→1 + opacity, for Woman)
+- `identity-radio-ripple` (scale 0→3, opacity fade, for Man / Prefer-not)
+- `identity-radio-tri-pulse` (3 colored rings for Transgender)
+- `identity-cosmic-sparkle` (radial sparkle burst for Non-binary)
+- `identity-star-twinkle` (✦ stars opacity loop for Non-binary)
+- `identity-aurora-shift` (background-position + hue cycle)
+- `identity-mist-drift` (translateX wisp)
+- `identity-bloom-rotate` (slow rotate of floral bloom)
+- `identity-glow-shift-tg` (Transgender card glow color cycle)
+- `prefers-reduced-motion` fallback disables all animations and hides particle layers.
 
 ## What does NOT change
 
-- No edits to other questions or to the shell.
-- Input value, placeholder, validation, and submit logic are untouched.
-- No new dependencies; everything is pure CSS + small React state inside `CitySearch`.
+- No edits to other questions, the shell, or any tokens.
+- `RadioGroup` semantics, value handling, and existing `border-gold` / `glow-gold-sm` tokens preserved.
+- Existing global `QuizBackground` and shell transitions untouched; ambient atmosphere sits above them at low opacity.

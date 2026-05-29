@@ -6,6 +6,7 @@ import { ColorPicker } from '@/components/quiz/ColorPicker';
 import { PersonalitySliders } from '@/components/quiz/PersonalitySliders';
 import { CitySearch } from '@/components/quiz/CitySearch';
 import { NostalgiaSettingOptions } from '@/components/quiz/NostalgiaSettingOptions';
+import { IdentityOptions } from '@/components/quiz/IdentityOptions';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
 interface QuestionRendererProps {
@@ -65,6 +66,17 @@ export const QuestionRenderer = ({
             value={(currentAnswer as string) || ''}
             onChange={(val) => updateAnswer(answerKey, val)}
             heading={heading}
+            helper={helper}
+            questionText={question.question_text}
+          />
+        );
+      }
+      if (question.answer_key === 'gender') {
+        return (
+          <IdentityOptions
+            options={question.options || []}
+            value={(currentAnswer as string) || ''}
+            onChange={(val) => updateAnswer(answerKey, val)}
             helper={helper}
             questionText={question.question_text}
           />
