@@ -71,6 +71,17 @@ export const QuestionRenderer = ({
           />
         );
       }
+      if (question.answer_key === 'gender') {
+        return (
+          <IdentityOptions
+            options={question.options || []}
+            value={(currentAnswer as string) || ''}
+            onChange={(val) => updateAnswer(answerKey, val)}
+            helper={helper}
+            questionText={question.question_text}
+          />
+        );
+      }
       return wrap(
         <RadioGroup
           value={(currentAnswer as string) || ''}

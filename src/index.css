@@ -1027,3 +1027,324 @@
   }
   .city-pins, .city-type-sparkle { display: none; }
 }
+
+/* ===================================================================
+   Identity (gender) — per-option celebratory animations
+   =================================================================== */
+
+.identity-root { position: relative; }
+
+/* Heading word rise */
+@keyframes identity-word-rise {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.identity-word {
+  display: inline-block;
+  opacity: 0;
+  animation: identity-word-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Option entry: rise from bottom */
+@keyframes identity-option-rise {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.identity-option {
+  opacity: 0;
+  animation: identity-option-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  isolation: isolate;
+  transition: opacity 300ms ease, border-color 300ms ease, background-color 300ms ease;
+}
+/* Dim non-selected once a choice exists */
+[data-has-selection='true'] .identity-option[data-selected='false'] {
+  opacity: 0.6;
+}
+[data-has-selection='true'] .identity-option[data-selected='false']:hover {
+  opacity: 0.85;
+}
+
+/* Hover shimmer */
+.identity-hover-shimmer {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    hsl(var(--bz-gold) / 0.18) 50%,
+    transparent 80%
+  );
+  transform: translateX(-110%);
+  transition: transform 400ms ease-out;
+  z-index: 0;
+}
+.identity-option:hover .identity-hover-shimmer { transform: translateX(110%); }
+.identity-option:hover { border-color: hsl(var(--bz-gold)) !important; }
+
+/* Per-card inner glow */
+.identity-card-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 400ms ease, box-shadow 600ms ease;
+  z-index: 0;
+}
+.identity-option[data-selected='true'] .identity-card-glow { opacity: 1; }
+.identity-option[data-identity='woman'] .identity-card-glow {
+  box-shadow: inset 0 0 32px rgba(232, 160, 160, 0.22);
+}
+.identity-option[data-identity='man'] .identity-card-glow {
+  box-shadow: inset 0 0 32px rgba(184, 134, 46, 0.28), inset 0 0 14px hsl(var(--bz-gold) / 0.25);
+}
+.identity-option[data-identity='transgender'] .identity-card-glow {
+  animation: identity-glow-shift-tg 8s ease-in-out infinite;
+}
+@keyframes identity-glow-shift-tg {
+  0%, 100% { box-shadow: inset 0 0 30px rgba(91, 206, 250, 0.25); }
+  50%      { box-shadow: inset 0 0 30px rgba(245, 169, 184, 0.25); }
+}
+.identity-option[data-identity='non-binary'] .identity-card-glow {
+  box-shadow: inset 0 0 14px rgba(167, 139, 250, 0.30),
+              inset 0 0 32px rgba(201, 168, 76, 0.22);
+}
+.identity-option[data-identity='prefer-not'] .identity-card-glow {
+  box-shadow: inset 0 0 28px rgba(245, 240, 232, 0.18);
+}
+
+/* Radio flourishes */
+/* Woman: gentle pulse-in fill */
+@keyframes identity-pulse-in {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  60%  { opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+}
+.identity-pulse-in {
+  pointer-events: none;
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 22px; height: 22px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(232, 160, 160, 0.6), transparent 70%);
+  animation: identity-pulse-in 900ms ease-out forwards;
+}
+
+/* Man: clean single ripple */
+@keyframes identity-ripple {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(5); opacity: 0; }
+}
+.identity-ripple {
+  pointer-events: none;
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 22px; height: 22px;
+  border-radius: 9999px;
+  border: 1.5px solid #C9A84C;
+  animation: identity-ripple 1000ms ease-out forwards;
+}
+
+/* Transgender: three colored rings */
+.identity-tri-pulse {
+  pointer-events: none;
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 0; height: 0;
+}
+.identity-tri-pulse > span {
+  position: absolute;
+  left: -11px; top: -11px;
+  width: 22px; height: 22px;
+  border-radius: 9999px;
+  border: 1.5px solid;
+  animation: identity-ripple 1100ms ease-out forwards;
+}
+
+/* Non-binary: cosmic burst */
+@keyframes identity-cosmic-fly {
+  0%   { transform: rotate(var(--deg)) translateX(0) scale(0.4); opacity: 0; }
+  30%  { opacity: 1; }
+  100% { transform: rotate(var(--deg)) translateX(28px) scale(0.2); opacity: 0; }
+}
+.identity-cosmic-burst {
+  pointer-events: none;
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 0; height: 0;
+}
+.identity-cosmic-burst > span {
+  position: absolute;
+  left: -3px; top: -3px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+  animation: identity-cosmic-fly 800ms ease-out forwards;
+}
+
+/* Prefer not: 2 ring pulse */
+.identity-double-ripple {
+  pointer-events: none;
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 0; height: 0;
+}
+.identity-double-ripple > span {
+  position: absolute;
+  left: -11px; top: -11px;
+  width: 22px; height: 22px;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--bz-cream) / 0.5);
+  animation: identity-ripple 900ms ease-out forwards;
+}
+
+/* Non-binary stars */
+@keyframes identity-star-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  50%      { opacity: 0.9; transform: scale(1); }
+}
+.identity-stars {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+.identity-star {
+  position: absolute;
+  color: hsl(var(--bz-gold));
+  text-shadow: 0 0 6px rgba(167, 139, 250, 0.6);
+  font-size: 10px;
+  opacity: 0;
+  animation: identity-star-twinkle 2.4s ease-in-out infinite;
+}
+
+/* ===== Atmosphere layer ===== */
+.identity-env-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.identity-env {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+/* Woman: floral bloom */
+.woman-bloom {
+  background: radial-gradient(
+    circle at 50% 60%,
+    rgba(232, 160, 160, 0.18),
+    rgba(245, 199, 199, 0.06) 30%,
+    transparent 65%
+  );
+  animation: identity-bloom-rotate 60s linear infinite;
+}
+@keyframes identity-bloom-rotate {
+  0%   { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+.identity-env-layer[data-identity='woman'] .woman-bloom { opacity: 0.5; }
+
+/* Man: cedar mist wisp */
+@keyframes identity-mist-drift {
+  0%   { transform: translateX(-30%); opacity: 0; }
+  50%  { opacity: 0.7; }
+  100% { transform: translateX(130%); opacity: 0; }
+}
+.man-mist {
+  width: 60vw; height: 40vh;
+  border-radius: 50%;
+  filter: blur(80px);
+  background: radial-gradient(circle, rgba(184, 134, 46, 0.30), transparent 70%);
+  top: 35%;
+}
+.identity-env-layer[data-identity='man'] .man-mist {
+  opacity: 1;
+  animation: identity-mist-drift 22s linear infinite;
+}
+
+/* Transgender: aurora */
+.tg-aurora {
+  background: linear-gradient(
+    120deg,
+    rgba(91, 206, 250, 0.12),
+    rgba(245, 240, 232, 0.08),
+    rgba(245, 169, 184, 0.12),
+    rgba(245, 240, 232, 0.08),
+    rgba(91, 206, 250, 0.12)
+  );
+  background-size: 300% 300%;
+  animation: identity-aurora-shift 14s ease-in-out infinite;
+}
+@keyframes identity-aurora-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+.identity-env-layer[data-identity='transgender'] .tg-aurora { opacity: 0.6; }
+
+/* Non-binary: cosmic purple-gold mist */
+.nb-cosmic {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(167, 139, 250, 0.18), transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(201, 168, 76, 0.18), transparent 50%);
+}
+.identity-env-layer[data-identity='non-binary'] .nb-cosmic { opacity: 1; }
+
+/* Prefer not: soft cream glow */
+.pn-glow {
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgba(245, 240, 232, 0.10),
+    rgba(245, 240, 232, 0.04) 50%,
+    transparent 80%
+  );
+}
+.identity-env-layer[data-identity='prefer-not'] .pn-glow { opacity: 1; }
+
+/* Particles */
+.identity-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ip {
+  position: absolute;
+  bottom: -8px;
+  border-radius: 50%;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: identity-particle-rise linear infinite;
+}
+@keyframes identity-particle-rise {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: 0.6; }
+  50%  { transform: translate(var(--sway, 10px), -55vh); opacity: 0.5; }
+  100% { transform: translate(0, -110vh); opacity: 0; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .identity-word,
+  .identity-option,
+  .identity-hover-shimmer,
+  .identity-pulse-in,
+  .identity-ripple,
+  .identity-tri-pulse > span,
+  .identity-cosmic-burst > span,
+  .identity-double-ripple > span,
+  .identity-star,
+  .woman-bloom,
+  .man-mist,
+  .tg-aurora,
+  .ip {
+    animation: none !important;
+    transition: opacity 200ms ease !important;
+    transform: none !important;
+    opacity: 1;
+  }
+  .identity-particles { display: none; }
+}
