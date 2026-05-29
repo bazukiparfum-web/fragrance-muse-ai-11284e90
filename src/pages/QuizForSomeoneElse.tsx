@@ -369,7 +369,9 @@ const QuizForSomeoneElse = () => {
           answers={answers}
           updateAnswer={updateAnswer}
           keyField="question_key"
+          isLastStep={currentStep === totalSteps}
         />
+
       </ImmersiveQuizShell>
 
       {crafting && <QuizCraftingScreen />}

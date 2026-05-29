@@ -34,7 +34,9 @@ export const QuestionRenderer = ({
   answers,
   updateAnswer,
   keyField,
+  isLastStep,
 }: QuestionRendererProps) => {
+
   if (!question) return null;
 
   const answerKey = question[keyField] as keyof QuizAnswers;
@@ -234,6 +236,17 @@ export const QuestionRenderer = ({
     }
 
     case 'text':
+      if (isLastStep) {
+        return (
+          <FinaleTextInput
+            value={(currentAnswer as string) || ''}
+            onChange={(v) => updateAnswer(answerKey, v)}
+            placeholder={question.placeholder || ''}
+            questionText={question.question_text}
+            helperText={helper}
+          />
+        );
+      }
       return wrap(
         <Input
           type="text"
@@ -244,6 +257,7 @@ export const QuestionRenderer = ({
           className="text-lg md:text-xl p-6 bg-bz-card/60 border-gold text-cream placeholder:text-cream-muted/60"
         />
       );
+
 
     default:
       return wrap(
