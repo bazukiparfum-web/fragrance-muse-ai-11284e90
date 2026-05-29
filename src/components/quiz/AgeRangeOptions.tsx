@@ -104,17 +104,15 @@ export const AgeRangeOptions = ({
                     aria-hidden
                   >
                     {Array.from({ length: BURST_DOTS }).map((_, i) => {
-                      const angle = (i / BURST_DOTS) * Math.PI * 2;
-                      const x = Math.cos(angle) * 18;
-                      const y = Math.sin(angle) * 18;
+                      const angle = (i / BURST_DOTS) * 360;
                       return (
                         <span
                           key={i}
-                          className="age-burst-dot absolute top-1/2 left-1/2 w-1.5 h-1.5 rounded-full bg-gold"
-                          style={{
-                            transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
-                          }}
-                        />
+                          className="absolute top-1/2 left-1/2 w-0 h-0"
+                          style={{ transform: `rotate(${angle}deg)` }}
+                        >
+                          <span className="age-burst-dot block w-1.5 h-1.5 rounded-full bg-gold" />
+                        </span>
                       );
                     })}
                   </span>
