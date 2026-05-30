@@ -2854,3 +2854,61 @@
   .occasion-grid-line, .occasion-compass { stroke-dashoffset: 0 !important; }
   .occasion-moon { opacity: 0.55; }
 }
+
+/* ===== Finale: layered family-tinted glow blobs ===== */
+.quiz-finale-glow {
+  position: absolute;
+  width: 60vmin;
+  height: 60vmin;
+  border-radius: 9999px;
+  pointer-events: none;
+  filter: blur(80px);
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation:
+    quiz-finale-glow-in 800ms ease-out forwards,
+    quiz-finale-glow-drift 18s ease-in-out infinite;
+}
+.quiz-finale-glow.is-exiting {
+  animation: quiz-finale-glow-out 600ms ease-in forwards;
+}
+.quiz-finale-glow--floral {
+  top: -10%;
+  left: -10%;
+  background: radial-gradient(circle, hsl(340 70% 65% / 0.55), transparent 65%);
+}
+.quiz-finale-glow--woody {
+  bottom: -15%;
+  right: -10%;
+  background: radial-gradient(circle, hsl(28 55% 40% / 0.55), transparent 65%);
+}
+.quiz-finale-glow--fresh {
+  top: 30%;
+  right: -20%;
+  background: radial-gradient(circle, hsl(180 60% 55% / 0.45), transparent 65%);
+}
+.quiz-finale-glow--warm {
+  bottom: -10%;
+  left: -5%;
+  background: radial-gradient(circle, hsl(42 95% 60% / 0.55), transparent 65%);
+}
+@keyframes quiz-finale-glow-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes quiz-finale-glow-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes quiz-finale-glow-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(4%, -3%) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz-finale-glow {
+    animation: quiz-finale-glow-in 400ms ease-out forwards !important;
+  }
+  .quiz-finale-glow.is-exiting {
+    animation: quiz-finale-glow-out 300ms ease-in forwards !important;
+  }
+}
