@@ -9,6 +9,7 @@ import { NostalgiaSettingOptions } from '@/components/quiz/NostalgiaSettingOptio
 import { IdentityOptions } from '@/components/quiz/IdentityOptions';
 import { AgeRangeOptions } from '@/components/quiz/AgeRangeOptions';
 import { PersonalityOptions } from '@/components/quiz/PersonalityOptions';
+import { ScentFamilyOptions } from '@/components/quiz/ScentFamilyOptions';
 import { FinaleTextInput } from '@/components/quiz/FinaleTextInput';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
@@ -192,26 +193,11 @@ export const QuestionRenderer = ({
         updateAnswer(answerKey, updated as any);
       };
       return wrap(
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-          {SCENT_FAMILIES.map((s) => {
-            const isOn = selected.includes(s.value);
-            return (
-              <button
-                key={s.value}
-                type="button"
-                onClick={() => toggle(s.value)}
-                className={`p-5 md:p-6 rounded-xl border-2 transition-all text-center ${
-                  isOn
-                    ? 'border-gold-strong bg-bz-card glow-gold-sm scale-[1.02]'
-                    : 'border-gold bg-bz-card/40 hover:bg-bz-card/70'
-                }`}
-              >
-                <div className="text-3xl md:text-4xl mb-2">{s.emoji}</div>
-                <div className="text-cream font-medium">{s.value}</div>
-              </button>
-            );
-          })}
-        </div>
+        <ScentFamilyOptions
+          families={SCENT_FAMILIES}
+          selected={selected}
+          onToggle={toggle}
+        />
       );
     }
 
