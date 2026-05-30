@@ -1,39 +1,42 @@
 ## Goal
-Give the Occasion question (Daily / Office / Evening / Sport / Travel) a per-card scene animation with a satisfying staggered "card-dealing" entry, matching the soul of earlier quiz steps.
+
+Most of the finale ritual is already wired up. This pass closes the one remaining gap from the brief — the ambient background on Step 10 for someone special flow and Step 13 for Myself flow — and verifies the other six behaviors are firing correctly.
+
+## What already exists (no changes needed)
+
+- **Entry celebration** — `ImmersiveQuizShell` triggers `finale-sparkle-rain` (20+ gold drops) and dispatches `bz:bottle-happy-pulse`; bottle shows 90% (`current=totalSteps-1`) with happy-pulse class.
+- **Typewriter heading** — `FinaleTextInput.useTypewriter` at 30ms/char with blinking caret.
+- **Enhanced typing magic** — 3 sparkles per keystroke, inner golden glow via `.finale-input` `finale-input-breath` keyframe, density-scaling `finale-atmosphere` particles driven by `--finale-intensity = min(1, length/12)`.
+- **Word echo** — throttled ghost copies float upward via `finale-word-echo` keyframe.
+- **Reveal button climax** — `is-finale-breathing` (2s breathing) + `is-finale-halo` (gold halo); on click runs bottle fill → 42-particle burst → flash overlay → button shimmer → mist exit transition, all timed to `mistDuration` before `onNext()`.
+
+## What's missing — the richest background
+
+The brief asks Step 10's ambient layer to feel like "all the ingredients are present" — floral wisps, golden particles, warm glow — the most complex of all pages. Today `QuizBackground` just renders default density unless the intensity slider changed it.
 
 ## Files
 
-**Create `src/components/quiz/OccasionOptions.tsx`**
-- Grid layout matching the current `case 'occasion'` chrome (2 cols mobile, 3 cols ≥md), single-select buttons.
-- Entry: each card scales `0.85 → 1` + fade, staggered 100ms in grid order via `--occasion-stagger` CSS var and a shared `occasion-deal-in` keyframe (one-shot on mount).
-- Selection state mounts an absolutely-positioned overlay (`pointer-events-none`, rounded to match card) containing the option's signature animation. Deselect unmounts after a 300ms fade-out (`occasion-fade-out`).
-- Variant resolution by normalized lowercase option value; unknown values fall back to a neutral glow.
+**Edit `src/components/quiz/ImmersiveQuizShell.tsx**`
 
-Per-option signatures:
+- In the existing finale-entry `useEffect` (`isLast && !finaleEnteredRef.current`), also dispatch `window.dispatchEvent(new CustomEvent('bz:finale-atmosphere', { detail: true }))` on enter and `{ detail: false }` on leaving the last step (reset branch).
 
-1. **Daily** — Warm sunrise radial gradient blooms in card background (`occasion-sunrise-bloom`, 700ms ease-out, persists while selected). 6 small golden particles drift upward continuously (`occasion-rise`, 3s loop, staggered). Border glow shifts warm amber via `--occasion-tint: 38 90% 60%`.
+**Edit `src/components/quiz/QuizBackground.tsx**`
 
-2. **Office** — A thin gold grid SVG (3×3 lines) strokes itself in via `stroke-dashoffset` 800ms then fades to ~15% opacity and stays. 5 particles travel in tight upward columns (`occasion-column-rise`, 2.4s loop). Tint blends cool blue + gold (`--occasion-tint: 210 50% 65%`, border accent gold).
+- Subscribe to `bz:finale-atmosphere`. When active, override atmos to a "finale" preset: `density = max(atmos.density, 60)`, `speedFactor = 1.15`, `opacity = 0.55`, `mistScale = 1.4` — keep the intensity-slider override semantics, finale wins only if the user hasn't dialed intensity above it.
+- Render 4 extra absolutely-positioned `<span class="quiz-finale-glow quiz-finale-glow--{floral|woody|fresh|warm}">` blobs when finale mode is active. Each is a soft radial-gradient circle in its family hue (rose, deep amber-brown, cool aqua, warm sunset gold), `mix-blend-mode: screen`, `filter: blur(80px)`, drifting slowly. They fade in over 800ms when entering, fade out over 600ms when leaving (component-local `entering` flag + `finale-glow-fade-out` class).
 
-3. **Evening (most dramatic)** — Deep purple → gold radial backdrop. 14 micro-star spans twinkle at random delays (`occasion-twinkle`, 1.6s loop). 8 slow shimmer particles fall (`occasion-shimmer-fall`, 4s loop). Border uses a layered `box-shadow` — outer deep gold + inner purple edge — driven by `.occasion-card--evening`. A crescent-moon SVG fades in near the top-right (`occasion-moon-fade`, 900ms ease-out then holds at 0.55 opacity).
+**Edit `src/index.css**`
 
-4. **Sport** — On select, card runs a one-shot `occasion-pop` (scale 1 → 1.06 → 1, 320ms). 10 particles shoot upward fast (`occasion-rise-fast`, 1.1s loop). Background pulse cycles cool blue-green (`occasion-pulse-cool`, 1.8s loop). Tint `--occasion-tint: 170 60% 55%`.
-
-5. **Travel** — Compass-rose SVG (or simple globe ring + crosshairs) strokes itself in over 600ms (`stroke-dashoffset` 0). 8 particles drift in varied directions using per-particle `--dx` / `--dy` CSS vars and a shared `occasion-wind` keyframe (4s loop). Warm wanderlust neutral glow via `--occasion-tint: 32 50% 60%`.
-
-**Edit `src/components/quiz/QuestionRenderer.tsx`**
-- Import `OccasionOptions`.
-- Replace the body of `case 'occasion':` with `return wrap(<OccasionOptions options={question.options || []} value={(currentAnswer as string) || ''} onChange={(v) => updateAnswer(answerKey, v)} />);`. No other branches change.
-
-**Edit `src/index.css`**
-- Add keyframes: `occasion-deal-in`, `occasion-fade-out`, `occasion-sunrise-bloom`, `occasion-rise`, `occasion-rise-fast`, `occasion-column-rise`, `occasion-grid-draw`, `occasion-twinkle`, `occasion-shimmer-fall`, `occasion-moon-fade`, `occasion-pop`, `occasion-pulse-cool`, `occasion-compass-draw`, `occasion-wind`.
-- Utility classes scoped under `.occasion-card--daily | --office | --evening | --sport | --travel` to drive `--occasion-tint`, border-glow intensity, and the Evening layered shadow.
-- All effects wrapped with `@media (prefers-reduced-motion: reduce)` no-op fallback (cards just fade in, selected state shows static tint).
+- Add the four `.quiz-finale-glow--*` color tokens and positions.
+- Add `quiz-finale-glow-drift` keyframe (slow translate + scale, 18s ease-in-out infinite, distinct delay per blob).
+- Add `quiz-finale-glow-in` (opacity 0→1, 800ms) and `quiz-finale-glow-out` (1→0, 600ms) keyframes.
+- Wrap all new animations in `prefers-reduced-motion` no-op fallback.
 
 ## Out of scope
-- No quiz data, scoring, formula math, other questions, or backend changes.
-- Does not touch global `QuizBackground` atmosphere; effects live inside each card.
+
+- No change to scoring, AI, navigation, or per-question data.
+- No tweaks to the already-working finale entry, typewriter, input glow, echoes, breathing button, or click sequence (those match the brief).
 
 ## Verification
-- `/shop/quiz/for-yourself` → question 12, and `/shop/quiz/for-someone-else` → question 8.
-- Confirm 100ms staggered scale-in on mount, each option's signature plays on select, deselect fades cleanly in 300ms, reduced-motion users see static selected state.
+
+- `/shop/quiz/for-yourself` → advance to Step 13. Confirm: heading types out, input glows with breathing halo, typing spawns 3 sparkles + ghost echoes + denser ambient particles, the page now carries four layered family-tinted glows + ~60 ambient particles. Click Reveal My Scents → bottle fills to 100%, burst + flash + mist-exit transition plays, then results route. Toggle reduced-motion → static state, glows fade in but don't drift.
