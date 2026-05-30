@@ -2700,3 +2700,157 @@
     animation: none !important;
   }
 }
+
+/* ============== OCCASION CARD ANIMATIONS ============== */
+@keyframes occasion-deal-in {
+  0% { opacity: 0; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.occasion-deal-in {
+  animation: occasion-deal-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.occasion-card--on.occasion-deal-in {
+  animation: occasion-deal-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+@keyframes occasion-fade-out {
+  to { opacity: 0; }
+}
+.occasion-fade-out { animation: occasion-fade-out 300ms ease-out forwards; }
+
+/* Daily */
+@keyframes occasion-sunrise-bloom {
+  0% { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.occasion-sunrise {
+  background: radial-gradient(ellipse at 50% 100%, hsl(38 95% 60% / 0.35), hsl(20 80% 50% / 0.18) 40%, transparent 70%);
+  animation: occasion-sunrise-bloom 700ms ease-out both;
+}
+@keyframes occasion-rise {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 0.9; }
+  100% { transform: translateY(-90px); opacity: 0; }
+}
+.occasion-rise { animation: occasion-rise 3s ease-in-out infinite; }
+.occasion-card--daily.occasion-card--on {
+  box-shadow: 0 0 22px hsl(38 90% 60% / 0.5), inset 0 0 12px hsl(38 90% 60% / 0.18);
+}
+
+/* Office */
+@keyframes occasion-grid-draw {
+  to { stroke-dashoffset: 0; }
+}
+.occasion-grid-line {
+  animation: occasion-grid-draw 800ms ease-out forwards;
+}
+@keyframes occasion-column-rise {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 0.8; }
+  100% { transform: translateY(-80px); opacity: 0; }
+}
+.occasion-column-rise { animation: occasion-column-rise 2.4s linear infinite; }
+.occasion-card--office.occasion-card--on {
+  box-shadow: 0 0 20px hsl(210 60% 60% / 0.4), 0 0 8px hsl(45 80% 60% / 0.35);
+}
+
+/* Evening */
+@keyframes occasion-evening-bg-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.occasion-evening-bg {
+  background:
+    radial-gradient(ellipse at 30% 20%, hsl(280 60% 35% / 0.55), transparent 60%),
+    radial-gradient(ellipse at 80% 80%, hsl(45 80% 50% / 0.35), transparent 65%),
+    linear-gradient(135deg, hsl(260 50% 15% / 0.6), hsl(280 40% 12% / 0.55));
+  animation: occasion-evening-bg-in 600ms ease-out both;
+}
+@keyframes occasion-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+.occasion-twinkle { animation: occasion-twinkle 1.6s ease-in-out infinite; }
+@keyframes occasion-shimmer-fall {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 0.8; }
+  100% { transform: translateY(110px); opacity: 0; }
+}
+.occasion-shimmer-fall { animation: occasion-shimmer-fall 4s linear infinite; }
+@keyframes occasion-moon-fade {
+  0% { opacity: 0; transform: scale(0.6) rotate(-20deg); }
+  100% { opacity: 0.55; transform: scale(1) rotate(0deg); }
+}
+.occasion-moon {
+  animation: occasion-moon-fade 900ms ease-out forwards;
+  filter: drop-shadow(0 0 6px hsl(45 95% 70% / 0.6));
+}
+.occasion-card--evening.occasion-card--on {
+  box-shadow:
+    0 0 28px hsl(45 90% 55% / 0.55),
+    0 0 12px hsl(280 70% 50% / 0.45),
+    inset 0 0 14px hsl(280 60% 40% / 0.35);
+}
+
+/* Sport */
+@keyframes occasion-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); }
+  100% { transform: scale(1.02); }
+}
+.occasion-pop { animation: occasion-pop 320ms ease-out; }
+@keyframes occasion-rise-fast {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-110px); opacity: 0; }
+}
+.occasion-rise-fast { animation: occasion-rise-fast 1.1s ease-out infinite; }
+@keyframes occasion-pulse-cool {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.55; }
+}
+.occasion-pulse-cool {
+  background: radial-gradient(ellipse at center, hsl(175 70% 50% / 0.4), hsl(195 80% 50% / 0.18) 55%, transparent 75%);
+  animation: occasion-pulse-cool 1.8s ease-in-out infinite;
+}
+.occasion-card--sport.occasion-card--on {
+  box-shadow: 0 0 22px hsl(175 70% 55% / 0.5);
+}
+
+/* Travel */
+@keyframes occasion-compass-draw {
+  to { stroke-dashoffset: 0; }
+}
+.occasion-compass {
+  animation: occasion-compass-draw 600ms ease-out forwards;
+}
+@keyframes occasion-wind {
+  0% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: 0.8; }
+  100% { transform: translate(var(--dx, 30px), var(--dy, -30px)); opacity: 0; }
+}
+.occasion-wind { animation: occasion-wind 4s ease-out infinite; }
+.occasion-card--travel.occasion-card--on {
+  box-shadow: 0 0 22px hsl(32 60% 55% / 0.45), inset 0 0 10px hsl(32 50% 50% / 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .occasion-deal-in,
+  .occasion-fade-out,
+  .occasion-sunrise,
+  .occasion-rise,
+  .occasion-rise-fast,
+  .occasion-column-rise,
+  .occasion-grid-line,
+  .occasion-twinkle,
+  .occasion-shimmer-fall,
+  .occasion-moon,
+  .occasion-pop,
+  .occasion-pulse-cool,
+  .occasion-compass,
+  .occasion-wind,
+  .occasion-evening-bg {
+    animation: none !important;
+  }
+  .occasion-grid-line, .occasion-compass { stroke-dashoffset: 0 !important; }
+  .occasion-moon { opacity: 0.55; }
+}

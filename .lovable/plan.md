@@ -1,32 +1,39 @@
 ## Goal
-Give the Longevity radio question (Short / All-day / Long-lasting) its own time/trail-inspired animation personality, matching the soul of earlier quiz steps.
+Give the Occasion question (Daily / Office / Evening / Sport / Travel) a per-card scene animation with a satisfying staggered "card-dealing" entry, matching the soul of earlier quiz steps.
 
 ## Files
 
-**Create `src/components/quiz/LongevityOptions.tsx`**
-- Radio-style list, same visual chrome as `PersonalityOptions` (border, glow when selected, full-width cards stacked).
-- Entry animation: each row slides in from alternating sides (left, right, left) with `translateX ±40px → 0` + fade, staggered 120ms apart. Uses new `longevity-slide-l` / `longevity-slide-r` keyframes.
-- On selection, the active card mounts a per-option overlay layer (absolute, pointer-events-none, rounded to match the card) containing the option's signature animation. Deselect unmounts after a 300ms fade.
+**Create `src/components/quiz/OccasionOptions.tsx`**
+- Grid layout matching the current `case 'occasion'` chrome (2 cols mobile, 3 cols ≥md), single-select buttons.
+- Entry: each card scales `0.85 → 1` + fade, staggered 100ms in grid order via `--occasion-stagger` CSS var and a shared `occasion-deal-in` keyframe (one-shot on mount).
+- Selection state mounts an absolutely-positioned overlay (`pointer-events-none`, rounded to match card) containing the option's signature animation. Deselect unmounts after a 300ms fade-out (`occasion-fade-out`).
+- Variant resolution by normalized lowercase option value; unknown values fall back to a neutral glow.
 
 Per-option signatures:
-1. **Short (2–4h)** — Brief bright burst of 8 gold particles, opacity 1→0 in 400ms then layer self-cleans; a small SVG dashed trail strokes across the card (`stroke-dashoffset` 0→100, 600ms) then fades; tiny clock-hand SVG sweeps 0→360° once near the right edge then fades. All effects play once; card glow remains while selected.
-2. **All-day (6–8h)** — SVG sun arc path animates across the top quarter (`stroke-dashoffset`, 800ms ease-out), with a small sun circle riding along via CSS offset-path or `@keyframes sun-arc` (translate + scale). Steady upward particle stream (4 dots, looping 3s) at comfortable pace. Card glow shifts to warm daylight gold (`hsl` accents through a `--longevity-tint` var).
-3. **Long-lasting (12+h)** — Background gradient transitions dawn→dusk; a small moon SVG fades in with 4 twinkling star spans (random delays). Rich deep-gold particle stream loops indefinitely (denser). Strongest border glow (`box-shadow` intensified). A shimmer band (`linear-gradient` overlay, `translateX -120% → 120%`) sweeps every 3s via `longevity-shimmer` keyframe.
 
-Reads option `value` to pick variant; falls back to generic style for unknown values (safety).
+1. **Daily** — Warm sunrise radial gradient blooms in card background (`occasion-sunrise-bloom`, 700ms ease-out, persists while selected). 6 small golden particles drift upward continuously (`occasion-rise`, 3s loop, staggered). Border glow shifts warm amber via `--occasion-tint: 38 90% 60%`.
+
+2. **Office** — A thin gold grid SVG (3×3 lines) strokes itself in via `stroke-dashoffset` 800ms then fades to ~15% opacity and stays. 5 particles travel in tight upward columns (`occasion-column-rise`, 2.4s loop). Tint blends cool blue + gold (`--occasion-tint: 210 50% 65%`, border accent gold).
+
+3. **Evening (most dramatic)** — Deep purple → gold radial backdrop. 14 micro-star spans twinkle at random delays (`occasion-twinkle`, 1.6s loop). 8 slow shimmer particles fall (`occasion-shimmer-fall`, 4s loop). Border uses a layered `box-shadow` — outer deep gold + inner purple edge — driven by `.occasion-card--evening`. A crescent-moon SVG fades in near the top-right (`occasion-moon-fade`, 900ms ease-out then holds at 0.55 opacity).
+
+4. **Sport** — On select, card runs a one-shot `occasion-pop` (scale 1 → 1.06 → 1, 320ms). 10 particles shoot upward fast (`occasion-rise-fast`, 1.1s loop). Background pulse cycles cool blue-green (`occasion-pulse-cool`, 1.8s loop). Tint `--occasion-tint: 170 60% 55%`.
+
+5. **Travel** — Compass-rose SVG (or simple globe ring + crosshairs) strokes itself in over 600ms (`stroke-dashoffset` 0). 8 particles drift in varied directions using per-particle `--dx` / `--dy` CSS vars and a shared `occasion-wind` keyframe (4s loop). Warm wanderlust neutral glow via `--occasion-tint: 32 50% 60%`.
 
 **Edit `src/components/quiz/QuestionRenderer.tsx`**
-- Add `LongevityOptions` import.
-- In `case 'radio'`, add branch: `if (question.question_key === 'longevity' || question.answer_key === 'longevity')` → render `<LongevityOptions options={…} value={…} onChange={…} heading={heading} helper={helper} />`. No change to other branches.
+- Import `OccasionOptions`.
+- Replace the body of `case 'occasion':` with `return wrap(<OccasionOptions options={question.options || []} value={(currentAnswer as string) || ''} onChange={(v) => updateAnswer(answerKey, v)} />);`. No other branches change.
 
 **Edit `src/index.css`**
-- Add keyframes: `longevity-slide-l`, `longevity-slide-r`, `longevity-burst` (gold flash), `longevity-trail-dash` (dash stroke), `longevity-clock-sweep`, `longevity-sun-arc`, `longevity-particle-rise`, `longevity-moon-fade`, `longevity-star-twinkle`, `longevity-shimmer`, plus a shared `longevity-fade-out` (300ms).
-- Utility classes scoped under `.longevity-card--short`, `.longevity-card--allday`, `.longevity-card--long` driving border-glow strength and `--longevity-tint`.
-- All wrapped with `@media (prefers-reduced-motion: reduce)` no-op fallback.
+- Add keyframes: `occasion-deal-in`, `occasion-fade-out`, `occasion-sunrise-bloom`, `occasion-rise`, `occasion-rise-fast`, `occasion-column-rise`, `occasion-grid-draw`, `occasion-twinkle`, `occasion-shimmer-fall`, `occasion-moon-fade`, `occasion-pop`, `occasion-pulse-cool`, `occasion-compass-draw`, `occasion-wind`.
+- Utility classes scoped under `.occasion-card--daily | --office | --evening | --sport | --travel` to drive `--occasion-tint`, border-glow intensity, and the Evening layered shadow.
+- All effects wrapped with `@media (prefers-reduced-motion: reduce)` no-op fallback (cards just fade in, selected state shows static tint).
 
 ## Out of scope
-- No changes to quiz data, scoring, formula math, other questions, or AI recommendations.
-- No backend / RLS / migrations.
+- No quiz data, scoring, formula math, other questions, or backend changes.
+- Does not touch global `QuizBackground` atmosphere; effects live inside each card.
 
 ## Verification
-- Open `/shop/quiz/for-someone-else`, advance to question 7. Confirm: staggered alt-side entry, each option's selection animation plays as described, deselecting fades out cleanly, reduced-motion users see only the static selected state.
+- `/shop/quiz/for-yourself` → question 12, and `/shop/quiz/for-someone-else` → question 8.
+- Confirm 100ms staggered scale-in on mount, each option's signature plays on select, deselect fades cleanly in 300ms, reduced-motion users see static selected state.

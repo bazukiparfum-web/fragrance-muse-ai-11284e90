@@ -12,6 +12,7 @@ import { PersonalityOptions } from '@/components/quiz/PersonalityOptions';
 import { ScentFamilyOptions } from '@/components/quiz/ScentFamilyOptions';
 import { IntensitySlider } from '@/components/quiz/IntensitySlider';
 import { LongevityOptions } from '@/components/quiz/LongevityOptions';
+import { OccasionOptions } from '@/components/quiz/OccasionOptions';
 import { FinaleTextInput } from '@/components/quiz/FinaleTextInput';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
@@ -216,25 +217,11 @@ export const QuestionRenderer = ({
 
     case 'occasion':
       return wrap(
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-          {(question.options || []).map((occ: string) => {
-            const isOn = currentAnswer === occ;
-            return (
-              <button
-                key={occ}
-                type="button"
-                onClick={() => updateAnswer(answerKey, occ)}
-                className={`p-5 md:p-6 rounded-xl border-2 transition-all ${
-                  isOn
-                    ? 'border-gold-strong bg-bz-card glow-gold-sm scale-[1.02]'
-                    : 'border-gold bg-bz-card/40 hover:bg-bz-card/70'
-                }`}
-              >
-                <span className="text-cream font-medium">{occ}</span>
-              </button>
-            );
-          })}
-        </div>
+        <OccasionOptions
+          options={question.options || []}
+          value={(currentAnswer as string) || ''}
+          onChange={(v) => updateAnswer(answerKey, v)}
+        />
       );
 
     case 'slider': {
