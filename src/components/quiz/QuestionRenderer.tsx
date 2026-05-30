@@ -229,21 +229,12 @@ export const QuestionRenderer = ({
       const max = question.max ?? question.max_value ?? 10;
       const value = (currentAnswer as number) ?? min;
       return wrap(
-        <div className="pt-4 px-2">
-          <Slider
-            value={[value]}
-            onValueChange={(v) => updateAnswer(answerKey, v[0])}
-            min={min}
-            max={max}
-            step={1}
-            className="mb-6"
-          />
-          <div className="flex justify-between text-sm text-cream-muted">
-            <span>Subtle ({min})</span>
-            <span className="text-2xl font-display text-gold">{value}</span>
-            <span>Bold ({max})</span>
-          </div>
-        </div>
+        <IntensitySlider
+          value={value}
+          min={min}
+          max={max}
+          onChange={(v) => updateAnswer(answerKey, v)}
+        />
       );
     }
 
