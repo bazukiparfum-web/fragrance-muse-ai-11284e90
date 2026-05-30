@@ -2289,3 +2289,140 @@
   }
 }
 
+
+/* Scent Family step animations */
+@keyframes bloom-in {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.bloom-in { animation: bloom-in 500ms ease-out both; }
+
+@keyframes family-fade-out {
+  to { opacity: 0; }
+}
+.family-fade-out { animation: family-fade-out 300ms ease-out forwards; }
+
+@keyframes family-wisp-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.family-wisp { animation: family-wisp-in 600ms ease-out both; }
+
+/* Inner glows */
+.glow-floral   { box-shadow: inset 0 0 40px hsl(340 70% 65% / 0.30), 0 0 14px hsl(340 70% 65% / 0.25); }
+.glow-woody    { box-shadow: inset 0 0 40px hsl(28 60% 30% / 0.45), 0 0 14px hsl(28 50% 35% / 0.30); }
+.glow-fresh    { box-shadow: inset 0 0 40px hsl(190 70% 50% / 0.30), 0 0 14px hsl(190 70% 55% / 0.25); }
+.glow-oriental { box-shadow: inset 0 0 40px hsl(15 70% 35% / 0.45), 0 0 14px hsl(30 70% 45% / 0.30); }
+.glow-gourmand { box-shadow: inset 0 0 40px hsl(35 60% 55% / 0.30), 0 0 14px hsl(35 60% 60% / 0.25); }
+.glow-spicy    { box-shadow: inset 0 0 40px hsl(12 80% 45% / 0.40), 0 0 14px hsl(12 80% 50% / 0.30); }
+.glow-herbal   { box-shadow: inset 0 0 40px hsl(140 50% 35% / 0.35), 0 0 14px hsl(140 50% 40% / 0.25); }
+
+/* Emoji motions */
+@keyframes floral-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+.emoji-floral { animation: floral-spin 600ms ease-out; transform-origin: center; display: inline-block; }
+
+@keyframes woody-grow { 0%,100% { transform: scale(1);} 50% { transform: scale(1.2);} }
+.emoji-woody { animation: woody-grow 700ms ease-in-out; display: inline-block; }
+
+@keyframes fresh-oscillate { 0%,100% { transform: rotate(-8deg);} 50% { transform: rotate(8deg);} }
+.emoji-fresh { animation: fresh-oscillate 1.2s ease-in-out infinite; display: inline-block; transform-origin: bottom center; }
+
+@keyframes oriental-pulse { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 4px hsl(45 90% 60%)); } 50% { transform: scale(1.12); filter: drop-shadow(0 0 12px hsl(45 90% 65%)); } }
+.emoji-oriental { animation: oriental-pulse 1.6s ease-in-out infinite; display: inline-block; position: relative; }
+.oriental-halo {
+  position: absolute; inset: -8px; border-radius: 9999px; pointer-events: none;
+  background: radial-gradient(circle, hsl(45 90% 60% / 0.45), transparent 65%);
+  animation: oriental-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes gourmand-wobble { 0%,100% { transform: rotate(-5deg);} 50% { transform: rotate(5deg);} }
+.emoji-gourmand { animation: gourmand-wobble 400ms ease-in-out infinite; display: inline-block; }
+
+@keyframes spicy-shake {
+  0%,100% { transform: translateX(0); }
+  10% { transform: translateX(-2px); }
+  20% { transform: translateX(2px); }
+  30% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  50% { transform: translateX(-1px); }
+  60% { transform: translateX(1px); }
+}
+.emoji-spicy { animation: spicy-shake 300ms ease-out; display: inline-block; }
+
+@keyframes herbal-sway { 0%,100% { transform: rotate(-10deg);} 50% { transform: rotate(10deg);} }
+.emoji-herbal { animation: herbal-sway 1.6s ease-in-out infinite; display: inline-block; transform-origin: bottom center; }
+
+/* Particles */
+@keyframes petal-rise {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  20% { opacity: 0.8; }
+  100% { transform: translateY(-90px) translateX(20px); opacity: 0; }
+}
+.petal-rise { animation: petal-rise 2.4s ease-out infinite; }
+
+@keyframes needle-rise {
+  0% { transform: translateY(0) rotate(0); opacity: 0; }
+  20% { opacity: 0.8; }
+  100% { transform: translateY(-80px) rotate(40deg); opacity: 0; }
+}
+.needle-rise { animation: needle-rise 2.6s ease-out infinite; }
+
+@keyframes fresh-ripple {
+  0% { transform: translate(-50%,-50%) scale(0.4); opacity: 0.7; }
+  100% { transform: translate(-50%,-50%) scale(3); opacity: 0; }
+}
+.fresh-ripple { animation: fresh-ripple 2.4s ease-out infinite; transform-origin: center; top: 50%; left: 50%; }
+
+@keyframes droplet-fall {
+  0% { transform: translateY(-4px); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(80px); opacity: 0; }
+}
+.droplet-fall { animation: droplet-fall 2.2s ease-in infinite; box-shadow: 0 0 4px hsl(190 80% 75%); }
+
+@keyframes oriental-spark {
+  0% { transform: translateY(0) scale(0); opacity: 1; }
+  50% { opacity: 1; }
+  100% { transform: translateY(-70px) scale(1.2); opacity: 0; }
+}
+.oriental-spark { animation: oriental-spark 1.4s ease-out infinite; box-shadow: 0 0 6px currentColor; }
+
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(110px) rotate(360deg); opacity: 0; }
+}
+.confetti-fall { animation: confetti-fall 2.4s ease-in infinite; }
+
+@keyframes ember-rise {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-90px) translateX(8px) scale(0.4); opacity: 0; }
+}
+.ember-rise { animation: ember-rise 1.8s ease-out infinite; }
+
+@keyframes leaf-rise {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  20% { opacity: 0.8; }
+  50% { transform: translateY(-50px) translateX(10px); }
+  100% { transform: translateY(-95px) translateX(-8px); opacity: 0; }
+}
+.leaf-rise { animation: leaf-rise 2.6s ease-out infinite; }
+
+@keyframes heat-wave {
+  0%,100% { opacity: 0; }
+  50% { opacity: 0.6; }
+}
+.heat-wave {
+  background: repeating-linear-gradient(0deg, transparent 0 8px, hsl(15 90% 50% / 0.06) 8px 10px);
+  animation: heat-wave 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bloom-in, .family-wisp,
+  .emoji-floral, .emoji-woody, .emoji-fresh, .emoji-oriental, .emoji-gourmand, .emoji-spicy, .emoji-herbal,
+  .oriental-halo,
+  .petal-rise, .needle-rise, .fresh-ripple, .droplet-fall, .oriental-spark, .confetti-fall, .ember-rise, .leaf-rise, .heat-wave {
+    animation: none;
+  }
+}
