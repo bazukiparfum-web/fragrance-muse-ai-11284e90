@@ -1,71 +1,60 @@
-## Scent Families — living micro-world per card
+# Visceral Intensity Slider
 
-Replace the inline `scent_family` block in `QuestionRenderer.tsx` with a dedicated component so each family card carries its own animated atmosphere. Multi-select layering is preserved.
+Replace the inline `case 'slider'` block in `QuestionRenderer.tsx` with a new dedicated `IntensitySlider` component that reacts to value in real time and emits a global atmosphere event the existing `QuizBackground` can listen to.
 
-### New file
-`src/components/quiz/ScentFamilyOptions.tsx`
+## New files
 
-Props:
-- `families: { value: string; emoji: string }[]` (passed from QuestionRenderer's existing `SCENT_FAMILIES` constant)
-- `selected: string[]`
-- `onToggle: (value: string) => void`
+### `src/components/quiz/IntensitySlider.tsx`
+Props: `{ value, min, max, onChange }`.
 
-### Per-card structure
-Each card is a `<button>` with:
-- `bloom-in` entry animation (scale 0.8→1 + opacity 0→1, 500ms ease-out, fill `both`), `animationDelay = index * 80ms`.
-- Selection state drives a CSS class `family-card--<key>` (e.g. `family-card--floral`), which controls inner-glow color (token-based, HSL).
-- A per-card emoji wrapper with family-specific keyframe when selected (`floral-spin`, `woody-grow`, `fresh-oscillate`, `oriental-pulse`, `gourmand-wobble`, `spicy-shake`, `herbal-sway`).
-- A per-card overlay layer (absolute, pointer-events-none) hosting local particles/ripples for that family — only mounted while selected; on deselect it stays mounted for a 300ms `fade-out` then unmounts via state.
+Layout:
+- Wrapper `pt-4 px-2 intensity-root` with `data-tier="subtle|medium|bold"` derived from value (1–3 / 4–6 / 7–10), used by CSS to tune glow + label colors.
+- `Slider` (Radix wrapper from `@/components/ui/slider`) given an `intensity-slider` class. Override thumb + range via the same `[&_[role=slider]]:...` / `[&_span[data-orientation=horizontal]>span]:...` pattern used in `PersonalitySliders`, so we can:
+  - Thumb: golden box-shadow whose spread/opacity is bound to a CSS var `--int-glow` (set inline from value: `0.1 + value/max * 0.9`). Slow `intensity-thumb-pulse` keyframe whose amplitude is also scaled by `--int-glow`.
+  - Range fill: gradient + a `::after` overlay running an `intensity-shimmer` keyframe (translateX -100% → 100%, 2.5s linear infinite) — gives the liquid-perfume gloss.
+- Labels row: `Subtle (min)` left, big number center, `Bold (max)` right.
+  - Both end labels get `data-glow="true"` when value is in their zone (≤ min+2 / ≥ max-2). CSS adds cool silver text-shadow on Subtle, warm amber on Bold; fades in/out 300ms.
+  - Center number uses `key={value}` to retrigger an `intensity-heartbeat` animation (scale 1→1.3→1, 200ms). Color via `color-mix` or interpolated HSL token from soft gold `hsl(45 50% 60%)` → bright gold `hsl(45 95% 65%)` based on value.
 
-### Family signatures (local layer only)
+Local state / handlers:
+- `onPointerDown` on the track wrapper sets `draggingRef`; `onPointerUp / onPointerCancel / onLostPointerCapture` triggers a burst.
+- Burst: pushes N particles into a `bursts` array (N = round(3 + (value-min)/(max-min) * 12), 3..15). Each particle: random angle, distance ~80–180px, lifetime 700ms; rendered as absolutely positioned spans inside the track wrapper at the thumb's current X (`left: ${((value-min)/(max-min))*100}%`). CSS keyframe `intensity-burst-dot` animates translate + opacity. Items removed via `setTimeout`.
+- On every value change (and on mount) dispatch `window.dispatchEvent(new CustomEvent('bz:intensity-atmos', { detail: { tier, density, speedFactor, opacity } }))` with:
+  - Subtle: `{ density: 10, speedFactor: 0.5, opacity: 0.2, mistScale: 0.7 }`
+  - Medium: `{ density: 25, speedFactor: 1, opacity: 0.35, mistScale: 1 }`
+  - Bold: `{ density: 50, speedFactor: 1.6, opacity: 0.55, mistScale: 1.35 }`
 
-- **Floral** — 6 pink/white petal spans floating upward (`petal-rise`, 2.4s loop, staggered). Rose-pink inner glow via `box-shadow: inset 0 0 40px hsl(340 70% 65% / 0.25)`. Emoji `floral-spin` (rotate 0→360°, 600ms ease-out, once).
-- **Woody** — 6 dark-green needle particles drifting up (`needle-rise`). Inner amber/brown glow. Emoji `woody-grow` (scale 1→1.2→1, 700ms).
-- **Fresh** — 3 concentric ellipses expanding outward (`fresh-ripple`, 2.4s loop, 800ms stagger). 5 aqua droplet sparkles (`droplet-fall`). Cool blue-teal inner tint. Emoji `fresh-oscillate` (rotate ±8°, 1.2s loop).
-- **Oriental** — 10 amber/purple sparkles in starburst (`oriental-spark`, rotated-parent + child translateY 0→-70px, 1.2s loop). Deep amber/burgundy inner glow. Emoji `oriental-pulse` with golden halo (radial-gradient overlay).
-- **Gourmand** — 8 pastel confetti dots sprinkling downward (`confetti-fall`). Caramel/vanilla inner glow. Emoji `gourmand-wobble` (rotate ±5°, 400ms loop).
-- **Spicy** — 8 orange/red embers rising (`ember-rise`, randomized horizontal jitter). Red-orange inner glow. Emoji `spicy-shake` (translateX ±2px, 300ms, then settles — runs only when newly selected, then once-per-select via key). Subtle heat-wave on card: `backdrop-filter: blur(0.5px)` cycled via `heat-wave`.
-- **Herbal** — 6 fresh green leaves swaying upward (`leaf-rise` with horizontal sway). Forest-green inner glow. Emoji `herbal-sway` (rotate ±10°, 1.6s loop).
+All animations gated by `prefers-reduced-motion`.
 
-### Background atmosphere (body-portal, shared)
-A new `ScentFamilyAtmosphere` component renders one fixed-position pointer-none layer that mounts a "global mist wisp" per selected family. Each wisp is a large blurred radial gradient at a deterministic offset, fading in over 600ms and out over 300ms on deselect. With multiple selections, multiple wisps layer naturally (additive blending via `mix-blend-mode: screen`). Wisp colors:
-- Floral: rose-pink
-- Woody: warm brown
-- Fresh: aqua
-- Oriental: deep amber
-- Gourmand: caramel
-- Spicy: red-orange
-- Herbal: forest green
+## Edits
 
-### Bottle sparkle burst
-On any selection change (selected array length increases), dispatch a `window` CustomEvent `bz:scent-family-selected`. `PerfumeBottleProgress.tsx` (already in tree) can listen and trigger an existing sparkle effect — if no such hook exists, add a lightweight listener inside the bottle component that flips a `sparkle` key for 500ms. (Scope: only add listener; reuse existing `ProgressSparkleBurst` if exported.)
+### `src/components/quiz/QuestionRenderer.tsx`
+- Add `import { IntensitySlider } from './IntensitySlider';`
+- Replace the body of `case 'slider'` (lines ~227–248) with:
+  ```tsx
+  return wrap(
+    <IntensitySlider
+      value={(currentAnswer as number) ?? (question.min ?? question.min_value ?? 1)}
+      min={question.min ?? question.min_value ?? 1}
+      max={question.max ?? question.max_value ?? 10}
+      onChange={(v) => updateAnswer(answerKey, v)}
+    />
+  );
+  ```
 
-### Deselect
-- Track `exitingFamilies: Set<string>` in component state. On toggle-off, add to set, schedule `setTimeout(remove, 300)`. Local overlay and atmosphere wisp both apply `family-fade-out` (opacity 1→0, 300ms) while in the exiting set.
+### `src/components/quiz/QuizBackground.tsx`
+- Subscribe (in a `useEffect`) to `bz:intensity-atmos`. Store `{ density, speedFactor, opacity, mistScale }` in state, defaulting to current behavior (35 / 1 / ~0.4 / 1).
+- Recompute `particles` from live density instead of the static `particleCount` prop (prop becomes a fallback). When density changes, transition by re-keying particles; duration scales by `1/speedFactor`; per-particle `opacity` clamped against the broadcast opacity.
+- Mist blobs: apply `style={{ transform: 'scale(var(--mist-scale))', opacity: 'var(--mist-opacity)' }}` and set those CSS vars on the root `.quiz-bg` from state. Add a 600ms CSS transition for both vars on `.quiz-mist` so density changes feel smooth, not snappy.
 
-### Wire-up
-In `QuestionRenderer.tsx`, replace the existing `case 'scent_family'` block body with:
-```tsx
-return wrap(
-  <ScentFamilyOptions
-    families={SCENT_FAMILIES}
-    selected={selected}
-    onToggle={toggle}
-  />
-);
-```
-(The `SCENT_FAMILIES` constant and `selected` / `toggle` helpers already exist in the case.)
+### `src/index.css`
+Add keyframes + utilities (all under `@media (prefers-reduced-motion: no-preference)`):
+- `intensity-thumb-pulse` — box-shadow expand/contract using `--int-glow`.
+- `intensity-shimmer` — translateX -100% → 100%, 2.5s linear infinite, applied via `.intensity-slider [data-orientation=horizontal] > span::after` (linear-gradient transparent → rgba(gold, 0.45) → transparent).
+- `intensity-heartbeat` — scale 1 → 1.3 → 1 over 200ms ease-out.
+- `intensity-burst-dot` — translate + fade out 700ms.
+- `.intensity-end[data-glow="true"][data-side="subtle"]` cool silver `text-shadow`; `[data-side="bold"]` warm amber. 300ms transition on `text-shadow` and `color`.
+- Smooth 600ms transitions on `.quiz-bg`'s mist vars.
 
-### CSS (src/index.css, appended after personality block)
-Add keyframes + utility classes:
-- `bloom-in`, `family-fade-out`
-- `petal-rise`, `needle-rise`, `droplet-fall`, `confetti-fall`, `ember-rise`, `leaf-rise`
-- `fresh-ripple`, `oriental-spark`, `heat-wave`
-- Emoji animations: `floral-spin`, `woody-grow`, `fresh-oscillate`, `oriental-pulse`, `gourmand-wobble`, `spicy-shake`, `herbal-sway`
-- Inner-glow utility classes `.glow-floral`, `.glow-woody`, `.glow-fresh`, `.glow-oriental`, `.glow-gourmand`, `.glow-spicy`, `.glow-herbal` (all `box-shadow: inset ...` with HSL).
-- All animations gated by `prefers-reduced-motion` (animations off, glows + selected border still apply).
-
-### Out of scope
-- No edits to `SCENT_FAMILIES` data, no business logic changes.
-- No changes to other question types or progress bar.
-- Bottle sparkle hook only added if `PerfumeBottleProgress` has no existing listener — otherwise just dispatch the event.
+## Out of scope
+No data, question schema, or other quiz step changes. Only the slider question visuals and the background's reactivity to the new event.
