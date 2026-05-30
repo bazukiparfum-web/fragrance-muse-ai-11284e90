@@ -1,42 +1,55 @@
 ## Goal
+Codify the animation system as a project rule and bring existing quiz animations into compliance — without changing any choreography, timing intent, or behavior the user already approved.
 
-Most of the finale ritual is already wired up. This pass closes the one remaining gap from the brief — the ambient background on Step 10 for someone special flow and Step 13 for Myself flow — and verifies the other six behaviors are firing correctly.
+## 1. Save the rules to memory
 
-## What already exists (no changes needed)
+Create `mem://design/animation-system` (type: `design`) capturing:
+- **Palette tokens** (already present in `src/index.css` as `--anim-gold #C9A84C`, `--anim-gold-bright #F0C040`, `--anim-ivory #F5F0E8`, `--anim-bg #0D0C0A`, `--anim-amber #1A1408`) — always reference via CSS variables, never hardcode.
+- **Easing**: entrances → `ease-out` / `var(--ease-out-soft)`; exits → `ease-in` / `var(--ease-in-soft)`; loops → `ease-in-out`. `linear` only for continuous left-to-right sweeps (bar shimmer, sparkle rain fall, button shimmer sweep).
+- **Durations**: interactions 200–800ms; ambient loops 2–60s.
+- **Performance**: every particle / floating / transforming element gets `will-change: transform, opacity`.
+- **A11y**: every animation must have a `@media (prefers-reduced-motion: reduce)` fallback that reduces to a simple fade or `animation: none`.
+- **Libraries**: Framer Motion for React page transitions, GSAP for complex particle systems, Lottie for the perfume-bottle fill, pure CSS keyframes for ambient background — current quiz uses CSS keyframes by design; do not introduce new libs unless the task warrants it.
 
-- **Entry celebration** — `ImmersiveQuizShell` triggers `finale-sparkle-rain` (20+ gold drops) and dispatches `bz:bottle-happy-pulse`; bottle shows 90% (`current=totalSteps-1`) with happy-pulse class.
-- **Typewriter heading** — `FinaleTextInput.useTypewriter` at 30ms/char with blinking caret.
-- **Enhanced typing magic** — 3 sparkles per keystroke, inner golden glow via `.finale-input` `finale-input-breath` keyframe, density-scaling `finale-atmosphere` particles driven by `--finale-intensity = min(1, length/12)`.
-- **Word echo** — throttled ghost copies float upward via `finale-word-echo` keyframe.
-- **Reveal button climax** — `is-finale-breathing` (2s breathing) + `is-finale-halo` (gold halo); on click runs bottle fill → 42-particle burst → flash overlay → button shimmer → mist exit transition, all timed to `mistDuration` before `onNext()`.
+Add a one-liner under `## Core` in `mem://index.md` plus a `## Memories` entry pointing at the new file. The existing index content is preserved verbatim.
 
-## What's missing — the richest background
+## 2. Audit & normalize `src/index.css`
 
-The brief asks Step 10's ambient layer to feel like "all the ingredients are present" — floral wisps, golden particles, warm glow — the most complex of all pages. Today `QuizBackground` just renders default density unless the intensity slider changed it.
+Targeted, mechanical edits — no visual redesign:
 
-## Files
+### a) Easing fixes on loop animations
+Currently using `linear infinite` where the rule says `ease-in-out`:
+- `.occasion-column-rise` (line 2751) — `linear infinite` → `ease-in-out infinite`
+- `.occasion-shimmer-fall` (2778) — `linear infinite` → `ease-in-out infinite`
+- `.quiz-particle` `particle-rise` / `particle-float` (258, 271) — `linear infinite` → `ease-in-out infinite`
+- `.nostalgia-mist` drifts (774, 778, 808) — `linear` → `ease-in-out`
+- `.city-blob-drift-*` (971, 976) — `linear` → `ease-in-out`
+- `.nostalgia-particle-rise` (833) — `linear infinite` → `ease-in-out infinite`
 
-**Edit `src/components/quiz/ImmersiveQuizShell.tsx**`
+Keep `linear` on these (intentional uniform sweeps): `.bar-shimmer`, `.finale-btn-shimmer`, `.finale-rain` (gravity drop), `.mist-rotate-drift` (continuous rotation reads better linear).
 
-- In the existing finale-entry `useEffect` (`isLast && !finaleEnteredRef.current`), also dispatch `window.dispatchEvent(new CustomEvent('bz:finale-atmosphere', { detail: true }))` on enter and `{ detail: false }` on leaving the last step (reset branch).
+### b) Add `will-change: transform, opacity`
+On particle/floating elements missing it:
+- `.finale-rain-drop`, `.finale-burst-particle`, `.finale-keystroke-sparkle`, `.finale-atmos-particle`, `.finale-word-echo`
+- `.occasion-rise`, `.occasion-rise-fast`, `.occasion-column-rise`, `.occasion-twinkle`, `.occasion-shimmer-fall`, `.occasion-wind` particle wrappers
+- `.longevity-trail`, longevity sparkle/particle classes
+- `.quiz-finale-glow`
 
-**Edit `src/components/quiz/QuizBackground.tsx**`
+### c) Reduced-motion coverage
+Verify (and add where missing) `@media (prefers-reduced-motion: reduce)` entries for the longevity block (around line 2572+) and the quiz-finale-glow block. Pattern: set `animation: none`, snap to final state (full opacity, final transform).
 
-- Subscribe to `bz:finale-atmosphere`. When active, override atmos to a "finale" preset: `density = max(atmos.density, 60)`, `speedFactor = 1.15`, `opacity = 0.55`, `mistScale = 1.4` — keep the intensity-slider override semantics, finale wins only if the user hasn't dialed intensity above it.
-- Render 4 extra absolutely-positioned `<span class="quiz-finale-glow quiz-finale-glow--{floral|woody|fresh|warm}">` blobs when finale mode is active. Each is a soft radial-gradient circle in its family hue (rose, deep amber-brown, cool aqua, warm sunset gold), `mix-blend-mode: screen`, `filter: blur(80px)`, drifting slowly. They fade in over 800ms when entering, fade out over 600ms when leaving (component-local `entering` flag + `finale-glow-fade-out` class).
-
-**Edit `src/index.css**`
-
-- Add the four `.quiz-finale-glow--*` color tokens and positions.
-- Add `quiz-finale-glow-drift` keyframe (slow translate + scale, 18s ease-in-out infinite, distinct delay per blob).
-- Add `quiz-finale-glow-in` (opacity 0→1, 800ms) and `quiz-finale-glow-out` (1→0, 600ms) keyframes.
-- Wrap all new animations in `prefers-reduced-motion` no-op fallback.
+### d) Color-token consistency
+Spot-check the longevity / occasion / finale CSS for stray hardcoded hexes; replace with `var(--anim-gold)`, `var(--anim-gold-bright)`, `var(--anim-ivory)`, or `hsl(var(--bz-gold) / α)` as appropriate. No new colors introduced.
 
 ## Out of scope
-
-- No change to scoring, AI, navigation, or per-question data.
-- No tweaks to the already-working finale entry, typewriter, input glow, echoes, breathing button, or click sequence (those match the brief).
+- No new animations, no choreography changes, no JS/TSX changes (the principles are CSS-level).
+- Bottle Lottie swap, Framer/GSAP introduction: not now — flag as future option in memory only.
+- Other (non-quiz) pages.
 
 ## Verification
+After build: walk `/shop/quiz/for-yourself` steps 1 → 10 → results. Confirm visuals look identical to current. Toggle OS "reduce motion" and confirm all quiz animations collapse to static/fade. DevTools → Rendering → Paint flashing: particle layers should stay on their own compositor layer (will-change verification).
 
-- `/shop/quiz/for-yourself` → advance to Step 13. Confirm: heading types out, input glows with breathing halo, typing spawns 3 sparkles + ghost echoes + denser ambient particles, the page now carries four layered family-tinted glows + ~60 ambient particles. Click Reveal My Scents → bottle fills to 100%, burst + flash + mist-exit transition plays, then results route. Toggle reduced-motion → static state, glows fade in but don't drift.
+## Files touched
+- `mem://design/animation-system` (new)
+- `mem://index.md` (append one Core line + one Memories entry; rest preserved)
+- `src/index.css` (~20 line-level edits across longevity / occasion / finale / quiz-particle / nostalgia / city blocks)
