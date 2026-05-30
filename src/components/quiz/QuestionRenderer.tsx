@@ -8,6 +8,7 @@ import { CitySearch } from '@/components/quiz/CitySearch';
 import { NostalgiaSettingOptions } from '@/components/quiz/NostalgiaSettingOptions';
 import { IdentityOptions } from '@/components/quiz/IdentityOptions';
 import { AgeRangeOptions } from '@/components/quiz/AgeRangeOptions';
+import { PersonalityOptions } from '@/components/quiz/PersonalityOptions';
 import { FinaleTextInput } from '@/components/quiz/FinaleTextInput';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
@@ -91,6 +92,18 @@ export const QuestionRenderer = ({
       if (question.answer_key === 'ageRange') {
         return (
           <AgeRangeOptions
+            options={question.options || []}
+            value={(currentAnswer as string) || ''}
+            onChange={(val) => updateAnswer(answerKey, val)}
+            heading={heading}
+            helper={helper}
+            questionText={question.question_text}
+          />
+        );
+      }
+      if (question.answer_key === 'personality' || question.question_key === 'personality') {
+        return (
+          <PersonalityOptions
             options={question.options || []}
             value={(currentAnswer as string) || ''}
             onChange={(val) => updateAnswer(answerKey, val)}
