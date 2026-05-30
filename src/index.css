@@ -2174,3 +2174,118 @@
 @media (prefers-reduced-motion: reduce) {
   .age-card-in, .age-burst-dot, .age-digit-float { animation: none; }
 }
+
+/* Personality step animations */
+@keyframes personality-row-in {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.personality-row-in {
+  animation: personality-row-in 500ms ease-out both;
+}
+
+/* Calm */
+@keyframes calm-ripple {
+  0% { transform: scale(0); opacity: 0.15; }
+  100% { transform: scale(6); opacity: 0; }
+}
+.calm-ripple {
+  animation: calm-ripple 3s ease-out infinite;
+  transform-origin: center;
+}
+@keyframes calm-bubble {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.25; }
+  100% { transform: translateY(-110vh); opacity: 0; }
+}
+.calm-bubble {
+  animation: calm-bubble linear infinite;
+}
+@keyframes calm-mist-drift {
+  0% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(8vw) translateY(-2vh); }
+  100% { transform: translateX(0) translateY(0); }
+}
+.calm-mist {
+  animation: calm-mist-drift 22s ease-in-out infinite;
+}
+
+/* Energetic */
+@keyframes energetic-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.energetic-bounce {
+  animation: energetic-bounce 300ms ease-out;
+}
+@keyframes energetic-shimmer {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.08; }
+}
+.energetic-shimmer {
+  animation: energetic-shimmer 700ms ease-out forwards;
+}
+@keyframes energetic-burst-dot {
+  0% { transform: translateY(0) scale(0); opacity: 1; }
+  100% { transform: translateY(-120px) scale(1.2); opacity: 0; }
+}
+.energetic-burst-dot {
+  animation: energetic-burst-dot 400ms ease-out forwards;
+}
+
+/* Elegant */
+@keyframes elegant-ribbon {
+  0% { stroke-dasharray: 0 2400; opacity: 0; }
+  20% { opacity: 1; }
+  60% { stroke-dasharray: 2400 0; opacity: 1; }
+  100% { stroke-dasharray: 2400 0; opacity: 0; }
+}
+.elegant-ribbon path {
+  stroke-dasharray: 0 2400;
+  animation: elegant-ribbon 1800ms ease-in-out forwards;
+  filter: drop-shadow(0 0 6px var(--anim-gold));
+}
+@keyframes elegant-petal {
+  0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.6; }
+  100% { transform: translateY(110vh) translateX(40px) rotate(360deg); opacity: 0; }
+}
+.elegant-petal {
+  animation: elegant-petal linear infinite;
+}
+@keyframes elegant-corner-glow {
+  0%, 100% { opacity: 0.3; box-shadow: 0 0 8px var(--anim-gold); }
+  50% { opacity: 0.9; box-shadow: 0 0 18px var(--anim-gold-bright); }
+}
+.elegant-corner-glow {
+  background: radial-gradient(circle at center, hsl(45 70% 60% / 0.4), transparent 70%);
+  animation: elegant-corner-glow 2400ms ease-in-out infinite;
+}
+
+/* Bold */
+@keyframes bold-flash {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.1; }
+}
+.bold-flash {
+  animation: bold-flash 100ms ease-out forwards;
+}
+@keyframes bold-burst-dot {
+  0% { transform: translateY(0) scale(0); opacity: 1; }
+  100% { transform: translateY(-220px) scale(1.4); opacity: 0; }
+}
+.bold-burst-dot {
+  animation: bold-burst-dot 600ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .personality-row-in,
+  .calm-ripple, .calm-bubble, .calm-mist,
+  .energetic-bounce, .energetic-shimmer, .energetic-burst-dot,
+  .elegant-ribbon path, .elegant-petal, .elegant-corner-glow,
+  .bold-flash, .bold-burst-dot {
+    animation: none;
+  }
+}
+
