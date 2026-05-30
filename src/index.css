@@ -2426,3 +2426,144 @@
     animation: none;
   }
 }
+
+/* ===========================================================
+   Intensity slider — visceral, value-reactive
+   =========================================================== */
+.intensity-root {
+  --int-glow: 0.3;
+}
+.quiz-mist {
+  transform: scale(var(--mist-scale, 1));
+  transition: transform 600ms ease, opacity 600ms ease;
+}
+.quiz-bg {
+  --mist-opacity: 1;
+}
+.quiz-mist-1 { opacity: calc(1 * var(--mist-opacity)); }
+.quiz-mist-2 { opacity: calc(1 * var(--mist-opacity)); }
+.quiz-mist-3 { opacity: calc(1 * var(--mist-opacity)); }
+
+/* Track + shimmer */
+.intensity-slider [data-orientation="horizontal"] {
+  height: 10px;
+  background: hsl(var(--secondary) / 0.6);
+  overflow: hidden;
+}
+.intensity-slider [data-orientation="horizontal"] > span {
+  background: linear-gradient(90deg, var(--anim-gold) 0%, var(--anim-gold-bright) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.intensity-slider [data-orientation="horizontal"] > span::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 240, 200, 0) 30%,
+    rgba(255, 240, 200, 0.55) 50%,
+    rgba(255, 240, 200, 0) 70%,
+    transparent 100%
+  );
+  animation: intensity-shimmer 2.5s linear infinite;
+  pointer-events: none;
+}
+
+/* Thumb glow */
+.intensity-slider [role="slider"] {
+  width: 22px;
+  height: 22px;
+  background: var(--anim-gold-bright);
+  border-color: var(--anim-gold-bright);
+  box-shadow:
+    0 0 calc(6px + var(--int-glow) * 18px) rgba(240, 192, 64, calc(0.3 + var(--int-glow) * 0.7)),
+    0 0 calc(2px + var(--int-glow) * 8px) rgba(255, 224, 140, calc(0.4 + var(--int-glow) * 0.6));
+  animation: intensity-thumb-pulse 1.8s ease-in-out infinite;
+  transition: box-shadow 250ms ease;
+}
+
+@keyframes intensity-thumb-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 calc(6px + var(--int-glow) * 18px) rgba(240, 192, 64, calc(0.3 + var(--int-glow) * 0.7)),
+      0 0 calc(2px + var(--int-glow) * 8px) rgba(255, 224, 140, calc(0.4 + var(--int-glow) * 0.6));
+  }
+  50% {
+    box-shadow:
+      0 0 calc(10px + var(--int-glow) * 32px) rgba(240, 192, 64, calc(0.45 + var(--int-glow) * 0.55)),
+      0 0 calc(4px + var(--int-glow) * 14px) rgba(255, 224, 140, calc(0.55 + var(--int-glow) * 0.45));
+  }
+}
+
+@keyframes intensity-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Heartbeat on value number */
+.intensity-number {
+  font-size: 2rem;
+  display: inline-block;
+  animation: intensity-heartbeat 240ms ease-out;
+  transition: color 200ms ease, text-shadow 200ms ease;
+}
+@keyframes intensity-heartbeat {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* End labels */
+.intensity-end {
+  transition: color 300ms ease, text-shadow 300ms ease;
+}
+.intensity-end[data-glow="true"][data-side="subtle"] {
+  color: hsl(210 20% 88%);
+  text-shadow: 0 0 8px hsl(210 30% 80% / 0.7), 0 0 16px hsl(210 30% 80% / 0.4);
+}
+.intensity-end[data-glow="true"][data-side="bold"] {
+  color: var(--anim-gold-bright);
+  text-shadow: 0 0 10px rgba(240, 192, 64, 0.8), 0 0 20px rgba(240, 192, 64, 0.4);
+}
+
+/* Burst on release */
+.intensity-burst {
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+.intensity-burst-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  background: var(--anim-gold-bright);
+  box-shadow: 0 0 8px var(--anim-gold-bright), 0 0 14px var(--anim-gold);
+  transform: translate(-50%, -50%);
+  animation: intensity-burst-dot 700ms ease-out forwards;
+}
+@keyframes intensity-burst-dot {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--bx, 0px)), calc(-50% + var(--by, 0px))) scale(0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intensity-slider [data-orientation="horizontal"] > span::after,
+  .intensity-slider [role="slider"],
+  .intensity-number,
+  .intensity-burst-dot {
+    animation: none !important;
+  }
+}
