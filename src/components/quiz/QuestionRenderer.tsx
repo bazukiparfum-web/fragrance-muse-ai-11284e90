@@ -12,6 +12,7 @@ import { PersonalityOptions } from '@/components/quiz/PersonalityOptions';
 import { ScentFamilyOptions } from '@/components/quiz/ScentFamilyOptions';
 import { IntensitySlider } from '@/components/quiz/IntensitySlider';
 import { LongevityOptions } from '@/components/quiz/LongevityOptions';
+import { OccasionOptions } from '@/components/quiz/OccasionOptions';
 import { FinaleTextInput } from '@/components/quiz/FinaleTextInput';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
