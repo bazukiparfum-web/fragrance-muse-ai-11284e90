@@ -2567,3 +2567,136 @@
     animation: none !important;
   }
 }
+
+/* ===== Longevity step animations ===== */
+@keyframes longevity-slide-l {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes longevity-slide-r {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.longevity-slide-l { animation: longevity-slide-l 500ms ease-out both; }
+.longevity-slide-r { animation: longevity-slide-r 500ms ease-out both; }
+
+@keyframes longevity-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.longevity-fade-out { animation: longevity-fade-out 300ms ease-out forwards; }
+
+/* SHORT */
+@keyframes longevity-trail-dash {
+  from { stroke-dashoffset: 200; opacity: 0; }
+  20%  { opacity: 0.9; }
+  to   { stroke-dashoffset: 0; opacity: 0; }
+}
+.longevity-trail {
+  stroke-dasharray: 6 6;
+  animation: longevity-trail-dash 900ms ease-out forwards;
+}
+@keyframes longevity-burst-dot {
+  0%   { transform: translateY(0) scale(0.4); opacity: 1; }
+  100% { transform: translateY(-60px) scale(1.2); opacity: 0; }
+}
+.longevity-burst-dot {
+  animation: longevity-burst-dot 400ms ease-out forwards;
+}
+@keyframes longevity-clock-fade {
+  0%, 80% { opacity: 0.9; }
+  100%    { opacity: 0; }
+}
+.longevity-clock {
+  animation: longevity-clock-fade 900ms ease-out forwards;
+}
+@keyframes longevity-clock-sweep {
+  from { transform: rotate(0deg); transform-origin: 12px 12px; }
+  to   { transform: rotate(360deg); transform-origin: 12px 12px; }
+}
+.longevity-clock-hand {
+  transform-origin: 12px 12px;
+  animation: longevity-clock-sweep 800ms ease-in-out forwards;
+}
+
+/* ALL-DAY */
+@keyframes longevity-sun-arc-draw {
+  from { stroke-dasharray: 600; stroke-dashoffset: 600; }
+  to   { stroke-dasharray: 600; stroke-dashoffset: 0; }
+}
+.longevity-sun-arc { animation: longevity-sun-arc-draw 800ms ease-out forwards; }
+
+@keyframes longevity-sun-ride {
+  0%   { transform: translate(20px, 56px) scale(0.9); opacity: 0; }
+  20%  { opacity: 1; }
+  50%  { transform: translate(50%, -2px) scale(1.05); }
+  100% { transform: translate(calc(100% - 24px), 56px) scale(0.9); opacity: 0.85; }
+}
+.longevity-sun { animation: longevity-sun-ride 1100ms ease-in-out forwards; }
+
+@keyframes longevity-particle {
+  0%   { transform: translateY(0) scale(0.8); opacity: 0; }
+  20%  { opacity: 0.8; }
+  100% { transform: translateY(-80px) scale(1); opacity: 0; }
+}
+.longevity-particle {
+  animation: longevity-particle 3s ease-out infinite;
+}
+
+.longevity-card--allday { --longevity-tint: 42 90% 62%; }
+.longevity-card--allday.border-gold-strong {
+  box-shadow:
+    0 0 12px hsl(var(--longevity-tint) / 0.35),
+    0 0 24px hsl(var(--longevity-tint) / 0.18);
+}
+
+/* LONG-LASTING */
+.longevity-card--long { --longevity-tint: 45 95% 60%; }
+.longevity-glow--max {
+  box-shadow:
+    0 0 14px hsl(var(--longevity-tint) / 0.55),
+    0 0 28px hsl(var(--longevity-tint) / 0.35),
+    0 0 56px hsl(var(--longevity-tint) / 0.2) !important;
+}
+@keyframes longevity-moon-fade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 0.9; transform: translateY(0); }
+}
+.longevity-moon { animation: longevity-moon-fade 900ms ease-out both; }
+
+@keyframes longevity-star-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.7); }
+  50%      { opacity: 1;   transform: scale(1.2); }
+}
+.longevity-star {
+  animation: longevity-star-twinkle 2.2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--anim-ivory);
+}
+
+@keyframes longevity-dusk-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.longevity-dusk { animation: longevity-dusk-fade 800ms ease-out both; }
+
+@keyframes longevity-shimmer {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(420%); }
+}
+.longevity-shimmer {
+  animation: longevity-shimmer 3s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .longevity-slide-l, .longevity-slide-r,
+  .longevity-fade-out,
+  .longevity-trail, .longevity-burst-dot,
+  .longevity-clock, .longevity-clock-hand,
+  .longevity-sun-arc, .longevity-sun,
+  .longevity-particle,
+  .longevity-moon, .longevity-star,
+  .longevity-dusk, .longevity-shimmer {
+    animation: none !important;
+  }
+}

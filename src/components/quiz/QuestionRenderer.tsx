@@ -11,6 +11,7 @@ import { AgeRangeOptions } from '@/components/quiz/AgeRangeOptions';
 import { PersonalityOptions } from '@/components/quiz/PersonalityOptions';
 import { ScentFamilyOptions } from '@/components/quiz/ScentFamilyOptions';
 import { IntensitySlider } from '@/components/quiz/IntensitySlider';
+import { LongevityOptions } from '@/components/quiz/LongevityOptions';
 import { FinaleTextInput } from '@/components/quiz/FinaleTextInput';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
@@ -112,6 +113,17 @@ export const QuestionRenderer = ({
             heading={heading}
             helper={helper}
             questionText={question.question_text}
+          />
+        );
+      }
+      if (question.answer_key === 'longevity' || question.question_key === 'longevity') {
+        return (
+          <LongevityOptions
+            options={question.options || []}
+            value={(currentAnswer as string) || ''}
+            onChange={(val) => updateAnswer(answerKey, val)}
+            heading={heading}
+            helper={helper}
           />
         );
       }
