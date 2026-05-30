@@ -81,6 +81,7 @@ export const ImmersiveQuizShell = ({
   useEffect(() => {
     if (isLast && !finaleEnteredRef.current) {
       finaleEnteredRef.current = true;
+      window.dispatchEvent(new CustomEvent('bz:finale-atmosphere', { detail: true }));
       if (!prefersReducedMotion()) {
         setRainKey((k) => k + 1);
         window.dispatchEvent(new CustomEvent('bz:bottle-happy-pulse'));
@@ -88,7 +89,10 @@ export const ImmersiveQuizShell = ({
         return () => window.clearTimeout(t);
       }
     }
-    if (!isLast) finaleEnteredRef.current = false;
+    if (!isLast && finaleEnteredRef.current) {
+      finaleEnteredRef.current = false;
+      window.dispatchEvent(new CustomEvent('bz:finale-atmosphere', { detail: false }));
+    }
   }, [isLast]);
 
   // Finale click sequence
