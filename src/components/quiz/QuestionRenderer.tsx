@@ -10,6 +10,7 @@ import { IdentityOptions } from '@/components/quiz/IdentityOptions';
 import { AgeRangeOptions } from '@/components/quiz/AgeRangeOptions';
 import { PersonalityOptions } from '@/components/quiz/PersonalityOptions';
 import { ScentFamilyOptions } from '@/components/quiz/ScentFamilyOptions';
+import { IntensitySlider } from '@/components/quiz/IntensitySlider';
 import { FinaleTextInput } from '@/components/quiz/FinaleTextInput';
 import type { QuizAnswers } from '@/contexts/QuizContext';
 
