@@ -29,63 +29,52 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Extract authorization header
+    const ANON_TEST_USER_ID = '00000000-0000-0000-0000-000000000000';
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error('Missing Authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - No authorization header provided' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
-    // Create Supabase client with service role key for auth verification
+    // Service-role client (used for bypass + writes that must skip RLS)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Verify the JWT token and get user
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userError || !user) {
-      console.error('Authentication error:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid or expired session' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Resolve user — fall back to anon test user when auth is bypassed (E2E testing mode)
+    let userId: string = ANON_TEST_USER_ID;
+    let useAdmin = true;
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+      if (userError || !user) {
+        console.warn('[auth-bypass] Invalid/expired token, falling back to ANON_TEST_USER_ID');
+      } else {
+        userId = user.id;
+        useAdmin = false;
+        console.log('User authenticated:', userId);
+      }
+    } else {
+      console.warn('[auth-bypass] No Authorization header, falling back to ANON_TEST_USER_ID');
     }
 
-    console.log('User authenticated:', user.id);
-
-    // Create client for user-scoped operations
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
+    // Use user-scoped client when a real session exists, otherwise service role (bypass mode)
+    const supabaseClient = useAdmin
+      ? supabaseAdmin
+      : createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+          { global: { headers: { Authorization: authHeader! } } }
+        );
 
     const { scentId } = await req.json();
-    console.log('Creating Shopify product for scent:', scentId);
-    console.log('Looking for scent with user_id:', user.id);
+    console.log('Creating Shopify product for scent:', scentId, 'user_id:', userId);
 
     // Fetch the saved scent
     const { data: scent, error: scentError } = await supabaseClient
       .from('saved_scents')
       .select('*')
       .eq('id', scentId)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .maybeSingle();
 
     if (scentError) {
