@@ -86,7 +86,7 @@ export default function ScentDetail() {
       }
 
       // Add to cart using Shopify variant ID
-      addItem({
+      const ok = await addItem({
         product: {
           node: {
             id: data.productId,
