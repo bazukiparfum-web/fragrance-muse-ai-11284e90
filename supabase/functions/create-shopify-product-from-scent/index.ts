@@ -69,13 +69,16 @@ Deno.serve(async (req) => {
     const { scentId } = await req.json();
     console.log('Creating Shopify product for scent:', scentId, 'user_id:', userId);
 
-    // Fetch the saved scent
-    const { data: scent, error: scentError } = await supabaseClient
+    // Fetch the saved scent. In auth-bypass mode (no real session) skip the
+    // user_id filter so any saved scent can be reordered for E2E testing.
+    let scentQuery = supabaseClient
       .from('saved_scents')
       .select('*')
-      .eq('id', scentId)
-      .eq('user_id', userId)
-      .maybeSingle();
+      .eq('id', scentId);
+    if (!useAdmin) {
+      scentQuery = scentQuery.eq('user_id', userId);
+    }
+    const { data: scent, error: scentError } = await scentQuery.maybeSingle();
 
     if (scentError) {
       console.error('Database error fetching scent:', scentError);
@@ -86,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     if (!scent) {
-      console.error('Scent not found. scentId:', scentId, 'user_id:', user.id);
+      console.error('Scent not found. scentId:', scentId, 'user_id:', userId);
       return new Response(
         JSON.stringify({ error: 'Scent not found. Please make sure the scent is saved first.' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -112,7 +115,8 @@ Deno.serve(async (req) => {
     const shopifyProduct = await createShopifyProduct(scent as SavedScent);
     
     // Update saved scent with Shopify IDs
-    const { error: updateError } = await supabaseClient
+    // Use service role for writes to bypass RLS (works for both auth modes).
+    const { error: updateError } = await supabaseAdmin
       .from('saved_scents')
       .update({
         shopify_product_id: shopifyProduct.id,
@@ -126,7 +130,7 @@ Deno.serve(async (req) => {
 
     // Create product mappings
     for (const variant of shopifyProduct.variants) {
-      await supabaseClient
+      await supabaseAdmin
         .from('shopify_product_mappings')
         .insert({
           saved_scent_id: scentId,
