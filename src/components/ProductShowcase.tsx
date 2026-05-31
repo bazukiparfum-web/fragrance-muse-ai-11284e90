@@ -73,7 +73,7 @@ function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!firstVariant) return;
-    await addItem({
+    const ok = await addItem({
       product,
       variantId: firstVariant.id,
       variantTitle: firstVariant.title,
@@ -81,7 +81,11 @@ function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
       quantity: 1,
       selectedOptions: firstVariant.selectedOptions || [],
     });
-    toast.success(`${node.title} added to cart`);
+    if (ok) {
+      toast.success(`${node.title} added to cart`);
+    } else {
+      toast.error('Failed to add to cart. Please try again.');
+    }
   };
 
   return (
