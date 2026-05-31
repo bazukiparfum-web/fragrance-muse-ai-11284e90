@@ -2921,3 +2921,442 @@
     animation: quiz-finale-glow-out 300ms ease-in forwards !important;
   }
 }
+
+/* ============================================================
+   QUIZ CRAFTING SCREEN — Bazuki machine assembly sequence
+   ============================================================ */
+
+.crafting-root {
+  isolation: isolate;
+}
+
+.crafting-particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform;
+}
+
+/* ---------- Machine layer ---------- */
+.crafting-machine-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 70vh;
+  pointer-events: none;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.crafting-machine-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.crafting-machine-halo {
+  position: absolute;
+  inset: -10%;
+  background: radial-gradient(
+    ellipse at 50% 80%,
+    rgba(201, 168, 76, 0.12) 0%,
+    rgba(201, 168, 76, 0) 60%
+  );
+  pointer-events: none;
+  animation: crafting-machine-halo-pulse 4s ease-in-out infinite;
+  will-change: opacity;
+}
+
+@keyframes crafting-machine-halo-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.crafting-machine-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.18;
+  transform-origin: 50% 90%;
+  will-change: transform;
+}
+
+.crafting-machine-breath {
+  animation: crafting-machine-breath 6s ease-in-out infinite;
+}
+
+@keyframes crafting-machine-breath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.005); }
+}
+
+.crafting-conveyor-motion {
+  stroke-dashoffset: 0;
+  animation: crafting-conveyor-flow 2s linear infinite;
+}
+
+@keyframes crafting-conveyor-flow {
+  to { stroke-dashoffset: -14; }
+}
+
+.crafting-monitor-scanline {
+  animation: crafting-monitor-scan 3s ease-in-out infinite;
+  transform-origin: 50% 50%;
+  will-change: opacity;
+}
+
+@keyframes crafting-monitor-scan {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.9; }
+}
+
+/* ---------- Vial activation ---------- */
+.crafting-vial .crafting-vial-glow { opacity: 0; }
+
+.crafting-vial.crafting-vial-active .crafting-vial-glow {
+  animation: crafting-vial-glow 600ms ease-out;
+  will-change: opacity;
+}
+
+@keyframes crafting-vial-glow {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------- Drop fall ---------- */
+.crafting-drop { opacity: 0; transform-origin: 50% 0%; }
+
+.crafting-drop.crafting-drop-fall {
+  animation: crafting-drop-fall 600ms ease-in;
+  will-change: transform, opacity;
+}
+
+@keyframes crafting-drop-fall {
+  0% { opacity: 0; transform: translateY(0); }
+  15% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(170px); }
+}
+
+/* ---------- Splash rings ---------- */
+.crafting-splash circle { opacity: 0; }
+
+.crafting-splash.crafting-splash-ring circle {
+  animation: crafting-splash-ring 350ms ease-out;
+  will-change: transform, opacity;
+}
+
+.crafting-splash.crafting-splash-ring circle:nth-child(2) { animation-delay: 80ms; }
+.crafting-splash.crafting-splash-ring circle:nth-child(3) { animation-delay: 160ms; }
+
+@keyframes crafting-splash-ring {
+  0% { opacity: 0.9; transform: scale(0.4); }
+  100% { opacity: 0; transform: scale(2.6); }
+}
+
+/* ---------- Bottle slide ---------- */
+.crafting-bottle-slide {
+  transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* ---------- Heading ---------- */
+.crafting-heading {
+  position: relative;
+  display: inline-block;
+}
+
+.crafting-heading-text {
+  background: linear-gradient(90deg, var(--anim-ivory), var(--anim-gold-bright), var(--anim-ivory));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.crafting-heading-shimmer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -20%;
+  width: 3px;
+  background: linear-gradient(90deg, transparent, rgba(245, 240, 232, 0.6), transparent);
+  filter: blur(2px);
+  animation: crafting-heading-shimmer 5s ease-in-out infinite;
+  animation-delay: 1s;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+@keyframes crafting-heading-shimmer {
+  0%, 70% { transform: translateX(0); opacity: 0; }
+  72% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { transform: translateX(120vw); opacity: 0; }
+}
+
+.crafting-ellipsis {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 2px;
+}
+
+.crafting-ellipsis-dot {
+  display: inline-block;
+  opacity: 0;
+  animation: crafting-ellipsis-dot 1.6s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.crafting-ellipsis-dot:nth-child(1) { animation-delay: 0ms; }
+.crafting-ellipsis-dot:nth-child(2) { animation-delay: 200ms; }
+.crafting-ellipsis-dot:nth-child(3) { animation-delay: 400ms; }
+
+@keyframes crafting-ellipsis-dot {
+  0%, 70%, 100% { opacity: 0; }
+  20%, 50% { opacity: 1; }
+}
+
+.crafting-heading-sparkle {
+  display: inline-block;
+  color: var(--anim-gold-bright);
+  filter: drop-shadow(0 0 8px var(--anim-gold-bright));
+  animation: crafting-sparkle-pulse 1.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes crafting-sparkle-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+/* ---------- Notes scanning ---------- */
+.crafting-notes {
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  min-height: 5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.crafting-note-scan {
+  font-family: var(--font-display, serif);
+  font-size: clamp(18px, 2.4vw, 24px);
+  color: #8B6914;
+  letter-spacing: 0.02em;
+  transition: color 200ms ease-out, transform 200ms ease-out;
+  will-change: transform, opacity;
+}
+
+.crafting-note-scan.is-locking {
+  color: var(--anim-gold-bright);
+  transform: scale(1.1);
+  text-shadow: 0 0 10px var(--anim-gold);
+}
+
+.crafting-note-spark {
+  color: var(--anim-gold-bright);
+  filter: drop-shadow(0 0 6px var(--anim-gold-bright));
+}
+
+.crafting-note-stack {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.crafting-note-locked {
+  font-size: clamp(13px, 1.6vw, 15px);
+  color: var(--anim-gold-bright);
+  opacity: 0.85;
+  transform: scale(0.85);
+  transform-origin: center;
+  animation: crafting-note-lock 500ms ease-out;
+  will-change: transform, opacity;
+  letter-spacing: 0.04em;
+}
+
+.crafting-note-spark-small {
+  color: var(--anim-gold);
+  font-size: 0.85em;
+}
+
+@keyframes crafting-note-lock {
+  0% { opacity: 0; transform: scale(1.2); }
+  60% { opacity: 1; transform: scale(0.95); }
+  100% { opacity: 0.85; transform: scale(0.85); }
+}
+
+/* ---------- Phase status text ---------- */
+.crafting-phase-text {
+  color: var(--anim-gold);
+  font-size: clamp(14px, 1.8vw, 17px);
+  letter-spacing: 0.02em;
+  margin-top: 0.5rem;
+}
+
+.crafting-phase-enter {
+  animation: crafting-phase-enter 400ms ease-out;
+  will-change: transform, opacity;
+}
+
+@keyframes crafting-phase-enter {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Progress bar ---------- */
+.crafting-progress-percent {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
+  color: var(--anim-gold);
+  opacity: 0.5;
+  z-index: 11;
+  text-transform: uppercase;
+}
+
+.crafting-progress-track {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgba(201, 168, 76, 0.1);
+  z-index: 11;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.crafting-progress-fill {
+  position: relative;
+  height: 100%;
+  background: linear-gradient(90deg, var(--anim-gold) 0%, var(--anim-gold-bright) 100%);
+  box-shadow: 0 0 10px var(--anim-gold-bright);
+  transition: width 200ms linear;
+  will-change: width;
+}
+
+.crafting-progress-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(245, 240, 232, 0.6), transparent);
+  background-size: 200% 100%;
+  animation: crafting-progress-shimmer 2s linear infinite;
+  will-change: background-position;
+}
+
+@keyframes crafting-progress-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.crafting-progress-bottle {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  filter: drop-shadow(0 0 6px var(--anim-gold-bright));
+  will-change: transform;
+}
+
+/* ---------- Finale ---------- */
+.crafting-finale-flash {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 200px;
+  height: 200px;
+  margin: -100px 0 0 -100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 192, 64, 0.4) 0%, rgba(240, 192, 64, 0) 70%);
+  z-index: 50;
+  pointer-events: none;
+  animation: crafting-finale-flash 500ms ease-out forwards;
+  animation-delay: 200ms;
+  will-change: transform, opacity;
+}
+
+@keyframes crafting-finale-flash {
+  0% { transform: scale(0); opacity: 0; }
+  30% { opacity: 0.6; }
+  100% { transform: scale(8); opacity: 0; }
+}
+
+.crafting-finale-mist {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  animation: crafting-finale-mist-show 600ms ease-out 1400ms forwards;
+  opacity: 0;
+}
+
+@keyframes crafting-finale-mist-show {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.crafting-finale-mist-layer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(201, 168, 76, 0.3) 0%, rgba(201, 168, 76, 0.1) 50%, rgba(201, 168, 76, 0) 100%);
+  animation: crafting-finale-mist-rise 600ms ease-in forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes crafting-finale-mist-rise {
+  0% { opacity: 0; transform: translateY(0); }
+  50% { opacity: 0.3; }
+  100% { opacity: 0; transform: translateY(-30vh); }
+}
+
+/* ---------- prefers-reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .crafting-machine-svg,
+  .crafting-machine-halo,
+  .crafting-conveyor-motion,
+  .crafting-monitor-scanline,
+  .crafting-heading-shimmer,
+  .crafting-heading-sparkle,
+  .crafting-note-locked,
+  .crafting-finale-flash,
+  .crafting-finale-mist,
+  .crafting-particle-canvas {
+    animation: none !important;
+    transition: none !important;
+  }
+  .crafting-machine-layer,
+  .crafting-notes,
+  .crafting-progress-percent,
+  .crafting-progress-track {
+    display: none !important;
+  }
+  .crafting-heading-text {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--anim-ivory);
+  }
+  .crafting-ellipsis-dot {
+    opacity: 1 !important;
+    animation: crafting-ellipsis-simple 1.4s ease-in-out infinite !important;
+  }
+  @keyframes crafting-ellipsis-simple {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+}

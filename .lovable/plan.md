@@ -1,55 +1,53 @@
 ## Goal
-Codify the animation system as a project rule and bring existing quiz animations into compliance — without changing any choreography, timing intent, or behavior the user already approved.
 
-## 1. Save the rules to memory
+Redesign `src/components/quiz/QuizCraftingScreen.tsx` so the AI-processing screen (shown between quiz completion and results) feels like watching the Bazuki machine physically assemble the user's formula. Text content and existing routing/timing stay intact — this is additive visual/animation work on the same dark `bg-bz-primary` background.
 
-Create `mem://design/animation-system` (type: `design`) capturing:
-- **Palette tokens** (already present in `src/index.css` as `--anim-gold #C9A84C`, `--anim-gold-bright #F0C040`, `--anim-ivory #F5F0E8`, `--anim-bg #0D0C0A`, `--anim-amber #1A1408`) — always reference via CSS variables, never hardcode.
-- **Easing**: entrances → `ease-out` / `var(--ease-out-soft)`; exits → `ease-in` / `var(--ease-in-soft)`; loops → `ease-in-out`. `linear` only for continuous left-to-right sweeps (bar shimmer, sparkle rain fall, button shimmer sweep).
-- **Durations**: interactions 200–800ms; ambient loops 2–60s.
-- **Performance**: every particle / floating / transforming element gets `will-change: transform, opacity`.
-- **A11y**: every animation must have a `@media (prefers-reduced-motion: reduce)` fallback that reduces to a simple fade or `animation: none`.
-- **Libraries**: Framer Motion for React page transitions, GSAP for complex particle systems, Lottie for the perfume-bottle fill, pure CSS keyframes for ambient background — current quiz uses CSS keyframes by design; do not introduce new libs unless the task warrants it.
+## Files
 
-Add a one-liner under `## Core` in `mem://index.md` plus a `## Memories` entry pointing at the new file. The existing index content is preserved verbatim.
+- **NEW** `src/components/quiz/crafting/BazukiMachineSVG.tsx` — inline SVG silhouette (top rail, 18 hanging vials, side uprights, conveyor, monitor with scanline, bottle on conveyor). Exposes refs so the parent can drive per-vial highlight + drop + splash animations. Static frame uses dark gold (`#8B6914`) at 15% opacity with upward fade mask. Idle: 6s breath scale (1→1.005), 4s ambient halo pulse.
+- **NEW** `src/components/quiz/crafting/CraftingParticleCanvas.tsx` — single `<canvas>` particle system: 60 ambient gold/ivory particles with slow clockwise drift, periodic 8-particle bursts from active vial (via prop), 3–4 large low-opacity mist puffs. RAF-driven, paused under `prefers-reduced-motion`.
+- **NEW** `src/components/quiz/crafting/NotesScanningText.tsx` — slot-machine note scanner: 200ms cycle through curated note list (Bergamot, Jasmine, Vetiver, Sandalwood, Rose, Oud, Amber, Cedar, Musk, Neroli, Vanilla, Patchouli, Iris, Ylang, Cardamom). Every ~3.5s "locks" a note (scale 1→1.1, brighten to `--anim-gold-bright`, ✦ + 3-particle burst). Stacks up to 3 locked notes below at 0.85 scale.
+- **NEW** `src/components/quiz/crafting/PhaseStatusText.tsx` — rotating 7-message sequence on 2.5s cadence with fade+slide crossfade.
+- **NEW** `src/components/quiz/crafting/FormulaProgressBar.tsx` — 2px gold bottom-of-screen bar that fills smoothly to 100% over the lifetime, with shimmer overlay and a 12px bottle icon riding the leading edge. Renders "Formula: NN% complete" tickered text using monospaced flips.
+- **EDIT** `src/components/quiz/QuizCraftingScreen.tsx` — orchestrate all of the above, drive vial activation schedule (every 1.8s single vial + every 6s 3–4 vial burst), keep existing `role="status"` + dark `bg-bz-primary` + existing text "Bazuki AI is crafting your scent profile…", but apply typewriter intro, shimmer loop on the heading, and animated ellipsis. Trigger the 2.5s finale sequence when the parent signals completion (or when an internal max-duration timer hits 100%), then dispatch a `bz:crafting-complete` event the existing parent flow can wire to results navigation. Until that wiring is touched, the finale still plays purely visually and the component remains drop-in compatible.
+- **EDIT** `src/index.css` — add keyframes/utility classes scoped under `.crafting-*`:
+  - `.crafting-machine-breath`, `.crafting-machine-halo`
+  - `.crafting-vial-active`, `.crafting-drop-fall`, `.crafting-splash-ring`, `.crafting-droplet-spark`
+  - `.crafting-bottle-slide`, `.crafting-bottle-fill`, `.crafting-liquid-wave`
+  - `.crafting-heading-shimmer`, `.crafting-ellipsis-dot` (3 staggered)
+  - `.crafting-note-lock`, `.crafting-note-stack-shrink`
+  - `.crafting-phase-enter`, `.crafting-phase-exit`
+  - `.crafting-progress-shimmer`, `.crafting-digit-flip`
+  - `.crafting-finale-flash`, `.crafting-finale-vial-wave`, `.crafting-finale-mist-exit` (4 layered)
+  - All animations use existing tokens (`--anim-gold` #C9A84C, `--anim-gold-bright` #F0C040, `--anim-ivory` #F5F0E8, `--anim-amber` #1A1408), `will-change: transform, opacity` on every animated element, ease-out enters / ease-in exits / ease-in-out loops, durations within 200–800ms or 2–60s.
+  - One `@media (prefers-reduced-motion: reduce)` block collapses everything: hide machine/canvas/particles, keep heading + a single pulsing gold dot loader, freeze phase text to first message + 1s simple fade per change.
 
-## 2. Audit & normalize `src/index.css`
+## Behavior contract
 
-Targeted, mechanical edits — no visual redesign:
+- Vial activation: never repeat the previous vial. State held in a `useRef<number>`.
+- Bottle position: tweens to active vial's x via inline `transform: translateX(...)` + 500ms cubic-bezier; drop emits after slide completes.
+- Bottle fill level: increments ~3% per single drop, ~10% per burst, clamped to 92% pre-finale (finale fills the last 8% in one cascade).
+- Particle bursts hook into the same vial schedule via a callback prop the canvas consumes (lightweight ref signal — no React re-renders per drop).
+- Total max loading duration: 18s safety cap. If parent unmounts earlier, all RAF / intervals teardown in `useEffect` cleanups.
+- No new dependencies — pure React + SVG + canvas + CSS.
 
-### a) Easing fixes on loop animations
-Currently using `linear infinite` where the rule says `ease-in-out`:
-- `.occasion-column-rise` (line 2751) — `linear infinite` → `ease-in-out infinite`
-- `.occasion-shimmer-fall` (2778) — `linear infinite` → `ease-in-out infinite`
-- `.quiz-particle` `particle-rise` / `particle-float` (258, 271) — `linear infinite` → `ease-in-out infinite`
-- `.nostalgia-mist` drifts (774, 778, 808) — `linear` → `ease-in-out`
-- `.city-blob-drift-*` (971, 976) — `linear` → `ease-in-out`
-- `.nostalgia-particle-rise` (833) — `linear infinite` → `ease-in-out infinite`
+## Performance + a11y guardrails
 
-Keep `linear` on these (intentional uniform sweeps): `.bar-shimmer`, `.finale-btn-shimmer`, `.finale-rain` (gravity drop), `.mist-rotate-drift` (continuous rotation reads better linear).
-
-### b) Add `will-change: transform, opacity`
-On particle/floating elements missing it:
-- `.finale-rain-drop`, `.finale-burst-particle`, `.finale-keystroke-sparkle`, `.finale-atmos-particle`, `.finale-word-echo`
-- `.occasion-rise`, `.occasion-rise-fast`, `.occasion-column-rise`, `.occasion-twinkle`, `.occasion-shimmer-fall`, `.occasion-wind` particle wrappers
-- `.longevity-trail`, longevity sparkle/particle classes
-- `.quiz-finale-glow`
-
-### c) Reduced-motion coverage
-Verify (and add where missing) `@media (prefers-reduced-motion: reduce)` entries for the longevity block (around line 2572+) and the quiz-finale-glow block. Pattern: set `animation: none`, snap to final state (full opacity, final transform).
-
-### d) Color-token consistency
-Spot-check the longevity / occasion / finale CSS for stray hardcoded hexes; replace with `var(--anim-gold)`, `var(--anim-gold-bright)`, `var(--anim-ivory)`, or `hsl(var(--bz-gold) / α)` as appropriate. No new colors introduced.
+- Particles, drops, and shimmer reflections live on the canvas / pseudo-elements (no per-frame React state).
+- Machine SVG inlined once; per-vial state toggled via CSS class on each `<g>` (cheap GPU-only transforms).
+- `prefers-reduced-motion`: machine, canvas, drops, notes scanner, finale, and mist exit are all disabled — heading + first phase message + pulsing dot only.
+- All gold colors via CSS vars, no hardcoded hex in components.
 
 ## Out of scope
-- No new animations, no choreography changes, no JS/TSX changes (the principles are CSS-level).
-- Bottle Lottie swap, Framer/GSAP introduction: not now — flag as future option in memory only.
-- Other (non-quiz) pages.
+
+- No text content changes beyond the 7 phase messages already specified by the user.
+- No changes to results page, quiz navigation, or completion logic — only an optional `bz:crafting-complete` event is dispatched, existing callers keep working as-is.
+- No new libraries (Framer Motion / GSAP / Lottie not introduced).
+- No design exploration round — spec is fully concrete; will implement directly on approval.
 
 ## Verification
-After build: walk `/shop/quiz/for-yourself` steps 1 → 10 → results. Confirm visuals look identical to current. Toggle OS "reduce motion" and confirm all quiz animations collapse to static/fade. DevTools → Rendering → Paint flashing: particle layers should stay on their own compositor layer (will-change verification).
 
-## Files touched
-- `mem://design/animation-system` (new)
-- `mem://index.md` (append one Core line + one Memories entry; rest preserved)
-- `src/index.css` (~20 line-level edits across longevity / occasion / finale / quiz-particle / nostalgia / city blocks)
+- Walk `/shop/quiz/for-yourself` → finish quiz → confirm crafting screen plays full sequence end-to-end on desktop (1067×672) and mobile widths.
+- Toggle OS "Reduce motion" and confirm fallback: only heading + dot loader + first phase message visible, no canvas/svg activity.
+- DevTools Performance: confirm long-task free, paint flashing shows canvas + finale overlay on isolated compositor layers.
+- Screenshot before/after for the user.
