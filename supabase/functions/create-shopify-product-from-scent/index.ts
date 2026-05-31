@@ -1,27 +1,26 @@
+// Returns Shopify variant IDs for the shared "Custom AI Fragrance" placeholder
+// product so custom-scent Add-to-Cart and Reorder work without an Admin API
+// token. Cart + checkout flow uses the Storefront API (already configured via
+// Lovable's native Shopify integration). The per-scent formula/metadata stays
+// in our DB (saved_scents + machine_formulas); the production-queue webhook
+// matches orders back to scents via saved_scent_id mapping rather than via a
+// unique Shopify product per scent.
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-supabase-api-version',
 };
 
-const SHOPIFY_STORE_DOMAIN = 'jg651i-6z.myshopify.com';
-const SHOPIFY_API_VERSION = '2025-07';
-
-interface SavedScent {
-  id: string;
-  name: string;
-  formula: any;
-  fragrance_code: string;
-  match_score: number;
-  intensity: number;
-  longevity: number;
-  prices?: {
-    '30ml': number;
-    '50ml': number;
-    '100ml'?: number;
-  };
-}
+// Shared placeholder product — created once via Lovable's Shopify integration.
+const SHARED_PRODUCT_ID = '15151907864940';
+const SHARED_VARIANTS = [
+  { id: '53827401810284', size: '30ml', price: '700.00' },
+  { id: '53827401843052', size: '50ml', price: '1099.00' },
+  { id: '53827401875820', size: '100ml', price: '1899.00' },
+];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -32,122 +31,61 @@ Deno.serve(async (req) => {
     const ANON_TEST_USER_ID = '00000000-0000-0000-0000-000000000000';
     const authHeader = req.headers.get('Authorization');
 
-    // Service-role client (used for bypass + writes that must skip RLS)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Resolve user — fall back to anon test user when auth is bypassed (E2E testing mode)
+    // Resolve user — fall back to anon test user when auth is bypassed.
     let userId: string = ANON_TEST_USER_ID;
     let useAdmin = true;
 
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
-      const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-      if (userError || !user) {
-        console.warn('[auth-bypass] Invalid/expired token, falling back to ANON_TEST_USER_ID');
-      } else {
+      const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+      if (user) {
         userId = user.id;
         useAdmin = false;
-        console.log('User authenticated:', userId);
       }
-    } else {
-      console.warn('[auth-bypass] No Authorization header, falling back to ANON_TEST_USER_ID');
     }
-
-    // Use user-scoped client when a real session exists, otherwise service role (bypass mode)
-    const supabaseClient = useAdmin
-      ? supabaseAdmin
-      : createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-          { global: { headers: { Authorization: authHeader! } } }
-        );
 
     const { scentId } = await req.json();
-    console.log('Creating Shopify product for scent:', scentId, 'user_id:', userId);
+    console.log('[custom-scent] resolving variants for scent:', scentId, 'user:', userId);
 
-    // Fetch the saved scent. In auth-bypass mode (no real session) skip the
-    // user_id filter so any saved scent can be reordered for E2E testing.
-    let scentQuery = supabaseClient
-      .from('saved_scents')
-      .select('*')
-      .eq('id', scentId);
-    if (!useAdmin) {
-      scentQuery = scentQuery.eq('user_id', userId);
-    }
-    const { data: scent, error: scentError } = await scentQuery.maybeSingle();
+    // Verify the scent exists (skip user filter in bypass mode for E2E testing).
+    let query = supabaseAdmin.from('saved_scents').select('id, name, shopify_product_id').eq('id', scentId);
+    if (!useAdmin) query = query.eq('user_id', userId);
+    const { data: scent, error: scentError } = await query.maybeSingle();
 
     if (scentError) {
-      console.error('Database error fetching scent:', scentError);
       return new Response(
         JSON.stringify({ error: 'Database error: ' + scentError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
     if (!scent) {
-      console.error('Scent not found. scentId:', scentId, 'user_id:', userId);
       return new Response(
         JSON.stringify({ error: 'Scent not found. Please make sure the scent is saved first.' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Successfully fetched scent:', scent.name);
-
-    // Check if product already exists
-    if (scent.shopify_product_id) {
-      console.log('Product already exists:', scent.shopify_product_id);
-      const variantIds = await getVariantIds(scent.shopify_product_id);
-      return new Response(
-        JSON.stringify({
-          productId: `gid://shopify/Product/${scent.shopify_product_id}`,
-          variantIds,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create Shopify product
-    const shopifyProduct = await createShopifyProduct(scent as SavedScent);
-    
-    // Update saved scent with Shopify IDs
-    // Use service role for writes to bypass RLS (works for both auth modes).
-    const { error: updateError } = await supabaseAdmin
-      .from('saved_scents')
-      .update({
-        shopify_product_id: shopifyProduct.id,
-        shopify_variant_id: shopifyProduct.variants[0].id,
-      })
-      .eq('id', scentId);
-
-    if (updateError) {
-      console.error('Error updating scent:', updateError);
-    }
-
-    // Create product mappings
-    for (const variant of shopifyProduct.variants) {
+    // Track the shared product id on the scent (helps webhook / production queue
+    // mapping). Best-effort — don't fail the request if this write is blocked.
+    if (scent.shopify_product_id !== SHARED_PRODUCT_ID) {
       await supabaseAdmin
-        .from('shopify_product_mappings')
-        .insert({
-          saved_scent_id: scentId,
-          shopify_product_id: shopifyProduct.id,
-          shopify_variant_id: variant.id,
-          size: variant.option1,
-        });
+        .from('saved_scents')
+        .update({ shopify_product_id: SHARED_PRODUCT_ID })
+        .eq('id', scentId);
     }
-
-    console.log('Successfully created Shopify product:', shopifyProduct.id);
 
     return new Response(
       JSON.stringify({
-        productId: `gid://shopify/Product/${shopifyProduct.id}`,
-        variantIds: shopifyProduct.variants.map((v: any) => ({
+        productId: `gid://shopify/Product/${SHARED_PRODUCT_ID}`,
+        variantIds: SHARED_VARIANTS.map((v) => ({
           id: `gid://shopify/ProductVariant/${v.id}`,
-          size: v.option1,
+          size: v.size,
           price: v.price,
         })),
       }),
@@ -162,124 +100,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-async function createShopifyProduct(scent: SavedScent) {
-  const SHOPIFY_ACCESS_TOKEN = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-  const DEFAULT_IMAGE_URL = Deno.env.get('DEFAULT_PRODUCT_IMAGE_URL') || 
-    'https://pcwfrmgcycbddqhkqgfx.supabase.co/storage/v1/object/public/product-images/custom-scent-default.jpg';
-  
-  const prices = scent.prices || {
-    '30ml': 700,
-    '50ml': 1099,
-    '100ml': 1899,
-  };
-  const price100 = prices['100ml'] ?? 1899;
-
-  const product = {
-    product: {
-      title: `${scent.name} (${scent.fragrance_code})`,
-      body_html: `Your personalized fragrance with a ${scent.match_score}% match score. 
-                  Intensity: ${scent.intensity}/10, Longevity: ${scent.longevity} hours.`,
-      vendor: 'BAZUKI',
-      product_type: 'Custom Perfume',
-      tags: ['custom', 'quiz-generated', 'personalized'],
-      images: [
-        {
-          src: DEFAULT_IMAGE_URL,
-          alt: `${scent.name} - Custom Perfume`,
-        },
-      ],
-      variants: [
-        {
-          option1: '30ml',
-          price: prices['30ml'].toFixed(2),
-          sku: `${scent.fragrance_code}-30ML`,
-          inventory_management: null,
-        },
-        {
-          option1: '50ml',
-          price: prices['50ml'].toFixed(2),
-          sku: `${scent.fragrance_code}-50ML`,
-          inventory_management: null,
-        },
-        {
-          option1: '100ml',
-          price: price100.toFixed(2),
-          sku: `${scent.fragrance_code}-100ML`,
-          inventory_management: null,
-        },
-      ],
-      options: [
-        {
-          name: 'Size',
-          values: ['30ml', '50ml', '100ml'],
-        },
-      ],
-      metafields: [
-        {
-          namespace: 'custom',
-          key: 'fragrance_code',
-          value: scent.fragrance_code,
-          type: 'single_line_text_field',
-        },
-        {
-          namespace: 'custom',
-          key: 'formula_json',
-          value: JSON.stringify(scent.formula),
-          type: 'json',
-        },
-        {
-          namespace: 'custom',
-          key: 'match_score',
-          value: scent.match_score.toString(),
-          type: 'number_integer',
-        },
-      ],
-    },
-  };
-
-  const response = await fetch(
-    `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/products.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': SHOPIFY_ACCESS_TOKEN!,
-      },
-      body: JSON.stringify(product),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('Shopify API error:', error);
-    throw new Error(`Failed to create Shopify product: ${error}`);
-  }
-
-  const data = await response.json();
-  return data.product;
-}
-
-async function getVariantIds(productId: string) {
-  const SHOPIFY_ACCESS_TOKEN = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-  
-  const response = await fetch(
-    `https://${SHOPIFY_STORE_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/products/${productId}.json`,
-    {
-      headers: {
-        'X-Shopify-Access-Token': SHOPIFY_ACCESS_TOKEN!,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch product variants');
-  }
-
-  const data = await response.json();
-  return data.product.variants.map((v: any) => ({
-    id: `gid://shopify/ProductVariant/${v.id}`,
-    size: v.option1,
-    price: v.price,
-  }));
-}
