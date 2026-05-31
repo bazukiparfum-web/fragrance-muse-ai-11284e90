@@ -251,7 +251,7 @@ const QuizResults = () => {
       }
 
       // Add to cart
-      addItem({
+      const ok = await addItem({
         product: {
           node: {
             id: data.productId,
@@ -299,7 +299,12 @@ const QuizResults = () => {
         selectedOptions: [{ name: 'Size', value: variant.size }],
       });
 
-      toast.success(`Added ${scent.name} (${size}) to cart!`);
+      if (ok) {
+        toast.success(`Added ${scent.name} (${size}) to cart!`);
+        useCartStore.getState().openDrawer();
+      } else {
+        toast.error('Failed to add to cart. Please try again.');
+      }
     } catch (error: any) {
       console.error('Error adding to cart:', error);
       toast.error('Failed to add to cart. Please try again.');
