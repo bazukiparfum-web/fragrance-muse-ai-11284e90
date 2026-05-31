@@ -321,58 +321,68 @@ const QuizResults = () => {
   const handleAddDiscoverySet = async () => {
     setAddingDiscoverySet(true);
     try {
-      // Discovery Set product from Shopify - 3 × 30ml bottles at ₹1,500
-      const discoverySetProduct = {
-        node: {
-          id: 'gid://shopify/Product/9146587775196',
-          title: '30ml Discovery Set',
-          description: 'Get all 3 custom fragrances in full-size 30ml bottles',
-          handle: 'discovery-set-30ml',
-          priceRange: {
-            minVariantPrice: {
-              amount: '1500.0',
-              currencyCode: 'INR',
-            },
-          },
-          images: {
-            edges: [{
-              node: {
-                url: '/custom-scent-default.jpg',
-                altText: '30ml Discovery Set'
+      // Look up the real Discovery Set product from the connected Shopify store
+      const PRODUCT_BY_HANDLE = `
+        query ProductByHandle($handle: String!) {
+          productByHandle(handle: $handle) {
+            id
+            title
+            description
+            handle
+            priceRange { minVariantPrice { amount currencyCode } }
+            images(first: 1) { edges { node { url altText } } }
+            variants(first: 5) {
+              edges {
+                node {
+                  id
+                  title
+                  price { amount currencyCode }
+                  availableForSale
+                  selectedOptions { name value }
+                }
               }
-            }],
-          },
-          variants: {
-            edges: [{
-              node: {
-                id: 'gid://shopify/ProductVariant/47200402669788',
-                title: '3 × 30ml Bottles',
-                price: {
-                  amount: '1500.0',
-                  currencyCode: 'INR',
-                },
-                availableForSale: true,
-                selectedOptions: [{ name: 'Title', value: '3 × 30ml Bottles' }],
-              },
-            }],
-          },
-          options: [{ name: 'Title', values: ['3 × 30ml Bottles'] }],
-        },
-      };
+            }
+            options { name values }
+          }
+        }
+      `;
 
-      addItem({
-        product: discoverySetProduct,
-        variantId: 'gid://shopify/ProductVariant/47200402669788',
-        variantTitle: '3 × 30ml Bottles',
-        price: {
-          amount: '1500.0',
-          currencyCode: 'INR',
+      const resp = await storefrontApiRequest(PRODUCT_BY_HANDLE, { handle: 'discovery-set-30ml' });
+      const product = resp?.data?.productByHandle;
+      const variantEdge = product?.variants?.edges?.find((e: any) => e.node.availableForSale) || product?.variants?.edges?.[0];
+      const variant = variantEdge?.node;
+
+      if (!product || !variant) {
+        toast.error('Discovery Set is currently unavailable.');
+        return;
+      }
+
+      const ok = await addItem({
+        product: {
+          node: {
+            id: product.id,
+            title: product.title,
+            description: product.description || '',
+            handle: product.handle,
+            priceRange: product.priceRange,
+            images: product.images,
+            variants: product.variants,
+            options: product.options,
+          },
         },
+        variantId: variant.id,
+        variantTitle: variant.title,
+        price: variant.price,
         quantity: 1,
-        selectedOptions: [{ name: 'Title', value: '3 × 30ml Bottles' }],
+        selectedOptions: variant.selectedOptions ?? [],
       });
 
-      toast.success('Added 30ml Discovery Set to cart!');
+      if (ok) {
+        toast.success('Added 30ml Discovery Set to cart!');
+        useCartStore.getState().openDrawer();
+      } else {
+        toast.error('Failed to add Discovery Set. Please try again.');
+      }
     } catch (error) {
       console.error('Error adding discovery set:', error);
       toast.error('Failed to add Discovery Set. Please try again.');
