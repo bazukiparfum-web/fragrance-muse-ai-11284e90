@@ -11,6 +11,7 @@ import { QuizAnalytics } from '@/components/QuizAnalytics';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuiz } from '@/contexts/QuizContext';
 import { useCartStore } from '@/stores/cartStore';
+import { storefrontApiRequest } from '@/lib/shopify';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useSEO } from '@/hooks/useSEO';
