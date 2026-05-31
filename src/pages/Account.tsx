@@ -265,7 +265,7 @@ const Account = () => {
       }
 
       // Add to Shopify cart
-      addItem({
+      const ok = await addItem({
         product: {
           node: {
             id: data.productId,
