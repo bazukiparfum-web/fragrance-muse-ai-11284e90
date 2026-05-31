@@ -86,7 +86,7 @@ export default function ScentDetail() {
       }
 
       // Add to cart using Shopify variant ID
-      addItem({
+      const ok = await addItem({
         product: {
           node: {
             id: data.productId,
@@ -129,6 +129,7 @@ export default function ScentDetail() {
         selectedOptions: [{ name: 'Size', value: selectedSize }],
       });
 
+      if (!ok) throw new Error('Add to cart failed');
       toast.success(`Added ${scent.name} (${selectedSize}) to cart!`);
     } catch (error: any) {
       console.error('Error adding to cart:', error);

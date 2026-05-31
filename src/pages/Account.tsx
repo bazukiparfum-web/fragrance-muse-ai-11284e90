@@ -265,7 +265,7 @@ const Account = () => {
       }
 
       // Add to Shopify cart
-      addItem({
+      const ok = await addItem({
         product: {
           node: {
             id: data.productId,
@@ -313,6 +313,7 @@ const Account = () => {
         selectedOptions: [{ name: 'Size', value: variant.size }],
       });
 
+      if (!ok) throw new Error('Add to cart failed');
       toast.success(`Added ${scent.name} (${defaultSize}) to cart!`);
     } catch (error: any) {
       console.error('Error reordering:', error);

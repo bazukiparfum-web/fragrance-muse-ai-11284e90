@@ -47,7 +47,7 @@ export function ReorderModal({ open, onOpenChange, scent }: Props) {
       const variant = data.variantIds.find((v: any) => v.size === size) || data.variantIds[0];
       if (!variant) throw new Error('Variant not found');
 
-      addItem({
+      const ok = await addItem({
         product: {
           node: {
             id: data.productId,
@@ -81,6 +81,7 @@ export function ReorderModal({ open, onOpenChange, scent }: Props) {
         selectedOptions: [{ name: 'Size', value: size }],
       });
 
+      if (!ok) throw new Error('Add to cart failed');
       toast.success(`Added ${qty} × ${scent.name} (${size}) to cart`);
       onOpenChange(false);
     } catch (err: any) {
