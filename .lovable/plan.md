@@ -1,57 +1,45 @@
-# Fix: Add to Cart not working
-
 ## Root cause
 
-Network log on `/shop/quiz/results` shows Shopify's Storefront API rejecting the cart with:
+Console on `/shop/quiz/results` shows the 50ml/100ml **Add to Cart** failing before any Shopify call:
 
-> "The merchandise with id `gid://shopify/ProductVariant/47200402669788` does not exist."
+```
+Error saving scent: invalid input syntax for type uuid: "anonymous-test-user"
+```
 
-That variant is **hardcoded** in `src/pages/QuizResults.tsx` (lines 321 / 342 / 359) for the "30ml Discovery Set" CTA — it does not exist in the connected Shopify store, so cart creation fails. But:
+`src/pages/QuizResults.tsx:210` inserts into `public.saved_scents` with `user_id: 'anonymous-test-user'`, but `saved_scents.user_id` is a `uuid` column (verified via DB). Postgres rejects with `22P02`, the `try` block throws, and we toast "Failed to add to cart" — no edge function call, no Shopify cart create. (Hence no edge-function call in the network log.)
 
-- `addItem(...)` is called without `await`, and
-- `toast.success('Added 30ml Discovery Set to cart!')` fires immediately,
+This only surfaces for the single-bottle CTAs because those scents are quiz-generated (id prefixed with `default-`), so `isValidUUID` returns false and we hit the insert branch every time.
 
-so the UI lies — the user sees success while nothing was added. This matches the session replay (toast appeared, cart icon never updates).
+A second latent issue: even after the UUID fix, `create-shopify-product-from-scent` does its own `supabaseAdmin.auth.getUser(token)` check and returns 401 when no real session exists. Per memory, auth is currently bypassed end-to-end (`isAdmin=true`, `verify_jwt=false`), so this edge function also needs to fall back to the test user instead of 401.
 
-The per-scent "Add to Cart" handler in the same file (line 253) has the same swallowed-result bug: it does `await` the edge function but never awaits `addItem`, so a returned `false` is silently hidden behind a success toast.
+## Fix
 
-Several other call sites have the same "no await / always toast success" pattern and should be audited while we're here.
+### 1. `src/pages/QuizResults.tsx` — use a valid UUID for the anonymous test user
 
-## Changes
+- Add a constant `const ANON_TEST_USER_ID = '00000000-0000-0000-0000-000000000000';`
+- Replace `user_id: 'anonymous-test-user'` with `user_id: ANON_TEST_USER_ID` in the `saved_scents` insert (line ~210).
 
-### 1. `src/pages/QuizResults.tsx` — `handleAddDiscoverySet`
+### 2. `supabase/functions/create-shopify-product-from-scent/index.ts` — match the project-wide auth bypass
 
-Replace the hardcoded product/variant block with a real lookup against the live Shopify store.
+- If `Authorization` header is missing OR `auth.getUser(token)` fails, fall back to `ANON_TEST_USER_ID = '00000000-0000-0000-0000-000000000000'` instead of returning 401. Log a clear `[auth-bypass]` warning so this is easy to find when re-enabling auth.
+- Use `supabaseAdmin` (service role) to read/write `saved_scents` in the bypass path so RLS doesn't block the lookup. When a real user is present, keep using the user-scoped client as today.
+- Use the resolved user id (real or fallback) for the `.eq('user_id', ...)` filter on the scent lookup.
 
-- Fetch the Discovery Set by handle (`discovery-set-30ml`) via the existing `storefrontApiRequest` helper in `src/lib/shopify.ts` using a `productByHandle` query that returns `id`, `handle`, `title`, `priceRange`, `images(first:1)`, `variants(first:5)`, `options`.
-- If the product or its first available variant cannot be found, surface `toast.error('Discovery Set is currently unavailable.')` and bail. Do **not** call `addItem`.
-- Build the `CartItem` from the real Shopify response (real `variantId`, `price`, `selectedOptions`), then `const ok = await addItem(...)`.
-- Only toast success when `ok === true`. On failure, `toast.error('Failed to add Discovery Set. Please try again.')`.
-- Open the cart drawer on success via `useCartStore.getState().openDrawer()` so the user sees the result.
+No other behavior changes; the rest of the edge function (Shopify product creation, mapping inserts, response shape) stays identical.
 
-### 2. `src/pages/QuizResults.tsx` — per-scent add handler (~line 253)
-
-- `await addItem({...})`, capture the boolean, toast success only when `true`, toast error otherwise.
-- Open cart drawer on success.
-
-### 3. Audit other `addItem` callers for the same bug
-
-Update these to `await` and gate the success toast on the returned boolean (no behavior change otherwise):
-
-- `src/components/account/ReorderModal.tsx` (line ~50)
-- `src/pages/Account.tsx` (line ~268)
-- `src/pages/ScentDetail.tsx` (line ~89)
-- `src/components/ProductShowcase.tsx` (line ~76)
-
-`ShopifyProductCard.tsx`, `FeaturedScents.tsx`, and `ProductDetail.tsx` already do this correctly — leave them alone.
-
-### 4. Out of scope
+### 3. Out of scope
 
 - No design changes.
-- No changes to `cartStore.ts`, edge functions, or the Discovery Set Shopify product itself. If the `discovery-set-30ml` handle does not exist in Shopify either, the new error toast will tell us and we'll create the product in Shopify as a follow-up.
+- No changes to `cartStore.ts`, the Storefront API cart mutations, or any other add-to-cart caller — those already work (Discovery Set CTA returned a valid `cartCreate` in the latest network log).
+- We do NOT change `saved_scents.user_id` to nullable or drop the FK; the placeholder UUID is enough for E2E testing and matches the existing "Testing Auth Bypass" memory.
 
 ## Verification
 
-1. On `/shop/quiz/results` click **Add 30ml Discovery Set to Cart** → cart badge increments, drawer opens, network shows a successful `cartCreate` with no `userErrors`.
-2. Click per-scent **Add to Cart** for a recommended scent → same expected behavior.
-3. With a deliberately invalid variant, confirm an **error** toast now appears instead of a fake success.
+1. On `/shop/quiz/results`, in Section C, pick **50ml** for Velvet Whisper → click **Add to Cart**.
+   - Console: `Scent saved successfully with ID: <uuid>` (no `22P02`).
+   - Network: edge function `create-shopify-product-from-scent` returns 200 with `productId` + `variantIds`.
+   - Network: Shopify `cartCreate` (or `cartLinesAdd`) returns 200 with empty `userErrors`.
+   - UI: success toast, cart drawer opens, badge increments.
+2. Repeat with **100ml** → same expected behavior, price ₹1899 reflected in the cart line.
+3. Repeat for Mystic Aura and Midnight Shadow → each creates its own Shopify product and adds a separate line.
+4. Re-clicking Add to Cart for the same scent/size should hit the `if (scent.shopify_product_id)` short-circuit in the edge function (no duplicate Shopify product created) and just add another line / increment quantity.

@@ -207,7 +207,7 @@ const QuizResults = () => {
         const { data: savedScent, error: saveError } = await supabase
           .from('saved_scents')
           .insert([{
-            user_id: 'anonymous-test-user',
+            user_id: '00000000-0000-0000-0000-000000000000',
             name: scent.name,
             formula: scent.formula as any,
             match_score: scent.matchScore,
