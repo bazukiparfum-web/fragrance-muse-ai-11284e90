@@ -115,7 +115,8 @@ Deno.serve(async (req) => {
     const shopifyProduct = await createShopifyProduct(scent as SavedScent);
     
     // Update saved scent with Shopify IDs
-    const { error: updateError } = await supabaseClient
+    // Use service role for writes to bypass RLS (works for both auth modes).
+    const { error: updateError } = await supabaseAdmin
       .from('saved_scents')
       .update({
         shopify_product_id: shopifyProduct.id,
@@ -129,7 +130,7 @@ Deno.serve(async (req) => {
 
     // Create product mappings
     for (const variant of shopifyProduct.variants) {
-      await supabaseClient
+      await supabaseAdmin
         .from('shopify_product_mappings')
         .insert({
           saved_scent_id: scentId,
