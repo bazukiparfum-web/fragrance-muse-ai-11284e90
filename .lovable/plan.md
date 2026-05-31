@@ -1,28 +1,37 @@
 ## Root cause
 
-The Reorder modal on `/shop/account?tab=scents` calls the edge function `create-shopify-product-from-scent`, which fails for two reasons:
+The edge function `create-shopify-product-from-scent` (and `getVariantIds`) calls Shopify Admin API directly using a manually-managed `SHOPIFY_ACCESS_TOKEN` secret. That token is invalid (`[API] Invalid API key or access token`), which is why 50ml / 100ml Add to Cart and Reorder fail.
 
-1. **Owner mismatch in auth-bypass mode.** The saved scents in the DB belong to real users (e.g. "Velvet Aura v3" → `fc414540-...`). With auth bypassed, the function falls back to `ANON_TEST_USER_ID = '00000000-...'` and then runs `.eq('user_id', userId)` on `saved_scents`. No row matches → scent treated as "not found".
-
-2. **Crash on the not-found path.** Line 89 references `user.id` (the `user` variable no longer exists in the refactored code), so the function throws a `ReferenceError` and returns a 500 instead of a clean 404. The UI shows the generic "Failed to add to cart" toast.
-
-A real user signing in would have hit bug #2 silently anyway because of bug #1 mismatch in any bypass test.
+Instead of asking you to create a Shopify custom app and paste a `shpat_…` token, we should use **Lovable's native Shopify integration**, which is already wired into this project (the storefront uses `shopify--get_storefront_token` and `shopify--get_shop_permanent_domain`). For Admin API calls from edge functions, Lovable exposes Shopify Admin tools (`shopify--create_product`, `shopify--update_product`, etc.) so we don't have to hold a long-lived Admin token at all.
 
 ## Fix
 
-Edit `supabase/functions/create-shopify-product-from-scent/index.ts`:
+Replace the raw `fetch` to `https://{store}.myshopify.com/admin/api/.../products.json` with Lovable's managed Shopify Admin path. Two viable approaches — recommend **Option A**:
 
-- When running in auth-bypass mode (`useAdmin === true`), drop the `.eq('user_id', userId)` filter on the `saved_scents` lookup so any saved scent can be reordered during E2E testing. Keep the user-id filter when a real session is present.
-- Replace the stale `user.id` reference on line 89 with `userId` so the not-found branch returns a proper 404 instead of crashing.
-- Also use `supabaseAdmin` for the post-create `update` and `insert` calls in bypass mode, so RLS does not silently block writing back `shopify_product_id` / mappings.
+### Option A (recommended): move product creation to client-side via Lovable Shopify tools
+- Lovable's Shopify integration exposes Admin operations (create product, create variant) to the agent/runtime, not to arbitrary edge functions. Since dynamic custom-scent product creation happens on Reorder / Add-to-Cart, refactor so:
+  1. Frontend (`ReorderModal.tsx`, custom-scent Add-to-Cart) calls a thin edge function that returns the saved scent + formula.
+  2. Edge function no longer talks to Shopify Admin — it just returns scent data.
+  3. Product/variant creation in Shopify happens once, ahead of time, via Lovable's Shopify admin tools (one product per saved scent, lazily created on first publish) — and the resulting `shopify_product_id` is stored in `saved_scents`.
+- Net effect: no `SHOPIFY_ACCESS_TOKEN` secret needed anywhere. The Storefront API (already using `shopify--get_storefront_token`) handles cart + checkout.
 
-No other files change. ReorderModal, cart store, and Shopify variant handling stay as-is — the 50ml/100ml variants are already created correctly by the edge function.
+### Option B (smaller change): keep edge function, route Admin calls through Lovable
+- Use the Storefront API's `cartCreate` mutation with a one-off draft order pattern instead of creating a real product per scent. Custom scents become line-item-only items (title + price + properties) — Shopify supports this for custom products via draft orders. Removes need for Admin token entirely.
+- File touched: `supabase/functions/create-shopify-product-from-scent/index.ts` → renamed to `prepare-custom-scent-cart` and rewritten to return a Storefront cart-ready payload (no Admin API call).
+
+### Option C (status quo + manual token)
+- Keep the custom-app `shpat_…` token path. This is what we were doing. Works but you have to maintain the token and re-rotate when it expires or scopes change. **Not recommended** given Lovable's native integration is available.
+
+## What needs your decision
+
+Which option do you want? I lean toward **Option B** — it's the smallest change that fully removes the broken `SHOPIFY_ACCESS_TOKEN` dependency, keeps Reorder + 50ml/100ml Add-to-Cart working today, and doesn't require any manual Shopify Admin setup from you.
 
 ## Out of scope
 
-- Bottle-size policy (the project memory says 30ml/50ml only, but the modal already offers 50ml/100ml; not changing that in this fix).
-- Restoring real auth — the testing bypass stays.
+- Storefront product display (already works via Lovable's native Storefront token).
+- Signature collection products (pre-made in Shopify, unaffected).
+- Auth bypass for E2E testing (stays as-is).
 
 ## Verification
 
-On `/shop/account?tab=scents`, click Reorder on "Velvet Aura v3" → pick 50ml or 100ml → Add to Cart. Expected: edge function returns 200 with `productId` + `variantIds`, cart drawer opens, success toast. Network shows no 500 from `create-shopify-product-from-scent`.
+After the fix, on `/shop/account?tab=scents`: Reorder → 50ml or 100ml → Add to Cart → cart drawer opens with the custom scent line item, checkout URL resolves. Network shows no 500s and no calls to `/admin/api/.../products.json`.
