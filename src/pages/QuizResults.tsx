@@ -347,7 +347,7 @@ const QuizResults = () => {
         }
       `;
 
-      const resp = await storefrontApiRequest(PRODUCT_BY_HANDLE, { handle: 'discovery-set-30ml' });
+      const resp = await storefrontApiRequest(PRODUCT_BY_HANDLE, { handle: '30ml-discovery-set' });
       const product = resp?.data?.productByHandle;
       const variantEdge = product?.variants?.edges?.find((e: any) => e.node.availableForSale) || product?.variants?.edges?.[0];
       const variant = variantEdge?.node;
