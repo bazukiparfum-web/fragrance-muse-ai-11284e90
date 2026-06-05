@@ -1,45 +1,113 @@
-## Scope update (per your direction)
+# End-to-End Specification Document — Bazuki Fragrance Platform
 
-- **Bespoke perfumes** → upload remaining 56 → visible in Bazuki Signature Scents section
-- **Diffusers** → upload remaining 10 → visible on `/business`
-- **Car perfumes** → SKIP. Delete the 1 pilot Car Perfume already created (`Bazuki Musk Car Perfume`, id `15158425616748`) so the store stays clean. No `/car-perfumes` page, no header link.
+## Goal
+Produce a single comprehensive specification document covering every user-facing feature, backend service, admin module, and integration in the project — usable for QA, onboarding, and end-to-end testing.
 
-Pilot Bespoke + Diffuser already live and verified — they stay.
+## Deliverable
+A structured document saved to `/mnt/documents/`:
+- **Primary**: `bazuki-e2e-specification.md` (Markdown, easy to update)
+- **Secondary**: `bazuki-e2e-specification.pdf` (printable, shareable)
+Plus a companion **`bazuki-test-checklist.md`** — a flat checklist QA can walk through.
 
-## Phase 1 — Clean up pilot
+## Discovery Pass (read-only)
+I'll audit the codebase in parallel batches and extract:
+1. All routes in `App.tsx` → page-level feature inventory
+2. All edge functions in `supabase/functions/` → backend capability inventory
+3. All admin pages under `src/pages/admin/` → admin module inventory
+4. All DB tables (already in context) → data model
+5. Shopify integration touchpoints (`src/lib/shopify.ts`, cart store, webhooks)
+6. Existing docs: `PHASE_4_INTEGRATION.md`, `QUICK_TEST_GUIDE.md`, `SHOPIFY_TESTING_GUIDE.md`, `TESTING_GUIDE.md`, `.lovable/plan.md`
 
-Delete product `15158425616748` (the Musk Car Perfume pilot) via `shopify--delete_product`.
+## Document Structure
 
-## Phase 2 — Bulk upload the remaining 66 products
+```text
+1. System Overview
+   ├─ Stack, architecture diagram (ASCII), environments
+   └─ Roles: guest / authenticated user / admin / machine API
 
-Sequential `shopify--create_product` calls using the already-prepared payloads in `/mnt/documents/shopify-import-preview.json` (images already downloaded to `/tmp/bazuki-imgs/`, all 334 verified).
+2. Customer-Facing Features (per feature: purpose, route, UI, data flow,
+   edge functions touched, DB tables, success/error paths, test steps)
+   ├─ 2.1  Home / Hero / Signature showcase
+   ├─ 2.2  Auth (email, Google, WhatsApp OTP)
+   ├─ 2.3  Personality Quiz (self + for-someone-else)
+   ├─ 2.4  Quiz Results + Crafting screen + Share
+   ├─ 2.5  My Scents / Account (save, publish, reorder, tweak)
+   ├─ 2.6  Public Collection / Marketplace
+   ├─ 2.7  Signature Products (Bazuki + Bespoke catalog)
+   ├─ 2.8  Product Detail Page + Reviews
+   ├─ 2.9  Cart (Zustand + Shopify Storefront sync)
+   ├─ 2.10 Checkout (Shopify hosted) + WhatsApp opt-in
+   ├─ 2.11 Order Confirmation + Order history
+   ├─ 2.12 Referrals (codes, rewards, discounts)
+   ├─ 2.13 Gift Cards (purchase, redeem)
+   ├─ 2.14 Business / B2B page + Diffusers + Lead form
+   ├─ 2.15 Scent Coaching, Ingredients, About, Guides, Legal, SEO pages
 
-- 56 Bespoke Perfumes: `vendor=BAZUKI`, `product_type=Bespoke Perfume`, `tags=signature,bespoke,inspired`, options `Size=[30 ML, 50 ML, 100 ML]`, each variant has `price` (sale) + `compare_at_price` (regular ₹499/999/1499) and `inventory_policy=continue`.
-- 10 Aroma Diffusers: `vendor=BAZUKI`, `product_type=Aroma Diffuser`, `tags=diffuser,b2b`, single variant at CSV price, `inventory_policy=continue`.
+3. Backend Services (per edge function: trigger, inputs, outputs, side effects, auth)
+   ├─ Quiz: get-quiz-questions, quiz-recommendations, share-quiz-result, quiz-share-meta, generate-quiz-og-image
+   ├─ Scent → Shopify: create-custom-scent, create-shopify-product-from-scent
+   ├─ Shopify ops: shopify-webhook-handler
+   ├─ Referrals: create-referral-discount, process-referral-reward
+   ├─ Gift cards: purchase-gift-card, redeem-gift-card
+   ├─ Email: process-email-queue
+   ├─ WhatsApp: whatsapp-send-otp, whatsapp-verify-otp, whatsapp-optin, whatsapp-optin-reconcile
+   ├─ Machine: machine-production-api
+   └─ Admin: admin-* (list-orders, manage-users, manage-production, simulate-order,
+              seed-production-queue, bulk-import-queue, manage-formulas, manage-scents,
+              manage-notes, upload-notes, manage-rules, manage-questions, get-quiz-analytics)
 
-Safeguards: idempotent skip if `title:"..."` already exists in Shopify (covers the 2 pilots); log every created `product_id` to `/mnt/documents/shopify-import-log.json`; stop and surface after 3 consecutive failures.
+4. Admin Panel (per module: route, purpose, screens, actions, edge function backing,
+   permissions, test scenarios)
+   ├─ Dashboard         ├─ Notes            ├─ Ingredients
+   ├─ Rules             ├─ Scents           ├─ Questions
+   ├─ Orders            ├─ Pumps            ├─ Production Queue
+   ├─ Formula Library   ├─ Consultations    ├─ Reviews
+   ├─ Users & Roles     └─ Manual Testing tool
 
-Expected final count: 7 baseline + 1 Bespoke pilot + 1 Diffuser pilot + 56 + 10 = **75 products** (after Car pilot is deleted).
+5. Data Model
+   └─ Table-by-table summary + RLS posture + key relationships
 
-## Phase 3 — Storefront wiring
+6. Integrations
+   ├─ Shopify (Admin + Storefront), product/tag conventions, ID format
+   ├─ Lovable AI Gateway (quiz recommendations, OG image)
+   └─ WhatsApp provider
 
-Files touched:
+7. Production / Machine API
+   └─ Queue lifecycle, formula format, pump mapping, dev auth note
 
-- `src/lib/shopify.ts` — thread an optional `query` argument through `fetchShopifyProducts` so callers can pass `tag:signature` / `tag:diffuser`. GraphQL already accepts `$query`.
-- `src/components/ProductShowcase.tsx` (homepage Signature section) — fetch with `query: "tag:signature"`, `first: 60`.
-- `src/pages/Collection.tsx` — Shopify side fetches with `query: "tag:signature"`. DB-backed scents section unchanged.
-- `src/pages/Business.tsx` — add an "Aroma Diffusers" grid section fetching `query: "tag:diffuser"`, using the existing `ShopifyProductCard`.
+8. Security Posture
+   └─ RLS summary, current testing bypass (isAdmin=true), placeholder machine key
 
-No changes to: `Header`, routing, cart, edge functions, DB, RLS, or webhook flow. The 5 existing hardcoded Signature products (Midnight Velvet etc.) are untouched — they're currently rendered from local code; the new tag-based Shopify fetch will add the 57 real perfumes alongside them. We can prune the legacy 5 later if you want.
+9. End-to-End Test Scenarios (numbered, step-by-step)
+   ├─ Guest takes quiz → saves → signs up → buys
+   ├─ User publishes scent → another user discovers in collection
+   ├─ Admin moderates review, tags scent, edits formula
+   ├─ Order paid → production queue → machine fetch → mark complete
+   ├─ Referral: A invites B, B buys, A gets reward
+   ├─ Gift card: purchase → email → recipient redeems
+   ├─ B2B lead capture → admin sees consultation
+   └─ WhatsApp OTP login + opt-in attached to order
 
-## Phase 4 — Verification
+10. Known Limitations & Test-Mode Flags
+    └─ Auth bypass, placeholder machine key, manual Shopify configs (GST/INR/shipping)
 
-- `shopify--count_products` returns 75.
-- Load `/` → Signature grid shows real Bespoke perfumes with strikethrough pricing.
-- Load `/collection` → same.
-- Load `/business` → new diffuser grid populates.
-- Add a 50 ML Bespoke to cart → cart drawer opens, Shopify checkoutUrl resolves.
+11. Appendix
+    ├─ Glossary
+    ├─ Route map table
+    └─ Environment variables / secrets inventory (names only)
+```
 
-## Rollback
+## Process
+1. Parallel read: `App.tsx`, all admin pages, all edge function `index.ts` headers, `shopify.ts`, `cartStore.ts`, existing testing guides.
+2. Synthesize into the structure above (no code edits).
+3. Write Markdown to `/mnt/documents/bazuki-e2e-specification.md`.
+4. Convert to PDF via pandoc.
+5. Write companion `bazuki-test-checklist.md`.
+6. Emit `<presentation-artifact>` tags for both.
 
-Every created `product_id` is logged. Bulk-undo via `shopify--delete_product` from the log if needed.
+## Out of Scope
+- No code changes, no schema changes, no edge function deploys.
+- Not a marketing/sales doc — engineering/QA-focused.
+- Will not invent features that aren't in the codebase.
+
+Estimated length: ~30–50 pages. Approve and I'll generate it.
