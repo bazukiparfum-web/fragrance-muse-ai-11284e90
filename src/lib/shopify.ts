@@ -185,9 +185,9 @@ export async function storefrontApiRequest(query: string, variables: any = {}) {
   return data;
 }
 
-export async function fetchShopifyProducts(first: number = 10): Promise<ShopifyProduct[]> {
+export async function fetchShopifyProducts(first: number = 10, query?: string): Promise<ShopifyProduct[]> {
   try {
-    const data = await storefrontApiRequest(STOREFRONT_QUERY, { first });
+    const data = await storefrontApiRequest(STOREFRONT_QUERY, { first, query });
     if (!data) return [];
     const edges = data?.data?.products?.edges ?? [];
     return edges;
