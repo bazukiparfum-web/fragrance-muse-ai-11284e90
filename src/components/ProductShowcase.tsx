@@ -140,7 +140,7 @@ const ProductShowcase = () => {
             .select("id, name, formulation_notes, match_score, intensity, longevity, visual_data, fragrance_code, creator_tag, created_at")
             .eq("is_public", true)
             .order("match_score", { ascending: false }),
-          fetchShopifyProducts(),
+          fetchShopifyProducts(60, "tag:signature"),
         ]);
 
         if (scentsResult.status === 'fulfilled' && !scentsResult.value.error) {
