@@ -102,7 +102,7 @@ const BusinessAroma = ({ showHero = true }: BusinessAromaProps) => {
             <div className="rounded-lg overflow-hidden shadow-2xl">
               <img
                 src={businessImage}
-                alt="Bazuki 360° Aroma business solutions"
+                alt="Bazuki Scent Marketing solutions"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -114,7 +114,7 @@ const BusinessAroma = ({ showHero = true }: BusinessAromaProps) => {
               <>
                 <div className="inline-block px-4 py-2 bg-luxury-gold/10 rounded-full mb-6">
                   <span className="text-luxury-gold font-semibold uppercase tracking-wider text-sm">
-                    For Businesses
+                    Scent Marketing
                   </span>
                 </div>
                 <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">

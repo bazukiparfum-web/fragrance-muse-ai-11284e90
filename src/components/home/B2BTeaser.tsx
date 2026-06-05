@@ -16,7 +16,7 @@ const B2BTeaser = () => {
         <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
           <div>
             <Reveal variant="headline" as="p" className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-4">
-              For Businesses
+              Scent Marketing
             </Reveal>
             <Reveal variant="headline" delay={80} as="h2" className="font-display text-cream text-3xl md:text-[40px] leading-tight mb-4">
               Scent Your Space with Bazuki 360° Aroma<sup className="text-[0.45em] tracking-normal align-top ml-0.5">®</sup>

@@ -18,17 +18,33 @@ import { buildBreadcrumbs } from "@/lib/breadcrumbs";
 
 const Business = () => {
   useSEO({
-    title: "Scent Marketing for Business | Bazuki Fragrance",
+    title: "Scent Marketing for Hotels, Retail & Offices | Bazuki",
     description:
-      "Scent Marketing — custom brand scents, IoT diffusers and refill subscriptions for hotels, retail, offices, spas, events and automotive across India.",
+      "Scent Marketing by Bazuki — custom brand scents, IoT diffusers and refill subscriptions for hotels, retail, offices, spas and events across India.",
   });
   const breadcrumbs = buildBreadcrumbs([
     { name: "Home", path: "/" },
     { name: "Scent Marketing", path: "/business" },
   ]);
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: "Scent Marketing",
+    serviceType: "Scent Marketing",
+    provider: {
+      "@type": "Organization",
+      name: "Bazuki Perfumes",
+      url: "https://www.bazukifragrance.com",
+    },
+    areaServed: { "@type": "Country", name: "India" },
+    url: "https://www.bazukifragrance.com/business",
+    description:
+      "Custom brand scents, IoT-ready diffusers and refill subscriptions for hotels, retail, offices, spas and events across India.",
+  };
   return (
     <div className="min-h-screen">
       <JsonLd id="breadcrumbs-business" data={breadcrumbs} />
+      <JsonLd id="service-scent-marketing" data={serviceJsonLd} />
       <Header />
       <main className="pt-16">
         <HeroB2B />

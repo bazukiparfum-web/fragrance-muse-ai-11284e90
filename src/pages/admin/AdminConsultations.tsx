@@ -60,7 +60,7 @@ const AdminConsultations = () => {
             <div className="flex-1">
               <h1 className="font-serif text-4xl font-bold heading-luxury">Consultation Requests</h1>
               <p className="text-muted-foreground mt-1">
-                View submissions from the Business Aroma consultation form
+                View submissions from the Scent Marketing consultation form
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={fetchRequests} disabled={loading}>

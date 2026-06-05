@@ -42,14 +42,14 @@ const NichePerfumeIndia = () => (
         ),
       },
       {
-        heading: "For brands: 360° aroma marketing",
+        heading: "For brands: Scent Marketing",
         body: (
           <p>
             Bazuki's B2B arm composes signature scents for hotels, retail spaces, salons, and
             corporate environments — pairing fragrance with diffusion hardware and a full sensory
             strategy. See{" "}
             <Link to="/business" className="text-luxury-gold underline-offset-4 hover:underline">
-              360° Aroma Solutions
+              Scent Marketing
             </Link>{" "}
             for case studies and packages.
           </p>
