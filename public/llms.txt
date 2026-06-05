@@ -23,7 +23,7 @@
 - [AI Fragrance Quiz](https://www.bazukifragrance.com/shop/quiz): 16-question quiz that generates three personalized fragrances.
 - [Collection](https://www.bazukifragrance.com/collection): Signature pre-made scents and community-published custom fragrances.
 - [Ingredients](https://www.bazukifragrance.com/ingredients): The 10 IFRA-compliant fragrance notes used in formulations.
-- [Business / 360° Aroma](https://www.bazukifragrance.com/business): Aroma marketing for hotels, retail, and offices.
+- [Scent Marketing](https://www.bazukifragrance.com/business): Scent marketing for hotels, retail, and offices.
 - [About](https://www.bazukifragrance.com/about): Science, technology, and AI fragrance composition method.
 - [Guide: Find Your Signature Scent](https://www.bazukifragrance.com/guide/find-your-signature-scent)
 - [Guide: Perfume Notes Explained](https://www.bazukifragrance.com/guide/perfume-notes-explained)

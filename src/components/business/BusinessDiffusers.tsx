@@ -91,7 +91,7 @@ const BusinessDiffusers = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="font-serif text-3xl md:text-4xl font-bold mb-3">
-            Aroma Diffusers for Business
+            Aroma Diffusers for Scent Marketing
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             IoT-ready diffusers engineered for hotels, retail, offices and spas — pair with any Bazuki signature scent.

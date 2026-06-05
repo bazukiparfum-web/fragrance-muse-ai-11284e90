@@ -53,11 +53,11 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Business */}
+          {/* Scent Marketing */}
           <div>
-            <h4 className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">Business</h4>
+            <h4 className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">Scent Marketing</h4>
             <ul className="space-y-3 text-sm">
-              <li><Link to="/business" className="text-cream-muted hover:text-gold transition-colors">360° Aroma Solutions</Link></li>
+              <li><Link to="/business" className="text-cream-muted hover:text-gold transition-colors">Scent Marketing</Link></li>
               <li><Link to="/business" className="text-cream-muted hover:text-gold transition-colors">Custom Fragrances</Link></li>
               <li><Link to="/business#consultation" className="text-cream-muted hover:text-gold transition-colors">Book a Consultation</Link></li>
               <li><Link to="/scent-coaching" className="text-cream-muted hover:text-gold transition-colors">Scent Coaching</Link></li>
