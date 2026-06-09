@@ -63,14 +63,6 @@ const tiers: Tier[] = [
   },
 ];
 
-const brands = [
-  "Narayani Heights Hotel",
-  "Concept Hyundai",
-  "MG",
-  "Harley Davidson",
-  "Honda Motors",
-  "KGB Golf Clubs",
-];
 
 const scrollToLead = () => {
   document.getElementById("lead-form")?.scrollIntoView({ behavior: "smooth" });
@@ -165,21 +157,6 @@ const B2BPackages = () => {
           * All prices exclusive of GST. Minimum 3-month commitment for Starter and Business plans. Enterprise pricing on request.
         </p>
 
-        <div className="mt-16 border-t border-gold-strong/15 pt-10">
-          <p className="text-center text-[10px] font-semibold uppercase tracking-[0.3em] text-gold">
-            Trusted by
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            {brands.map((b) => (
-              <span
-                key={b}
-                className="rounded-pill border border-gold-strong/40 bg-bz-card px-4 py-2 text-[12px] tracking-[0.1em] text-cream"
-              >
-                {b}
-              </span>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
   );
