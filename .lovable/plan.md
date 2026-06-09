@@ -1,57 +1,61 @@
 ## Goal
-Add a "Trusted By" client logo carousel on the Scent Marketing (`/business`) and About (`/about`) pages. Responsive hybrid: auto-scrolling marquee on mobile, clickable arrow carousel on desktop.
+Add the 8 client logos you uploaded to `src/assets/clients/`, normalize them to a consistent visual size, and wire them into the `TrustedByCarousel` on `/business` and `/about`.
 
-## What we'll build
+## Logos to add
+1. KBG Club
+2. MG Motor
+3. Makeba (The Lounge Cafe)
+4. Jeep
+5. Cartec
+6. Kawasaki
+7. Harley-Davidson
+8. Concept Hyundai
 
-### 1. New shared component: `src/components/TrustedByCarousel.tsx`
-A self-contained, reusable section component.
+## The "same size" problem
+Your source files have very different aspect ratios and backgrounds:
+- **Square-ish**: KBG, MG, Cartec, Concept Hyundai
+- **Wide**: Jeep, Harley, Makeba (banner)
+- **With backgrounds**: Makeba (navy), Kawasaki (black+green), Harley (colored)
 
-**Props:**
-- `eyebrow?: string` — small label (default: `"Trusted By"`)
-- `title?: string` — heading (default: `"Brands that trust Bazuki"`)
-- `logos: { name: string; src: string; href?: string }[]`
-- `className?: string`
+Just dropping them in and constraining with CSS (`h-14`, `max-w-[160px]`) makes wide logos visually huge and square logos visually small. The fix is to **pre-process each logo to a fixed canvas** so they all share the same bounding box.
 
-**Behavior:**
-- **Mobile (`< md`)**: pure CSS infinite marquee (duplicated logo track, `@keyframes` translateX). Pauses on touch/hover. No arrows.
-- **Desktop (`>= md`)**: shadcn `Carousel` (Embla) showing 5–6 logos at a time, with prev/next arrows, `loop: true`, `align: "start"`, and Embla autoplay plugin (slow drift, pauses on hover).
-- Logos rendered as `<img>` with grayscale + reduced opacity by default, full color on hover (subtle, brand-respectful).
-- `prefers-reduced-motion`: marquee/autoplay disabled, static row shown.
-- Fully a11y: `role="region"` with `aria-label="Trusted by"`, alt text from `name`.
+## Approach
 
-**Styling:** Dark theme aware, uses Bazuki tokens (`bg-bz-secondary` / `border-gold/15`). Logo tile: ~`h-12 md:h-14`, `object-contain`, `px-6`, separated by faint vertical dividers.
+### 1. Normalize on a fixed canvas (sandbox-side, before upload)
+For each logo, use ImageMagick to:
+- Trim excess whitespace
+- Resize the artwork to fit within ~**320×120 px**, preserving aspect ratio
+- Center it on a **400×140 transparent PNG canvas** (consistent letterbox)
+- Keep original colors (some brands like Harley/Kawasaki lose identity in pure mono)
 
-### 2. Logos data + assets
-- Add **`src/data/clientLogos.ts`** exporting a single `CLIENT_LOGOS` array consumed by both pages.
-- Place uploaded logo files under **`src/assets/clients/`** (e.g., `narayani-heights.png`, `adani-menswear.png`, etc.) and import them.
-- Until you upload real files, the array will be **empty** and the component will render nothing (graceful no-op). Once you drop logos in, both pages light up automatically.
+This guarantees every logo renders at the exact same tile size in the carousel.
 
-You'll provide the actual logo files. We'll add each as an `import` in `clientLogos.ts`.
+### 2. Logos with dark/branded backgrounds
+- **Makeba** (navy bg, gold artwork) → keep navy background inside the 400×140 tile; it reads cleanly on our dark `bz-secondary` section.
+- **Kawasaki** (black + green stripes) → keep as-is, centered on transparent canvas.
+- **Harley-Davidson** (orange shield) → keep full color on transparent canvas.
+- All others → transparent background.
 
-### 3. Placement
+### 3. Upload via Lovable Assets CDN (not committed to repo)
+Per project asset policy, binary logos go to the CDN as `.asset.json` pointers under `src/assets/clients/`, not raw PNGs in the repo. Each logo becomes `src/assets/clients/<slug>.png.asset.json`.
 
-**`src/pages/Business.tsx`** — insert `<TrustedByCarousel />` between `<B2BPackages />` and `<ClientStories />` (i.e., right after Scent Marketing Packages, in a "Trusted By" strip).
+### 4. Wire into `clientLogos.ts`
+Replace the placeholder array with all 8 entries (importing each `.asset.json` and using `.url` as `src`).
 
-**`src/pages/About.tsx`** — insert as a new `<section>` between the existing stats strip and the bottom CTA.
+### 5. Tweak `TrustedByCarousel` for color logos
+The current tile uses `grayscale opacity-70` by default → Harley/Kawasaki/Makeba would look muddy. Change to:
+- Default: full color, `opacity-90`
+- Hover: `opacity-100` + subtle scale
+Tile size stays `h-14` with `max-w-[180px]` and `object-contain` — and since every source PNG is now the same 400×140 canvas, every logo lands at the same visual size.
 
-### 4. Dependency
-Add `embla-carousel-autoplay` (small, official Embla plugin) for the desktop autoplay drift. Already-installed `embla-carousel-react` powers the rest via the existing shadcn `Carousel`.
-
-### 5. SEO / structure
-- Use a proper `<section aria-labelledby="trusted-by-…">` with a visible `<h2>` (sr-only on Business if it'd clutter, visible on About). No JSON-LD needed (logos alone aren't a structured-data entity).
-
-## File changes summary
-- **Add** `src/components/TrustedByCarousel.tsx`
-- **Add** `src/data/clientLogos.ts`
-- **Add** `src/assets/clients/` (directory; you'll upload logo files here)
-- **Edit** `src/pages/Business.tsx` — import + render after `B2BPackages`
-- **Edit** `src/pages/About.tsx` — import + render after stats strip
-- **Install** `embla-carousel-autoplay`
+## File changes
+- **Add (CDN pointers)**: `src/assets/clients/kbg-club.png.asset.json`, `mg.png.asset.json`, `makeba.png.asset.json`, `jeep.png.asset.json`, `cartec.png.asset.json`, `kawasaki.png.asset.json`, `harley-davidson.png.asset.json`, `concept-hyundai.png.asset.json`
+- **Edit** `src/data/clientLogos.ts` — import all 8 and populate `CLIENT_LOGOS`
+- **Edit** `src/components/TrustedByCarousel.tsx` — drop default grayscale, bump `max-w` to `180px` for consistent tile width
+- **No** raw PNGs added to the repo
 
 ## Out of scope
-- No backend / DB changes.
-- No edits to other pages, header, footer, or Shopify.
-- No logo-management admin UI (logos are code-managed for now — fast to add, simple to maintain).
+- No new pages, routes, or backend changes
+- No edits to other sections of `/business` or `/about`
 
-## Next step from you
-Upload the customer logo files (PNG with transparent background preferred, or SVG). Drop them anywhere and tell me the brand names + order; I'll wire them into `clientLogos.ts` during build.
+Approve and I'll execute.
