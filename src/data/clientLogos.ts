@@ -11,6 +11,7 @@ import h3Preschool from "@/assets/clients/h3-preschool.png.asset.json";
 import vespa from "@/assets/clients/vespa.png.asset.json";
 import elementalStudio from "@/assets/clients/elemental-studio.png.asset.json";
 import raymond from "@/assets/clients/raymond.png.asset.json";
+import narayaniHeights from "@/assets/clients/narayani-heights.png.asset.json";
 
 export type ClientLogo = {
   name: string;
@@ -32,4 +33,5 @@ export const CLIENT_LOGOS: ClientLogo[] = [
   { name: "Vespa", src: vespa.url },
   { name: "Elemental Studio", src: elementalStudio.url },
   { name: "Raymond", src: raymond.url },
+  { name: "Narayani Heights Hotel and Club", src: narayaniHeights.url },
 ];
