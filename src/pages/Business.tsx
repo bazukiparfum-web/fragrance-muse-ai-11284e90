@@ -12,6 +12,8 @@ import LeadCaptureForm from "@/components/business/LeadCaptureForm";
 import BusinessFAQ from "@/components/business/BusinessFAQ";
 import FinalCtaStrip from "@/components/business/FinalCtaStrip";
 import BusinessDiffusers from "@/components/business/BusinessDiffusers";
+import { TrustedByCarousel } from "@/components/TrustedByCarousel";
+import { CLIENT_LOGOS } from "@/data/clientLogos";
 import { useSEO } from "@/hooks/useSEO";
 import { JsonLd } from "@/components/JsonLd";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
@@ -51,6 +53,12 @@ const Business = () => {
         <ScentScience />
         <UseCasesGrid />
         <B2BPackages />
+        <TrustedByCarousel
+          logos={CLIENT_LOGOS}
+          eyebrow="Trusted By"
+          title="Brands that trust Bazuki"
+          headingVisible={false}
+        />
         <ClientStories />
         <HowItWorks />
         <ServicesOffered />

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import scienceHero from "@/assets/science-hero.jpg";
 import technologyHero from "@/assets/technology-hero.jpg";
+import { TrustedByCarousel } from "@/components/TrustedByCarousel";
+import { CLIENT_LOGOS } from "@/data/clientLogos";
 import { useSEO } from "@/hooks/useSEO";
 import { JsonLd } from "@/components/JsonLd";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
@@ -126,6 +128,13 @@ const About = () => {
           </div>
         </div>
       </section>
+
+      {/* Trusted By */}
+      <TrustedByCarousel
+        logos={CLIENT_LOGOS}
+        eyebrow="Trusted By"
+        title="Brands that trust Bazuki"
+      />
 
       {/* Bottom CTA */}
       <section className="py-16 md:py-24">
