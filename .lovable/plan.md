@@ -1,39 +1,33 @@
-# Fix Trusted-By logo display
+## Fix: New pages should always open at the top
 
-Single file edit: `src/components/TrustedByCarousel.tsx`. Only CSS in the inline `<style>` block changes. No markup, marquee speed, borders, eyebrow label, or fade masks are touched.
+### Changes
 
-## Changes
+1. **Create `src/components/ScrollToTop.tsx`**
+   - Listens to `useLocation().pathname` and calls `window.scrollTo({ top: 0, left: 0, behavior: 'instant' })` on every change.
+   - Also resets `document.documentElement.scrollTop` and `document.body.scrollTop` (Safari safety).
+   - Returns `null`.
 
-**1. Marquee gap:** `.tb-marquee-track` gap `80px → 100px`.
+2. **Mount it in `src/App.tsx`**
+   - Render `<ScrollToTop />` as the first child inside `<BrowserRouter>`, before `<Routes>`.
 
-**2. Logo wrapper (`.tb-logo-wrap`):**
-- height `52px → 56px`
-- add `min-width: 140px`
-- keep flex centering (already `inline-flex` + `align-items:center`; add `justify-content:center` explicitly)
+3. **Disable browser scroll restoration in `src/main.tsx`**
+   - Add once at module load:
+     ```ts
+     if ('scrollRestoration' in window.history) {
+       window.history.scrollRestoration = 'manual';
+     }
+     ```
 
-**3. Logo image (`.tb-logo-img`) — replace current rules with:**
-```css
-height: 56px;
-max-width: 160px;
-width: auto;
-object-fit: contain;
-transform: scale(1.3);
-transform-origin: center;
-mix-blend-mode: lighten;
-filter: grayscale(100%) brightness(2.5) contrast(0.8) opacity(0.6);
-transition: filter 300ms ease, transform 200ms ease;
-```
+4. **CSS safety net in `src/index.css`**
+   - Add `html { scroll-behavior: auto; }` (no `!important` unless conflict found) so route changes don't animate.
 
-**4. Hover state:** move the scale + lift from `.tb-logo-wrap:hover` onto the image itself so transform and filter animate together:
-```css
-.tb-logo-wrap:hover .tb-logo-img {
-  filter: grayscale(0%) brightness(1) contrast(1) opacity(1);
-  transform: scale(1.38) translateY(-2px);
-}
-```
-Remove the existing `.tb-logo-wrap:hover { transform: translateY(-3px) }` so the wrapper no longer moves (prevents double-translate against the new image transform).
+### Out of scope
+- Per-button `onClick` scroll resets (the global handler covers React Router `<Link>` and `navigate()` calls; adding to every button is noisy and unnecessary).
+- Shopify Liquid script (project is a React SPA).
+- No changes to quiz logic, styling, or page content.
 
-**5. Reduced-motion:** unchanged — marquee still disabled; filters still apply (static visibility is fine).
-
-## Out of scope
-Section background, gold borders, glow, eyebrow lines/text, marquee duration (35s), edge fade mask, tooltip, IntersectionObserver entry sequence — all untouched.
+### Files touched
+- new: `src/components/ScrollToTop.tsx`
+- edit: `src/App.tsx` (mount component)
+- edit: `src/main.tsx` (disable scrollRestoration)
+- edit: `src/index.css` (one rule)
