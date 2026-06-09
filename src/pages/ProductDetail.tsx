@@ -73,8 +73,18 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [addStatus, setAddStatus] = useState<'idle' | 'adding' | 'added' | 'error'>('idle');
   const [buyStatus, setBuyStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [qtyPulse, setQtyPulse] = useState(false);
+  const [addShimmer, setAddShimmer] = useState(false);
+  const qtyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const addItem = useCartStore((s) => s.addItem);
+  const pulseQty = () => {
+    setQtyPulse(false);
+    if (qtyTimerRef.current) clearTimeout(qtyTimerRef.current);
+    // re-trigger animation on next frame
+    requestAnimationFrame(() => setQtyPulse(true));
+    qtyTimerRef.current = setTimeout(() => setQtyPulse(false), 200);
+  };
+
   const { launchCheckout, isLaunching, isError, error: launchError, retry: retryLaunch, reset: resetLaunch } = useCheckoutRedirect();
   const openDrawer = useCartStore((s) => s.openDrawer);
 
