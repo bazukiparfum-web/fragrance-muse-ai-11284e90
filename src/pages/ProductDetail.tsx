@@ -301,17 +301,17 @@ export default function ProductDetail() {
                     )}
                     style={{
                       border: `1px solid hsl(var(--bz-gold) / ${i === selectedImage ? 1 : 0.2})`,
-                      background: '#0D0C0A',
+                      background: '#141210',
                     }}
                     aria-label={`View image ${i + 1}`}
                   >
                     <img
                       src={img.node.url}
                       alt=""
-                      className="w-full h-full object-contain p-1"
-                      style={{ mixBlendMode: 'multiply' }}
+                      className="w-full h-full object-contain object-center p-1"
                     />
                   </button>
+
                 ))}
               </div>
             )}
