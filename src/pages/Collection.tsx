@@ -32,7 +32,7 @@ export default function Collection() {
     setLoading(true);
     setError(false);
     const [shopRes, scentRes] = await Promise.allSettled([
-      fetchShopifyProducts(),
+      fetchShopifyProducts(50, "NOT tag:diffuser"),
       supabase
         .from("saved_scents")
         .select(
