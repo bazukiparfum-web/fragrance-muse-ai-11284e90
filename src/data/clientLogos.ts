@@ -6,6 +6,11 @@ import cartec from "@/assets/clients/cartec.png.asset.json";
 import kawasaki from "@/assets/clients/kawasaki.png.asset.json";
 import harleyDavidson from "@/assets/clients/harley-davidson.png.asset.json";
 import conceptHyundai from "@/assets/clients/concept-hyundai.png.asset.json";
+import torrecid from "@/assets/clients/torrecid.png.asset.json";
+import h3Preschool from "@/assets/clients/h3-preschool.png.asset.json";
+import vespa from "@/assets/clients/vespa.png.asset.json";
+import elementalStudio from "@/assets/clients/elemental-studio.png.asset.json";
+import raymond from "@/assets/clients/raymond.png.asset.json";
 
 export type ClientLogo = {
   name: string;
@@ -22,4 +27,9 @@ export const CLIENT_LOGOS: ClientLogo[] = [
   { name: "Kawasaki", src: kawasaki.url },
   { name: "Harley-Davidson", src: harleyDavidson.url },
   { name: "Concept Hyundai", src: conceptHyundai.url },
+  { name: "Torrecid", src: torrecid.url },
+  { name: "H3 Pre-School", src: h3Preschool.url },
+  { name: "Vespa", src: vespa.url },
+  { name: "Elemental Studio", src: elementalStudio.url },
+  { name: "Raymond", src: raymond.url },
 ];
