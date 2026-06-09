@@ -569,7 +569,7 @@ export default function ProductDetail() {
                 <TabsTrigger
                   key={t.v}
                   value={t.v}
-                  className="rounded-none bg-transparent px-0 pb-3 uppercase tracking-[0.1em] data-[state=active]:shadow-none transition-colors"
+                  className="pdp-tab-trigger rounded-none bg-transparent px-0 pb-3 uppercase tracking-[0.1em] data-[state=active]:shadow-none transition-colors hover:text-[#C8C0B0] data-[state=active]:text-[#C9A84C] data-[state=active]:border-b-2 data-[state=active]:border-[#C9A84C]"
                   style={{
                     fontSize: '13px',
                     color: 'var(--anim-dim-gold)',
