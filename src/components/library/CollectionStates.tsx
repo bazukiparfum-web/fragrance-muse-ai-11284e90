@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import GoldBottleIcon from "@/components/library/GoldBottleIcon";
 
 export function CollectionError({ onRetry }: { onRetry: () => void }) {
   return (
@@ -7,7 +8,7 @@ export function CollectionError({ onRetry }: { onRetry: () => void }) {
       <Button
         variant="outline"
         onClick={onRetry}
-        className="rounded-pill border-gold-strong text-gold hover:bg-gold hover:text-primary-foreground"
+        className="rounded-pill border-[hsl(var(--bz-gold)/0.5)] text-gold hover:bg-gold hover:text-primary-foreground"
       >
         Retry
       </Button>
@@ -15,17 +16,38 @@ export function CollectionError({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-export function CollectionEmpty() {
+interface EmptyProps {
+  onReset?: () => void;
+  filtered?: boolean;
+}
+
+export function CollectionEmpty({ onReset, filtered = false }: EmptyProps) {
+  if (!filtered) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="text-gold mb-5"><GoldBottleIcon size={60} opacity={0.7} /></div>
+        <p className="text-cream-muted">
+          Our scent library is being updated. Check back soon.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <img
-        src="/favicon.png"
-        alt="Bazuki"
-        className="h-14 w-14 mb-5 opacity-90"
-      />
-      <p className="text-cream-muted">
-        Our scent library is being updated. Check back soon.
+      <div className="text-gold mb-5"><GoldBottleIcon size={60} opacity={0.7} /></div>
+      <h3 className="font-display text-xl text-cream mb-2">No scents found</h3>
+      <p className="text-gold text-sm mb-6 max-w-sm">
+        Try a different scent family or explore all our fragrances.
       </p>
+      {onReset && (
+        <button
+          onClick={onReset}
+          className="rounded-pill border border-[hsl(var(--bz-gold)/0.5)] text-gold text-[12px] uppercase tracking-[0.1em] px-5 py-2 hover:bg-[hsl(var(--bz-gold)/0.08)] hover:border-[hsl(var(--bz-gold))] transition"
+        >
+          View All
+        </button>
+      )}
     </div>
   );
 }

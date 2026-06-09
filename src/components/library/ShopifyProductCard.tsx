@@ -26,11 +26,21 @@ function formatPrice(amount: number, currencyCode: string) {
   return `${currencyCode} ${rounded}`;
 }
 
-export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
+function getNoteHighlights(item: LibraryItem): string[] {
+  const { top, heart, base } = item.notes;
+  const out: string[] = [];
+  if (top[0]) out.push(top[0]);
+  if (heart[0]) out.push(heart[0]);
+  if (base[0]) out.push(base[0]);
+  return out.slice(0, 3);
+}
+
+export default function ShopifyProductCard({ item, index = 0 }: Props) {
   const navigate = useNavigate();
   const addItem = useCartStore((s) => s.addItem);
   const openDrawer = useCartStore((s) => s.openDrawer);
   const [status, setStatus] = useState<"idle" | "adding" | "added" | "error">("idle");
+  const [pulse, setPulse] = useState(false);
 
   const raw = item.shopify!.raw;
   const variants = raw.node.variants.edges.map((e) => e.node);
@@ -47,12 +57,17 @@ export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
     selected?.price.currencyCode ||
     raw.node.priceRange.minVariantPrice.currencyCode ||
     "INR";
-  const priceAmount = selected ? parseFloat(selected.price.amount) : parseFloat(raw.node.priceRange.minVariantPrice.amount);
+  const priceAmount = selected
+    ? parseFloat(selected.price.amount)
+    : parseFloat(raw.node.priceRange.minVariantPrice.amount);
   const outOfStock = !selected?.availableForSale;
+  const noteHighlights = getNoteHighlights(item);
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!selected || status === "adding") return;
+    setPulse(true);
+    setTimeout(() => setPulse(false), 160);
     setStatus("adding");
     try {
       const ok = await addItem({
@@ -81,43 +96,62 @@ export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
     <article
       onClick={() => navigate(`/products/${raw.node.handle}`)}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-xl bg-bz-card border border-gold cursor-pointer",
-        "transition-all duration-300 hover:-translate-y-0.5 hover:border-gold-strong hover:glow-gold-sm",
-        "animate-[fade-in_0.5s_ease-out_both]",
+        "lux-card-enter lux-card-shadow group relative flex flex-col overflow-hidden rounded-xl cursor-pointer",
+        "bg-[var(--anim-amber)] border border-[hsl(var(--bz-gold)/0.15)]",
+        "transition-all duration-[350ms] ease-out hover:-translate-y-1 hover:border-[hsl(var(--bz-gold)/0.5)] active:scale-[0.995]",
       )}
-      style={{ animationDelay: `${Math.min(index, 12) * 50}ms` }}
+      style={{ animationDelay: `${Math.min(index, 12) * 80}ms` }}
     >
-      <ProductImage
-        src={image?.url}
-        alt={image?.altText || raw.node.title}
-        aspect="aspect-[4/5]"
-        eager={index < 3}
-        imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
-      />
+      {/* Image stage */}
+      <div className="relative">
+        <ProductImage
+          src={image?.url}
+          alt={image?.altText || raw.node.title}
+          stage
+          height="h-[240px] md:h-[260px]"
+          eager={index < 3}
+          imgClassName="group-hover:scale-[1.06] transition-transform duration-[400ms] ease-out"
+        />
+        <span className="lux-card-glow absolute inset-0" aria-hidden />
+      </div>
 
-      <div className="flex flex-col gap-3 p-5">
+      <div className="flex flex-col gap-3 px-[18px] pt-4 pb-[18px]">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-display text-xl text-cream leading-tight">
+          <h3 className="font-display text-[15px] text-cream leading-snug line-clamp-2">
             {raw.node.title}
           </h3>
-          <span className="text-gold whitespace-nowrap">
+          <span className="font-display text-[14px] text-gold whitespace-nowrap">
             {formatPrice(priceAmount, currency)}
           </span>
         </div>
 
+        {noteHighlights.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap min-h-[20px]">
+            {noteHighlights.map((n, i) => (
+              <span
+                key={`${n}-${i}`}
+                className="lux-note-tag rounded-pill bg-[var(--anim-amber)] border border-[hsl(var(--bz-gold)/0.2)] text-[9px] uppercase tracking-[0.1em] px-2 py-0.5 text-[hsl(var(--bz-gold)/0.6)]"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                {n}
+              </span>
+            ))}
+          </div>
+        )}
+
         {variants.length > 1 && (
           <div onClick={(e) => e.stopPropagation()}>
             <Select value={selectedId} onValueChange={setSelectedId}>
-              <SelectTrigger className="bg-bz-secondary/60 border-gold-strong text-cream rounded-pill h-10 focus:ring-gold">
+              <SelectTrigger className="h-9 rounded-md bg-[var(--anim-amber)] border border-[hsl(var(--bz-gold)/0.3)] text-gold text-xs focus:ring-1 focus:ring-[hsl(var(--bz-gold)/0.6)] focus:border-[hsl(var(--bz-gold)/0.6)]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-bz-card border-gold-strong">
+              <SelectContent className="bg-[hsl(var(--bz-bg-card))] border-[hsl(var(--bz-gold)/0.3)]">
                 {variants.map((v) => (
                   <SelectItem
                     key={v.id}
                     value={v.id}
                     className={cn(
-                      "text-cream focus:bg-gold/10 focus:text-cream",
+                      "text-cream focus:bg-[hsl(var(--bz-gold)/0.1)] focus:text-gold",
                       !v.availableForSale && "opacity-50",
                     )}
                   >
@@ -134,14 +168,15 @@ export default function ShopifyProductCard({ item, onOpen, index = 0 }: Props) {
           disabled={outOfStock || status === "adding"}
           onClick={handleAdd}
           className={cn(
-            "rounded-pill mt-1 transition-colors",
+            "lux-btn rounded-md mt-1 h-10 border text-[12px] uppercase tracking-[0.12em] font-medium transition-colors duration-[250ms]",
             outOfStock
-              ? "bg-bz-secondary/60 text-cream-muted hover:bg-bz-secondary/60 cursor-not-allowed"
+              ? "bg-transparent border-[hsl(var(--bz-gold)/0.2)] text-[hsl(var(--bz-cream-muted)/0.5)] cursor-not-allowed hover:bg-transparent"
               : status === "added"
-              ? "bg-emerald-600 hover:bg-emerald-600 text-white"
+              ? "bg-emerald-600 border-emerald-600 hover:bg-emerald-600 text-white"
               : status === "error"
-              ? "bg-red-600 hover:bg-red-600 text-white"
-              : "bg-gold text-primary-foreground hover:bg-gold/90",
+              ? "bg-red-600 border-red-600 hover:bg-red-600 text-white"
+              : "bg-transparent border-[hsl(var(--bz-gold))] text-gold hover:bg-[hsl(var(--bz-gold))] hover:text-primary-foreground",
+            pulse && "lux-btn-pulse",
           )}
         >
           {status === "adding" ? (

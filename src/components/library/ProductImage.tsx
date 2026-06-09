@@ -1,24 +1,25 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ImageOff } from "lucide-react";
+import GoldBottleIcon from "@/components/library/GoldBottleIcon";
 
 interface ProductImageProps {
   src?: string | null;
   alt: string;
   className?: string;
   imgClassName?: string;
-  /** Aspect ratio class, e.g. "aspect-[4/5]". Defaults to aspect-[4/5]. */
+  /** Aspect ratio class — ignored when `height` is set. */
   aspect?: string;
-  /** Higher-priority image (above-the-fold). Skips lazy loading. */
+  /** Fixed height class, e.g. "h-[260px]". When set, overrides aspect. */
+  height?: string;
+  /** Apply mix-blend-multiply + padding so image floats on dark stage. */
+  stage?: boolean;
   eager?: boolean;
 }
 
 /**
- * Premium product image with:
- *  - shimmer skeleton while loading
- *  - graceful fallback on error / missing src (no broken-image icon)
- *  - lazy decoding by default
- *  - fixed aspect ratio so layout never shifts on slow devices
+ * Premium product image with stage mode for the collection page:
+ * dark backdrop, contained image, `mix-blend-mode: multiply` to blend away
+ * white image backgrounds, and an elegant gold-bottle placeholder when missing.
  */
 export default function ProductImage({
   src,
@@ -26,6 +27,8 @@ export default function ProductImage({
   className,
   imgClassName,
   aspect = "aspect-[4/5]",
+  height,
+  stage = false,
   eager = false,
 }: ProductImageProps) {
   const [loaded, setLoaded] = useState(false);
@@ -35,12 +38,12 @@ export default function ProductImage({
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden bg-bz-secondary/60",
-        aspect,
+        "relative w-full overflow-hidden",
+        stage ? "lux-image-stage" : "bg-bz-secondary/60",
+        height ?? aspect,
         className,
       )}
     >
-      {/* Shimmer skeleton — visible until image loads */}
       {!showFallback && !loaded && (
         <div
           className="absolute inset-0 animate-pulse bg-gradient-to-br from-bz-secondary/40 via-bz-card to-bz-secondary/40"
@@ -49,11 +52,29 @@ export default function ProductImage({
       )}
 
       {showFallback ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-bz-card to-bz-secondary/60 text-gold-muted">
-          <ImageOff className="h-6 w-6 opacity-60" aria-hidden />
-          <span className="font-body text-[10px] uppercase tracking-[0.22em]">
-            Image unavailable
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gold">
+          <GoldBottleIcon size={40} opacity={0.3} />
+          <span className="italic text-[11px] text-gold-muted">
+            Image Coming Soon
           </span>
+        </div>
+      ) : stage ? (
+        <div className="absolute inset-0 flex items-center justify-center p-5">
+          <img
+            src={src!}
+            alt={alt}
+            loading={eager ? "eager" : "lazy"}
+            decoding="async"
+            fetchPriority={eager ? "high" : "low"}
+            onLoad={() => setLoaded(true)}
+            onError={() => setErrored(true)}
+            className={cn(
+              "max-h-full w-[85%] object-contain transition-all duration-500",
+              loaded ? "opacity-100" : "opacity-0",
+              imgClassName,
+            )}
+            style={{ mixBlendMode: "multiply" }}
+          />
         </div>
       ) : (
         <img
