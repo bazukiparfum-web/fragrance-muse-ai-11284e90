@@ -249,11 +249,32 @@ export default function ProductDetail() {
     },
   };
 
+  // Title word-split for stagger animation
+  const titleWords = product.title.split(/\s+/);
+
+  // Best-effort key notes (first of each layer)
+  const keyNotes = [notes.top[0]?.name, notes.heart[0]?.name, notes.base[0]?.name].filter(Boolean) as string[];
+  // Use Shopify productType as scent family fallback (not "Bazuki Fragrance" default)
+  const productType = ((product as any).productType || '').trim();
+  const scentFamily = productType && productType.toLowerCase() !== 'bazuki fragrance' ? productType : undefined;
+
+  const triggerAddShimmer = () => {
+    setAddShimmer(false);
+    requestAnimationFrame(() => setAddShimmer(true));
+    setTimeout(() => setAddShimmer(false), 550);
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen relative" style={{ background: '#0D0C0A' }}>
       <JsonLd id={`product-${product.handle}`} data={productJsonLd} />
       <Header />
-      <main className="container mx-auto px-4 lg:px-8 py-10">
+
+      {/* Atmosphere */}
+      <div className="fixed inset-0 pointer-events-none z-0" aria-hidden>
+        <CollectionAmbience particleCount={20} />
+      </div>
+
+      <main className="container relative z-10 mx-auto px-4 lg:px-8 py-10">
         <Link
           to="/collection"
           className="inline-flex items-center gap-2 text-gold hover:text-gold-strong text-sm font-medium mb-8 transition-colors"
@@ -264,22 +285,10 @@ export default function ProductDetail() {
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Gallery */}
           <div>
-            <div
-              className="aspect-square w-full rounded-xl overflow-hidden bg-bz-secondary/40"
-              style={{ border: '1px solid hsl(var(--bz-gold) / 0.15)' }}
-            >
-              {images[selectedImage] ? (
-                <img
-                  src={images[selectedImage].node.url}
-                  alt={images[selectedImage].node.altText || product.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <ShoppingBag className="h-16 w-16 text-gold-muted" />
-                </div>
-              )}
-            </div>
+            <ProductImageStage
+              src={images[selectedImage]?.node.url}
+              alt={images[selectedImage]?.node.altText || product.title}
+            />
             {images.length > 1 && (
               <div className="flex flex-wrap gap-3 mt-4">
                 {images.map((img, i) => (
@@ -292,10 +301,16 @@ export default function ProductDetail() {
                     )}
                     style={{
                       border: `1px solid hsl(var(--bz-gold) / ${i === selectedImage ? 1 : 0.2})`,
+                      background: '#0D0C0A',
                     }}
                     aria-label={`View image ${i + 1}`}
                   >
-                    <img src={img.node.url} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={img.node.url}
+                      alt=""
+                      className="w-full h-full object-contain p-1"
+                      style={{ mixBlendMode: 'multiply' }}
+                    />
                   </button>
                 ))}
               </div>
@@ -305,30 +320,49 @@ export default function ProductDetail() {
           {/* Details */}
           <div className="flex flex-col">
             <p
-              className="text-gold uppercase mb-3"
-              style={{ fontSize: '10px', letterSpacing: '0.2em' }}
+              className="uppercase mb-3 flex items-center gap-2"
+              style={{ fontSize: '11px', letterSpacing: '0.2em', color: 'var(--anim-gold)' }}
             >
-              {eyebrow}
+              <span>✦</span> Bazuki Fragrance
             </p>
             <h1
-              className="font-display text-cream leading-tight mb-4"
-              style={{ fontSize: '44px' }}
+              className="font-display leading-tight mb-4"
+              style={{
+                fontSize: 'clamp(28px, 5vw, 42px)',
+                color: 'var(--anim-ivory)',
+                textShadow: '0 0 24px rgba(201,168,76,0.08)',
+              }}
             >
-              {product.title}
+              {titleWords.map((w, i) => (
+                <span
+                  key={i}
+                  className="pdp-word mr-2"
+                  style={{ animationDelay: `${200 + i * 80}ms` }}
+                >
+                  {w}
+                </span>
+              ))}
             </h1>
 
             {shortDesc && (
               <p
-                className="mb-6"
-                style={{ fontSize: '15px', color: '#8A7A6A', lineHeight: 1.75 }}
+                className="mb-2"
+                style={{ fontSize: '15px', color: '#C8C0B0', lineHeight: 1.7 }}
               >
                 {shortDesc}
               </p>
             )}
 
+            {/* Scent Identity Strip */}
+            <ScentIdentityStrip
+              family={scentFamily}
+              intensity={hasNotes ? 3 : undefined}
+              keyNotes={keyNotes}
+            />
+
             <p
-              className="font-display text-gold mb-8"
-              style={{ fontSize: '32px' }}
+              className="pdp-price-in font-display mb-8"
+              style={{ fontSize: '32px', color: 'var(--anim-gold)' }}
             >
               {formatPrice(priceAmount, currency)}
             </p>
@@ -337,8 +371,8 @@ export default function ProductDetail() {
             {variants.length > 1 && (
               <div className="mb-6">
                 <p
-                  className="text-gold uppercase mb-3"
-                  style={{ fontSize: '10px', letterSpacing: '0.2em' }}
+                  className="uppercase mb-3"
+                  style={{ fontSize: '11px', letterSpacing: '0.15em', color: 'var(--anim-dim-gold)' }}
                 >
                   Select Size
                 </p>
@@ -351,16 +385,16 @@ export default function ProductDetail() {
                         disabled={!v.availableForSale}
                         onClick={() => setSelectedVariantId(v.id)}
                         className={cn(
-                          'rounded-full px-5 h-10 text-sm transition-all',
+                          'rounded-lg px-5 h-10 text-sm transition-all',
                           isSelected
-                            ? 'bg-gold text-primary-foreground border border-gold'
-                            : 'bg-bz-secondary/60 text-cream hover:border-gold',
+                            ? 'text-primary-foreground'
+                            : 'hover:border-gold',
                           !v.availableForSale && 'opacity-40 cursor-not-allowed line-through',
                         )}
                         style={
-                          !isSelected
-                            ? { border: '1px solid hsl(var(--bz-gold) / 0.2)' }
-                            : undefined
+                          isSelected
+                            ? { background: 'var(--anim-gold)', border: '1px solid var(--anim-gold)' }
+                            : { background: '#141210', border: '1px solid rgba(201,168,76,0.3)', color: 'var(--anim-ivory)' }
                         }
                       >
                         {v.title}
@@ -374,53 +408,66 @@ export default function ProductDetail() {
             {/* Quantity */}
             <div className="mb-6">
               <p
-                className="text-gold uppercase mb-3"
-                style={{ fontSize: '10px', letterSpacing: '0.2em' }}
+                className="uppercase mb-3"
+                style={{ fontSize: '11px', letterSpacing: '0.15em', color: 'var(--anim-dim-gold)' }}
               >
                 Quantity
               </p>
               <div
-                className="inline-flex items-center rounded-full bg-bz-secondary/60"
-                style={{ border: '1px solid hsl(var(--bz-gold) / 0.2)' }}
+                className="inline-flex items-center rounded-lg"
+                style={{ background: '#141210', border: '1px solid rgba(201,168,76,0.3)' }}
               >
                 <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="w-10 h-10 flex items-center justify-center text-gold hover:text-gold-strong transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => { pulseQty(); setQuantity((q) => Math.max(1, q - 1)); }}
+                  className="w-11 h-11 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(201,168,76,0.1)]"
+                  style={{ color: 'var(--anim-gold)' }}
                   disabled={isOutOfStock || quantity <= 1}
                   aria-label="Decrease quantity"
                 >
-                  <Minus className="h-4 w-4" />
+                  <Minus className="h-[18px] w-[18px]" />
                 </button>
-                <span className="w-10 text-center text-cream text-sm">{quantity}</span>
+                <span
+                  key={qtyPulse ? `p-${quantity}` : `n-${quantity}`}
+                  className={cn('w-12 text-center font-display text-[16px]', qtyPulse && 'pdp-qty-pulse')}
+                  style={{ color: 'var(--anim-ivory)' }}
+                >
+                  {quantity}
+                </span>
                 <button
-                  onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
-                  className="w-10 h-10 flex items-center justify-center text-gold hover:text-gold-strong transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => { pulseQty(); setQuantity((q) => Math.min(maxQuantity, q + 1)); }}
+                  className="w-11 h-11 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[rgba(201,168,76,0.1)]"
+                  style={{ color: 'var(--anim-gold)' }}
                   disabled={isOutOfStock || quantity >= maxQuantity}
                   aria-label="Increase quantity"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-[18px] w-[18px]" />
                 </button>
               </div>
             </div>
 
-            {/* Add to Cart + Buy Now (with stock tooltips) */}
+            {/* Add to Cart + Buy Now */}
             <TooltipProvider delayDuration={150}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span tabIndex={isOutOfStock ? 0 : -1} className="block">
+                  <span tabIndex={isOutOfStock ? 0 : -1} className="block mb-3">
                     <Button
-                      onClick={handleAddToCart}
+                      onClick={() => { triggerAddShimmer(); handleAddToCart(); }}
                       disabled={isOutOfStock || addStatus === 'adding'}
                       aria-describedby={stockMessage ? 'stock-helper' : undefined}
                       className={cn(
-                        'w-full rounded-full mb-3 font-medium transition-colors',
+                        'pdp-cta-gold w-full rounded-lg font-semibold uppercase tracking-[0.12em] text-[13px]',
                         addStatus === 'added'
-                          ? 'bg-emerald-600 hover:bg-emerald-600 text-white'
+                          ? '!bg-emerald-600 hover:!bg-emerald-600 text-white'
                           : addStatus === 'error'
-                          ? 'bg-red-600 hover:bg-red-600 text-white'
-                          : 'bg-gold text-primary-foreground hover:bg-gold/90',
+                          ? '!bg-red-600 hover:!bg-red-600 text-white'
+                          : '',
+                        addShimmer && 'is-clicked',
                       )}
-                      style={{ height: '52px' }}
+                      style={{
+                        height: '52px',
+                        background: addStatus === 'idle' || addStatus === 'adding' ? 'var(--anim-gold)' : undefined,
+                        color: addStatus === 'idle' || addStatus === 'adding' ? 'var(--anim-bg)' : undefined,
+                      }}
                     >
                       {addStatus === 'adding' ? (
                         <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Adding…</>
@@ -449,8 +496,8 @@ export default function ProductDetail() {
                       disabled={isOutOfStock || buyStatus === 'loading' || isLaunching}
                       aria-describedby={stockMessage ? 'stock-helper' : undefined}
                       variant="outline"
-                      className="w-full rounded-full bg-transparent text-cream hover:bg-gold/10 hover:text-cream"
-                      style={{ height: '52px', border: '1px solid hsl(var(--bz-gold))' }}
+                      className="pdp-cta-ghost w-full rounded-lg font-semibold uppercase tracking-[0.12em] text-[13px]"
+                      style={{ height: '52px' }}
                     >
                       {buyStatus === 'loading' || isLaunching ? (
                         <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Preparing checkout…</>
@@ -481,12 +528,18 @@ export default function ProductDetail() {
               </p>
             )}
 
+            {/* AI Formula callout */}
+            <AIFormulaCallout />
+
+            {/* Trust badges */}
+            <TrustBadges />
+
             {/* Fragrance Pyramid */}
             {hasNotes && (
               <div className="mt-10">
                 <p
-                  className="text-gold uppercase mb-4"
-                  style={{ fontSize: '10px', letterSpacing: '0.2em' }}
+                  className="uppercase mb-4"
+                  style={{ fontSize: '11px', letterSpacing: '0.15em', color: 'var(--anim-dim-gold)' }}
                 >
                   Fragrance Notes
                 </p>
@@ -505,8 +558,8 @@ export default function ProductDetail() {
         <div className="mt-16 max-w-4xl">
           <Tabs defaultValue="description">
             <TabsList
-              className="bg-transparent border-b rounded-none w-full justify-start gap-6 h-auto p-0"
-              style={{ borderColor: 'hsl(var(--bz-gold) / 0.2)' }}
+              className="bg-transparent border-b rounded-none w-full justify-start gap-8 h-auto p-0"
+              style={{ borderColor: 'rgba(201,168,76,0.2)' }}
             >
               {[
                 { v: 'description', label: 'Description' },
@@ -516,41 +569,61 @@ export default function ProductDetail() {
                 <TabsTrigger
                   key={t.v}
                   value={t.v}
-                  className="rounded-none bg-transparent px-0 pb-3 text-cream-muted data-[state=active]:text-gold data-[state=active]:border-b-2 data-[state=active]:border-gold data-[state=active]:shadow-none"
-                  style={{ fontSize: '13px' }}
+                  className="rounded-none bg-transparent px-0 pb-3 uppercase tracking-[0.1em] data-[state=active]:shadow-none transition-colors"
+                  style={{
+                    fontSize: '13px',
+                    color: 'var(--anim-dim-gold)',
+                    borderBottom: '2px solid transparent',
+                  }}
                 >
                   {t.label}
                 </TabsTrigger>
               ))}
             </TabsList>
-            <TabsContent value="description" className="pt-6">
-              <p
-                className="whitespace-pre-wrap"
-                style={{ fontSize: '15px', color: '#8A7A6A', lineHeight: 1.75 }}
-              >
-                {product.description || 'No description available.'}
-              </p>
-            </TabsContent>
-            <TabsContent value="how" className="pt-6">
-              <ul
-                className="space-y-2 list-disc pl-5"
-                style={{ fontSize: '15px', color: '#8A7A6A', lineHeight: 1.75 }}
-              >
-                <li>Apply to pulse points — wrists, neck, and behind the ears — for the fullest projection.</li>
-                <li>Avoid rubbing wrists together; it can crush the top notes.</li>
-                <li>Layer with an unscented moisturiser to extend longevity on skin.</li>
-                <li>Store away from direct sunlight and heat to preserve the composition.</li>
-              </ul>
-            </TabsContent>
-            <TabsContent value="shipping" className="pt-6">
-              <p style={{ fontSize: '15px', color: '#8A7A6A', lineHeight: 1.75 }}>
-                Ships within 2–4 business days via Delhivery / Shiprocket. Free shipping on orders above ₹999.
-              </p>
-            </TabsContent>
+            <div
+              className="rounded-b-lg p-6 mt-0"
+              style={{
+                background: '#141210',
+                border: '1px solid rgba(201,168,76,0.1)',
+                borderTop: 'none',
+                borderRadius: '0 8px 8px 8px',
+              }}
+            >
+              <TabsContent value="description" className="pdp-tab-in mt-0 pt-0">
+                <p
+                  className="whitespace-pre-wrap"
+                  style={{ fontSize: '14px', color: '#C8C0B0', lineHeight: 1.8 }}
+                >
+                  {product.description || 'No description available.'}
+                </p>
+              </TabsContent>
+              <TabsContent value="how" className="pdp-tab-in mt-0 pt-0">
+                <ul
+                  className="space-y-2 list-disc pl-5"
+                  style={{ fontSize: '14px', color: '#C8C0B0', lineHeight: 1.8 }}
+                >
+                  <li>Apply to pulse points — wrists, neck, and behind the ears — for the fullest projection.</li>
+                  <li>Avoid rubbing wrists together; it can crush the top notes.</li>
+                  <li>Layer with an unscented moisturiser to extend longevity on skin.</li>
+                  <li>Store away from direct sunlight and heat to preserve the composition.</li>
+                </ul>
+              </TabsContent>
+              <TabsContent value="shipping" className="pdp-tab-in mt-0 pt-0">
+                <p style={{ fontSize: '14px', color: '#C8C0B0', lineHeight: 1.8 }}>
+                  Ships within 2–4 business days via Delhivery / Shiprocket. Free shipping on orders above ₹999.
+                </p>
+              </TabsContent>
+            </div>
           </Tabs>
         </div>
 
+        {/* Quiz CTA banner */}
+        <QuizCTABanner />
+
         <ReviewsSection productHandle={product.handle} productName={product.title} />
+
+        {/* Related products */}
+        <RelatedProducts excludeHandle={product.handle} />
       </main>
       <Footer />
       <CheckoutLoadingOverlay
@@ -560,5 +633,6 @@ export default function ProductDetail() {
         onClose={isError ? resetLaunch : undefined}
       />
     </div>
+
   );
 }
