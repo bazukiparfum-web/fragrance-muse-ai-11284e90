@@ -85,8 +85,10 @@ export default function ProductDetail() {
     qtyTimerRef.current = setTimeout(() => setQtyPulse(false), 200);
   };
 
+  const addItem = useCartStore((s) => s.addItem);
   const { launchCheckout, isLaunching, isError, error: launchError, retry: retryLaunch, reset: resetLaunch } = useCheckoutRedirect();
   const openDrawer = useCartStore((s) => s.openDrawer);
+
 
   useEffect(() => {
     if (!handle) return;
