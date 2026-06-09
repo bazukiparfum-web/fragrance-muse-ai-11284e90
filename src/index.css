@@ -3518,7 +3518,7 @@ html { scroll-behavior: auto; }
 
 /* Image stage */
 .pdp-image-stage {
-  background: #0D0C0A;
+  background: #141210;
   border: 1px solid rgba(201, 168, 76, 0.2);
   position: relative;
   opacity: 0;
