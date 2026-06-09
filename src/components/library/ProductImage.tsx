@@ -39,7 +39,7 @@ export default function ProductImage({
     <div
       className={cn(
         "relative w-full overflow-hidden",
-        stage ? "lux-image-stage" : "bg-bz-secondary/60",
+        stage ? "lux-image-stage lux-image-fade" : "bg-bz-secondary/60",
         height ?? aspect,
         className,
       )}
@@ -59,23 +59,21 @@ export default function ProductImage({
           </span>
         </div>
       ) : stage ? (
-        <div className="absolute inset-0 flex items-center justify-center p-5">
-          <img
-            src={src!}
-            alt={alt}
-            loading={eager ? "eager" : "lazy"}
-            decoding="async"
-            fetchPriority={eager ? "high" : "low"}
-            onLoad={() => setLoaded(true)}
-            onError={() => setErrored(true)}
-            className={cn(
-              "max-h-full w-[85%] object-contain transition-all duration-500",
-              loaded ? "opacity-100" : "opacity-0",
-              imgClassName,
-            )}
-            style={{ mixBlendMode: "multiply" }}
-          />
-        </div>
+        <img
+          src={src!}
+          alt={alt}
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={eager ? "high" : "low"}
+          onLoad={() => setLoaded(true)}
+          onError={() => setErrored(true)}
+          className={cn(
+            "absolute inset-0 h-full w-full object-contain object-center transition-opacity duration-500",
+            loaded ? "opacity-100" : "opacity-0",
+            imgClassName,
+          )}
+          style={{ padding: "16px" }}
+        />
       ) : (
         <img
           src={src!}
@@ -95,3 +93,4 @@ export default function ProductImage({
     </div>
   );
 }
+
