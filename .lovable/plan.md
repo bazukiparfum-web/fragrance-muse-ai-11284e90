@@ -1,43 +1,74 @@
-## Goal
-Redesign `/collection` into a premium, editorial fragrance-house experience that matches the quiz's dark luxury atmosphere. Pure visual + animation work — no changes to data, prices, variants, cart, navigation, or filtering logic.
+# PDP Dark Luxury Redesign
 
-## Files touched
-- `src/pages/Collection.tsx` — wire ambient background, new product-count header, sort state, animated re-mount on filter/sort changes
-- `src/components/library/HeroLibrary.tsx` — enlarged heading with word-stagger reveal, gold subtext, gold ✦ divider
-- `src/components/library/MoodFilterBar.tsx` — luxury pill restyle, stagger entry, sort dropdown slot, mobile fade-right mask
-- `src/components/library/ShopifyProductCard.tsx` — full premium card redesign (image stage, scent-note hover strip, gold button shimmer, click pulse)
-- `src/components/library/ScentCard.tsx` — same visual language as the Shopify card so the grid feels unified
-- `src/components/library/ProductImage.tsx` — dark "stage" mode: contain + padding + `mix-blend-mode: multiply`, elegant placeholder (gold bottle SVG + "Image Coming Soon")
-- `src/components/library/CollectionStates.tsx` — `CollectionEmpty` becomes the elegant zero-results state with gold bottle icon + "View All" pill
-- `src/index.css` — add tokens (`--lux-bg`, `--lux-card`, `--lux-card-hover`, `--lux-gold-dim`, gold border alphas), `mix-blend-multiply` image-stage helper, `shimmer-sweep` + `divider-draw` + `word-rise` keyframes (all with `prefers-reduced-motion` fallback)
-- *(new)* `src/components/library/CollectionAmbience.tsx` — 25 drifting gold/ivory particles + 3 slow radial gold blobs, `pointer-events-none`, `z-0`. Reuses the same idea as `QuizBackground` but scoped to the page.
-- *(new)* `src/components/library/SortDropdown.tsx` — small styled `<Select>` (Featured / Price ↑ / Price ↓ / Newest)
-- *(new)* `src/components/library/GoldBottleIcon.tsx` — shared stroke-style perfume bottle SVG used by placeholder + empty state
+Restyle `src/pages/ProductDetail.tsx` and supporting bits to match the `/collection` luxury treatment. No product data, prices, variant logic, cart store, or tab text content changes.
 
-## Section-by-section
+## File changes
 
-**1. Background atmosphere** — `CollectionAmbience` mounted inside the page wrapper at `z-0`; main content wrapped at `z-10`. Particle keyframes already exist in the project — reuse the same drift/opacity loop, 25 count, gold/ivory mix.
+### `src/pages/ProductDetail.tsx` (main work)
+Restructure JSX into the new sections; keep all state, handlers, and data fetching identical. Wrap page in `bg-[#0D0C0A]` and mount `<CollectionAmbience />` (reusing the existing one). Replace inline styling with new luxury tokens. Inject the new sections:
+- Scent Identity Strip (between description and price)
+- AI Formula Callout (below CTAs)
+- Trust Badges row
+- Find Your Scent quiz banner (between tabs and reviews)
+- Related Products grid (before footer)
 
-**2. Hero** — Heading split into words; each `<span>` animates `opacity 0→1, translateY 20→0` with 80 ms stagger via inline `animationDelay`. Gold text-shadow on the `<h1>`. Subtext recolored to gold with `tracking-[0.05em]`, delayed 400 ms. Divider is a flex row: 60 px line → ✦ → 60 px line; lines animate `scaleX 0→1` on mount.
+Animations driven by CSS classes added to `index.css` (no new motion library).
 
-**3. Filter pills** — Restyled with tokens above. Active state gets a one-shot `shimmer-sweep` overlay + scale 1→1.05 spring. Pills stagger in (60 ms each, starting 400 ms). Wrapped in a flex row with sort on the right; mobile collapses sort below and applies an `overflow-x-auto` with right-edge mask-image gradient.
+### New components (`src/components/product/`)
+- `ProductImageStage.tsx` — square dark container, `mix-blend-multiply` image, 4 gold corner brackets (pseudo-elements via CSS), hover scale + gold radial glow, entry fade/scale, bracket draw-in stagger. Reuses existing gallery state via props.
+- `ScentIdentityStrip.tsx` — 3 pills (Scent Family, Intensity with 5-dot scale, Key Notes). Reads from product `productType`, `tags`, and parsed notes; falls back to "—" with a `// TODO: populate from Shopify metafields` comment. Staggered fade-in.
+- `AIFormulaCallout.tsx` — gold-left-border card with ✦ icon, italic copy, "Learn how it works →" link to `/about` (or existing AI explainer route). Slide-in from left.
+- `TrustBadges.tsx` — inline row of 3 badges with gold dot separators.
+- `QuizCTABanner.tsx` — full-width banner with gold gradient borders, headline, subtext, gold "Take the Quiz →" button linking to `/quiz`. Breathing glow.
+- `RelatedProducts.tsx` — fetches 3 products via existing `fetchShopifyProducts(3)` (excluding current handle), renders using existing `ShopifyProductCard` from `library/`. Heading with gold ✦ + draw-in underline.
 
-**4. Product cards** — New container styling per spec (bg `#141210`, gold-15 border, lift + glow + brighter border on hover). Image area is a fixed-height "stage" with dark bg, contained image at 85 % w, 20 px pad, `mix-blend-mode: multiply`, hover scale 1.06, radial gold glow that fades in on hover. Below image: serif name + gold price on one flex row, scent-note pill strip that fades in on hover (only when notes exist in `item.notes`), restyled variant `<Select>`, gold outline CTA with left→right shimmer on hover and a click pulse. Existing add-to-cart logic untouched; success checkmark already exists in the component.
+### `src/components/ReviewsSection.tsx` (light edit)
+Replace the empty state block only: dark card, `GoldBottleIcon` (reuse from `library/`), ivory heading, subtext, 5 hover-fill outlined stars, ghost "Write a Review" CTA. Section heading gets ✦ prefix and draw-in gold underline. All review-submission logic untouched.
 
-**5. Grid** — Keep 1/2/3 column responsive grid, gap 24 px, `max-w-[1200px]`. Cards animate in with `opacity/translateY/scale` and an 80 ms stagger. On filter or sort change, we bump a `key` on the grid wrapper so cards re-mount and replay the cascade — gives the "exit small / enter staggered" feel without adding a new animation library.
+### `src/index.css` (additive)
+New utility classes / keyframes (all with `prefers-reduced-motion` fallback):
+- `.pdp-image-stage` + `::before/::after` for the 4 corner brackets with draw-in animation
+- `.pdp-image-glow` hover radial gradient
+- `.pdp-word-rise` (reuse `lux-word-rise` from collection if already present)
+- `.pdp-pill-rise` staggered fade-up
+- `.pdp-cta-gold` breathing glow loop + shimmer-sweep on click
+- `.pdp-cta-ghost` hover state
+- `.pdp-callout-slide-in`
+- `.pdp-underline-draw` for section headings
+- `.pdp-quantity-pulse` for number scale pulse on click
 
-**6. Sort dropdown** — Local state in `Collection.tsx`; sorts the `filtered` array before slicing. Featured = original order. Newest = `saved_scents.created_at` for scents, Shopify products keep their fetch order (push to end).
+## Layout (desktop, 2-col grid kept)
 
-**7. Header count** — Small dim-gold line above the filter row: `Showing N {mood} fragrances` (omits the mood word when `All`).
+```text
+[Header]
+[Back to Library]
+┌──────────────┬───────────────────────────┐
+│              │  ✦ BAZUKI FRAGRANCE       │
+│  IMAGE       │  Product Title (word-rise)│
+│  STAGE       │  Description line         │
+│  + brackets  │  [Scent Identity Strip]   │
+│  + glow      │  Price                    │
+│              │  Size pills (existing)    │
+│              │  Quantity                 │
+│              │  [Add to Cart] (gold)     │
+│              │  [Buy Now] (ghost)        │
+│              │  [AI Formula Callout]     │
+│              │  [Trust Badges]           │
+│              │  Fragrance Pyramid        │
+└──────────────┴───────────────────────────┘
+[Tabs: Description / How to Use / Shipping]
+[Quiz CTA Banner]
+[Reviews Section — enhanced empty state]
+[Related Products — 3 cards]
+[Footer]
+```
 
-**8. Empty state** — `CollectionEmpty` shown when `filtered.length === 0` post-filter: gold bottle icon, ivory serif "No scents found", gold subtext, gold "View All" pill that calls `onReset` (passed from `Collection.tsx` to reset mood to `"All"`).
-
-**9. Mobile** — Filter row already `overflow-x-auto`; add `[mask-image:linear-gradient(to_right,black_85%,transparent)]` for the fade. Card image area becomes 240 px tall; hover effects degrade to `active:` variants so taps give a quick scale pulse.
-
-## Animation & token notes
-- All new keyframes added under `@layer utilities` in `src/index.css`, gated by `@media (prefers-reduced-motion: reduce)` to disable.
-- Colors added as CSS variables and consumed via Tailwind arbitrary values or new utility classes — no hardcoded hex in JSX (per project memory rule).
-- No new dependencies. No motion library — CSS keyframes + `key`-based remount only.
+Mobile collapses to single column; image stage stays square; pills wrap; CTAs full-width.
 
 ## Out of scope
-Product data, prices, variant logic, cart store, routing, SEO, header/footer, drawer behavior, infinite-scroll sentinel (kept as-is).
+Product data shape, prices, variant selection logic, cart store, checkout redirect hook, SEO meta, JSON-LD, routing, Header/Footer, tab text bodies, review submission logic.
+
+## Notes
+- Reuses `CollectionAmbience`, `GoldBottleIcon`, and `ShopifyProductCard` from `src/components/library/` — no duplication.
+- "Scent Family / Intensity / Key Notes" parsed from existing `productType`, `tags`, and `parseNotesFromDescription()`; placeholders shown when absent, with a code comment for the Shopify metafield TODO.
+- All animations gated by `prefers-reduced-motion: reduce`.
