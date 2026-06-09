@@ -3485,3 +3485,224 @@ html { scroll-behavior: auto; }
   .lux-btn::after { display: none; }
   .lux-pill-shimmer { display: none; }
 }
+
+/* ===========================================================
+   PDP — Product Detail Page (dark luxury)
+   =========================================================== */
+
+/* Image stage */
+.pdp-image-stage {
+  background: #0D0C0A;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  position: relative;
+  opacity: 0;
+  transform: scale(0.97);
+  animation: pdp-image-in 500ms var(--ease-out-soft) 100ms forwards;
+}
+@keyframes pdp-image-in {
+  to { opacity: 1; transform: scale(1); }
+}
+.pdp-image-glow {
+  opacity: 0;
+  transition: opacity 400ms var(--ease-out-soft);
+  background: radial-gradient(ellipse 70% 60% at center, rgba(201,168,76,0.07) 0%, transparent 70%);
+  z-index: 0;
+}
+.pdp-image-stage:hover .pdp-image-glow { opacity: 1; }
+
+/* Corner brackets (12x12, 1.5px gold) */
+.pdp-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  animation: pdp-corner-in 400ms var(--ease-out-soft) forwards;
+}
+.pdp-corner-tl { top: 10px; left: 10px;
+  border-top: 1.5px solid rgba(201,168,76,0.6);
+  border-left: 1.5px solid rgba(201,168,76,0.6);
+  animation-delay: 500ms;
+}
+.pdp-corner-tr { top: 10px; right: 10px;
+  border-top: 1.5px solid rgba(201,168,76,0.6);
+  border-right: 1.5px solid rgba(201,168,76,0.6);
+  animation-delay: 560ms;
+}
+.pdp-corner-bl { bottom: 10px; left: 10px;
+  border-bottom: 1.5px solid rgba(201,168,76,0.6);
+  border-left: 1.5px solid rgba(201,168,76,0.6);
+  animation-delay: 620ms;
+}
+.pdp-corner-br { bottom: 10px; right: 10px;
+  border-bottom: 1.5px solid rgba(201,168,76,0.6);
+  border-right: 1.5px solid rgba(201,168,76,0.6);
+  animation-delay: 680ms;
+}
+@keyframes pdp-corner-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Word rise for title */
+.pdp-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(15px);
+  animation: pdp-word-rise 500ms var(--ease-out-soft) forwards;
+}
+@keyframes pdp-word-rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scent identity pills */
+.pdp-pill {
+  background: #141210;
+  border: 1px solid rgba(201,168,76,0.2);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: pdp-pill-in 500ms var(--ease-out-soft) forwards;
+  animation-delay: 350ms;
+  transition: border-color 250ms ease, background 250ms ease;
+}
+.pdp-pill:hover { border-color: rgba(201,168,76,0.5); background: #1A1408; }
+@keyframes pdp-pill-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Price entry */
+.pdp-price-in {
+  opacity: 0;
+  transform: scale(0.95);
+  animation: pdp-price-in 300ms var(--ease-out-soft) 500ms forwards;
+}
+@keyframes pdp-price-in {
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Quantity number pulse */
+.pdp-qty-pulse {
+  animation: pdp-qty-pulse 150ms var(--ease-spring);
+}
+@keyframes pdp-qty-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Gold CTA — breathing glow, hover, click shimmer */
+.pdp-cta-gold {
+  position: relative;
+  overflow: hidden;
+  animation: pdp-cta-breathe 2.5s ease-in-out infinite;
+  transition: background 200ms ease, transform 150ms ease, box-shadow 200ms ease;
+}
+@keyframes pdp-cta-breathe {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 15px rgba(201,168,76,0.3); }
+  50%      { transform: scale(1.02); box-shadow: 0 0 22px rgba(201,168,76,0.45); }
+}
+.pdp-cta-gold:hover {
+  background: var(--anim-gold-bright) !important;
+  transform: scale(1.02);
+  box-shadow: 0 0 25px rgba(201,168,76,0.55);
+}
+.pdp-cta-gold:active { transform: scale(1.05); }
+.pdp-cta-gold::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+  transform: translateX(-100%);
+  pointer-events: none;
+  opacity: 0;
+}
+.pdp-cta-gold.is-clicked::after {
+  opacity: 1;
+  animation: btn-shimmer-sweep 500ms linear;
+}
+
+/* Ghost CTA (Buy Now) */
+.pdp-cta-ghost {
+  background: transparent;
+  border: 1px solid rgba(201,168,76,0.5);
+  color: var(--anim-ivory);
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+.pdp-cta-ghost:hover {
+  background: rgba(201,168,76,0.08);
+  border-color: rgba(201,168,76,0.9);
+  color: var(--anim-gold);
+}
+
+/* AI Formula callout */
+.pdp-callout-in {
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: pdp-callout-in 400ms var(--ease-out-soft) 700ms forwards;
+}
+@keyframes pdp-callout-in {
+  to { opacity: 1; transform: translateX(0); }
+}
+.pdp-link { position: relative; transition: color 200ms ease; }
+.pdp-link::after {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: -2px;
+  height: 1px; background: currentColor;
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 250ms var(--ease-out-soft);
+}
+.pdp-link:hover::after { transform: scaleX(1); }
+
+/* Trust badges */
+.pdp-badges-in {
+  opacity: 0;
+  animation: pdp-fade-in 400ms var(--ease-out-soft) 900ms forwards;
+}
+@keyframes pdp-fade-in { to { opacity: 1; } }
+
+/* Tab content crossfade */
+.pdp-tab-in {
+  animation: pdp-tab-in 250ms var(--ease-out-soft);
+}
+@keyframes pdp-tab-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Section underline draw-in */
+.pdp-underline-draw {
+  height: 1px;
+  width: 0;
+  background: linear-gradient(90deg, rgba(201,168,76,0.8), rgba(201,168,76,0.1));
+  animation: pdp-underline-draw 600ms var(--ease-out-soft) 100ms forwards;
+  max-width: 200px;
+}
+@keyframes pdp-underline-draw {
+  to { width: 200px; }
+}
+
+/* Quiz banner CTA inherits .pdp-cta-gold for breathing glow */
+
+/* Stars hover-fill (review empty state) */
+.pdp-star-row:hover .pdp-star { color: var(--anim-gold); fill: var(--anim-gold); }
+.pdp-star { transition: color 150ms ease, fill 150ms ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pdp-image-stage,
+  .pdp-corner,
+  .pdp-word,
+  .pdp-pill,
+  .pdp-price-in,
+  .pdp-callout-in,
+  .pdp-badges-in,
+  .pdp-tab-in,
+  .pdp-underline-draw {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    width: 200px;
+  }
+  .pdp-cta-gold { animation: none !important; }
+  .pdp-cta-gold::after { display: none; }
+}
+
