@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Check, Minus, Plus, ArrowLeft, ShoppingBag } from 'lucide-react';
+import { Loader2, Check, Minus, Plus, ArrowLeft } from 'lucide-react';
 import { fetchShopifyProductByHandle, ShopifyProduct } from '@/lib/shopify';
 import { useCartStore } from '@/stores/cartStore';
 import { FragrancePyramid, Note } from '@/components/FragrancePyramid';
@@ -15,6 +15,14 @@ import { useSEO } from '@/hooks/useSEO';
 import { cn } from '@/lib/utils';
 import { useCheckoutRedirect } from '@/hooks/useCheckoutRedirect';
 import CheckoutLoadingOverlay from '@/components/checkout/CheckoutLoadingOverlay';
+import CollectionAmbience from '@/components/library/CollectionAmbience';
+import ProductImageStage from '@/components/product/ProductImageStage';
+import ScentIdentityStrip from '@/components/product/ScentIdentityStrip';
+import AIFormulaCallout from '@/components/product/AIFormulaCallout';
+import TrustBadges from '@/components/product/TrustBadges';
+import QuizCTABanner from '@/components/product/QuizCTABanner';
+import RelatedProducts from '@/components/product/RelatedProducts';
+
 
 type ProductNode = ShopifyProduct['node'];
 
