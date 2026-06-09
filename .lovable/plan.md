@@ -1,38 +1,57 @@
-# Rename "For Business" → "Scent Marketing"
+## Goal
+Add a "Trusted By" client logo carousel on the Scent Marketing (`/business`) and About (`/about`) pages. Responsive hybrid: auto-scrolling marquee on mobile, clickable arrow carousel on desktop.
 
-Label-only rename across the site. The route `/business` and component file names stay the same to preserve existing inbound links, SEO equity, and the sitemap entry.
+## What we'll build
 
-## Visible label changes
+### 1. New shared component: `src/components/TrustedByCarousel.tsx`
+A self-contained, reusable section component.
 
-1. **Header nav** (`src/components/Header.tsx:12`) — `'For Business'` → `'Scent Marketing'`.
-2. **Homepage B2B teaser** (`src/components/home/B2BTeaser.tsx:19`) — `For Businesses` → `Scent Marketing`.
-3. **BusinessAroma section** (`src/components/BusinessAroma.tsx:117`) — `For Businesses` → `Scent Marketing`. Also update `alt` text on line 105 to "Bazuki Scent Marketing solutions".
-4. **Footer** (`src/components/Footer.tsx:56–62`) — Column heading `Business` → `Scent Marketing`; first link label `360° Aroma Solutions` → `Scent Marketing`; keep `Custom Fragrances` and `Book a Consultation`.
-5. **BusinessDiffusers heading** (`src/components/business/BusinessDiffusers.tsx:94`) — `Aroma Diffusers for Business` → `Aroma Diffusers for Scent Marketing`.
-6. **AdminConsultations description** (`src/pages/admin/AdminConsultations.tsx:63`) — "Business Aroma consultation form" → "Scent Marketing consultation form".
+**Props:**
+- `eyebrow?: string` — small label (default: `"Trusted By"`)
+- `title?: string` — heading (default: `"Brands that trust Bazuki"`)
+- `logos: { name: string; src: string; href?: string }[]`
+- `className?: string`
 
-Untouched on purpose: "Business" in pricing tier name (`B2BPackages` "Business" plan), real-world phrases like "business days", "boutique business", and the `business@bazuki360aroma.com` email address.
+**Behavior:**
+- **Mobile (`< md`)**: pure CSS infinite marquee (duplicated logo track, `@keyframes` translateX). Pauses on touch/hover. No arrows.
+- **Desktop (`>= md`)**: shadcn `Carousel` (Embla) showing 5–6 logos at a time, with prev/next arrows, `loop: true`, `align: "start"`, and Embla autoplay plugin (slow drift, pauses on hover).
+- Logos rendered as `<img>` with grayscale + reduced opacity by default, full color on hover (subtle, brand-respectful).
+- `prefers-reduced-motion`: marquee/autoplay disabled, static row shown.
+- Fully a11y: `role="region"` with `aria-label="Trusted by"`, alt text from `name`.
 
-## SEO changes
+**Styling:** Dark theme aware, uses Bazuki tokens (`bg-bz-secondary` / `border-gold/15`). Logo tile: ~`h-12 md:h-14`, `object-contain`, `px-6`, separated by faint vertical dividers.
 
-1. **`src/pages/Business.tsx`** — Tighten meta:
-   - `title`: `Scent Marketing for Hotels, Retail & Offices | Bazuki` (≤60 chars)
-   - `description`: Add a focused <160-char description mentioning scent marketing, brand scent, India.
-   - Add `<link rel="canonical" href="https://www.bazukifragrance.com/business" />` via Helmet.
-   - Breadcrumb label already "Scent Marketing" — keep.
-   - Add a `Service` JSON-LD block (`@type: Service`, `serviceType: "Scent Marketing"`, `areaServed: India`, `provider: Bazuki`).
+### 2. Logos data + assets
+- Add **`src/data/clientLogos.ts`** exporting a single `CLIENT_LOGOS` array consumed by both pages.
+- Place uploaded logo files under **`src/assets/clients/`** (e.g., `narayani-heights.png`, `adani-menswear.png`, etc.) and import them.
+- Until you upload real files, the array will be **empty** and the component will render nothing (graceful no-op). Once you drop logos in, both pages light up automatically.
 
-2. **`public/llms.txt:26`** — Label `Business / 360° Aroma` → `Scent Marketing`; keep URL.
+You'll provide the actual logo files. We'll add each as an `import` in `clientLogos.ts`.
 
-3. **`public/llms-full.txt`** — Replace phrasing referring to the business page as "consultation requests" with "Scent Marketing (B2B) page"; keep URLs.
+### 3. Placement
 
-4. **`public/sitemap.xml`** — Bump `<lastmod>` on `/business` to today.
+**`src/pages/Business.tsx`** — insert `<TrustedByCarousel />` between `<B2BPackages />` and `<ClientStories />` (i.e., right after Scent Marketing Packages, in a "Trusted By" strip).
 
-5. **`src/pages/seo/NichePerfumeIndia.tsx:51`** — Link text near `/business` updated to say "Scent Marketing" instead of generic.
+**`src/pages/About.tsx`** — insert as a new `<section>` between the existing stats strip and the bottom CTA.
+
+### 4. Dependency
+Add `embla-carousel-autoplay` (small, official Embla plugin) for the desktop autoplay drift. Already-installed `embla-carousel-react` powers the rest via the existing shadcn `Carousel`.
+
+### 5. SEO / structure
+- Use a proper `<section aria-labelledby="trusted-by-…">` with a visible `<h2>` (sr-only on Business if it'd clutter, visible on About). No JSON-LD needed (logos alone aren't a structured-data entity).
+
+## File changes summary
+- **Add** `src/components/TrustedByCarousel.tsx`
+- **Add** `src/data/clientLogos.ts`
+- **Add** `src/assets/clients/` (directory; you'll upload logo files here)
+- **Edit** `src/pages/Business.tsx` — import + render after `B2BPackages`
+- **Edit** `src/pages/About.tsx` — import + render after stats strip
+- **Install** `embla-carousel-autoplay`
 
 ## Out of scope
+- No backend / DB changes.
+- No edits to other pages, header, footer, or Shopify.
+- No logo-management admin UI (logos are code-managed for now — fast to add, simple to maintain).
 
-- Route path `/business` and file names (`Business.tsx`, `business/*`) — kept to preserve SEO and inbound links.
-- The "Business" pricing tier name in `B2BPackages`.
-- The `business@` email address.
-- Any backend/data changes.
+## Next step from you
+Upload the customer logo files (PNG with transparent background preferred, or SVG). Drop them anywhere and tell me the brand names + order; I'll wire them into `clientLogos.ts` during build.
