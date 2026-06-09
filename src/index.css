@@ -3362,3 +3362,126 @@ html { scroll-behavior: auto; }
     50% { opacity: 1; }
   }
 }
+
+/* ===========================================================
+   Collection / library page — luxury redesign utilities
+   =========================================================== */
+.lux-image-stage {
+  background: var(--anim-bg);
+}
+.lux-image-stage img {
+  mix-blend-mode: multiply;
+}
+.lux-card-glow {
+  background: radial-gradient(ellipse 60% 50% at center, hsl(var(--bz-gold) / 0.08) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+.group:hover .lux-card-glow,
+.group:focus-within .lux-card-glow { opacity: 1; }
+
+.lux-card-shadow:hover,
+.lux-card-shadow:focus-within {
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 20px hsl(var(--bz-gold) / 0.08);
+}
+
+/* Button shimmer sweep on hover */
+.lux-btn { position: relative; overflow: hidden; }
+.lux-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, hsl(var(--bz-cream) / 0.35) 50%, transparent 70%);
+  transform: translateX(-110%);
+  transition: transform 0s;
+  pointer-events: none;
+}
+.lux-btn:hover::after {
+  transform: translateX(110%);
+  transition: transform 600ms ease;
+}
+@keyframes lux-click-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+.lux-btn-pulse { animation: lux-click-pulse 150ms ease-out; }
+
+/* Pill shimmer on activation */
+@keyframes lux-pill-shimmer {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(110%); }
+}
+.lux-pill-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%);
+  animation: lux-pill-shimmer 600ms ease-out;
+  pointer-events: none;
+}
+
+/* Hero divider self-draw */
+@keyframes lux-divider-draw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.lux-divider-line {
+  transform-origin: center;
+  animation: lux-divider-draw 500ms ease-out both;
+}
+
+/* Hero word rise */
+@keyframes lux-word-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lux-word { display: inline-block; opacity: 0; animation: lux-word-rise 600ms ease-out both; }
+
+/* Grid card cascade */
+@keyframes lux-card-rise {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.lux-card-enter { opacity: 0; animation: lux-card-rise 400ms ease-out both; }
+
+/* Filter pill cascade */
+@keyframes lux-pill-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lux-pill-enter { opacity: 0; animation: lux-pill-rise 350ms ease-out both; }
+
+/* Scent-note tag fade on hover */
+@keyframes lux-tag-rise {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lux-note-tag { opacity: 0; }
+.group:hover .lux-note-tag,
+.group:focus-within .lux-note-tag {
+  animation: lux-tag-rise 200ms ease-out both;
+}
+
+/* Mobile filter row fade-right mask */
+.lux-fade-right {
+  mask-image: linear-gradient(to right, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent);
+}
+
+/* Hero heading gold glow */
+.lux-hero-h1 { text-shadow: 0 0 40px rgba(201,168,76,0.2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lux-word,
+  .lux-card-enter,
+  .lux-pill-enter,
+  .lux-divider-line,
+  .lux-note-tag {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .lux-btn::after { display: none; }
+  .lux-pill-shimmer { display: none; }
+}
