@@ -8,19 +8,19 @@ interface Props {
 }
 
 /**
- * Dark luxury image stage: square, gold corner brackets, mix-blend-mode multiply,
+ * Dark luxury image stage: square, gold corner brackets, dark card backdrop,
+ * gradient bottom fade so light-bg product photos blend in cleanly,
  * hover gold radial glow + image zoom, entry fade/scale.
  */
 export default function ProductImageStage({ src, alt, className }: Props) {
   return (
-    <div className={cn("pdp-image-stage group relative aspect-square w-full rounded-xl overflow-hidden", className)}>
+    <div className={cn("pdp-image-stage pdp-image-fade group relative aspect-square w-full rounded-xl overflow-hidden", className)}>
       <div className="pdp-image-glow absolute inset-0 pointer-events-none" aria-hidden />
       {src ? (
         <img
           src={src}
           alt={alt}
-          className="pdp-image relative z-[1] w-full h-full object-contain p-6 transition-transform duration-[400ms] ease-out group-hover:scale-105"
-          style={{ mixBlendMode: "multiply" }}
+          className="pdp-image relative z-[1] w-full h-full object-contain object-center p-5 transition-transform duration-[400ms] ease-out group-hover:scale-105"
         />
       ) : (
         <div className="relative z-[1] w-full h-full flex items-center justify-center">
@@ -34,3 +34,4 @@ export default function ProductImageStage({ src, alt, className }: Props) {
     </div>
   );
 }
+
