@@ -25,7 +25,8 @@ const LogoTile = ({ logo }: { logo: ClientLogo }) => {
       src={logo.src}
       alt={logo.name}
       loading="lazy"
-      className="h-12 md:h-14 w-auto max-w-[160px] object-contain opacity-70 grayscale transition-all duration-300 hover:opacity-100 hover:grayscale-0"
+      className="h-14 md:h-16 w-auto max-w-[180px] object-contain opacity-90 transition-all duration-300 hover:opacity-100 hover:scale-105"
+
     />
   );
   return (
