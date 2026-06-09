@@ -178,7 +178,7 @@ export const TrustedByCarousel = ({
         .tb-marquee-track {
           display: flex;
           align-items: center;
-          gap: 80px;
+          gap: 100px;
           width: max-content;
           padding: 8px 0;
           animation: tb-marquee 35s linear infinite;
@@ -194,22 +194,23 @@ export const TrustedByCarousel = ({
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          height: 52px;
-          transition: transform 200ms ease-out;
+          height: 56px;
+          min-width: 140px;
         }
         .tb-logo-img {
-          height: 52px;
+          height: 56px;
+          max-width: 160px;
           width: auto;
-          max-width: 180px;
           object-fit: contain;
-          filter: grayscale(100%) brightness(0.75);
-          opacity: 0.55;
-          transition: filter 300ms ease, opacity 300ms ease;
+          transform: scale(1.3);
+          transform-origin: center;
+          mix-blend-mode: lighten;
+          filter: grayscale(100%) brightness(2.5) contrast(0.8) opacity(0.6);
+          transition: filter 300ms ease, transform 200ms ease;
         }
-        .tb-logo-wrap:hover { transform: translateY(-3px); }
         .tb-logo-wrap:hover .tb-logo-img {
-          filter: grayscale(0%) brightness(1);
-          opacity: 1;
+          filter: grayscale(0%) brightness(1) contrast(1) opacity(1);
+          transform: scale(1.38) translateY(-2px);
         }
 
         .tb-tooltip {
