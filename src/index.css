@@ -3367,11 +3367,37 @@ html { scroll-behavior: auto; }
    Collection / library page — luxury redesign utilities
    =========================================================== */
 .lux-image-stage {
-  background: var(--anim-bg);
+  background: #141210;
+  position: relative;
 }
 .lux-image-stage img {
-  mix-blend-mode: multiply;
+  filter: none;
+  mix-blend-mode: normal;
 }
+/* Bottom fade so light/beige product photos blend into the dark card. */
+.lux-image-fade::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 35%;
+  background: linear-gradient(to top, #141210 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+.pdp-image-fade::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 25%;
+  background: linear-gradient(to top, #141210 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
 .lux-card-glow {
   background: radial-gradient(ellipse 60% 50% at center, hsl(var(--bz-gold) / 0.08) 0%, transparent 70%);
   opacity: 0;
@@ -3492,7 +3518,7 @@ html { scroll-behavior: auto; }
 
 /* Image stage */
 .pdp-image-stage {
-  background: #0D0C0A;
+  background: #141210;
   border: 1px solid rgba(201, 168, 76, 0.2);
   position: relative;
   opacity: 0;

@@ -1,74 +1,34 @@
-# PDP Dark Luxury Redesign
+# Fix invisible product images (remove mix-blend-mode: multiply)
 
-Restyle `src/pages/ProductDetail.tsx` and supporting bits to match the `/collection` luxury treatment. No product data, prices, variant logic, cart store, or tab text content changes.
+## Root cause
+`mix-blend-mode: multiply` was applied to product `<img>` elements assuming a light page background. On the dark `#0D0C0A` / `#141210` cards the multiply blend mode crushes images to near-black, making the product photos invisible on both the collection grid and the PDP. Replace blend mode with a clean `object-fit: contain` + a bottom-gradient fade pseudo-element on the container.
 
 ## File changes
 
-### `src/pages/ProductDetail.tsx` (main work)
-Restructure JSX into the new sections; keep all state, handlers, and data fetching identical. Wrap page in `bg-[#0D0C0A]` and mount `<CollectionAmbience />` (reusing the existing one). Replace inline styling with new luxury tokens. Inject the new sections:
-- Scent Identity Strip (between description and price)
-- AI Formula Callout (below CTAs)
-- Trust Badges row
-- Find Your Scent quiz banner (between tabs and reviews)
-- Related Products grid (before footer)
+### 1. `src/components/library/ProductImage.tsx` (collection card image)
+- Remove `mix-blend-mode: multiply` from the `<img>` (and any darkening filter).
+- Keep container relative + dark `#141210` bg, `overflow-hidden`, fixed height.
+- Image: `width 100% / height 100% / object-contain / object-position center / padding 16px / filter: none`.
+- Add a `::after` overlay class (or inline span) on the container: bottom 35%, `linear-gradient(to top, #141210 0%, transparent 100%)`, `pointer-events: none`, `z-index: 1`. Image sits at `z-index: 0`.
+- Leave the "Image Coming Soon" placeholder branch untouched.
 
-Animations driven by CSS classes added to `index.css` (no new motion library).
+### 2. `src/components/product/ProductImageStage.tsx` (PDP main image)
+- Remove `style={{ mixBlendMode: "multiply" }}` from the `<img>`.
+- Container background changes from `#0D0C0A` to `#141210` (matches spec) — corner brackets and gold border kept.
+- Image: `object-contain / object-position center / padding 20px / filter: none / w-full h-full`.
+- Add gradient fade `::after` overlay: height 25%, same `#141210 → transparent` linear gradient, `pointer-events: none`, above image (`z-index: 1`) but below corner brackets (`z-index: 2`, already set).
+- Keep entry fade/scale + hover scale + gold radial glow.
 
-### New components (`src/components/product/`)
-- `ProductImageStage.tsx` — square dark container, `mix-blend-multiply` image, 4 gold corner brackets (pseudo-elements via CSS), hover scale + gold radial glow, entry fade/scale, bracket draw-in stagger. Reuses existing gallery state via props.
-- `ScentIdentityStrip.tsx` — 3 pills (Scent Family, Intensity with 5-dot scale, Key Notes). Reads from product `productType`, `tags`, and parsed notes; falls back to "—" with a `// TODO: populate from Shopify metafields` comment. Staggered fade-in.
-- `AIFormulaCallout.tsx` — gold-left-border card with ✦ icon, italic copy, "Learn how it works →" link to `/about` (or existing AI explainer route). Slide-in from left.
-- `TrustBadges.tsx` — inline row of 3 badges with gold dot separators.
-- `QuizCTABanner.tsx` — full-width banner with gold gradient borders, headline, subtext, gold "Take the Quiz →" button linking to `/quiz`. Breathing glow.
-- `RelatedProducts.tsx` — fetches 3 products via existing `fetchShopifyProducts(3)` (excluding current handle), renders using existing `ShopifyProductCard` from `library/`. Heading with gold ✦ + draw-in underline.
+### 3. `src/index.css`
+- Add a small utility class `.pdp-image-fade` (and reuse for collection container, e.g. `.lux-image-fade`) implementing the `::after` gradient overlay, so both components can apply it via className. Keep the existing `.pdp-image-stage`/corner bracket rules; only the image element styling and the new overlay change.
+- Remove any leftover `mix-blend-multiply` helper / `lux-image-stage` multiply rule if present (search and clean).
 
-### `src/components/ReviewsSection.tsx` (light edit)
-Replace the empty state block only: dark card, `GoldBottleIcon` (reuse from `library/`), ivory heading, subtext, 5 hover-fill outlined stars, ghost "Write a Review" CTA. Section heading gets ✦ prefix and draw-in gold underline. All review-submission logic untouched.
-
-### `src/index.css` (additive)
-New utility classes / keyframes (all with `prefers-reduced-motion` fallback):
-- `.pdp-image-stage` + `::before/::after` for the 4 corner brackets with draw-in animation
-- `.pdp-image-glow` hover radial gradient
-- `.pdp-word-rise` (reuse `lux-word-rise` from collection if already present)
-- `.pdp-pill-rise` staggered fade-up
-- `.pdp-cta-gold` breathing glow loop + shimmer-sweep on click
-- `.pdp-cta-ghost` hover state
-- `.pdp-callout-slide-in`
-- `.pdp-underline-draw` for section headings
-- `.pdp-quantity-pulse` for number scale pulse on click
-
-## Layout (desktop, 2-col grid kept)
-
-```text
-[Header]
-[Back to Library]
-┌──────────────┬───────────────────────────┐
-│              │  ✦ BAZUKI FRAGRANCE       │
-│  IMAGE       │  Product Title (word-rise)│
-│  STAGE       │  Description line         │
-│  + brackets  │  [Scent Identity Strip]   │
-│  + glow      │  Price                    │
-│              │  Size pills (existing)    │
-│              │  Quantity                 │
-│              │  [Add to Cart] (gold)     │
-│              │  [Buy Now] (ghost)        │
-│              │  [AI Formula Callout]     │
-│              │  [Trust Badges]           │
-│              │  Fragrance Pyramid        │
-└──────────────┴───────────────────────────┘
-[Tabs: Description / How to Use / Shipping]
-[Quiz CTA Banner]
-[Reviews Section — enhanced empty state]
-[Related Products — 3 cards]
-[Footer]
-```
-
-Mobile collapses to single column; image stage stays square; pills wrap; CTAs full-width.
+### 4. PDP thumbnails (`src/pages/ProductDetail.tsx`)
+- Remove `style={{ mixBlendMode: 'multiply' }}` from the small thumbnail `<img>` strip under the main image. Use `object-contain` on a `#141210` background. No gradient overlay needed at thumbnail size.
 
 ## Out of scope
-Product data shape, prices, variant selection logic, cart store, checkout redirect hook, SEO meta, JSON-LD, routing, Header/Footer, tab text bodies, review submission logic.
+Card layout, gold borders, corner brackets, hover effects, animations, prices, cart logic, placeholder ("Image Coming Soon"), text/typography, any other page.
 
-## Notes
-- Reuses `CollectionAmbience`, `GoldBottleIcon`, and `ShopifyProductCard` from `src/components/library/` — no duplication.
-- "Scent Family / Intensity / Key Notes" parsed from existing `productType`, `tags`, and `parseNotesFromDescription()`; placeholders shown when absent, with a code comment for the Shopify metafield TODO.
-- All animations gated by `prefers-reduced-motion: reduce`.
+## Verification
+- `rg -n "mix-blend|multiply"` across `src/` returns no hits on product image elements after the change.
+- Manually verify on `/collection` (Discovery Set, 30ml Discovery Set bottles fully visible, Custom AI still shows placeholder) and on `/products/discovery-set` (main image and thumbnails fully visible, corner brackets and gold border intact).
