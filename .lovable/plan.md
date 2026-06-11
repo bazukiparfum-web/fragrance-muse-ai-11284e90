@@ -1,56 +1,71 @@
-## Goal
+# Harden Admin Access Control
 
-Add a dedicated **Customers** area to the admin, separate from Users (employees). A customer = anyone who has a `profiles` row, a `saved_scents` row, a `quiz_responses` row, OR an `orders` row — merged by email (for guest orders) and `user_id`.
+## Problem
+Multiple admin-facing pages and Edge Functions have hardcoded `isAdmin = true` or skip caller authentication entirely. While the React Router `AdminRoute` currently blocks non-admins, defense-in-depth is broken — any future route refactoring or direct Edge Function calls by a non-admin would succeed.
 
 ## Scope
+**In scope:** Remove testing bypasses, add real admin verification to all admin entry points.
+**Out of scope:** Changes to `AdminRoute.tsx` (already correct), changes to non-admin flows, UI redesign.
 
-### Navigation
-- New sidebar link **"Customers"** under `/admin/customers`. Existing `/admin/users` stays unchanged (employees/roles).
-- Two new routes:
-  - `/admin/customers` — searchable list
-  - `/admin/customers/:id` — detail page (id = profile UUID or email for guest-only customers)
+## Frontend Changes
 
-### Customers list (`/admin/customers`)
-Table columns: Email · Name · Phone · # Orders · Total spent · # Scents · Signed up · Last activity · Account?
+### 1. Fix hardcoded admin flags in admin pages
+Replace hardcoded `isAdmin = true` with a real `user_roles` query in:
 
-- Search by email/name/phone.
-- Sort by last activity (default), total spent, signups.
-- Filter chips: All / Has account / Guest only / Has orders / Quiz takers.
-- Row click → detail page.
+| File | Current | Fix |
+|------|---------|-----|
+| `src/pages/admin/AdminNotes.tsx` | `useState<boolean \| null>(true)` | Query `user_roles` for `role = 'admin'`, show access-denied spinner if not admin |
+| `src/pages/admin/AdminIngredients.tsx` | `setIsAdmin(true)` in `useEffect` | Same pattern |
+| `src/pages/admin/AdminQuestions.tsx` | `setIsAdmin(true)` in `useEffect` | Same pattern |
 
-### Customer detail (`/admin/customers/:id`)
-Four read-only sections in tabs (mobile) / stacked cards (desktop):
+Pattern to use:
+```ts
+useEffect(() => {
+  const check = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setIsAdmin(false); return; }
+    const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').maybeSingle();
+    setIsAdmin(!!data);
+  };
+  check();
+}, []);
+```
 
-1. **Profile & contact** — email, full name, phone, WhatsApp opt-in status, signup date, last activity, account type badge (Account / Guest), most-recent shipping address from latest order.
-2. **Orders history** — list of all `orders` + `order_items`, totals, status, created_at, "Open in Shopify" link (uses existing Shopify admin order URL), "Resend confirmation email" button (calls existing transactional email queue with order context).
-3. **Created perfumes** — all `saved_scents` (public AND private) with name, fragrance_code, formula preview, is_public badge, created_at, link to `/admin/scents` row when public.
-4. **Quiz activity & referrals** — latest `quiz_responses` + result snapshot, referral code issued, list of referrals made + reward status from `referral_rewards`.
+## Edge Function Changes
 
-No edit/delete/disable actions on this page. (Those stay on `/admin/users` for employees only.)
+### 2. Add caller admin verification to all admin Edge Functions missing it
 
-### Backend (edge function)
-New `admin-list-customers` edge function (Service Role, admin-gated):
-- `action: 'list'` → returns merged customer rows. Joins `profiles` left with aggregated `orders` (count, sum, max(created_at)) and `saved_scents` (count). Unions in distinct `orders.email` rows that have no matching profile (guest customers).
-- `action: 'detail', id | email` → returns profile + all orders + order_items + saved_scents + latest quiz_response + referral code + referrals + referral_rewards + whatsapp_optin in one payload.
-- `action: 'resend_order_email', orderId` → enqueues order confirmation via existing `process-email-queue` pipeline.
+The following Edge Functions create a service-role client but **never verify the caller holds an admin role**. A logged-in customer who knows the function name can invoke them via `supabase.functions.invoke()`:
 
-Reuses admin-role check pattern from `admin-manage-users`.
+- `admin-manage-questions` — explicitly documented as "no auth checks"
+- `admin-manage-notes`
+- `admin-manage-scents`
+- `admin-manage-rules`
+- `admin-manage-formulas`
+- `admin-bulk-import-queue`
+- `admin-seed-production-queue`
 
-### Frontend files
-- `src/pages/admin/AdminCustomers.tsx` (list)
-- `src/pages/admin/AdminCustomerDetail.tsx` (detail, 4 sections)
-- Sidebar entry in `src/components/admin/AdminSidebar.tsx`
-- Routes in `src/App.tsx`
+Standard auth guard to add to each:
+1. Read `Authorization` header.
+2. Create a user-scoped Supabase client with the caller's JWT.
+3. Call `auth.getClaims(token)` to extract `callerId`.
+4. Query `user_roles` for `role = 'admin'` matching `callerId`.
+5. Return `403 Forbidden` if no admin role found.
+6. Only then proceed with the service-role client for data mutations.
 
-### Out of scope
-- No schema changes (uses existing tables).
-- No edits/deletes/password actions on customers.
-- No CSV export, no bulk actions, no pagination beyond first 100 (search to narrow).
-- Users page (`/admin/users`) is unchanged.
+**Reference implementation** already exists in:
+- `admin-manage-users`
+- `admin-list-orders`
+- `admin-simulate-order`
+- `admin-list-customers`
 
-## Technical notes
+These should be copied as the canonical pattern.
 
-- Customer ID strategy: prefer `profiles.id` (UUID). For guest-only customers (orders without a profile), use URL-encoded email as the id segment; detail function dispatches on UUID vs email.
-- "Last activity" = `GREATEST(max(orders.created_at), max(saved_scents.created_at), max(quiz_responses.created_at), profiles.created_at)`.
-- All queries run inside the edge function with `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS — same pattern as `admin-list-orders`.
-- Shopify order link: `https://{shop}.myshopify.com/admin/orders/{shopify_order_id}` built from existing `orders.shopify_order_id`.
+### 3. Remove testing bypass comments
+Delete or rephrase comments like "bypass RLS (test mode - no auth checks)" and any `isAdmin=true` / `verify_jwt=false` remnants so the codebase no longer documents how to disable security.
+
+## Verification
+- [ ] Non-admin user (customer account) calling any admin Edge Function receives `403`.
+- [ ] Admin user can still access all admin pages and Edge Functions normally.
+- [ ] No hardcoded `isAdmin = true` remains in `src/pages/admin/`.
+- [ ] Build passes without TypeScript errors.

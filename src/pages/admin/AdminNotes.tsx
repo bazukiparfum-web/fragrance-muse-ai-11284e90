@@ -22,7 +22,7 @@ const AdminNotes = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(true);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -49,7 +49,19 @@ const AdminNotes = () => {
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadNotes();
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setIsAdmin(false); return; }
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      const ok = !!data;
+      setIsAdmin(ok);
+      if (ok) loadNotes();
+    })();
   }, []);
 
   const invokeNotes = async (operation: string, payload: any = {}) => {
