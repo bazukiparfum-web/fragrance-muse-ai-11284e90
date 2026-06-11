@@ -16,6 +16,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ChevronDown, ChevronUp, Play, Copy, FileCode, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { simulateRules, BASELINE_FORMULA, type SimulatorInput, type SimulationResult } from '@/lib/ruleSimulator';
+import { RULE_TEMPLATES } from '@/data/ruleTemplates';
+
+
 
 interface FormulationRule {
   id: string;
@@ -55,6 +62,57 @@ const AdminRules = () => {
     climate: 10,
     ageRange: 5
   });
+
+  // Simulator state
+  const [simInput, setSimInput] = useState<SimulatorInput>({
+    personality: '',
+    scentFamily: [],
+    occasion: '',
+    climate: '',
+    intensity: 5,
+    longevity: '',
+    ageRange: '',
+  });
+  const [simResult, setSimResult] = useState<SimulationResult | null>(null);
+  const [showUnmatched, setShowUnmatched] = useState(false);
+
+  const runSimulation = () => {
+    const result = simulateRules(simInput, rules as any);
+    setSimResult(result);
+  };
+
+  const resetSimulation = () => {
+    setSimInput({
+      personality: '', scentFamily: [], occasion: '',
+      climate: '', intensity: 5, longevity: '', ageRange: '',
+    });
+    setSimResult(null);
+  };
+
+  const cloneTemplate = (tpl: typeof RULE_TEMPLATES[number]) => {
+    setEditingRule({
+      id: `new-${Date.now()}`,
+      rule_name: `${tpl.rule_name} (copy)`,
+      rule_type: tpl.rule_type,
+      description: tpl.description,
+      conditions: tpl.conditions,
+      actions: tpl.actions,
+      priority: tpl.priority,
+      is_active: tpl.is_active,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const toggleScentFamily = (val: string) => {
+    setSimInput((prev) => {
+      const cur = prev.scentFamily || [];
+      return {
+        ...prev,
+        scentFamily: cur.includes(val) ? cur.filter((v) => v !== val) : [...cur, val],
+      };
+    });
+  };
+
 
   useEffect(() => {
     setIsAdmin(true);
@@ -269,10 +327,13 @@ const AdminRules = () => {
           </div>
 
           <Tabs defaultValue="rules" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-2xl">
               <TabsTrigger value="rules">Formulation Rules</TabsTrigger>
+              <TabsTrigger value="simulator">Simulator</TabsTrigger>
+              <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="weights">Scoring Weights</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="rules" className="space-y-4">
               <Card className="p-6">
@@ -345,6 +406,274 @@ const AdminRules = () => {
                 )}
               </Card>
             </TabsContent>
+
+            <TabsContent value="simulator" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Input Panel */}
+                <Card className="p-6 space-y-5">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Play className="h-5 w-5 text-accent" />
+                    <h2 className="text-xl font-serif font-bold">Quiz Input</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Enter mock quiz answers to see which rules trigger and how they reshape the formula.
+                  </p>
+
+                  <div className="space-y-2">
+                    <Label>Personality</Label>
+                    <Select value={simInput.personality || ''} onValueChange={(v) => setSimInput({ ...simInput, personality: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                      <SelectContent>
+                        {['Adventurous', 'Elegant', 'Romantic', 'Confident', 'Mysterious', 'Playful'].map((p) => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Scent Family (multi)</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['fresh', 'citrus', 'floral', 'woody', 'oriental', 'gourmand'].map((f) => (
+                        <label key={f} className="flex items-center gap-2 text-sm capitalize cursor-pointer">
+                          <Checkbox
+                            checked={(simInput.scentFamily || []).includes(f)}
+                            onCheckedChange={() => toggleScentFamily(f)}
+                          />
+                          {f}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Occasion</Label>
+                      <Select value={simInput.occasion || ''} onValueChange={(v) => setSimInput({ ...simInput, occasion: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                        <SelectContent>
+                          {['Daily', 'Office', 'Evening', 'Special', 'Sport'].map((o) => (
+                            <SelectItem key={o} value={o}>{o}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Climate</Label>
+                      <Select value={simInput.climate || ''} onValueChange={(v) => setSimInput({ ...simInput, climate: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                        <SelectContent>
+                          {['Hot/Humid', 'Warm', 'Mild', 'Cool', 'Cold'].map((c) => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label>Intensity</Label>
+                      <span className="text-sm font-bold text-accent">{simInput.intensity}/10</span>
+                    </div>
+                    <Slider
+                      value={[simInput.intensity || 5]}
+                      onValueChange={(vals) => setSimInput({ ...simInput, intensity: vals[0] })}
+                      min={1} max={10} step={1}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Longevity</Label>
+                      <Select value={simInput.longevity || ''} onValueChange={(v) => setSimInput({ ...simInput, longevity: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                        <SelectContent>
+                          {['Light', 'Moderate', 'Long', 'Very Long'].map((l) => (
+                            <SelectItem key={l} value={l}>{l}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Age Range</Label>
+                      <Select value={simInput.ageRange || ''} onValueChange={(v) => setSimInput({ ...simInput, ageRange: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                        <SelectContent>
+                          {['18-24', '25-34', '35-44', '45-54', '55+'].map((a) => (
+                            <SelectItem key={a} value={a}>{a}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button onClick={runSimulation} className="flex-1">
+                      <Play className="h-4 w-4 mr-2" /> Run Simulation
+                    </Button>
+                    <Button variant="outline" onClick={resetSimulation}>Reset</Button>
+                  </div>
+                </Card>
+
+                {/* Results Panel */}
+                <Card className="p-6 space-y-4">
+                  <h2 className="text-xl font-serif font-bold mb-2">Results</h2>
+
+                  {!simResult && (
+                    <p className="text-center py-12 text-muted-foreground text-sm">
+                      Enter inputs and run a simulation to see matched rules and the resulting formula.
+                    </p>
+                  )}
+
+                  {simResult && (
+                    <>
+                      {/* Baseline → Final diff */}
+                      <div className="rounded-lg border border-border p-4 space-y-3">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Formula Change</div>
+                        {(['top', 'heart', 'base'] as const).map((layer) => {
+                          const baseV = simResult.baseline[layer];
+                          const finalV = simResult.finalFormula[layer];
+                          const delta = simResult.diff[layer];
+                          return (
+                            <div key={layer} className="flex items-center justify-between gap-3 text-sm">
+                              <span className="capitalize font-medium w-16">{layer}</span>
+                              <div className="flex items-center gap-2 flex-1 justify-end">
+                                <span className="text-muted-foreground">{baseV}%</span>
+                                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                <span className="font-bold text-accent">{finalV}%</span>
+                                {delta !== 0 && (
+                                  <Badge variant={delta > 0 ? 'default' : 'secondary'} className="ml-2">
+                                    {delta > 0 ? '+' : ''}{delta}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Required / Avoided notes */}
+                      {(['top', 'heart', 'base'] as const).some((l) =>
+                        simResult.requiredNotes[l].length || simResult.avoidedNotes[l].length
+                      ) && (
+                        <div className="rounded-lg border border-border p-4 space-y-2">
+                          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Note Constraints</div>
+                          {(['top', 'heart', 'base'] as const).map((layer) => {
+                            const req = simResult.requiredNotes[layer];
+                            const avo = simResult.avoidedNotes[layer];
+                            if (!req.length && !avo.length) return null;
+                            return (
+                              <div key={layer} className="text-sm">
+                                <span className="capitalize font-medium">{layer}: </span>
+                                {req.map((n) => (
+                                  <Badge key={`r-${n}`} variant="default" className="mr-1">+{n}</Badge>
+                                ))}
+                                {avo.map((n) => (
+                                  <Badge key={`a-${n}`} variant="destructive" className="mr-1">−{n}</Badge>
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Matched rules */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-accent" />
+                          <span className="text-sm font-semibold">Matched Rules ({simResult.matched.length})</span>
+                        </div>
+                        {simResult.matched.length === 0 && (
+                          <p className="text-sm text-muted-foreground">No rules matched these inputs.</p>
+                        )}
+                        {simResult.matched.map((r) => (
+                          <div key={r.id} className="rounded border border-accent/40 bg-accent/5 p-3 space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-medium text-sm">{r.rule_name}</span>
+                              <div className="flex gap-1">
+                                <Badge variant="secondary">{r.rule_type}</Badge>
+                                <Badge variant="outline">P{r.priority}</Badge>
+                              </div>
+                            </div>
+                            {r.description && (
+                              <p className="text-xs text-muted-foreground">{r.description}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Unmatched (collapsible) */}
+                      {simResult.unmatched.length > 0 && (
+                        <Collapsible open={showUnmatched} onOpenChange={setShowUnmatched}>
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="w-full justify-between">
+                              <span className="flex items-center gap-2">
+                                <XCircle className="h-4 w-4" />
+                                {simResult.unmatched.length} rules did not match
+                              </span>
+                              {showUnmatched ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="space-y-1 pt-2">
+                            {simResult.unmatched.map((r) => (
+                              <div key={r.id} className="rounded border border-border p-2 text-xs flex justify-between">
+                                <span>{r.rule_name}</span>
+                                <Badge variant="outline">P{r.priority}</Badge>
+                              </div>
+                            ))}
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
+                    </>
+                  )}
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="templates" className="space-y-4">
+              <Card className="p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <FileCode className="h-5 w-5 text-accent" />
+                  <h2 className="text-xl font-serif font-bold">Rule Templates</h2>
+                </div>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Pre-built examples you can clone and tweak. Clicking "Clone & Edit" opens the rule editor with the template values pre-filled — saving creates a brand new rule.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {RULE_TEMPLATES.map((tpl, i) => (
+                    <div key={i} className="rounded-lg border border-border bg-card/50 p-4 space-y-3 flex flex-col">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold text-sm">{tpl.rule_name}</h3>
+                        <Badge variant="outline">P{tpl.priority}</Badge>
+                      </div>
+                      <Badge variant="secondary" className="w-fit">{tpl.rule_type}</Badge>
+                      <p className="text-xs text-muted-foreground flex-1">{tpl.description}</p>
+
+                      <Collapsible>
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm" className="w-full justify-between text-xs">
+                            View JSON <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <pre className="bg-muted/40 rounded p-2 text-[10px] overflow-x-auto mt-1">
+{JSON.stringify({ conditions: tpl.conditions, actions: tpl.actions }, null, 2)}
+                          </pre>
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      <Button size="sm" onClick={() => cloneTemplate(tpl)} className="w-full">
+                        <Copy className="h-3 w-3 mr-2" /> Clone & Edit
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </TabsContent>
+
+
 
             <TabsContent value="weights" className="space-y-4">
               <Card className="p-6">

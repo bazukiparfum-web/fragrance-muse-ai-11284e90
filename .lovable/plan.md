@@ -1,34 +1,65 @@
-# Fix invisible product images (remove mix-blend-mode: multiply)
+# Admin Rules: Simulator + Templates Gallery
 
-## Root cause
-`mix-blend-mode: multiply` was applied to product `<img>` elements assuming a light page background. On the dark `#0D0C0A` / `#141210` cards the multiply blend mode crushes images to near-black, making the product photos invisible on both the collection grid and the PDP. Replace blend mode with a clean `object-fit: contain` + a bottom-gradient fade pseudo-element on the container.
+Add two new tabs to `/admin/rules` alongside the existing Formulation Rules and Scoring Weights tabs. Pure frontend additions — no schema, no edge function changes, no impact on the live recommendation engine.
 
-## File changes
+## 1. New Tab: "Simulator"
 
-### 1. `src/components/library/ProductImage.tsx` (collection card image)
-- Remove `mix-blend-mode: multiply` from the `<img>` (and any darkening filter).
-- Keep container relative + dark `#141210` bg, `overflow-hidden`, fixed height.
-- Image: `width 100% / height 100% / object-contain / object-position center / padding 16px / filter: none`.
-- Add a `::after` overlay class (or inline span) on the container: bottom 35%, `linear-gradient(to top, #141210 0%, transparent 100%)`, `pointer-events: none`, `z-index: 1`. Image sits at `z-index: 0`.
-- Leave the "Image Coming Soon" placeholder branch untouched.
+A sandbox where admins enter mock quiz inputs and see exactly which active rules match and how they change the formula.
 
-### 2. `src/components/product/ProductImageStage.tsx` (PDP main image)
-- Remove `style={{ mixBlendMode: "multiply" }}` from the `<img>`.
-- Container background changes from `#0D0C0A` to `#141210` (matches spec) — corner brackets and gold border kept.
-- Image: `object-contain / object-position center / padding 20px / filter: none / w-full h-full`.
-- Add gradient fade `::after` overlay: height 25%, same `#141210 → transparent` linear gradient, `pointer-events: none`, above image (`z-index: 1`) but below corner brackets (`z-index: 2`, already set).
-- Keep entry fade/scale + hover scale + gold radial glow.
+**Input panel (left column):**
+- Personality (select: Adventurous, Elegant, Romantic, Confident, Mysterious, Playful)
+- Scent Family (multi-select: Fresh, Citrus, Floral, Woody, Oriental, Gourmand)
+- Occasion (select: Daily, Office, Evening, Special, Sport)
+- Climate (select: Hot/Humid, Warm, Mild, Cool, Cold)
+- Intensity (slider 1–10)
+- Longevity (select: Light, Moderate, Long, Very Long)
+- Age Range (select)
+- "Run Simulation" button + "Reset" button
 
-### 3. `src/index.css`
-- Add a small utility class `.pdp-image-fade` (and reuse for collection container, e.g. `.lux-image-fade`) implementing the `::after` gradient overlay, so both components can apply it via className. Keep the existing `.pdp-image-stage`/corner bracket rules; only the image element styling and the new overlay change.
-- Remove any leftover `mix-blend-multiply` helper / `lux-image-stage` multiply rule if present (search and clean).
+**Results panel (right column):**
+- **Baseline formula** card: default proportions 25% top / 35% heart / 40% base
+- **Matched Rules** list: each rule shown as a card with name, type badge, priority, description, and a green "MATCHED" indicator. Non-matching rules collapsed under "X rules did not match" expander.
+- **Final formula** card: proportions after all matched rules applied (highest priority first), plus required notes and avoided notes lists.
+- **Diff view**: shows top/heart/base deltas (e.g. "Top: 25% → 35% (+10)") with up/down arrows in gold.
 
-### 4. PDP thumbnails (`src/pages/ProductDetail.tsx`)
-- Remove `style={{ mixBlendMode: 'multiply' }}` from the small thumbnail `<img>` strip under the main image. Use `object-contain` on a `#141210` background. No gradient overlay needed at thumbnail size.
+**Matching logic (client-side, mirrors engine semantics):**
+- Load active rules via existing `admin-manage-rules` list operation (already wired).
+- For each rule, check every key in `conditions` against the simulator input. A rule matches when all condition keys are satisfied (string equality, array membership for multi-select, numeric range for intensity).
+- Apply matched rules in priority order: `actions.proportions` overrides current proportions; `actions.requireNotes` appended to required list; `actions.avoidNotes` appended to avoid list.
 
-## Out of scope
-Card layout, gold borders, corner brackets, hover effects, animations, prices, cart logic, placeholder ("Image Coming Soon"), text/typography, any other page.
+## 2. New Tab: "Templates"
 
-## Verification
-- `rg -n "mix-blend|multiply"` across `src/` returns no hits on product image elements after the change.
-- Manually verify on `/collection` (Discovery Set, 30ml Discovery Set bottles fully visible, Custom AI still shows placeholder) and on `/products/discovery-set` (main image and thumbnails fully visible, corner brackets and gold border intact).
+Gallery of pre-built rule templates the admin can clone with one click.
+
+**Templates included (the 3 existing dummy rules + 3 more for variety):**
+1. Summer Fresh Boost — proportion
+2. Evening Elegance Anchor — enhancement
+3. Sport Clean Slate — restriction
+4. Winter Warm Base — proportion (cold climate → heavier base)
+5. Office Subtle Intensity — proportion (office occasion → lighter top)
+6. Romantic Floral Heart — enhancement (romantic personality → require Rose/Jasmine in heart)
+
+**Each template card shows:**
+- Rule name, type badge, priority
+- Short description
+- Collapsed JSON preview of conditions + actions
+- "Clone & Edit" button → opens the existing rule editor dialog pre-filled with template values and `id: new-{timestamp}` so save creates a new rule.
+
+Templates live as a static `RULE_TEMPLATES` constant in the page file (no DB). Cloning reuses the existing `openEditRuleDialog` / `handleSaveRule` flow.
+
+## Technical Details
+
+**Files:**
+- `src/pages/admin/AdminRules.tsx` — add two `<TabsTrigger>` entries ("Simulator", "Templates"), two `<TabsContent>` blocks, and the simulator/templates UI. Tabs grid changes from `grid-cols-2` to `grid-cols-4`.
+- `src/lib/ruleSimulator.ts` (new) — pure helper: `simulateRules(input, rules)` returns `{ matched, unmatched, baseline, finalFormula, diff }`. Keeps page file lean and is unit-testable.
+- `src/data/ruleTemplates.ts` (new) — exports `RULE_TEMPLATES: Omit<FormulationRule, 'id'>[]`.
+
+**No changes to:** edge functions, DB schema, existing rules data, existing tabs, recommendation engine logic.
+
+**Styling:** matches existing admin dark-luxury aesthetic — `Card`, `Badge`, `Button` shadcn components with gold accents already used on the page.
+
+## Out of Scope
+
+- Persisting simulator runs to history (can add later if useful).
+- A/B comparing two rule sets.
+- Real quiz-engine call from the simulator (we mirror logic client-side so admins get instant feedback without burning quota).
