@@ -63,6 +63,57 @@ const AdminRules = () => {
     ageRange: 5
   });
 
+  // Simulator state
+  const [simInput, setSimInput] = useState<SimulatorInput>({
+    personality: '',
+    scentFamily: [],
+    occasion: '',
+    climate: '',
+    intensity: 5,
+    longevity: '',
+    ageRange: '',
+  });
+  const [simResult, setSimResult] = useState<SimulationResult | null>(null);
+  const [showUnmatched, setShowUnmatched] = useState(false);
+
+  const runSimulation = () => {
+    const result = simulateRules(simInput, rules as any);
+    setSimResult(result);
+  };
+
+  const resetSimulation = () => {
+    setSimInput({
+      personality: '', scentFamily: [], occasion: '',
+      climate: '', intensity: 5, longevity: '', ageRange: '',
+    });
+    setSimResult(null);
+  };
+
+  const cloneTemplate = (tpl: typeof RULE_TEMPLATES[number]) => {
+    setEditingRule({
+      id: `new-${Date.now()}`,
+      rule_name: `${tpl.rule_name} (copy)`,
+      rule_type: tpl.rule_type,
+      description: tpl.description,
+      conditions: tpl.conditions,
+      actions: tpl.actions,
+      priority: tpl.priority,
+      is_active: tpl.is_active,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const toggleScentFamily = (val: string) => {
+    setSimInput((prev) => {
+      const cur = prev.scentFamily || [];
+      return {
+        ...prev,
+        scentFamily: cur.includes(val) ? cur.filter((v) => v !== val) : [...cur, val],
+      };
+    });
+  };
+
+
   useEffect(() => {
     setIsAdmin(true);
     loadRules();
