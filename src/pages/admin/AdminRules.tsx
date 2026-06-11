@@ -327,10 +327,13 @@ const AdminRules = () => {
           </div>
 
           <Tabs defaultValue="rules" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-2xl">
               <TabsTrigger value="rules">Formulation Rules</TabsTrigger>
+              <TabsTrigger value="simulator">Simulator</TabsTrigger>
+              <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="weights">Scoring Weights</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="rules" className="space-y-4">
               <Card className="p-6">
