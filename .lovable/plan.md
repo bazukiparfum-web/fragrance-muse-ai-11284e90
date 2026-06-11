@@ -1,40 +1,56 @@
-
 ## Goal
 
-Let the primary admin (modivishvam@live.com) fully manage other users from `/admin/users` — edit their profile, send a password reset, temporarily disable login, or permanently delete the account. Regular admins keep the existing Grant/Revoke abilities only.
+Add a dedicated **Customers** area to the admin, separate from Users (employees). A customer = anyone who has a `profiles` row, a `saved_scents` row, a `quiz_responses` row, OR an `orders` row — merged by email (for guest orders) and `user_id`.
 
-## Permission model
+## Scope
 
-- **Primary admin** (email `modivishvam@live.com`): sees Edit, Reset password, Disable, Enable, and Delete actions for every other user.
-- **Other admins**: see only the existing Grant admin / Revoke admin button.
-- Nobody can edit, disable, or delete their own account.
-- The primary admin account itself cannot be disabled, deleted, or have its admin revoked by anyone.
+### Navigation
+- New sidebar link **"Customers"** under `/admin/customers`. Existing `/admin/users` stays unchanged (employees/roles).
+- Two new routes:
+  - `/admin/customers` — searchable list
+  - `/admin/customers/:id` — detail page (id = profile UUID or email for guest-only customers)
 
-## UI changes — `src/pages/admin/AdminUsers.tsx`
+### Customers list (`/admin/customers`)
+Table columns: Email · Name · Phone · # Orders · Total spent · # Scents · Signed up · Last activity · Account?
 
-1. Add a "Status" column (Active / Disabled badge based on `banned_until`).
-2. Add an actions menu (dropdown) in the row, visible only when the current user is the primary admin:
-   - **Edit user** → opens dialog with fields: Full name, Email, Phone (all validated with zod, trimmed, length-capped).
-   - **Send password reset** → triggers a reset email to the user's address, with toast confirmation.
-   - **Disable login** / **Enable login** → toggles a ban (sets `banned_until` to a far-future date or clears it). Confirm via AlertDialog.
-   - **Delete permanently** → red destructive AlertDialog with the user's email typed to confirm, then hard-deletes the auth user (cascades to profile + related rows).
-3. Existing Grant/Revoke admin button stays where it is, shown to all admins.
+- Search by email/name/phone.
+- Sort by last activity (default), total spent, signups.
+- Filter chips: All / Has account / Guest only / Has orders / Quiz takers.
+- Row click → detail page.
 
-## Backend changes — `supabase/functions/admin-manage-users/index.ts`
+### Customer detail (`/admin/customers/:id`)
+Four read-only sections in tabs (mobile) / stacked cards (desktop):
 
-Extend the existing function with new actions, all gated by the same admin-role check it already performs, plus a primary-admin check (look up the caller's email in `profiles` and compare to `modivishvam@live.com`) for the destructive ones.
+1. **Profile & contact** — email, full name, phone, WhatsApp opt-in status, signup date, last activity, account type badge (Account / Guest), most-recent shipping address from latest order.
+2. **Orders history** — list of all `orders` + `order_items`, totals, status, created_at, "Open in Shopify" link (uses existing Shopify admin order URL), "Resend confirmation email" button (calls existing transactional email queue with order context).
+3. **Created perfumes** — all `saved_scents` (public AND private) with name, fragrance_code, formula preview, is_public badge, created_at, link to `/admin/scents` row when public.
+4. **Quiz activity & referrals** — latest `quiz_responses` + result snapshot, referral code issued, list of referrals made + reward status from `referral_rewards`.
 
-New actions:
-- `update_user` — `{ userId, full_name?, email?, phone? }`. Updates `profiles` row; if `email` changed, also calls `admin.auth.admin.updateUserById` to sync the auth email. Zod-validated.
-- `send_password_reset` — `{ userId }`. Looks up the user's email, calls `admin.auth.resetPasswordForEmail`.
-- `set_user_disabled` — `{ userId, disabled: boolean }`. Calls `admin.auth.admin.updateUserById` with `ban_duration: '876000h'` (≈100 years) when disabling, `'none'` when enabling.
-- `delete_user` — `{ userId, confirmEmail }`. Verifies `confirmEmail` matches the target's email, then `admin.auth.admin.deleteUser(userId)`. Cascade FKs already remove `profiles` and related rows.
+No edit/delete/disable actions on this page. (Those stay on `/admin/users` for employees only.)
 
-All destructive actions reject when `userId === callerId` or when the target email is `modivishvam@live.com`.
+### Backend (edge function)
+New `admin-list-customers` edge function (Service Role, admin-gated):
+- `action: 'list'` → returns merged customer rows. Joins `profiles` left with aggregated `orders` (count, sum, max(created_at)) and `saved_scents` (count). Unions in distinct `orders.email` rows that have no matching profile (guest customers).
+- `action: 'detail', id | email` → returns profile + all orders + order_items + saved_scents + latest quiz_response + referral code + referrals + referral_rewards + whatsapp_optin in one payload.
+- `action: 'resend_order_email', orderId` → enqueues order confirmation via existing `process-email-queue` pipeline.
 
-The existing `list` action is extended to return `is_disabled` (derived from auth admin `listUsers` lookup keyed by id) and `phone` so the UI can render the status badge and edit form.
+Reuses admin-role check pattern from `admin-manage-users`.
 
-## Out of scope
+### Frontend files
+- `src/pages/admin/AdminCustomers.tsx` (list)
+- `src/pages/admin/AdminCustomerDetail.tsx` (detail, 4 sections)
+- Sidebar entry in `src/components/admin/AdminSidebar.tsx`
+- Routes in `src/App.tsx`
 
-- Bulk actions, audit log, undo, pagination beyond the existing 50-row limit.
-- Changing how regular admins are managed — only the primary admin gains the new destructive powers.
+### Out of scope
+- No schema changes (uses existing tables).
+- No edits/deletes/password actions on customers.
+- No CSV export, no bulk actions, no pagination beyond first 100 (search to narrow).
+- Users page (`/admin/users`) is unchanged.
+
+## Technical notes
+
+- Customer ID strategy: prefer `profiles.id` (UUID). For guest-only customers (orders without a profile), use URL-encoded email as the id segment; detail function dispatches on UUID vs email.
+- "Last activity" = `GREATEST(max(orders.created_at), max(saved_scents.created_at), max(quiz_responses.created_at), profiles.created_at)`.
+- All queries run inside the edge function with `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS — same pattern as `admin-list-orders`.
+- Shopify order link: `https://{shop}.myshopify.com/admin/orders/{shopify_order_id}` built from existing `orders.shopify_order_id`.

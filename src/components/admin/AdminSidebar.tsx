@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Star,
   Users,
+  UserSquare2,
   FlaskConical,
   Droplets,
   BookOpen,
@@ -55,7 +56,10 @@ const groups = [
   },
   {
     label: 'Access',
-    items: [{ title: 'Users & Roles', url: '/admin/users', icon: Users }],
+    items: [
+      { title: 'Customers', url: '/admin/customers', icon: UserSquare2 },
+      { title: 'Users & Roles', url: '/admin/users', icon: Users },
+    ],
   },
   {
     label: 'Tools',

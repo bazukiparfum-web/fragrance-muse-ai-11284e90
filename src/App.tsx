@@ -44,6 +44,8 @@ import AdminProductionQueue from "./pages/admin/AdminProductionQueue";
 import AdminPumps from "./pages/admin/AdminPumps";
 import AdminFormulas from "./pages/admin/AdminFormulas";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminCustomers from "./pages/admin/AdminCustomers";
+import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail";
 import AdminTesting from "./pages/admin/AdminTesting";
 import ShopifyRedirectSetup from "./pages/admin/ShopifyRedirectSetup";
 import NotFound from "./pages/NotFound";
@@ -117,6 +119,8 @@ const AppInner = () => {
             <Route path="pumps" element={<AdminPumps />} />
             <Route path="formulas" element={<AdminFormulas />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="customers" element={<AdminCustomers />} />
+            <Route path="customers/:id" element={<AdminCustomerDetail />} />
             <Route path="testing" element={<AdminTesting />} />
             <Route path="shopify-redirect-setup" element={<ShopifyRedirectSetup />} />
           </Route>
