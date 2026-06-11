@@ -1,65 +1,40 @@
-# Admin Rules: Simulator + Templates Gallery
 
-Add two new tabs to `/admin/rules` alongside the existing Formulation Rules and Scoring Weights tabs. Pure frontend additions — no schema, no edge function changes, no impact on the live recommendation engine.
+## Goal
 
-## 1. New Tab: "Simulator"
+Let the primary admin (modivishvam@live.com) fully manage other users from `/admin/users` — edit their profile, send a password reset, temporarily disable login, or permanently delete the account. Regular admins keep the existing Grant/Revoke abilities only.
 
-A sandbox where admins enter mock quiz inputs and see exactly which active rules match and how they change the formula.
+## Permission model
 
-**Input panel (left column):**
-- Personality (select: Adventurous, Elegant, Romantic, Confident, Mysterious, Playful)
-- Scent Family (multi-select: Fresh, Citrus, Floral, Woody, Oriental, Gourmand)
-- Occasion (select: Daily, Office, Evening, Special, Sport)
-- Climate (select: Hot/Humid, Warm, Mild, Cool, Cold)
-- Intensity (slider 1–10)
-- Longevity (select: Light, Moderate, Long, Very Long)
-- Age Range (select)
-- "Run Simulation" button + "Reset" button
+- **Primary admin** (email `modivishvam@live.com`): sees Edit, Reset password, Disable, Enable, and Delete actions for every other user.
+- **Other admins**: see only the existing Grant admin / Revoke admin button.
+- Nobody can edit, disable, or delete their own account.
+- The primary admin account itself cannot be disabled, deleted, or have its admin revoked by anyone.
 
-**Results panel (right column):**
-- **Baseline formula** card: default proportions 25% top / 35% heart / 40% base
-- **Matched Rules** list: each rule shown as a card with name, type badge, priority, description, and a green "MATCHED" indicator. Non-matching rules collapsed under "X rules did not match" expander.
-- **Final formula** card: proportions after all matched rules applied (highest priority first), plus required notes and avoided notes lists.
-- **Diff view**: shows top/heart/base deltas (e.g. "Top: 25% → 35% (+10)") with up/down arrows in gold.
+## UI changes — `src/pages/admin/AdminUsers.tsx`
 
-**Matching logic (client-side, mirrors engine semantics):**
-- Load active rules via existing `admin-manage-rules` list operation (already wired).
-- For each rule, check every key in `conditions` against the simulator input. A rule matches when all condition keys are satisfied (string equality, array membership for multi-select, numeric range for intensity).
-- Apply matched rules in priority order: `actions.proportions` overrides current proportions; `actions.requireNotes` appended to required list; `actions.avoidNotes` appended to avoid list.
+1. Add a "Status" column (Active / Disabled badge based on `banned_until`).
+2. Add an actions menu (dropdown) in the row, visible only when the current user is the primary admin:
+   - **Edit user** → opens dialog with fields: Full name, Email, Phone (all validated with zod, trimmed, length-capped).
+   - **Send password reset** → triggers a reset email to the user's address, with toast confirmation.
+   - **Disable login** / **Enable login** → toggles a ban (sets `banned_until` to a far-future date or clears it). Confirm via AlertDialog.
+   - **Delete permanently** → red destructive AlertDialog with the user's email typed to confirm, then hard-deletes the auth user (cascades to profile + related rows).
+3. Existing Grant/Revoke admin button stays where it is, shown to all admins.
 
-## 2. New Tab: "Templates"
+## Backend changes — `supabase/functions/admin-manage-users/index.ts`
 
-Gallery of pre-built rule templates the admin can clone with one click.
+Extend the existing function with new actions, all gated by the same admin-role check it already performs, plus a primary-admin check (look up the caller's email in `profiles` and compare to `modivishvam@live.com`) for the destructive ones.
 
-**Templates included (the 3 existing dummy rules + 3 more for variety):**
-1. Summer Fresh Boost — proportion
-2. Evening Elegance Anchor — enhancement
-3. Sport Clean Slate — restriction
-4. Winter Warm Base — proportion (cold climate → heavier base)
-5. Office Subtle Intensity — proportion (office occasion → lighter top)
-6. Romantic Floral Heart — enhancement (romantic personality → require Rose/Jasmine in heart)
+New actions:
+- `update_user` — `{ userId, full_name?, email?, phone? }`. Updates `profiles` row; if `email` changed, also calls `admin.auth.admin.updateUserById` to sync the auth email. Zod-validated.
+- `send_password_reset` — `{ userId }`. Looks up the user's email, calls `admin.auth.resetPasswordForEmail`.
+- `set_user_disabled` — `{ userId, disabled: boolean }`. Calls `admin.auth.admin.updateUserById` with `ban_duration: '876000h'` (≈100 years) when disabling, `'none'` when enabling.
+- `delete_user` — `{ userId, confirmEmail }`. Verifies `confirmEmail` matches the target's email, then `admin.auth.admin.deleteUser(userId)`. Cascade FKs already remove `profiles` and related rows.
 
-**Each template card shows:**
-- Rule name, type badge, priority
-- Short description
-- Collapsed JSON preview of conditions + actions
-- "Clone & Edit" button → opens the existing rule editor dialog pre-filled with template values and `id: new-{timestamp}` so save creates a new rule.
+All destructive actions reject when `userId === callerId` or when the target email is `modivishvam@live.com`.
 
-Templates live as a static `RULE_TEMPLATES` constant in the page file (no DB). Cloning reuses the existing `openEditRuleDialog` / `handleSaveRule` flow.
+The existing `list` action is extended to return `is_disabled` (derived from auth admin `listUsers` lookup keyed by id) and `phone` so the UI can render the status badge and edit form.
 
-## Technical Details
+## Out of scope
 
-**Files:**
-- `src/pages/admin/AdminRules.tsx` — add two `<TabsTrigger>` entries ("Simulator", "Templates"), two `<TabsContent>` blocks, and the simulator/templates UI. Tabs grid changes from `grid-cols-2` to `grid-cols-4`.
-- `src/lib/ruleSimulator.ts` (new) — pure helper: `simulateRules(input, rules)` returns `{ matched, unmatched, baseline, finalFormula, diff }`. Keeps page file lean and is unit-testable.
-- `src/data/ruleTemplates.ts` (new) — exports `RULE_TEMPLATES: Omit<FormulationRule, 'id'>[]`.
-
-**No changes to:** edge functions, DB schema, existing rules data, existing tabs, recommendation engine logic.
-
-**Styling:** matches existing admin dark-luxury aesthetic — `Card`, `Badge`, `Button` shadcn components with gold accents already used on the page.
-
-## Out of Scope
-
-- Persisting simulator runs to history (can add later if useful).
-- A/B comparing two rule sets.
-- Real quiz-engine call from the simulator (we mirror logic client-side so admins get instant feedback without burning quota).
+- Bulk actions, audit log, undo, pagination beyond the existing 50-row limit.
+- Changing how regular admins are managed — only the primary admin gains the new destructive powers.
