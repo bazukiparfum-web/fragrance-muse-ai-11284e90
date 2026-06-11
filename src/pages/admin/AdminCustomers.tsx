@@ -6,6 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -13,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CustomerRow {
@@ -36,6 +43,17 @@ const FILTERS = [
   { key: 'quiz_takers', label: 'Quiz takers' },
 ] as const;
 
+const SORTS: Array<{ key: string; label: string }> = [
+  { key: 'last_activity', label: 'Last activity' },
+  { key: 'created_at', label: 'Signup date' },
+  { key: 'orders_total', label: 'Total spent' },
+  { key: 'orders_count', label: 'Orders' },
+  { key: 'scents_count', label: 'Scents' },
+  { key: 'email', label: 'Email' },
+];
+
+const ORDER_STATUSES = ['any', 'pending', 'paid', 'fulfilled', 'cancelled', 'refunded'];
+
 const fmtINR = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
@@ -48,11 +66,36 @@ const AdminCustomers = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<(typeof FILTERS)[number]['key']>('all');
 
+  // Advanced filters
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [orderStatus, setOrderStatus] = useState('any');
+  const [minSpend, setMinSpend] = useState('');
+  const [maxSpend, setMaxSpend] = useState('');
+  const [city, setCity] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Sorting
+  const [sortBy, setSortBy] = useState('last_activity');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
   const load = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('admin-list-customers', {
-        body: { action: 'list', search, filter },
+        body: {
+          action: 'list',
+          search,
+          filter,
+          date_from: dateFrom || undefined,
+          date_to: dateTo || undefined,
+          order_status: orderStatus,
+          min_spend: minSpend ? Number(minSpend) : undefined,
+          max_spend: maxSpend ? Number(maxSpend) : undefined,
+          city: city || undefined,
+          sort_by: sortBy,
+          sort_dir: sortDir,
+        },
       });
       if (error) throw error;
       setRows(data.customers ?? []);
@@ -66,7 +109,16 @@ const AdminCustomers = () => {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, sortBy, sortDir]);
+
+  const resetAdvanced = () => {
+    setDateFrom('');
+    setDateTo('');
+    setOrderStatus('any');
+    setMinSpend('');
+    setMaxSpend('');
+    setCity('');
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -76,7 +128,7 @@ const AdminCustomers = () => {
       </p>
 
       <Card className="p-4 mb-4 space-y-3">
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3 items-center">
           <Input
             placeholder="Search by email, name, or phone…"
             value={search}
@@ -85,7 +137,30 @@ const AdminCustomers = () => {
             className="max-w-xs"
           />
           <Button onClick={load}>Search</Button>
+          <Button variant="outline" onClick={() => setShowAdvanced((v) => !v)}>
+            {showAdvanced ? 'Hide' : 'Advanced'} filters
+          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Sort</span>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {SORTS.map((s) => (
+                  <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+              title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+            >
+              {sortDir === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
+
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <Button
@@ -98,6 +173,48 @@ const AdminCustomers = () => {
             </Button>
           ))}
         </div>
+
+        {showAdvanced && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 border-t">
+            <div>
+              <label className="text-xs text-muted-foreground">Order date from</label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Order date to</label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Order status</label>
+              <Select value={orderStatus} onValueChange={setOrderStatus}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ORDER_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Min spend (₹)</label>
+              <Input type="number" value={minSpend} onChange={(e) => setMinSpend(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Max spend (₹)</label>
+              <Input type="number" value={maxSpend} onChange={(e) => setMaxSpend(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Shipping city</label>
+              <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Mumbai" />
+            </div>
+            <div className="col-span-full flex gap-2">
+              <Button size="sm" onClick={load}>Apply filters</Button>
+              <Button size="sm" variant="outline" onClick={() => { resetAdvanced(); setTimeout(load, 0); }}>
+                Reset
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card>
