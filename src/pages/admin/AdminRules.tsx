@@ -16,6 +16,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ChevronDown, ChevronUp, Play, Copy, FileCode, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { simulateRules, BASELINE_FORMULA, type SimulatorInput, type SimulationResult } from '@/lib/ruleSimulator';
+import { RULE_TEMPLATES } from '@/data/ruleTemplates';
+
+
 
 interface FormulationRule {
   id: string;
