@@ -72,6 +72,9 @@ export default {
         display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
         cormorant: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        engravingClassic: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        engravingElegant: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        engravingBold: ['"Cinzel"', '"Cormorant Garamond"', 'serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
