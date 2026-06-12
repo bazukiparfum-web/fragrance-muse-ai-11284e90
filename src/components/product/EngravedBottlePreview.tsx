@@ -68,6 +68,7 @@ export default function EngravedBottlePreview({ src, alt, enabled, text, style, 
         >
 
           <div
+            data-testid="engraving-preview-text"
             className={cn('relative inline-block', ENGRAVING_FONT_CLASS[style])}
             style={{
               fontSize: `${size}px`,
@@ -77,6 +78,7 @@ export default function EngravedBottlePreview({ src, alt, enabled, text, style, 
               letterSpacing: '0.08em',
             }}
           >
+
             {text.split('').map((ch, i) => (
               <span
                 key={`${i}-${ch}-${text.length}`}
