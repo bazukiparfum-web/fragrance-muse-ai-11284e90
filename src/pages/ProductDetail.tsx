@@ -168,8 +168,26 @@ export default function ProductDetail() {
   const seoImage = images[0]?.node.url;
   useSEO({ title: seoTitle, description: seoDescription, image: seoImage, type: 'product' });
 
+  const buildEngravingAttrs = () => {
+    if (!engraving.isActive) return undefined;
+    return [
+      { key: '_Engraving Text', value: engraving.trimmed },
+      { key: '_Engraving Style', value: engraving.style },
+      { key: '_Engraving Fee', value: `₹${ENGRAVING_FEE}` },
+    ];
+  };
+
+  const validateEngraving = (): boolean => {
+    if (engraving.enabled && engraving.trimmed.length === 0) {
+      engravingPanelRef.current?.pulseInvalid();
+      return false;
+    }
+    return true;
+  };
+
   const handleAddToCart = async () => {
     if (!product || !selectedVariant || addStatus === 'adding') return;
+    if (!validateEngraving()) return;
     setAddStatus('adding');
     const ok = await addItem({
       product: { node: product } as ShopifyProduct,
@@ -178,6 +196,7 @@ export default function ProductDetail() {
       price: selectedVariant.price,
       quantity,
       selectedOptions: selectedVariant.selectedOptions || [],
+      attributes: buildEngravingAttrs(),
     });
     if (ok) {
       setAddStatus('added');
@@ -191,6 +210,7 @@ export default function ProductDetail() {
 
   const handleBuyNow = async () => {
     if (!product || !selectedVariant || buyStatus === 'loading') return;
+    if (!validateEngraving()) return;
     setBuyStatus('loading');
     const ok = await addItem({
       product: { node: product } as ShopifyProduct,
@@ -199,6 +219,7 @@ export default function ProductDetail() {
       price: selectedVariant.price,
       quantity,
       selectedOptions: selectedVariant.selectedOptions || [],
+      attributes: buildEngravingAttrs(),
     });
     if (ok) {
       const url = useCartStore.getState().checkoutUrl;
