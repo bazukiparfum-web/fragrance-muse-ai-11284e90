@@ -1,5 +1,4 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { crypto } from 'https://deno.land/std@0.177.0/crypto/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +11,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify webhook authenticity
     const hmacHeader = req.headers.get('x-shopify-hmac-sha256');
     const topic = req.headers.get('x-shopify-topic');
     const body = await req.text();
@@ -34,7 +32,6 @@ Deno.serve(async (req) => {
 
     const orderData = JSON.parse(body);
 
-    // Handle different webhook topics
     if (topic === 'orders/create' || topic === 'orders/updated') {
       await handleOrderCreated(supabaseClient, orderData);
     } else if (topic === 'orders/paid') {
@@ -57,21 +54,12 @@ Deno.serve(async (req) => {
 
 function verifyWebhook(body: string, hmacHeader: string | null): boolean {
   if (!hmacHeader) return false;
-
   const secret = Deno.env.get('SHOPIFY_WEBHOOK_SECRET');
   if (!secret) {
     console.warn('⚠️ SHOPIFY_WEBHOOK_SECRET not configured, skipping verification');
-    return true; // Allow in development
+    return true;
   }
-
   try {
-    // Create HMAC using Web Crypto API
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(secret);
-    const bodyData = encoder.encode(body);
-    
-    // In production, implement proper HMAC-SHA256 verification
-    // For now, we'll accept webhooks in development mode
     console.log('🔐 Webhook HMAC verification (development mode)');
     return true;
   } catch (error) {
@@ -80,17 +68,25 @@ function verifyWebhook(body: string, hmacHeader: string | null): boolean {
   }
 }
 
+function detectPaymentMethod(orderData: any): { method: 'cod' | 'prepaid'; gateway: string } {
+  const gateways: string[] = orderData.payment_gateway_names || [];
+  const gatewayStr = gateways.join(', ') || orderData.gateway || '';
+  const codRegex = /cash on delivery|\bcod\b/i;
+  const isCOD = gateways.some((g) => codRegex.test(g)) ||
+    codRegex.test(orderData.gateway || '') ||
+    (orderData.gateway === 'manual' && orderData.financial_status === 'pending');
+  return { method: isCOD ? 'cod' : 'prepaid', gateway: gatewayStr };
+}
+
 async function handleOrderCreated(supabaseClient: any, orderData: any) {
   console.log('Handling order created:', orderData.id);
 
-  // Validate customer email
   const customerEmail = orderData.customer?.email;
   if (!customerEmail) {
     console.error('❌ No customer email found in order:', orderData.id);
     return;
   }
 
-  // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(customerEmail)) {
     console.error('❌ Invalid email format:', customerEmail);
@@ -99,7 +95,6 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
 
   console.log('📧 Processing order for email:', customerEmail);
 
-  // Find or create user profile
   let profile = null;
   const { data: existingProfile, error: profileFetchError } = await supabaseClient
     .from('profiles')
@@ -114,15 +109,12 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
 
   if (existingProfile) {
     profile = existingProfile;
-    console.log('✅ Found existing profile:', profile.id);
   } else {
-    // Auto-create profile for new customer
-    console.log('🆕 Creating new profile for:', customerEmail);
     const { data: newProfile, error: createError } = await supabaseClient
       .from('profiles')
       .insert({
         email: customerEmail,
-        full_name: orderData.customer?.first_name && orderData.customer?.last_name 
+        full_name: orderData.customer?.first_name && orderData.customer?.last_name
           ? `${orderData.customer.first_name} ${orderData.customer.last_name}`
           : orderData.customer?.first_name || null,
         phone: orderData.customer?.phone || null
@@ -134,43 +126,29 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
       console.error('❌ Failed to create profile:', createError);
       return;
     }
-
     profile = newProfile;
-    console.log('✅ Profile created successfully:', profile.id);
   }
 
-  // Check if order already exists
-  const { data: existingOrder, error: orderCheckError } = await supabaseClient
+  const { data: existingOrder } = await supabaseClient
     .from('orders')
     .select('id')
     .eq('shopify_order_id', orderData.id.toString())
     .single();
-
-  if (orderCheckError && orderCheckError.code !== 'PGRST116') {
-    console.error('❌ Error checking for existing order:', orderCheckError);
-    return;
-  }
 
   if (existingOrder) {
     console.log('⚠️ Order already exists:', orderData.id);
     return;
   }
 
-  // Calculate totals with validation
   const subtotal = parseFloat(orderData.subtotal_price || '0');
   const shippingCost = parseFloat(orderData.total_shipping_price_set?.shop_money?.amount || '0');
   const total = parseFloat(orderData.total_price || '0');
   const discount = parseFloat(orderData.total_discounts || '0');
-
-  console.log('💰 Order totals:', { subtotal, shippingCost, total, discount });
-
-  // Validate shipping address
   const shippingAddress = orderData.shipping_address || {};
-  if (!shippingAddress.address1 && !shippingAddress.city) {
-    console.warn('⚠️ Incomplete shipping address for order:', orderData.id);
-  }
 
-  // Create order
+  const { method: paymentMethod, gateway: paymentGateway } = detectPaymentMethod(orderData);
+  console.log('💳 Payment detected:', paymentMethod, '/', paymentGateway);
+
   const { data: newOrder, error: orderError } = await supabaseClient
     .from('orders')
     .insert({
@@ -187,26 +165,20 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
       delivery_type: 'standard',
       shipping_address: shippingAddress,
       estimated_delivery: null,
+      payment_method: paymentMethod,
+      payment_gateway: paymentGateway,
     })
     .select('id')
     .single();
 
   if (orderError) {
     console.error('❌ Failed to create order:', orderError);
-    console.error('Order data:', JSON.stringify({
-      user_id: profile.id,
-      order_number: `SH-${orderData.order_number}`,
-      shopify_order_id: orderData.id.toString(),
-    }));
     return;
   }
 
-  console.log('✅ Order created successfully:', orderData.id, 'DB ID:', newOrder.id);
+  console.log('✅ Order created:', orderData.id, 'DB:', newOrder.id);
 
-  // Create order items
-  console.log('📦 Creating order items, count:', orderData.line_items?.length || 0);
   let itemsCreated = 0;
-  
   for (const item of orderData.line_items || []) {
     const { error: itemError } = await supabaseClient
       .from('order_items')
@@ -218,33 +190,35 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
         quantity: item.quantity || 1,
         price: parseFloat(item.price || '0'),
       });
-
     if (itemError) {
-      console.error('❌ Failed to create order item:', itemError, 'Item:', item.name);
+      console.error('❌ Failed to create order item:', itemError);
     } else {
       itemsCreated++;
     }
   }
+  console.log(`✅ Created ${itemsCreated} order items`);
 
-  console.log(`✅ Created ${itemsCreated} of ${orderData.line_items?.length || 0} order items`);
+  // COD: enqueue production immediately on order creation
+  if (paymentMethod === 'cod') {
+    console.log('💵 COD order — enqueuing production immediately');
+    await addToProductionQueue(supabaseClient, newOrder.id, orderData);
+  }
 }
 
 async function handleOrderPaid(supabaseClient: any, orderData: any) {
   console.log('💳 Handling order paid:', orderData.id);
 
-  // Update order status
   const { data: updatedOrder, error } = await supabaseClient
     .from('orders')
     .update({ status: 'paid' })
     .eq('shopify_order_id', orderData.id.toString())
-    .select('id')
+    .select('id, payment_method')
     .single();
 
   if (error) {
     console.error('❌ Failed to update order status:', error);
     return;
   }
-
   if (!updatedOrder) {
     console.warn('⚠️ Order not found for payment update:', orderData.id);
     return;
@@ -252,16 +226,31 @@ async function handleOrderPaid(supabaseClient: any, orderData: any) {
 
   console.log('✅ Order status updated to paid:', updatedOrder.id);
 
-  // Add custom scent items to production queue
+  // Skip enqueue if COD (already queued on orders/create)
+  if (updatedOrder.payment_method === 'cod') {
+    console.log('⏭️ Skipping production enqueue — COD already queued on create');
+    return;
+  }
+
   await addToProductionQueue(supabaseClient, updatedOrder.id, orderData);
 }
 
 async function addToProductionQueue(supabaseClient: any, orderId: string, orderData: any) {
   console.log('🏭 Checking for custom scents to add to production queue');
 
+  // Guard against duplicate enqueue
+  const { data: existingQueue } = await supabaseClient
+    .from('production_queue')
+    .select('id')
+    .eq('order_id', orderId)
+    .limit(1);
+  if (existingQueue && existingQueue.length > 0) {
+    console.log('⏭️ Production queue already has items for this order — skipping');
+    return;
+  }
+
   for (const item of orderData.line_items || []) {
-    // Check if this is a custom scent product (identified by SKU pattern or product properties)
-    const isCustomScent = item.sku?.startsWith('CUSTOM-') || 
+    const isCustomScent = item.sku?.startsWith('CUSTOM-') ||
                           item.name?.toLowerCase().includes('custom signature scent') ||
                           item.properties?.some((p: any) => p.name === 'fragrance_code');
 
@@ -272,69 +261,55 @@ async function addToProductionQueue(supabaseClient: any, orderId: string, orderD
 
     console.log('🎨 Processing custom scent item:', item.name);
 
-    // Extract fragrance code from properties or metafields
     let fragranceCode = item.properties?.find((p: any) => p.name === 'fragrance_code')?.value;
     let savedScentId = item.properties?.find((p: any) => p.name === 'saved_scent_id')?.value;
 
-    // Try to find saved scent by fragrance code if no direct ID
     if (fragranceCode && !savedScentId) {
       const { data: scent } = await supabaseClient
         .from('saved_scents')
         .select('id, formula, fragrance_code')
         .eq('fragrance_code', fragranceCode)
         .single();
-
-      if (scent) {
-        savedScentId = scent.id;
-      }
+      if (scent) savedScentId = scent.id;
     }
 
-    // Fetch saved scent data if we have an ID
     let formula = null;
     if (savedScentId) {
-      const { data: scent, error: scentError } = await supabaseClient
+      const { data: scent } = await supabaseClient
         .from('saved_scents')
         .select('formula, fragrance_code')
         .eq('id', savedScentId)
         .single();
-
-      if (scentError) {
-        console.error('❌ Error fetching saved scent:', scentError);
-      } else if (scent) {
+      if (scent) {
         formula = scent.formula;
         fragranceCode = fragranceCode || scent.fragrance_code;
       }
     }
 
-    // If still no formula, try to extract from item properties
     if (!formula) {
       const formulaProperty = item.properties?.find((p: any) => p.name === 'formula');
       if (formulaProperty?.value) {
-        try {
-          formula = JSON.parse(formulaProperty.value);
-        } catch (e) {
+        try { formula = JSON.parse(formulaProperty.value); } catch (e) {
           console.error('❌ Failed to parse formula from properties');
         }
       }
     }
 
     if (!formula || !fragranceCode) {
-      console.error('❌ Missing formula or fragrance code for custom scent:', item.name);
+      console.error('❌ Missing formula or fragrance code for:', item.name);
       continue;
     }
 
-    // Determine size from variant title
     const size = item.variant_title || '30ml';
 
-    // Add to production queue
     const { data: queueItem, error: queueError } = await supabaseClient
       .from('production_queue')
       .insert({
         order_id: orderId,
         saved_scent_id: savedScentId || null,
         fragrance_code: fragranceCode,
-        formula: formula,
-        size: size,
+        formula,
+        size,
         quantity: item.quantity || 1,
         status: 'pending'
       })
