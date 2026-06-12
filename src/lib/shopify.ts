@@ -248,14 +248,28 @@ function isCartNotFoundError(userErrors: Array<{ field: string[] | null; message
   return userErrors.some(e => e.message.toLowerCase().includes('cart not found') || e.message.toLowerCase().includes('does not exist'));
 }
 
+export interface CartAttribute { key: string; value: string }
+
 export interface CartItemInput {
   variantId: string;
   quantity: number;
+  attributes?: CartAttribute[];
+}
+
+function buildLineInput(item: CartItemInput) {
+  const line: Record<string, unknown> = {
+    quantity: item.quantity,
+    merchandiseId: item.variantId,
+  };
+  if (item.attributes && item.attributes.length > 0) {
+    line.attributes = item.attributes.map((a) => ({ key: a.key, value: a.value }));
+  }
+  return line;
 }
 
 export async function createShopifyCart(item: CartItemInput): Promise<{ cartId: string; checkoutUrl: string; lineId: string } | null> {
   const data = await storefrontApiRequest(CART_CREATE_MUTATION, {
-    input: { lines: [{ quantity: item.quantity, merchandiseId: item.variantId }] },
+    input: { lines: [buildLineInput(item)] },
   });
 
   if (data?.data?.cartCreate?.userErrors?.length > 0) {
@@ -275,7 +289,7 @@ export async function createShopifyCart(item: CartItemInput): Promise<{ cartId: 
 export async function addLineToShopifyCart(cartId: string, item: CartItemInput): Promise<{ success: boolean; lineId?: string; cartNotFound?: boolean }> {
   const data = await storefrontApiRequest(CART_LINES_ADD_MUTATION, {
     cartId,
-    lines: [{ quantity: item.quantity, merchandiseId: item.variantId }],
+    lines: [buildLineInput(item)],
   });
 
   const userErrors = data?.data?.cartLinesAdd?.userErrors || [];
@@ -285,8 +299,11 @@ export async function addLineToShopifyCart(cartId: string, item: CartItemInput):
     return { success: false };
   }
 
+  // When attributes are present, Shopify may return multiple lines for the same variant.
+  // Pick the newest line for our variant (last edge) so the lineId maps to the just-added line.
   const lines = data?.data?.cartLinesAdd?.cart?.lines?.edges || [];
-  const newLine = lines.find((l: any) => l.node.merchandise.id === item.variantId);
+  const matching = lines.filter((l: any) => l.node.merchandise.id === item.variantId);
+  const newLine = matching[matching.length - 1];
   return { success: true, lineId: newLine?.node?.id };
 }
 
