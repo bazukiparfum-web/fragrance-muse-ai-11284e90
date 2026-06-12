@@ -22,8 +22,8 @@ export default function BazukiCartDrawer() {
   const items = useCartStore((s) => s.items);
   const isLoading = useCartStore((s) => s.isLoading);
   const isSyncing = useCartStore((s) => s.isSyncing);
-  const updateQuantity = useCartStore((s) => s.updateQuantity);
-  const removeItem = useCartStore((s) => s.removeItem);
+  const updateLineQuantity = useCartStore((s) => s.updateLineQuantity);
+  const removeLine = useCartStore((s) => s.removeLine);
   const syncCart = useCartStore((s) => s.syncCart);
   const getCheckoutUrl = useCartStore((s) => s.getCheckoutUrl);
   const cartId = useCartStore((s) => s.cartId);
@@ -139,8 +139,11 @@ export default function BazukiCartDrawer() {
                     ? item.variantTitle
                     : item.selectedOptions.map((o) => o.value).filter(v => v !== "Default Title").join(" • ");
                 const lineTotal = parseFloat(item.price.amount) * item.quantity;
+                const engravingText = item.attributes?.find((a) => a.key === '_Engraving Text')?.value;
+                const engravingStyle = item.attributes?.find((a) => a.key === '_Engraving Style')?.value;
+                const rowKey = item.lineId ?? item.variantId;
                 return (
-                  <div key={item.variantId} className="flex gap-4">
+                  <div key={rowKey} className="flex gap-4">
                     <div
                       className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0"
                       style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
@@ -165,6 +168,16 @@ export default function BazukiCartDrawer() {
                       {variantLabel && (
                         <p className="text-cream-muted text-xs mt-0.5 truncate">{variantLabel}</p>
                       )}
+                      {engravingText && (
+                        <p
+                          className="text-[12px] italic mt-0.5 truncate"
+                          style={{ color: 'rgba(201,168,76,0.7)' }}
+                          title={`Engraved: ${engravingText} · ${engravingStyle ?? ''}`}
+                        >
+                          ✦ Engraved: {engravingText}
+                          {engravingStyle ? ` · ${engravingStyle}` : ''}
+                        </p>
+                      )}
                       <p className="mt-1 text-sm font-medium" style={{ color: GOLD }}>
                         {formatMoney(lineTotal)}
                       </p>
@@ -172,13 +185,13 @@ export default function BazukiCartDrawer() {
                       <div className="mt-2 flex items-center gap-3">
                         <div className="flex items-center gap-1">
                           <button
-                            disabled={isLoading}
+                            disabled={isLoading || !item.lineId}
                             aria-label="Decrease quantity"
-                            onClick={() =>
-                              item.quantity <= 1
-                                ? removeItem(item.variantId)
-                                : updateQuantity(item.variantId, item.quantity - 1)
-                            }
+                            onClick={() => {
+                              if (!item.lineId) return;
+                              if (item.quantity <= 1) removeLine(item.lineId);
+                              else updateLineQuantity(item.lineId, item.quantity - 1);
+                            }}
                             className="w-7 h-7 rounded-md flex items-center justify-center text-cream disabled:opacity-50 transition-colors hover:bg-white/5"
                             style={{
                               border: `1px solid rgba(201,168,76,0.4)`,
@@ -191,9 +204,9 @@ export default function BazukiCartDrawer() {
                             {item.quantity}
                           </span>
                           <button
-                            disabled={isLoading}
+                            disabled={isLoading || !item.lineId}
                             aria-label="Increase quantity"
-                            onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                            onClick={() => item.lineId && updateLineQuantity(item.lineId, item.quantity + 1)}
                             className="w-7 h-7 rounded-md flex items-center justify-center text-cream disabled:opacity-50 transition-colors hover:bg-white/5"
                             style={{
                               border: `1px solid rgba(201,168,76,0.4)`,
@@ -204,8 +217,8 @@ export default function BazukiCartDrawer() {
                           </button>
                         </div>
                         <button
-                          onClick={() => removeItem(item.variantId)}
-                          disabled={isLoading}
+                          onClick={() => item.lineId && removeLine(item.lineId)}
+                          disabled={isLoading || !item.lineId}
                           className="font-sans text-[11px] hover:text-cream transition-colors disabled:opacity-50"
                           style={{ color: "#6B5D50" }}
                         >
