@@ -545,6 +545,8 @@ export default function ProductDetail() {
                           )}
                         </span>
                       )}
+                    </Button>
+                  </span>
                 </TooltipTrigger>
                 {stockMessage && (
                   <TooltipContent side="top">{stockMessage}</TooltipContent>
