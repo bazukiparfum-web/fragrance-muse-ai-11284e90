@@ -72,10 +72,13 @@ describe('EngravingPanel a11y', () => {
 
   it('pulseInvalid() marks input invalid and shows alert', () => {
     const { ref } = setup({ enabled: true, text: '' });
-    ref.current?.pulseInvalid();
+    act(() => {
+      ref.current?.pulseInvalid();
+    });
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent(/please enter your engraving text/i);
     const input = screen.getByLabelText(/your engraving text/i);
     expect(input).toHaveAttribute('aria-invalid', 'true');
   });
+
 });
