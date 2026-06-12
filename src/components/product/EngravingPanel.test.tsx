@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { EngravingPanel, EngravingPanelHandle } from './EngravingPanel';
+
 
 function setup(initial: { enabled?: boolean; text?: string; style?: 'Classic' | 'Elegant' | 'Bold' } = {}) {
   const onEnabledChange = vi.fn();
