@@ -19,7 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { OrderTimeline } from '@/components/admin/OrderTimeline';
 import { toast } from 'sonner';
 
 interface OrderRow {
@@ -44,6 +45,7 @@ const AdminOrders = () => {
   const [paymentMethod, setPaymentMethod] = useState<string>('all');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -116,6 +118,7 @@ const AdminOrders = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10" />
                 <TableHead>Order #</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Total</TableHead>
@@ -126,43 +129,67 @@ const AdminOrders = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((o) => (
-                <TableRow key={o.id}>
-                  <TableCell className="font-mono text-xs">{o.order_number}</TableCell>
-                  <TableCell>{o.user_email ?? '—'}</TableCell>
-                  <TableCell>₹{Number(o.total).toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{o.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {o.payment_method === 'cod' ? (
-                      <Badge
-                        variant="outline"
-                        className="border-amber-500/40 text-amber-500"
-                        title={o.payment_gateway ?? 'Cash on Delivery'}
-                      >
-                        COD
-                      </Badge>
-                    ) : o.payment_method === 'prepaid' ? (
-                      <Badge variant="secondary" title={o.payment_gateway ?? 'Prepaid'}>
-                        Prepaid
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
+              {rows.map((o) => {
+                const isOpen = expandedId === o.id;
+                return (
+                  <>
+                    <TableRow
+                      key={o.id}
+                      className="cursor-pointer"
+                      onClick={() => setExpandedId(isOpen ? null : o.id)}
+                    >
+                      <TableCell>
+                        {isOpen ? (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{o.order_number}</TableCell>
+                      <TableCell>{o.user_email ?? '—'}</TableCell>
+                      <TableCell>₹{Number(o.total).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{o.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {o.payment_method === 'cod' ? (
+                          <Badge
+                            variant="outline"
+                            className="border-amber-500/40 text-amber-500"
+                            title={o.payment_gateway ?? 'Cash on Delivery'}
+                          >
+                            COD
+                          </Badge>
+                        ) : o.payment_method === 'prepaid' ? (
+                          <Badge variant="secondary" title={o.payment_gateway ?? 'Prepaid'}>
+                            Prepaid
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {o.shopify_order_number ?? '—'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {new Date(o.created_at).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                    {isOpen && (
+                      <TableRow key={`${o.id}-timeline`} className="bg-muted/30 hover:bg-muted/30">
+                        <TableCell colSpan={8}>
+                          <OrderTimeline orderId={o.id} />
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {o.shopify_order_number ?? '—'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {new Date(o.created_at).toLocaleString()}
-                  </TableCell>
-                </TableRow>
-              ))}
+                  </>
+                );
+              })}
             </TableBody>
           </Table>
         )}
       </Card>
+
 
       <div className="flex items-center justify-between mt-4">
         <span className="text-sm text-muted-foreground">Page {page + 1}</span>
