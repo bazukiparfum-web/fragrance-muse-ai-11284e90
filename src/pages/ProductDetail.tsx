@@ -491,6 +491,17 @@ export default function ProductDetail() {
               </div>
             </div>
 
+            {/* Engraving panel */}
+            <EngravingPanel
+              ref={engravingPanelRef}
+              enabled={engraving.enabled}
+              onEnabledChange={engraving.setEnabled}
+              text={engraving.text}
+              onTextChange={engraving.setText}
+              style={engraving.style}
+              onStyleChange={engraving.setStyle}
+            />
+
             {/* Add to Cart + Buy Now */}
             <TooltipProvider delayDuration={150}>
               <Tooltip>
@@ -524,10 +535,16 @@ export default function ProductDetail() {
                       ) : isOutOfStock ? (
                         'Sold Out'
                       ) : (
-                        'Add to Cart'
+                        <span
+                          key={engraving.isActive ? 'eng' : 'base'}
+                          className="engrave-fade-in"
+                        >
+                          Add to Cart — {formatPrice(
+                            parseFloat(priceAmount) * quantity + (engraving.isActive ? ENGRAVING_FEE : 0),
+                            currency,
+                          )}
+                        </span>
                       )}
-                    </Button>
-                  </span>
                 </TooltipTrigger>
                 {stockMessage && (
                   <TooltipContent side="top">{stockMessage}</TooltipContent>
