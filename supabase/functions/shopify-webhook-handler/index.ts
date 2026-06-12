@@ -78,6 +78,23 @@ function detectPaymentMethod(orderData: any): { method: 'cod' | 'prepaid'; gatew
   return { method: isCOD ? 'cod' : 'prepaid', gateway: gatewayStr };
 }
 
+async function logEvent(
+  supabaseClient: any,
+  orderId: string,
+  eventType: string,
+  metadata: Record<string, any> = {},
+) {
+  try {
+    const { error } = await supabaseClient
+      .from('order_events')
+      .insert({ order_id: orderId, event_type: eventType, source: 'shopify_webhook', metadata });
+    if (error) console.error('⚠️ logEvent failed:', eventType, error);
+  } catch (e) {
+    console.error('⚠️ logEvent threw:', eventType, e);
+  }
+}
+
+
 async function handleOrderCreated(supabaseClient: any, orderData: any) {
   console.log('Handling order created:', orderData.id);
 
@@ -178,6 +195,13 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
 
   console.log('✅ Order created:', orderData.id, 'DB:', newOrder.id);
 
+  await logEvent(supabaseClient, newOrder.id, 'order_created', {
+    topic: 'orders/create',
+    payment_method: paymentMethod,
+    payment_gateway: paymentGateway,
+    shopify_order_id: orderData.id?.toString(),
+  });
+
   let itemsCreated = 0;
   for (const item of orderData.line_items || []) {
     const { error: itemError } = await supabaseClient
@@ -201,7 +225,7 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
   // COD: enqueue production immediately on order creation
   if (paymentMethod === 'cod') {
     console.log('💵 COD order — enqueuing production immediately');
-    await addToProductionQueue(supabaseClient, newOrder.id, orderData);
+    await addToProductionQueue(supabaseClient, newOrder.id, orderData, 'orders/create', 'cod');
   }
 }
 
@@ -226,16 +250,28 @@ async function handleOrderPaid(supabaseClient: any, orderData: any) {
 
   console.log('✅ Order status updated to paid:', updatedOrder.id);
 
+  await logEvent(supabaseClient, updatedOrder.id, 'payment_received', {
+    topic: 'orders/paid',
+    payment_method: updatedOrder.payment_method ?? 'prepaid',
+  });
+
+
   // Skip enqueue if COD (already queued on orders/create)
   if (updatedOrder.payment_method === 'cod') {
     console.log('⏭️ Skipping production enqueue — COD already queued on create');
     return;
   }
 
-  await addToProductionQueue(supabaseClient, updatedOrder.id, orderData);
+  await addToProductionQueue(supabaseClient, updatedOrder.id, orderData, 'orders/paid', updatedOrder.payment_method ?? 'prepaid');
 }
 
-async function addToProductionQueue(supabaseClient: any, orderId: string, orderData: any) {
+async function addToProductionQueue(
+  supabaseClient: any,
+  orderId: string,
+  orderData: any,
+  trigger: 'orders/create' | 'orders/paid' = 'orders/paid',
+  paymentMethod: 'cod' | 'prepaid' = 'prepaid',
+) {
   console.log('🏭 Checking for custom scents to add to production queue');
 
   // Guard against duplicate enqueue
@@ -320,6 +356,14 @@ async function addToProductionQueue(supabaseClient: any, orderId: string, orderD
       console.error('❌ Failed to add to production queue:', queueError);
     } else {
       console.log('✅ Added to production queue:', queueItem.id, 'Code:', fragranceCode);
+      await logEvent(supabaseClient, orderId, 'production_enqueued', {
+        trigger,
+        payment_method: paymentMethod,
+        queue_item_id: queueItem.id,
+        fragrance_code: fragranceCode,
+        size,
+        quantity: item.quantity || 1,
+      });
     }
   }
 }
