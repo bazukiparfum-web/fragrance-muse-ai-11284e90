@@ -138,14 +138,11 @@ export const EngravingPanel = forwardRef<EngravingPanelHandle, Props>(function E
         </div>
       </div>
 
-      {/* Collapsible body */}
+      {/* Body — always visible; toggle only controls whether engraving is active */}
       <div
         id="engraving-panel-body"
-        className={enabled ? 'engrave-panel-expanded' : 'engrave-panel-collapsed'}
+        className="engrave-panel-expanded"
         ref={wrapRef}
-        hidden={!enabled}
-        // @ts-expect-error inert is valid HTML
-        inert={!enabled ? '' : undefined}
       >
         <div className="px-4 pb-5 pt-1">
           {/* Font cards */}

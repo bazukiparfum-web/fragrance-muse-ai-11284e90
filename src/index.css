@@ -3793,11 +3793,7 @@ html { scroll-behavior: auto; }
 .engrave-border-pulse {
   animation: engrave-border-pulse 300ms ease-in-out 3;
 }
-.engrave-panel-collapsed { max-height: 0; overflow: hidden; }
-.engrave-panel-expanded {
-  max-height: 700px;
-  transition: max-height 400ms ease-out;
-}
+.engrave-panel-expanded { /* body always visible — no collapse */ }
 .engrave-fade-in { animation: fade-in 300ms ease-out both; }
 
 @media (prefers-reduced-motion: reduce) {
