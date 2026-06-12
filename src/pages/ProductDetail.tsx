@@ -317,9 +317,13 @@ export default function ProductDetail() {
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Gallery */}
           <div>
-            <ProductImageStage
+            <EngravedBottlePreview
               src={images[selectedImage]?.node.url}
               alt={images[selectedImage]?.node.altText || product.title}
+              enabled={engraving.enabled}
+              text={engraving.text}
+              style={engraving.style}
+              glowPulseKey={glowPulseKey}
             />
             {images.length > 1 && (
               <div className="flex flex-wrap gap-3 mt-4">
@@ -392,12 +396,22 @@ export default function ProductDetail() {
               keyNotes={keyNotes}
             />
 
-            <p
-              className="pdp-price-in font-display mb-8"
-              style={{ fontSize: '32px', color: 'var(--anim-gold)' }}
-            >
-              {formatPrice(priceAmount, currency)}
-            </p>
+            <div className="mb-8">
+              <p
+                className="pdp-price-in font-display"
+                style={{ fontSize: '32px', color: 'var(--anim-gold)' }}
+              >
+                {formatPrice(priceAmount, currency)}
+              </p>
+              {engraving.isActive && (
+                <p
+                  className="engrave-fade-in mt-1"
+                  style={{ fontSize: 13, color: '#C9A84C' }}
+                >
+                  + ₹{ENGRAVING_FEE} personalised engraving
+                </p>
+              )}
+            </div>
 
             {/* Variant pills */}
             {variants.length > 1 && (
