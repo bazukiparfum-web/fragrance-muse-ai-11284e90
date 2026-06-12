@@ -56,6 +56,7 @@ export default function EngravedBottlePreview({ src, alt, enabled, text, style, 
       {showOverlay && (
         <div
           key={`overlay-${style}`}
+          data-testid="engraving-overlay"
           className="engrave-overlay-wrap absolute pointer-events-none z-10 text-center"
           style={{
             top: '45%',
@@ -65,6 +66,7 @@ export default function EngravedBottlePreview({ src, alt, enabled, text, style, 
           }}
           aria-hidden
         >
+
           <div
             className={cn('relative inline-block', ENGRAVING_FONT_CLASS[style])}
             style={{
