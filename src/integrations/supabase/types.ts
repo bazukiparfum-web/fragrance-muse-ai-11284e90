@@ -457,6 +457,8 @@ export type Database = {
           estimated_delivery: string | null
           id: string
           order_number: string
+          payment_gateway: string | null
+          payment_method: string | null
           referral_reward_id: string | null
           shipping_address: Json
           shopify_checkout_url: string | null
@@ -476,6 +478,8 @@ export type Database = {
           estimated_delivery?: string | null
           id?: string
           order_number: string
+          payment_gateway?: string | null
+          payment_method?: string | null
           referral_reward_id?: string | null
           shipping_address: Json
           shopify_checkout_url?: string | null
@@ -495,6 +499,8 @@ export type Database = {
           estimated_delivery?: string | null
           id?: string
           order_number?: string
+          payment_gateway?: string | null
+          payment_method?: string | null
           referral_reward_id?: string | null
           shipping_address?: Json
           shopify_checkout_url?: string | null

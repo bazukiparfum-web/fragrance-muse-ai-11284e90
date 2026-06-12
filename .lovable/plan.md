@@ -1,71 +1,43 @@
-# Harden Admin Access Control
+## Goal
+Enable COD orders to enter production immediately on `orders/create`, while prepaid orders keep their existing `orders/paid` flow. Surface COD visibility in `/admin/orders` with a badge and filter.
 
-## Problem
-Multiple admin-facing pages and Edge Functions have hardcoded `isAdmin = true` or skip caller authentication entirely. While the React Router `AdminRoute` currently blocks non-admins, defense-in-depth is broken — any future route refactoring or direct Edge Function calls by a non-admin would succeed.
+## Changes
 
-## Scope
-**In scope:** Remove testing bypasses, add real admin verification to all admin entry points.
-**Out of scope:** Changes to `AdminRoute.tsx` (already correct), changes to non-admin flows, UI redesign.
+### 1. `supabase/functions/shopify-webhook-handler/index.ts`
+- Detect payment method per order. Shopify exposes this via `payment_gateway_names` (array, e.g. `["Cash on Delivery (COD)"]`) and `financial_status` (`pending` for COD).
+- Helper `isCOD(orderData)`: returns true when any gateway name matches `/cash on delivery|cod/i`, or when `gateway === 'manual'` and `financial_status === 'pending'`.
+- In `handleOrderCreated`:
+  - After persisting the order + items, if `isCOD(orderData)` → call `addToProductionQueue(...)` immediately (same function already used by `handleOrderPaid`). Mark the stored order with `payment_method: 'cod'`.
+  - Non-COD orders: no production enqueue here (unchanged behavior).
+- In `handleOrderPaid`:
+  - Skip `addToProductionQueue` if the order is already COD-enqueued (guard against duplicates by checking existing `production_queue` rows for this `order_id`).
+  - Prepaid path unchanged.
+- Persist `payment_method` ('cod' | 'prepaid') and `payment_gateway` (raw string) on the `orders` row so the admin UI can filter without re-parsing.
 
-## Frontend Changes
+### 2. Database
+- Add nullable columns to `public.orders`:
+  - `payment_method text` (values: 'cod' | 'prepaid')
+  - `payment_gateway text`
+- No RLS changes needed; existing policies cover new columns.
 
-### 1. Fix hardcoded admin flags in admin pages
-Replace hardcoded `isAdmin = true` with a real `user_roles` query in:
+### 3. `supabase/functions/admin-list-orders/index.ts`
+- Accept new filter `paymentMethod: 'all' | 'cod' | 'prepaid'` in request body.
+- Include `payment_method`, `payment_gateway` in the `select`.
+- Apply `.eq('payment_method', paymentMethod)` when not `'all'`.
 
-| File | Current | Fix |
-|------|---------|-----|
-| `src/pages/admin/AdminNotes.tsx` | `useState<boolean \| null>(true)` | Query `user_roles` for `role = 'admin'`, show access-denied spinner if not admin |
-| `src/pages/admin/AdminIngredients.tsx` | `setIsAdmin(true)` in `useEffect` | Same pattern |
-| `src/pages/admin/AdminQuestions.tsx` | `setIsAdmin(true)` in `useEffect` | Same pattern |
+### 4. `src/pages/admin/AdminOrders.tsx`
+- Add `paymentMethod` state + `<Select>` (All / COD / Prepaid) next to the existing status filter; pass it in the `invoke` body and reset page on change.
+- Extend `OrderRow` with `payment_method`.
+- Add a "Payment" column showing a `<Badge>`:
+  - COD → `variant="outline"` with amber/warning class
+  - Prepaid → `variant="secondary"`
+  - Unknown → `—`
 
-Pattern to use:
-```ts
-useEffect(() => {
-  const check = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setIsAdmin(false); return; }
-    const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').maybeSingle();
-    setIsAdmin(!!data);
-  };
-  check();
-}, []);
-```
+## Out of scope
+- No changes to Shopify Admin config (COD enablement, pincode gating, COD fees).
+- No email/notification changes.
+- No backfill of `payment_method` on historical orders (column stays null until webhook re-runs or admin edits).
 
-## Edge Function Changes
-
-### 2. Add caller admin verification to all admin Edge Functions missing it
-
-The following Edge Functions create a service-role client but **never verify the caller holds an admin role**. A logged-in customer who knows the function name can invoke them via `supabase.functions.invoke()`:
-
-- `admin-manage-questions` — explicitly documented as "no auth checks"
-- `admin-manage-notes`
-- `admin-manage-scents`
-- `admin-manage-rules`
-- `admin-manage-formulas`
-- `admin-bulk-import-queue`
-- `admin-seed-production-queue`
-
-Standard auth guard to add to each:
-1. Read `Authorization` header.
-2. Create a user-scoped Supabase client with the caller's JWT.
-3. Call `auth.getClaims(token)` to extract `callerId`.
-4. Query `user_roles` for `role = 'admin'` matching `callerId`.
-5. Return `403 Forbidden` if no admin role found.
-6. Only then proceed with the service-role client for data mutations.
-
-**Reference implementation** already exists in:
-- `admin-manage-users`
-- `admin-list-orders`
-- `admin-simulate-order`
-- `admin-list-customers`
-
-These should be copied as the canonical pattern.
-
-### 3. Remove testing bypass comments
-Delete or rephrase comments like "bypass RLS (test mode - no auth checks)" and any `isAdmin=true` / `verify_jwt=false` remnants so the codebase no longer documents how to disable security.
-
-## Verification
-- [ ] Non-admin user (customer account) calling any admin Edge Function receives `403`.
-- [ ] Admin user can still access all admin pages and Edge Functions normally.
-- [ ] No hardcoded `isAdmin = true` remains in `src/pages/admin/`.
-- [ ] Build passes without TypeScript errors.
+## Technical notes
+- Duplicate-enqueue guard uses a `SELECT id FROM production_queue WHERE order_id = ? LIMIT 1` before insert in both paths.
+- `payment_method` is derived once in `handleOrderCreated` and reused; `handleOrderPaid` reads it back from the DB to decide whether to skip enqueue.

@@ -1,0 +1,2 @@
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_method text, ADD COLUMN IF NOT EXISTS payment_gateway text;
+CREATE INDEX IF NOT EXISTS orders_payment_method_idx ON public.orders(payment_method);
