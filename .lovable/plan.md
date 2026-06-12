@@ -1,43 +1,60 @@
 ## Goal
-Enable COD orders to enter production immediately on `orders/create`, while prepaid orders keep their existing `orders/paid` flow. Surface COD visibility in `/admin/orders` with a badge and filter.
+Show a per-order timeline in the admin that records key lifecycle moments — order created, payment received, production enqueued — distinguishing COD vs prepaid flows.
+
+## Approach
+Add a lightweight, append-only `order_events` table written by the webhook handler. Render it as an expandable timeline row inside `/admin/orders` (no separate route).
 
 ## Changes
 
-### 1. `supabase/functions/shopify-webhook-handler/index.ts`
-- Detect payment method per order. Shopify exposes this via `payment_gateway_names` (array, e.g. `["Cash on Delivery (COD)"]`) and `financial_status` (`pending` for COD).
-- Helper `isCOD(orderData)`: returns true when any gateway name matches `/cash on delivery|cod/i`, or when `gateway === 'manual'` and `financial_status === 'pending'`.
-- In `handleOrderCreated`:
-  - After persisting the order + items, if `isCOD(orderData)` → call `addToProductionQueue(...)` immediately (same function already used by `handleOrderPaid`). Mark the stored order with `payment_method: 'cod'`.
-  - Non-COD orders: no production enqueue here (unchanged behavior).
-- In `handleOrderPaid`:
-  - Skip `addToProductionQueue` if the order is already COD-enqueued (guard against duplicates by checking existing `production_queue` rows for this `order_id`).
-  - Prepaid path unchanged.
-- Persist `payment_method` ('cod' | 'prepaid') and `payment_gateway` (raw string) on the `orders` row so the admin UI can filter without re-parsing.
+### 1. Database — new table `public.order_events`
+Columns:
+- `order_id uuid references public.orders(id) on delete cascade`
+- `event_type text` — one of: `order_created`, `payment_received`, `production_enqueued`, `status_changed`
+- `source text` — `shopify_webhook` | `system` | `admin`
+- `metadata jsonb` — e.g. `{ topic: 'orders/paid', payment_method: 'cod', queue_item_id, fragrance_code, from_status, to_status }`
+- `occurred_at timestamptz default now()`
+- standard `id`, `created_at`
 
-### 2. Database
-- Add nullable columns to `public.orders`:
-  - `payment_method text` (values: 'cod' | 'prepaid')
-  - `payment_gateway text`
-- No RLS changes needed; existing policies cover new columns.
+Indexes: `(order_id, occurred_at)`.
+GRANTs: `service_role` full; `authenticated` SELECT (admin reads via edge function with service-role, but SELECT grant kept for future). RLS: enable, single policy "Admins can read" using `has_role(auth.uid(), 'admin')`. No INSERT policy needed — writes happen via service role.
 
-### 3. `supabase/functions/admin-list-orders/index.ts`
-- Accept new filter `paymentMethod: 'all' | 'cod' | 'prepaid'` in request body.
-- Include `payment_method`, `payment_gateway` in the `select`.
-- Apply `.eq('payment_method', paymentMethod)` when not `'all'`.
+### 2. `supabase/functions/shopify-webhook-handler/index.ts`
+Insert an event row at each milestone:
+- After `orders` row is inserted in `handleOrderCreated` → `order_created` with `{ topic, payment_method, payment_gateway }`.
+- If COD branch enqueues production → for each `production_queue` insert, write `production_enqueued` with `{ trigger: 'orders/create', queue_item_id, fragrance_code, payment_method: 'cod' }`.
+- In `handleOrderPaid` after status update → `payment_received` with `{ topic: 'orders/paid', payment_method }`.
+- For each prepaid enqueue inside `addToProductionQueue` → `production_enqueued` with `{ trigger: 'orders/paid', queue_item_id, fragrance_code, payment_method: 'prepaid' }`.
+
+Wrap the inserts in a small helper `logEvent(orderId, type, metadata)` so failures are caught and logged but never break webhook processing.
+
+### 3. New edge function `admin-list-order-events`
+- Standard admin auth guard (JWT + `has_role` check) matching `admin-list-orders`.
+- Input: `{ orderId: string }`.
+- Returns events sorted ascending by `occurred_at`, plus a derived fallback when zero events exist (so historical orders still show something):
+  - synth `order_created` from `orders.created_at`
+  - synth `payment_received` if `orders.status === 'paid'` (use `updated_at` if available, else `created_at`)
+  - synth `production_enqueued` rows from existing `production_queue` rows for this `order_id` using their `created_at`.
+- Register in `supabase/config.toml`.
 
 ### 4. `src/pages/admin/AdminOrders.tsx`
-- Add `paymentMethod` state + `<Select>` (All / COD / Prepaid) next to the existing status filter; pass it in the `invoke` body and reset page on change.
-- Extend `OrderRow` with `payment_method`.
-- Add a "Payment" column showing a `<Badge>`:
-  - COD → `variant="outline"` with amber/warning class
-  - Prepaid → `variant="secondary"`
-  - Unknown → `—`
+- Add a row-expand toggle (chevron in a leading column). Clicking a row toggles an expanded `<TableRow>` underneath that renders `<OrderTimeline orderId={...} />`.
+- Track `expandedId` in component state; lazy-fetch events when first expanded; cache in a `Record<string, Event[]>`.
+
+### 5. New component `src/components/admin/OrderTimeline.tsx`
+- Calls `admin-list-order-events` via `supabase.functions.invoke`.
+- Renders a vertical timeline (dot + line) of events, each row:
+  - icon by `event_type` (Plus / CreditCard / Factory / RefreshCw)
+  - localized `occurred_at`
+  - human label ("Order placed", "Payment received via Razorpay", "Production enqueued (COD, on order create)", etc.)
+  - small muted line with `metadata.fragrance_code` when relevant
+- Loading skeleton + empty state ("No events recorded").
+- Uses semantic tokens only (no hardcoded colors); COD-related rows tagged with the same amber badge style used in the orders table.
 
 ## Out of scope
-- No changes to Shopify Admin config (COD enablement, pincode gating, COD fees).
-- No email/notification changes.
-- No backfill of `payment_method` on historical orders (column stays null until webhook re-runs or admin edits).
+- No write/edit UI for events.
+- No email/notification triggers from events.
+- No backfill migration — historical orders rely on the derived fallback in step 3.
 
 ## Technical notes
-- Duplicate-enqueue guard uses a `SELECT id FROM production_queue WHERE order_id = ? LIMIT 1` before insert in both paths.
-- `payment_method` is derived once in `handleOrderCreated` and reused; `handleOrderPaid` reads it back from the DB to decide whether to skip enqueue.
+- Event writes are best-effort: each `logEvent` call is wrapped in try/catch and only logs on failure, so a missing event never breaks an order or queue insert.
+- Timeline always renders chronologically; derived events from the fallback are marked `source: 'derived'` so admins can see they're inferred.
