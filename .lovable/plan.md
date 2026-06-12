@@ -1,60 +1,79 @@
-## Goal
-Show a per-order timeline in the admin that records key lifecycle moments — order created, payment received, production enqueued — distinguishing COD vs prepaid flows.
+## Live Laser Engraving Personalisation — PDP Feature
 
-## Approach
-Add a lightweight, append-only `order_events` table written by the webhook handler. Render it as an expandable timeline row inside `/admin/orders` (no separate route).
+A self-contained personalisation panel on `src/pages/ProductDetail.tsx` that overlays the customer's typed text directly on the product bottle image in their chosen font, and passes the engraving as Shopify line-item attributes to the cart. No changes to existing cart/checkout/pricing logic outside this feature.
 
-## Changes
+### Scope
+- Only edits the PDP image stage + a new panel above "Add to Cart".
+- Cart store + Shopify lib get a minimal, additive `attributes` pass-through.
+- Cart drawer + cart page display engraving meta below product name.
+- Existing cart logic for non-engraved items is unchanged.
 
-### 1. Database — new table `public.order_events`
-Columns:
-- `order_id uuid references public.orders(id) on delete cascade`
-- `event_type text` — one of: `order_created`, `payment_received`, `production_enqueued`, `status_changed`
-- `source text` — `shopify_webhook` | `system` | `admin`
-- `metadata jsonb` — e.g. `{ topic: 'orders/paid', payment_method: 'cod', queue_item_id, fragrance_code, from_status, to_status }`
-- `occurred_at timestamptz default now()`
-- standard `id`, `created_at`
+### Files
 
-Indexes: `(order_id, occurred_at)`.
-GRANTs: `service_role` full; `authenticated` SELECT (admin reads via edge function with service-role, but SELECT grant kept for future). RLS: enable, single policy "Admins can read" using `has_role(auth.uid(), 'admin')`. No INSERT policy needed — writes happen via service role.
+New:
+- `src/components/product/EngravingPanel.tsx` — header row + toggle, 3 font cards, input + counter, validation tooltip, expand/collapse animation.
+- `src/components/product/EngravedBottlePreview.tsx` — wraps `ProductImageStage`, adds absolute-positioned engraving overlay with per-char flash, spark, shimmer, and font-switch transitions.
+- `src/hooks/useEngraving.ts` — small state hook: `{ enabled, text, style, setEnabled, setText, setStyle, valid }`.
 
-### 2. `supabase/functions/shopify-webhook-handler/index.ts`
-Insert an event row at each milestone:
-- After `orders` row is inserted in `handleOrderCreated` → `order_created` with `{ topic, payment_method, payment_gateway }`.
-- If COD branch enqueues production → for each `production_queue` insert, write `production_enqueued` with `{ trigger: 'orders/create', queue_item_id, fragrance_code, payment_method: 'cod' }`.
-- In `handleOrderPaid` after status update → `payment_received` with `{ topic: 'orders/paid', payment_method }`.
-- For each prepaid enqueue inside `addToProductionQueue` → `production_enqueued` with `{ trigger: 'orders/paid', queue_item_id, fragrance_code, payment_method: 'prepaid' }`.
+Edited:
+- `src/pages/ProductDetail.tsx` — swap raw image for `EngravedBottlePreview`, render `EngravingPanel`, append `+ ₹199 personalised engraving` line under the price when active, update Add-to-Cart label with crossfade, pass `engraving` to `addItem`, run validation before add.
+- `src/stores/cartStore.ts` — extend `CartItem` with optional `attributes?: Array<{key:string; value:string}>`; forward to Shopify add calls; preserve on update/remove.
+- `src/lib/shopify.ts` — extend `createShopifyCart` / `addLineToShopifyCart` input types and GraphQL line input to include `attributes` when provided (no behaviour change when omitted).
+- `src/components/cart/BazukiCartDrawer.tsx` and `src/pages/Cart.tsx` — if `item.attributes` contains `_Engraving Text`, render `✦ Engraved: {text} · {Style}` line (12px, gold 70%, italic) under the product name.
+- `index.html` (or `index.css` `@import`) — add Google Fonts: Cormorant Garamond 300 italic + 400, Cinzel 700.
+- `tailwind.config.ts` — add `fontFamily.engravingClassic`, `engravingElegant`, `engravingBold` mapped to those fonts.
+- `src/index.css` — keyframes/utilities for engraving: `engrave-in`, `engrave-spark`, `engrave-shimmer`, `engrave-glow-pulse`, all with `@media (prefers-reduced-motion: reduce)` fallbacks.
 
-Wrap the inserts in a small helper `logEvent(orderId, type, metadata)` so failures are caught and logged but never break webhook processing.
+### Behaviour spec (matches request)
 
-### 3. New edge function `admin-list-order-events`
-- Standard admin auth guard (JWT + `has_role` check) matching `admin-list-orders`.
-- Input: `{ orderId: string }`.
-- Returns events sorted ascending by `occurred_at`, plus a derived fallback when zero events exist (so historical orders still show something):
-  - synth `order_created` from `orders.created_at`
-  - synth `payment_received` if `orders.status === 'paid'` (use `updated_at` if available, else `created_at`)
-  - synth `production_enqueued` rows from existing `production_queue` rows for this `order_id` using their `created_at`.
-- Register in `supabase/config.toml`.
+Toggle row above panel
+- Left: ✦ "Personalise Your Bottle" + subtext "Laser engraved — permanent & precise".
+- Right: `+ ₹199` badge + shadcn `Switch` (off by default).
+- Off → only header row visible; panel `max-height: 0`; overlay hidden.
+- On → panel expands (400ms), font cards stagger-fade (80ms), input slides up, bottle gets one-shot gold glow pulse (600ms).
 
-### 4. `src/pages/admin/AdminOrders.tsx`
-- Add a row-expand toggle (chevron in a leading column). Clicking a row toggles an expanded `<TableRow>` underneath that renders `<OrderTimeline orderId={...} />`.
-- Track `expandedId` in component state; lazy-fetch events when first expanded; cache in a `Record<string, Event[]>`.
+Font style cards (3, equal-width grid)
+- CLASSIC: Cormorant Garamond 400, sample "Classic", tagline "Timeless".
+- ELEGANT: Cormorant Garamond 300 italic, sample "Elegant", tagline "Romantic".
+- BOLD: Cinzel 700 uppercase, sample "BOLD", tagline "Statement".
+- Card visuals + selected state (gold border, tinted bg, ✓ badge, scale 1.04) per spec.
 
-### 5. New component `src/components/admin/OrderTimeline.tsx`
-- Calls `admin-list-order-events` via `supabase.functions.invoke`.
-- Renders a vertical timeline (dot + line) of events, each row:
-  - icon by `event_type` (Plus / CreditCard / Factory / RefreshCw)
-  - localized `occurred_at`
-  - human label ("Order placed", "Payment received via Razorpay", "Production enqueued (COD, on order create)", etc.)
-  - small muted line with `metadata.fragrance_code` when relevant
-- Loading skeleton + empty state ("No events recorded").
-- Uses semantic tokens only (no hardcoded colors); COD-related rows tagged with the same amber badge style used in the orders table.
+Input
+- Label row with live `n / 20` counter; color tiers 0–15 dim gold, 16–18 bright gold, 19–20 urgent; 3× pulse at 20.
+- Input font dynamically matches selected style.
+- Placeholder, max length 20, focus ring + ✦ icon per spec.
 
-## Out of scope
-- No write/edit UI for events.
-- No email/notification triggers from events.
-- No backfill migration — historical orders rely on the derived fallback in step 3.
+Bottle overlay (`EngravedBottlePreview`)
+- Wraps image in `relative` container; absolute overlay at `top:45% left:50% translateX(-50%)`, `width:65%`, `text-align:center`, `pointer-events:none`, `z-index:10`.
+- Dynamic font-size by length (22/18/14/11px), color `#C9A84C` 90%, glow text-shadow, letter-spacing 0.08em.
+- Per-char `engrave-in` (opacity 0→1, 150ms) — implemented by mapping each char to a `<span>` with staggered animation only for newly added chars (track previous text length).
+- Trailing `✦` spark element animated on each keystroke (400ms fade).
+- Shimmer pseudo-element runs 300ms after 700ms idle (debounced).
+- Font switch: container `key={style}` triggers fade-out/in + scale 0.95→1 (200ms spring via CSS).
 
-## Technical notes
-- Event writes are best-effort: each `logEvent` call is wrapped in try/catch and only logs on failure, so a missing event never breaks an order or queue insert.
-- Timeline always renders chronologically; derived events from the fallback are marked `source: 'derived'` so admins can see they're inferred.
+Price + CTA
+- When `enabled && text.trim().length > 0`: render `+ ₹199 personalised engraving` (gold, 13px, fade-in 300ms) under the main price.
+- CTA label crossfade between `ADD TO CART — ₹X` and `ADD TO CART — ₹X+199` (old fades up/out, new fades up/in, 200ms).
+
+Validation
+- Click ATC while `enabled && text.trim() === ''`: border pulses gold 3× (300ms each), tooltip "Please enter your engraving text" fades above input, smooth scroll to input. ATC is not blocked when toggle is off.
+
+Cart integration
+- On successful add, attach Shopify line-item attributes:
+  - `_Engraving Text`: trimmed text
+  - `_Engraving Style`: `Classic` | `Elegant` | `Bold`
+  - `_Engraving Fee`: `₹199`
+- `cartStore.addItem` forwards `attributes` to `createShopifyCart` / `addLineToShopifyCart`. When two adds have the same `variantId` but different attributes, treat as a separate line (do not merge — match Shopify behaviour) by composing a composite key `variantId + JSON.stringify(attributes)` for the existing-item lookup.
+- Cart drawer + Cart page display engraving meta line if attributes present.
+
+Pricing
+- Engraving fee is presentational only on the PDP (no Shopify variant change). Shopify-side fee handling is out of scope; the attribute `_Engraving Fee: ₹199` is the source of truth for fulfilment. (Flag for follow-up: real charge requires a Shopify "Engraving Fee" product line or script.)
+
+### Out of scope
+- Backend changes, edge functions, DB migrations.
+- Real charging of the ₹199 in Shopify (display + attribute only this pass).
+- Per-product overlay coordinate tuning beyond the spec's default position.
+- Cart/checkout layout changes beyond the small engraving meta line.
+
+### Design tokens
+Use spec hex values via inline styles / arbitrary Tailwind values only inside the new engraving components (intentional: simulates real gold-on-black laser engraving outside the global semantic theme). All other UI keeps semantic tokens.

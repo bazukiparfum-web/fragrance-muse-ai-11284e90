@@ -17,6 +17,9 @@ import { useCheckoutRedirect } from '@/hooks/useCheckoutRedirect';
 import CheckoutLoadingOverlay from '@/components/checkout/CheckoutLoadingOverlay';
 import CollectionAmbience from '@/components/library/CollectionAmbience';
 import ProductImageStage from '@/components/product/ProductImageStage';
+import EngravedBottlePreview from '@/components/product/EngravedBottlePreview';
+import { EngravingPanel, EngravingPanelHandle } from '@/components/product/EngravingPanel';
+import { useEngraving, ENGRAVING_FEE } from '@/hooks/useEngraving';
 import ScentIdentityStrip from '@/components/product/ScentIdentityStrip';
 import AIFormulaCallout from '@/components/product/AIFormulaCallout';
 import TrustBadges from '@/components/product/TrustBadges';
@@ -75,7 +78,15 @@ export default function ProductDetail() {
   const [buyStatus, setBuyStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [qtyPulse, setQtyPulse] = useState(false);
   const [addShimmer, setAddShimmer] = useState(false);
+  const [glowPulseKey, setGlowPulseKey] = useState(0);
   const qtyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const engravingPanelRef = useRef<EngravingPanelHandle>(null);
+  const engraving = useEngraving();
+
+  // Pulse the bottle glow when engraving is first turned on.
+  useEffect(() => {
+    if (engraving.enabled) setGlowPulseKey((k) => k + 1);
+  }, [engraving.enabled]);
 
   const pulseQty = () => {
     setQtyPulse(false);
@@ -157,8 +168,26 @@ export default function ProductDetail() {
   const seoImage = images[0]?.node.url;
   useSEO({ title: seoTitle, description: seoDescription, image: seoImage, type: 'product' });
 
+  const buildEngravingAttrs = () => {
+    if (!engraving.isActive) return undefined;
+    return [
+      { key: '_Engraving Text', value: engraving.trimmed },
+      { key: '_Engraving Style', value: engraving.style },
+      { key: '_Engraving Fee', value: `₹${ENGRAVING_FEE}` },
+    ];
+  };
+
+  const validateEngraving = (): boolean => {
+    if (engraving.enabled && engraving.trimmed.length === 0) {
+      engravingPanelRef.current?.pulseInvalid();
+      return false;
+    }
+    return true;
+  };
+
   const handleAddToCart = async () => {
     if (!product || !selectedVariant || addStatus === 'adding') return;
+    if (!validateEngraving()) return;
     setAddStatus('adding');
     const ok = await addItem({
       product: { node: product } as ShopifyProduct,
@@ -167,6 +196,7 @@ export default function ProductDetail() {
       price: selectedVariant.price,
       quantity,
       selectedOptions: selectedVariant.selectedOptions || [],
+      attributes: buildEngravingAttrs(),
     });
     if (ok) {
       setAddStatus('added');
@@ -180,6 +210,7 @@ export default function ProductDetail() {
 
   const handleBuyNow = async () => {
     if (!product || !selectedVariant || buyStatus === 'loading') return;
+    if (!validateEngraving()) return;
     setBuyStatus('loading');
     const ok = await addItem({
       product: { node: product } as ShopifyProduct,
@@ -188,6 +219,7 @@ export default function ProductDetail() {
       price: selectedVariant.price,
       quantity,
       selectedOptions: selectedVariant.selectedOptions || [],
+      attributes: buildEngravingAttrs(),
     });
     if (ok) {
       const url = useCartStore.getState().checkoutUrl;
@@ -285,9 +317,13 @@ export default function ProductDetail() {
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Gallery */}
           <div>
-            <ProductImageStage
+            <EngravedBottlePreview
               src={images[selectedImage]?.node.url}
               alt={images[selectedImage]?.node.altText || product.title}
+              enabled={engraving.enabled}
+              text={engraving.text}
+              style={engraving.style}
+              glowPulseKey={glowPulseKey}
             />
             {images.length > 1 && (
               <div className="flex flex-wrap gap-3 mt-4">
@@ -360,12 +396,22 @@ export default function ProductDetail() {
               keyNotes={keyNotes}
             />
 
-            <p
-              className="pdp-price-in font-display mb-8"
-              style={{ fontSize: '32px', color: 'var(--anim-gold)' }}
-            >
-              {formatPrice(priceAmount, currency)}
-            </p>
+            <div className="mb-8">
+              <p
+                className="pdp-price-in font-display"
+                style={{ fontSize: '32px', color: 'var(--anim-gold)' }}
+              >
+                {formatPrice(priceAmount, currency)}
+              </p>
+              {engraving.isActive && (
+                <p
+                  className="engrave-fade-in mt-1"
+                  style={{ fontSize: 13, color: '#C9A84C' }}
+                >
+                  + ₹{ENGRAVING_FEE} personalised engraving
+                </p>
+              )}
+            </div>
 
             {/* Variant pills */}
             {variants.length > 1 && (
@@ -445,6 +491,17 @@ export default function ProductDetail() {
               </div>
             </div>
 
+            {/* Engraving panel */}
+            <EngravingPanel
+              ref={engravingPanelRef}
+              enabled={engraving.enabled}
+              onEnabledChange={engraving.setEnabled}
+              text={engraving.text}
+              onTextChange={engraving.setText}
+              style={engraving.style}
+              onStyleChange={engraving.setStyle}
+            />
+
             {/* Add to Cart + Buy Now */}
             <TooltipProvider delayDuration={150}>
               <Tooltip>
@@ -478,7 +535,15 @@ export default function ProductDetail() {
                       ) : isOutOfStock ? (
                         'Sold Out'
                       ) : (
-                        'Add to Cart'
+                        <span
+                          key={engraving.isActive ? 'eng' : 'base'}
+                          className="engrave-fade-in"
+                        >
+                          Add to Cart — {formatPrice(
+                            parseFloat(priceAmount) * quantity + (engraving.isActive ? ENGRAVING_FEE : 0),
+                            currency,
+                          )}
+                        </span>
                       )}
                     </Button>
                   </span>
