@@ -51,6 +51,23 @@ export default function OrderConfirmation() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<OrderSummaryItem[] | null>(null);
+
+  useEffect(() => {
+    if (!orderNumber) return;
+    let cancelled = false;
+    supabase.functions
+      .invoke("get-order-summary", { body: { orderNumber } })
+      .then(({ data, error }) => {
+        if (cancelled || error || !data?.items) return;
+        setSummary(data.items as OrderSummaryItem[]);
+      })
+      .catch((e) => console.error("get-order-summary failed", e));
+    return () => {
+      cancelled = true;
+    };
+  }, [orderNumber]);
+
 
   useEffect(() => {
     // Capture cart id before we clear it, so we can reconcile
