@@ -80,3 +80,7 @@ verify_jwt = false
 
 [functions.admin-manage-formulas]
 verify_jwt = false
+
+[functions.admin-list-order-events]
+verify_jwt = false
+
