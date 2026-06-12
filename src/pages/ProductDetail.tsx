@@ -17,6 +17,9 @@ import { useCheckoutRedirect } from '@/hooks/useCheckoutRedirect';
 import CheckoutLoadingOverlay from '@/components/checkout/CheckoutLoadingOverlay';
 import CollectionAmbience from '@/components/library/CollectionAmbience';
 import ProductImageStage from '@/components/product/ProductImageStage';
+import EngravedBottlePreview from '@/components/product/EngravedBottlePreview';
+import { EngravingPanel, EngravingPanelHandle } from '@/components/product/EngravingPanel';
+import { useEngraving, ENGRAVING_FEE } from '@/hooks/useEngraving';
 import ScentIdentityStrip from '@/components/product/ScentIdentityStrip';
 import AIFormulaCallout from '@/components/product/AIFormulaCallout';
 import TrustBadges from '@/components/product/TrustBadges';
@@ -75,7 +78,15 @@ export default function ProductDetail() {
   const [buyStatus, setBuyStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [qtyPulse, setQtyPulse] = useState(false);
   const [addShimmer, setAddShimmer] = useState(false);
+  const [glowPulseKey, setGlowPulseKey] = useState(0);
   const qtyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const engravingPanelRef = useRef<EngravingPanelHandle>(null);
+  const engraving = useEngraving();
+
+  // Pulse the bottle glow when engraving is first turned on.
+  useEffect(() => {
+    if (engraving.enabled) setGlowPulseKey((k) => k + 1);
+  }, [engraving.enabled]);
 
   const pulseQty = () => {
     setQtyPulse(false);
