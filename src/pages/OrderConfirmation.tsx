@@ -10,6 +10,17 @@ import WhatsAppCaptureField, {
   WhatsAppValue,
 } from "@/components/checkout/WhatsAppCaptureField";
 import { Check, Loader2 } from "lucide-react";
+import { ENGRAVING_FONT_CLASS, EngravingStyle } from "@/hooks/useEngraving";
+
+interface OrderSummaryItem {
+  name: string;
+  size?: string;
+  qty: number;
+  price: number;
+  image?: string;
+  engraving: { text: string; style: string; fee?: string } | null;
+}
+
 
 const GOLD = "hsl(var(--bz-gold))";
 const WA_STORAGE_KEY = "bazuki_wa_optin";
