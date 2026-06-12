@@ -54,6 +54,8 @@ import ShopifyDebugPanel from "./components/dev/ShopifyDebugPanel";
 import BazukiCartDrawer from "./components/cart/BazukiCartDrawer";
 import CheckoutTestChecklist from "./components/dev/CheckoutTestChecklist";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import Unsubscribe from "./pages/Unsubscribe";
+
 import PerfumeNotesExplained from "./pages/guides/PerfumeNotesExplained";
 import AIPerfumeVsTraditional from "./pages/guides/AIPerfumeVsTraditional";
 import CustomPerfumeIndia from "./pages/seo/CustomPerfumeIndia";
@@ -103,6 +105,8 @@ const AppInner = () => {
           <Route path="/unique-perfume" element={<UniquePerfume />} />
           <Route path="/niche-perfume-india" element={<NichePerfumeIndia />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
+
           <Route path="/scent-library" element={<Navigate to="/collection" replace />} />
           <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
             <Route index element={<AdminDashboard />} />

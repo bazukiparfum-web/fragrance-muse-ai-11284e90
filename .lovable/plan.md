@@ -1,79 +1,87 @@
-## Live Laser Engraving Personalisation — PDP Feature
+# Engraving — Tests, A11y & Post-Purchase Visibility
 
-A self-contained personalisation panel on `src/pages/ProductDetail.tsx` that overlays the customer's typed text directly on the product bottle image in their chosen font, and passes the engraving as Shopify line-item attributes to the cart. No changes to existing cart/checkout/pricing logic outside this feature.
+Three independent additions on top of the existing engraving feature. No changes to pricing, cart, or checkout logic.
 
-### Scope
-- Only edits the PDP image stage + a new panel above "Add to Cart".
-- Cart store + Shopify lib get a minimal, additive `attributes` pass-through.
-- Cart drawer + cart page display engraving meta below product name.
-- Existing cart logic for non-engraved items is unchanged.
+## 1. Automated tests
 
-### Files
+Switch `vitest.config.ts` to `environment: "jsdom"` with `src/test/setup.ts` (jest-dom + `matchMedia` shim) so React components can render. Add `@vitejs/plugin-react-swc` to the config.
 
-New:
-- `src/components/product/EngravingPanel.tsx` — header row + toggle, 3 font cards, input + counter, validation tooltip, expand/collapse animation.
-- `src/components/product/EngravedBottlePreview.tsx` — wraps `ProductImageStage`, adds absolute-positioned engraving overlay with per-char flash, spark, shimmer, and font-switch transitions.
-- `src/hooks/useEngraving.ts` — small state hook: `{ enabled, text, style, setEnabled, setText, setStyle, valid }`.
+New test files:
 
-Edited:
-- `src/pages/ProductDetail.tsx` — swap raw image for `EngravedBottlePreview`, render `EngravingPanel`, append `+ ₹199 personalised engraving` line under the price when active, update Add-to-Cart label with crossfade, pass `engraving` to `addItem`, run validation before add.
-- `src/stores/cartStore.ts` — extend `CartItem` with optional `attributes?: Array<{key:string; value:string}>`; forward to Shopify add calls; preserve on update/remove.
-- `src/lib/shopify.ts` — extend `createShopifyCart` / `addLineToShopifyCart` input types and GraphQL line input to include `attributes` when provided (no behaviour change when omitted).
-- `src/components/cart/BazukiCartDrawer.tsx` and `src/pages/Cart.tsx` — if `item.attributes` contains `_Engraving Text`, render `✦ Engraved: {text} · {Style}` line (12px, gold 70%, italic) under the product name.
-- `index.html` (or `index.css` `@import`) — add Google Fonts: Cormorant Garamond 300 italic + 400, Cinzel 700.
-- `tailwind.config.ts` — add `fontFamily.engravingClassic`, `engravingElegant`, `engravingBold` mapped to those fonts.
-- `src/index.css` — keyframes/utilities for engraving: `engrave-in`, `engrave-spark`, `engrave-shimmer`, `engrave-glow-pulse`, all with `@media (prefers-reduced-motion: reduce)` fallbacks.
+- `src/hooks/useEngraving.test.ts`
+  - Empty/whitespace text → `isActive === false` even when enabled.
+  - 20-char cap and trimming.
+  - `Bold` style uppercases new input *and* converts existing text on style switch.
+  - `trimmed` matches expectation.
 
-### Behaviour spec (matches request)
+- `src/components/product/EngravingPanel.test.tsx`
+  - Toggle off: body collapsed, font cards & input not focusable (`tabindex="-1"` / `inert`).
+  - Toggle on: cards have `role="radio"` + `aria-checked`, input visible.
+  - Typing updates counter and color tier (assert class / inline style).
+  - `pulseInvalid()` via ref focuses input and shows tooltip.
 
-Toggle row above panel
-- Left: ✦ "Personalise Your Bottle" + subtext "Laser engraved — permanent & precise".
-- Right: `+ ₹199` badge + shadcn `Switch` (off by default).
-- Off → only header row visible; panel `max-height: 0`; overlay hidden.
-- On → panel expands (400ms), font cards stagger-fade (80ms), input slides up, bottle gets one-shot gold glow pulse (600ms).
+- `src/components/product/EngravedBottlePreview.test.tsx`
+  - Hidden when `enabled=false` or empty text.
+  - Renders each char + trailing spark when enabled+text.
+  - Font size shrinks as length grows (assert inline `fontSize` thresholds at 6/12/18).
 
-Font style cards (3, equal-width grid)
-- CLASSIC: Cormorant Garamond 400, sample "Classic", tagline "Timeless".
-- ELEGANT: Cormorant Garamond 300 italic, sample "Elegant", tagline "Romantic".
-- BOLD: Cinzel 700 uppercase, sample "BOLD", tagline "Statement".
-- Card visuals + selected state (gold border, tinted bg, ✓ badge, scale 1.04) per spec.
+- `src/pages/__tests__/ProductDetail.engraving.test.tsx` (light, mocks `fetchShopifyProductByHandle` & `useCartStore`)
+  - Base CTA shows `ADD TO CART — ₹X`.
+  - Enabling toggle + typing valid text → CTA shows `₹X+199` and `+ ₹199 personalised engraving` line appears under price.
+  - Enabling toggle with empty text → clicking ATC calls `pulseInvalid` and does NOT call `addItem`.
+  - Valid engraving → `addItem` called with `attributes` containing `_Engraving Text`, `_Engraving Style`, `_Engraving Fee`.
 
-Input
-- Label row with live `n / 20` counter; color tiers 0–15 dim gold, 16–18 bright gold, 19–20 urgent; 3× pulse at 20.
-- Input font dynamically matches selected style.
-- Placeholder, max length 20, focus ring + ✦ icon per spec.
+## 2. Accessibility improvements
 
-Bottle overlay (`EngravedBottlePreview`)
-- Wraps image in `relative` container; absolute overlay at `top:45% left:50% translateX(-50%)`, `width:65%`, `text-align:center`, `pointer-events:none`, `z-index:10`.
-- Dynamic font-size by length (22/18/14/11px), color `#C9A84C` 90%, glow text-shadow, letter-spacing 0.08em.
-- Per-char `engrave-in` (opacity 0→1, 150ms) — implemented by mapping each char to a `<span>` with staggered animation only for newly added chars (track previous text length).
-- Trailing `✦` spark element animated on each keystroke (400ms fade).
-- Shimmer pseudo-element runs 300ms after 700ms idle (debounced).
-- Font switch: container `key={style}` triggers fade-out/in + scale 0.95→1 (200ms spring via CSS).
+- **Toggle row** (`EngravingPanel`):
+  - Wrap header in a `<label htmlFor="engraving-toggle">` so clicking the label toggles the switch; give `Switch` `id="engraving-toggle"` and `aria-describedby="engraving-toggle-desc"`.
+  - Add `aria-expanded` on the toggle reflecting `enabled`; collapsed body gets `hidden` / `inert` so screen readers and tab order skip it.
+  - Animated fee badge gets `aria-hidden="true"` (info is in the toggle label).
 
-Price + CTA
-- When `enabled && text.trim().length > 0`: render `+ ₹199 personalised engraving` (gold, 13px, fade-in 300ms) under the main price.
-- CTA label crossfade between `ADD TO CART — ₹X` and `ADD TO CART — ₹X+199` (old fades up/out, new fades up/in, 200ms).
+- **Font style cards**:
+  - Convert from individual buttons to a `role="radiogroup"` with `aria-label="Engraving font style"`.
+  - Each card becomes `role="radio"` with `aria-checked`, `tabIndex` set to 0 only for the selected card (roving focus), others -1.
+  - Arrow Left/Right/Up/Down cycles selection and moves focus; Home/End jump to first/last; Space/Enter selects.
+  - Visible `focus-visible` ring using existing gold token.
+  - Sample text gets `aria-hidden`; add visually-hidden description e.g. `"Classic — timeless serif"` via `<span className="sr-only">`.
 
-Validation
-- Click ATC while `enabled && text.trim() === ''`: border pulses gold 3× (300ms each), tooltip "Please enter your engraving text" fades above input, smooth scroll to input. ATC is not blocked when toggle is off.
+- **Engraving input**:
+  - Associate counter via `aria-describedby="engraving-counter"`; counter gets `aria-live="polite"` and `aria-atomic="true"`.
+  - When at 19/20 chars, add `aria-describedby` to include a near-limit announcement.
+  - Tooltip on invalid submit becomes `role="alert"` (already partially) and input gets `aria-invalid="true"` for the pulse duration.
+  - Spark icon → `aria-hidden`.
+  - Ensure label `htmlFor` matches input id (already does).
 
-Cart integration
-- On successful add, attach Shopify line-item attributes:
-  - `_Engraving Text`: trimmed text
-  - `_Engraving Style`: `Classic` | `Elegant` | `Bold`
-  - `_Engraving Fee`: `₹199`
-- `cartStore.addItem` forwards `attributes` to `createShopifyCart` / `addLineToShopifyCart`. When two adds have the same `variantId` but different attributes, treat as a separate line (do not merge — match Shopify behaviour) by composing a composite key `variantId + JSON.stringify(attributes)` for the existing-item lookup.
-- Cart drawer + Cart page display engraving meta line if attributes present.
+- **Live preview** (`EngravedBottlePreview`): overlay `aria-hidden` (decorative); add an `sr-only` live region in the panel that announces `"Preview updated: <text> in <style>"` debounced 500ms so SR users get feedback.
 
-Pricing
-- Engraving fee is presentational only on the PDP (no Shopify variant change). Shopify-side fee handling is out of scope; the attribute `_Engraving Fee: ₹199` is the source of truth for fulfilment. (Flag for follow-up: real charge requires a Shopify "Engraving Fee" product line or script.)
+- Respect `prefers-reduced-motion`: skip pulse/spark/shimmer (already partly handled in CSS — verify and extend).
 
-### Out of scope
-- Backend changes, edge functions, DB migrations.
-- Real charging of the ₹199 in Shopify (display + attribute only this pass).
-- Per-product overlay coordinate tuning beyond the spec's default position.
-- Cart/checkout layout changes beyond the small engraving meta line.
+## 3. Engraving on order confirmation page + email
 
-### Design tokens
-Use spec hex values via inline styles / arbitrary Tailwind values only inside the new engraving components (intentional: simulates real gold-on-black laser engraving outside the global semantic theme). All other UI keeps semantic tokens.
+### Storage
+Migration: add `attributes jsonb` column to `public.order_items` (default `'[]'::jsonb`). Re-grant unchanged.
+
+### Webhook
+In `shopify-webhook-handler` `handleOrderCreated` line-item insert, persist `item.properties` (filtered to the three engraving keys + any other `_` prefixed) into the new `attributes` column. Shopify line-item properties already arrive as `[{name, value}]`.
+
+### Edge function
+Add `get-order-summary` (public, takes `orderNumber`, service-role): returns `{ order_number, items: [{ name, qty, price, size, image, engraving: { text, style, fee } | null }] }`. Used by both the confirmation page and the email.
+
+### Order Confirmation page
+Below the order number badge, render an **Order Summary** card. For each item with engraving show a gold-bordered sub-row:
+`✦ Engraved "PRIYA" · Elegant style · +₹199` using the same font class as in cart (`ENGRAVING_FONT_CLASS[style]`). No engraving → unchanged.
+
+### Email template
+New transactional template `order-confirmation-with-engraving.tsx` (or extend existing order email if one exists — will check during build). Each line item renders product name + quantity + price; engraved lines append:
+```
+✦ Engraved: PRIYA
+   Style: Elegant · +₹199
+```
+Sent from `shopify-webhook-handler` after `order_items` insert when `recipientEmail` is available (Shopify `orderData.email`), with `idempotencyKey = order-confirm-${shopifyOrderId}`.
+
+If no email infrastructure / template registry exists for app emails, the build step will run `setup_email_infra` + `scaffold_transactional_email` first, then add this template.
+
+## Out of scope
+- Changing engraving pricing, cart line-item logic, or checkout flow.
+- Editing Shopify-side order confirmation email (we send our own branded one).
+- Admin UI changes (engraving will naturally appear in any existing order_items listing once attributes is populated; no new admin work).

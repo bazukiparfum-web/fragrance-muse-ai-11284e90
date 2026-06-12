@@ -204,6 +204,9 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
 
   let itemsCreated = 0;
   for (const item of orderData.line_items || []) {
+    const attributes = Array.isArray(item.properties)
+      ? item.properties.filter((p: any) => p && typeof p.name === 'string')
+      : [];
     const { error: itemError } = await supabaseClient
       .from('order_items')
       .insert({
@@ -213,6 +216,7 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
         size: item.variant_title || 'Standard',
         quantity: item.quantity || 1,
         price: parseFloat(item.price || '0'),
+        attributes,
       });
     if (itemError) {
       console.error('❌ Failed to create order item:', itemError);
@@ -222,12 +226,52 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
   }
   console.log(`✅ Created ${itemsCreated} order items`);
 
+  // Send branded order confirmation email (with engraving details)
+  try {
+    const itemsForEmail = (orderData.line_items || []).map((item: any) => {
+      const props: Array<{ name: string; value: string }> = Array.isArray(item.properties)
+        ? item.properties
+        : [];
+      const get = (k: string) => props.find((p) => p?.name === k)?.value;
+      const text = get('_Engraving Text');
+      const style = get('_Engraving Style');
+      const fee = get('_Engraving Fee');
+      const priceN = parseFloat(item.price || '0');
+      return {
+        name: item.name || 'Bazuki Fragrance',
+        size: item.variant_title || undefined,
+        qty: item.quantity || 1,
+        price: `₹${priceN.toLocaleString('en-IN')}`,
+        engraving: text ? { text, style: style || 'Classic', fee } : null,
+      };
+    });
+    const fullName = [orderData.customer?.first_name, orderData.customer?.last_name]
+      .filter(Boolean)
+      .join(' ');
+    await supabaseClient.functions.invoke('send-transactional-email', {
+      body: {
+        templateName: 'order-confirmation',
+        recipientEmail: customerEmail,
+        idempotencyKey: `order-confirm-${orderData.id}`,
+        templateData: {
+          orderNumber: orderData.order_number?.toString() || newOrder.id,
+          customerName: fullName || undefined,
+          items: itemsForEmail,
+          total: `₹${total.toLocaleString('en-IN')}`,
+        },
+      },
+    });
+  } catch (emailErr) {
+    console.error('⚠️ Failed to send order confirmation email:', emailErr);
+  }
+
   // COD: enqueue production immediately on order creation
   if (paymentMethod === 'cod') {
     console.log('💵 COD order — enqueuing production immediately');
     await addToProductionQueue(supabaseClient, newOrder.id, orderData, 'orders/create', 'cod');
   }
 }
+
 
 async function handleOrderPaid(supabaseClient: any, orderData: any) {
   console.log('💳 Handling order paid:', orderData.id);

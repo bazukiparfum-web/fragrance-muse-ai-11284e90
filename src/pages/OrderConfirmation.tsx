@@ -10,6 +10,17 @@ import WhatsAppCaptureField, {
   WhatsAppValue,
 } from "@/components/checkout/WhatsAppCaptureField";
 import { Check, Loader2 } from "lucide-react";
+import { ENGRAVING_FONT_CLASS, EngravingStyle } from "@/hooks/useEngraving";
+
+interface OrderSummaryItem {
+  name: string;
+  size?: string;
+  qty: number;
+  price: number;
+  image?: string;
+  engraving: { text: string; style: string; fee?: string } | null;
+}
+
 
 const GOLD = "hsl(var(--bz-gold))";
 const WA_STORAGE_KEY = "bazuki_wa_optin";
@@ -40,6 +51,23 @@ export default function OrderConfirmation() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<OrderSummaryItem[] | null>(null);
+
+  useEffect(() => {
+    if (!orderNumber) return;
+    let cancelled = false;
+    supabase.functions
+      .invoke("get-order-summary", { body: { orderNumber } })
+      .then(({ data, error }) => {
+        if (cancelled || error || !data?.items) return;
+        setSummary(data.items as OrderSummaryItem[]);
+      })
+      .catch((e) => console.error("get-order-summary failed", e));
+    return () => {
+      cancelled = true;
+    };
+  }, [orderNumber]);
+
 
   useEffect(() => {
     // Capture cart id before we clear it, so we can reconcile
@@ -132,6 +160,66 @@ export default function OrderConfirmation() {
             Order #{orderNumber}
           </div>
         )}
+
+        {summary && summary.length > 0 && (
+          <div
+            className="w-full max-w-[440px] rounded-md p-5 text-left"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.02)",
+              border: "1px solid hsl(var(--bz-gold) / 0.2)",
+            }}
+          >
+            <p
+              className="text-cream-muted uppercase tracking-[0.12em] mb-3"
+              style={{ fontSize: 10 }}
+            >
+              Order summary
+            </p>
+            <ul className="space-y-3">
+              {summary.map((it, i) => {
+                const styleKey = (it.engraving?.style as EngravingStyle) || "Classic";
+                const fontClass = ENGRAVING_FONT_CLASS[styleKey] || ENGRAVING_FONT_CLASS.Classic;
+                return (
+                  <li key={i} className="text-cream font-sans" style={{ fontSize: 14 }}>
+                    <div className="flex justify-between gap-3">
+                      <span>
+                        {it.name}
+                        {it.qty > 1 ? ` × ${it.qty}` : ""}
+                        {it.size ? <span className="text-cream-muted" style={{ fontSize: 12 }}> · {it.size}</span> : null}
+                      </span>
+                      <span style={{ color: GOLD }}>₹{Number(it.price).toLocaleString("en-IN")}</span>
+                    </div>
+                    {it.engraving && (
+                      <div
+                        className="mt-2 rounded-md px-3 py-2"
+                        style={{
+                          border: "1px solid hsl(var(--bz-gold) / 0.5)",
+                          background: "rgba(201,168,76,0.05)",
+                        }}
+                      >
+                        <p
+                          className="uppercase tracking-[0.14em]"
+                          style={{ fontSize: 10, color: GOLD }}
+                        >
+                          ✦ Laser Engraving
+                        </p>
+                        <p className={fontClass} style={{ fontSize: 20, color: GOLD, marginTop: 4 }}>
+                          "{it.engraving.text}"
+                        </p>
+                        <p className="text-cream-muted" style={{ fontSize: 11, marginTop: 2 }}>
+                          {it.engraving.style} style
+                          {it.engraving.fee ? ` · ${it.engraving.fee}` : ""}
+                        </p>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+
 
         {/* WhatsApp updates card */}
         <div

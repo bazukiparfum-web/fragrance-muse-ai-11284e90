@@ -446,6 +446,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          attributes: Json
           created_at: string | null
           id: string
           order_id: string
@@ -456,6 +457,7 @@ export type Database = {
           size: string
         }
         Insert: {
+          attributes?: Json
           created_at?: string | null
           id?: string
           order_id: string
@@ -466,6 +468,7 @@ export type Database = {
           size: string
         }
         Update: {
+          attributes?: Json
           created_at?: string | null
           id?: string
           order_id?: string
