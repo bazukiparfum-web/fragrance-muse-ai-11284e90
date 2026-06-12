@@ -30,6 +30,8 @@ interface OrderRow {
   status: string;
   created_at: string;
   user_email?: string | null;
+  payment_method?: string | null;
+  payment_gateway?: string | null;
 }
 
 const PAGE_SIZE = 20;
@@ -39,6 +41,7 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
+  const [paymentMethod, setPaymentMethod] = useState<string>('all');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
 
@@ -46,7 +49,7 @@ const AdminOrders = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('admin-list-orders', {
-        body: { search, status, page, pageSize: PAGE_SIZE },
+        body: { search, status, paymentMethod, page, pageSize: PAGE_SIZE },
       });
       if (error) throw error;
       setRows(data.orders ?? []);
@@ -61,7 +64,7 @@ const AdminOrders = () => {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, status]);
+  }, [page, status, paymentMethod]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -76,7 +79,7 @@ const AdminOrders = () => {
           className="sm:max-w-xs"
         />
         <Select value={status} onValueChange={(v) => { setStatus(v); setPage(0); }}>
-          <SelectTrigger className="sm:w-48">
+          <SelectTrigger className="sm:w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -87,6 +90,16 @@ const AdminOrders = () => {
             <SelectItem value="shipped">Shipped</SelectItem>
             <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={paymentMethod} onValueChange={(v) => { setPaymentMethod(v); setPage(0); }}>
+          <SelectTrigger className="sm:w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All payments</SelectItem>
+            <SelectItem value="cod">COD</SelectItem>
+            <SelectItem value="prepaid">Prepaid</SelectItem>
           </SelectContent>
         </Select>
         <Button onClick={() => { setPage(0); load(); }}>Search</Button>
@@ -107,6 +120,7 @@ const AdminOrders = () => {
                 <TableHead>Customer</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Payment</TableHead>
                 <TableHead>Shopify</TableHead>
                 <TableHead>Date</TableHead>
               </TableRow>
@@ -119,6 +133,23 @@ const AdminOrders = () => {
                   <TableCell>₹{Number(o.total).toFixed(2)}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{o.status}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {o.payment_method === 'cod' ? (
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500/40 text-amber-500"
+                        title={o.payment_gateway ?? 'Cash on Delivery'}
+                      >
+                        COD
+                      </Badge>
+                    ) : o.payment_method === 'prepaid' ? (
+                      <Badge variant="secondary" title={o.payment_gateway ?? 'Prepaid'}>
+                        Prepaid
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {o.shopify_order_number ?? '—'}

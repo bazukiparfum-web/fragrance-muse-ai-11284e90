@@ -45,17 +45,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { search = '', status = 'all', page = 0, pageSize = 20 } = await req.json().catch(() => ({}));
+    const { search = '', status = 'all', paymentMethod = 'all', page = 0, pageSize = 20 } = await req.json().catch(() => ({}));
     const from = page * pageSize;
     const to = from + pageSize - 1;
 
     let query = admin
       .from('orders')
-      .select('id, order_number, shopify_order_number, total, status, created_at, user_id')
+      .select('id, order_number, shopify_order_number, total, status, created_at, user_id, payment_method, payment_gateway')
       .order('created_at', { ascending: false })
       .range(from, to);
 
     if (status !== 'all') query = query.eq('status', status);
+    if (paymentMethod !== 'all') query = query.eq('payment_method', paymentMethod);
     if (search) query = query.or(`order_number.ilike.%${search}%,shopify_order_number.ilike.%${search}%`);
 
     const { data: orders, error } = await query;
