@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import {
   ShopifyProduct,
+  CartAttribute,
   CART_QUERY,
   storefrontApiRequest,
   createShopifyCart,
@@ -24,6 +25,16 @@ export interface CartItem {
     name: string;
     value: string;
   }>;
+  attributes?: CartAttribute[];
+}
+
+function attrKey(attrs?: CartAttribute[]): string {
+  if (!attrs || attrs.length === 0) return '';
+  return attrs
+    .slice()
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map((a) => `${a.key}=${a.value}`)
+    .join('|');
 }
 
 interface CartStore {
@@ -37,6 +48,8 @@ interface CartStore {
   addItem: (item: Omit<CartItem, 'lineId'>) => Promise<boolean>;
   updateQuantity: (variantId: string, quantity: number) => Promise<void>;
   removeItem: (variantId: string) => Promise<void>;
+  updateLineQuantity: (lineId: string, quantity: number) => Promise<void>;
+  removeLine: (lineId: string) => Promise<void>;
   clearCart: () => void;
   syncCart: () => Promise<void>;
   getCheckoutUrl: () => string | null;
@@ -60,8 +73,6 @@ export const useCartStore = create<CartStore>()(
       setDrawerOpen: (open) => set({ isDrawerOpen: open }),
 
       addItem: async (item) => {
-        // Safety net: prevent purchasing a single 30ml custom scent.
-        // 30ml custom scents are sold only as the 3-bottle Custom Discovery Set.
         const handle = item.product?.node?.handle || '';
         const isCustomScent = handle.startsWith('custom-scent-') || handle.startsWith('custom-');
         const is30ml = item.selectedOptions?.some(
@@ -73,13 +84,21 @@ export const useCartStore = create<CartStore>()(
           return false;
         }
 
+        const itemKey = attrKey(item.attributes);
         const { items, cartId, clearCart } = get();
-        const existingItem = items.find(i => i.variantId === item.variantId);
+        // Only merge with an existing item if BOTH the variant AND the attributes match.
+        const existingItem = items.find(
+          (i) => i.variantId === item.variantId && attrKey(i.attributes) === itemKey
+        );
 
         set({ isLoading: true });
         try {
           if (!cartId) {
-            const result = await createShopifyCart({ variantId: item.variantId, quantity: item.quantity });
+            const result = await createShopifyCart({
+              variantId: item.variantId,
+              quantity: item.quantity,
+              attributes: item.attributes,
+            });
             if (!result) return false;
             set({
               cartId: result.cartId,
@@ -96,13 +115,21 @@ export const useCartStore = create<CartStore>()(
             const result = await updateShopifyCartLine(cartId, existingItem.lineId, newQuantity);
             if (result.success) {
               const currentItems = get().items;
-              set({ items: currentItems.map(i => i.variantId === item.variantId ? { ...i, quantity: newQuantity } : i) });
+              set({
+                items: currentItems.map((i) =>
+                  i.lineId === existingItem.lineId ? { ...i, quantity: newQuantity } : i,
+                ),
+              });
               return true;
             }
             if (result.cartNotFound) clearCart();
             return false;
           } else {
-            const result = await addLineToShopifyCart(cartId, { variantId: item.variantId, quantity: item.quantity });
+            const result = await addLineToShopifyCart(cartId, {
+              variantId: item.variantId,
+              quantity: item.quantity,
+              attributes: item.attributes,
+            });
             if (result.success) {
               const currentItems = get().items;
               set({ items: [...currentItems, { ...item, lineId: result.lineId ?? null }] });
@@ -124,17 +151,19 @@ export const useCartStore = create<CartStore>()(
           await get().removeItem(variantId);
           return;
         }
-
         const { items, cartId, clearCart } = get();
-        const item = items.find(i => i.variantId === variantId);
+        const item = items.find((i) => i.variantId === variantId);
         if (!item?.lineId || !cartId) return;
-
         set({ isLoading: true });
         try {
           const result = await updateShopifyCartLine(cartId, item.lineId, quantity);
           if (result.success) {
             const currentItems = get().items;
-            set({ items: currentItems.map(i => i.variantId === variantId ? { ...i, quantity } : i) });
+            set({
+              items: currentItems.map((i) =>
+                i.lineId === item.lineId ? { ...i, quantity } : i,
+              ),
+            });
           } else if (result.cartNotFound) {
             clearCart();
           }
@@ -147,21 +176,63 @@ export const useCartStore = create<CartStore>()(
 
       removeItem: async (variantId) => {
         const { items, cartId, clearCart } = get();
-        const item = items.find(i => i.variantId === variantId);
+        const item = items.find((i) => i.variantId === variantId);
         if (!item?.lineId || !cartId) return;
-
         set({ isLoading: true });
         try {
           const result = await removeLineFromShopifyCart(cartId, item.lineId);
           if (result.success) {
             const currentItems = get().items;
-            const newItems = currentItems.filter(i => i.variantId !== variantId);
+            const newItems = currentItems.filter((i) => i.lineId !== item.lineId);
             newItems.length === 0 ? clearCart() : set({ items: newItems });
           } else if (result.cartNotFound) {
             clearCart();
           }
         } catch (error) {
           console.error('Failed to remove item:', error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateLineQuantity: async (lineId, quantity) => {
+        if (quantity <= 0) {
+          await get().removeLine(lineId);
+          return;
+        }
+        const { cartId, clearCart, items } = get();
+        if (!cartId) return;
+        set({ isLoading: true });
+        try {
+          const result = await updateShopifyCartLine(cartId, lineId, quantity);
+          if (result.success) {
+            set({
+              items: items.map((i) => (i.lineId === lineId ? { ...i, quantity } : i)),
+            });
+          } else if (result.cartNotFound) {
+            clearCart();
+          }
+        } catch (error) {
+          console.error('Failed to update line:', error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      removeLine: async (lineId) => {
+        const { cartId, clearCart, items } = get();
+        if (!cartId) return;
+        set({ isLoading: true });
+        try {
+          const result = await removeLineFromShopifyCart(cartId, lineId);
+          if (result.success) {
+            const newItems = items.filter((i) => i.lineId !== lineId);
+            newItems.length === 0 ? clearCart() : set({ items: newItems });
+          } else if (result.cartNotFound) {
+            clearCart();
+          }
+        } catch (error) {
+          console.error('Failed to remove line:', error);
         } finally {
           set({ isLoading: false });
         }
