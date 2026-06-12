@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -132,9 +132,8 @@ const AdminOrders = () => {
               {rows.map((o) => {
                 const isOpen = expandedId === o.id;
                 return (
-                  <>
+                  <Fragment key={o.id}>
                     <TableRow
-                      key={o.id}
                       className="cursor-pointer"
                       onClick={() => setExpandedId(isOpen ? null : o.id)}
                     >
@@ -176,13 +175,13 @@ const AdminOrders = () => {
                       </TableCell>
                     </TableRow>
                     {isOpen && (
-                      <TableRow key={`${o.id}-timeline`} className="bg-muted/30 hover:bg-muted/30">
+                      <TableRow className="bg-muted/30 hover:bg-muted/30">
                         <TableCell colSpan={8}>
                           <OrderTimeline orderId={o.id} />
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </TableBody>
