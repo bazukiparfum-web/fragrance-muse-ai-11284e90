@@ -425,7 +425,7 @@ function NoteRow({
 }
 
 /* -------------------- Main -------------------- */
-export function FormulaReveal({ scent, replayKey }: Props) {
+export function FormulaReveal({ scent, replayKey, header }: Props) {
   const { ref, inView } = useInView<HTMLDivElement>({ threshold: 0.25 });
   const [expanded, setExpanded] = useState<LayerKey | null>(null);
   const [hintDismissed, setHintDismissed] = useState(false);
