@@ -933,6 +933,30 @@ const QuizResults = () => {
               <span style={{ color: GOLD_DIM }}>|</span>
               <span>Ships in 3–5 days</span>
             </p>
+            {restoredAt && (
+              <p className="mt-2" style={{ color: GOLD, fontSize: 12 }}>
+                ✦ Here are your saved results from {restoredAt}
+              </p>
+            )}
+            {showPrivacyNote && (
+              <p className="mt-3 inline-flex items-center gap-2" style={{ color: GOLD_DIM, fontSize: 11 }}>
+                <span>
+                  ✦ Your formula results are saved for 30 days so you can return anytime.{' '}
+                  <Link to="/legal/privacy" className="underline underline-offset-2">Privacy Policy</Link>
+                </span>
+                <button
+                  type="button"
+                  aria-label="Dismiss"
+                  onClick={() => {
+                    try { localStorage.setItem('bazuki:privacy-note-dismissed', '1'); } catch {}
+                    setShowPrivacyNote(false);
+                  }}
+                  style={{ color: GOLD_DIM, fontSize: 14, lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </p>
+            )}
           </div>
 
           {/* 2. URGENCY */}
