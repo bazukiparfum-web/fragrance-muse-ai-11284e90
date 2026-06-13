@@ -13,17 +13,31 @@ export interface FormulaNoteLike {
   locked?: boolean;
 }
 
-export function isValidFormula(formula: unknown): formula is FormulaNoteLike[] {
-  if (!Array.isArray(formula) || formula.length === 0) return false;
+function flattenFormula(formula: unknown): FormulaNoteLike[] {
+  if (Array.isArray(formula)) return formula as FormulaNoteLike[];
+  if (formula && typeof formula === "object") {
+    const f = formula as Record<string, unknown>;
+    const out: FormulaNoteLike[] = [];
+    for (const key of ["top", "heart", "base"]) {
+      const arr = f[key];
+      if (Array.isArray(arr)) out.push(...(arr as FormulaNoteLike[]));
+    }
+    return out;
+  }
+  return [];
+}
+
+export function isValidFormula(formula: unknown): boolean {
+  const notes = flattenFormula(formula);
+  if (notes.length === 0) return false;
 
   let total = 0;
   let hasNamedNote = false;
-  for (const n of formula) {
+  for (const n of notes) {
     if (!n || typeof n !== "object") continue;
-    const note = n as FormulaNoteLike;
-    const label = (note.name ?? note.note ?? "").toString().trim();
+    const label = (n.name ?? n.note ?? "").toString().trim();
     if (label) hasNamedNote = true;
-    const pct = Number(note.percentage ?? 0);
+    const pct = Number(n.percentage ?? 0);
     if (Number.isFinite(pct)) total += pct;
   }
 
