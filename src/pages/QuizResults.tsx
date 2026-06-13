@@ -1041,6 +1041,11 @@ const QuizResults = () => {
             scrollToBottles={scrollToBottles}
           />
 
+          {/* 4b. EMAIL RETARGETING CAPTURE */}
+          <RetargetEmailCapture
+            sessionId={sessionId}
+            bestMatchName={recommendations.find((r) => r.id === bestId)?.name}
+          />
 
           {/* 5. SINGLE BOTTLE SECTION */}
           <div id="single-bottle-section" className="mb-14 scroll-mt-24">
