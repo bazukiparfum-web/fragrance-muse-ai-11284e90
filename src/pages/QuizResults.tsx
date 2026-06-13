@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -24,6 +24,13 @@ import { FormulaReveal } from '@/components/quiz/results/FormulaReveal';
 import { isValidFormula, EMPTY_FORMULA_MESSAGE } from '@/lib/formulaValidation';
 import { ENGRAVING_FEE } from '@/hooks/useEngraving';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  persistQuizSession,
+  fetchSessionById,
+  getFromLocalStorage,
+  getSessionCookie,
+} from '@/lib/quizSession';
+import { RetargetEmailCapture } from '@/components/quiz/results/RetargetEmailCapture';
 
 const quizResultsBreadcrumbs = buildBreadcrumbs([
   { name: 'Home', path: '/' },
