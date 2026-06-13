@@ -358,7 +358,7 @@ export default function ScentDetail() {
                       .filter(([size]) => size !== '30ml' && size !== 'ml30')
                       .map(([size, price]: [string, any]) => (
                         <SelectItem key={size} value={size}>
-                          {size} - ₹{(price / 100).toFixed(2)}
+                          {size} - ₹{Number(price).toLocaleString('en-IN')}
                         </SelectItem>
                       ));
                   })()}
