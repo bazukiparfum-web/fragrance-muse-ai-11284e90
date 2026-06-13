@@ -1,61 +1,62 @@
-## Why Add to Cart fails
+## Root cause
 
-On the quiz results page, every "Add to Cart" click is gated by `isValidFormula(scent.formula)` in `src/pages/QuizResults.tsx` (line 191). When it returns `false` the toast "This fragrance has no formula and cannot be saved." fires and the flow exits before any Shopify call.
+Console shows:
+```
+Error saving scent: new row violates row-level security policy for table "saved_scents"
+```
 
-The bug is in `src/lib/formulaValidation.ts`:
+In `src/pages/QuizResults.tsx` (line ~205), the handler tries to client-insert the scent into `saved_scents` with a hard-coded `user_id: '00000000-0000-0000-0000-000000000000'`. The RLS INSERT policy on `saved_scents` is `WITH CHECK (auth.uid() = user_id)`, so:
 
-- `isValidFormula` only accepts a flat array of notes (`Array.isArray(formula)` → required).
-- But the quiz recommendations (both `defaultRecommendations` in QuizResults and the AI engine output) use the nested object form: `{ top: [...], heart: [...], base: [...] }`.
-- Result: nested formulas are always treated as empty, so add-to-cart is always blocked on the quiz results screen.
+- Anonymous users: `auth.uid()` is `null` → blocked.
+- Logged-in users: `auth.uid()` is their real id, not the zero UUID → blocked.
 
-The rest of the codebase already handles both shapes — e.g. `getNotesByCategory` in `QuizResults.tsx` (lines 174–182) explicitly supports flat array OR nested object. The validator is the only place that doesn't.
+So every fresh quiz recommendation (`id` starts with `default-`, not a UUID) fails at the save step, the catch fires, and the user sees "Failed to add to cart."
 
 ## Fix
 
-Update `src/lib/formulaValidation.ts` so `isValidFormula` accepts either:
+Move the save server-side into the existing `create-shopify-product-from-scent` edge function (already uses the service-role client, already resolves the auth'd user or falls back to the anon test user).
 
-1. A non-empty flat array of notes (current behavior), OR
-2. A nested object with `top` / `heart` / `base` arrays — flatten them and apply the same checks (at least one named note + total percentage > 0).
+### Edge function `supabase/functions/create-shopify-product-from-scent/index.ts`
 
-No other file needs to change. The cart flow, save flow, and Shopify product creation downstream already work with either shape.
+Accept an optional `scent` payload in the request body. New flow:
 
-### Technical detail
+1. Parse `{ scentId, scent }` from body.
+2. If `scentId` is missing OR not a valid UUID (e.g. `default-1`):
+   - Require `scent` payload (name, formula, matchScore, intensity, longevity, prices, formulationNotes, quizAnswers).
+   - Insert into `saved_scents` via the service-role client using the resolved `userId` (real user when authed, else `ANON_TEST_USER_ID`).
+   - Use the inserted row's `id` as `scentId`.
+3. Continue with the existing variant-resolution / `shopify_product_id` tracking code unchanged.
 
-```ts
-function flattenFormula(formula: unknown): FormulaNoteLike[] {
-  if (Array.isArray(formula)) return formula as FormulaNoteLike[];
-  if (formula && typeof formula === "object") {
-    const f = formula as Record<string, unknown>;
-    const out: FormulaNoteLike[] = [];
-    for (const key of ["top", "heart", "base"]) {
-      const arr = f[key];
-      if (Array.isArray(arr)) out.push(...(arr as FormulaNoteLike[]));
-    }
-    return out;
-  }
-  return [];
-}
+Validation: reuse the same shape the client currently sends (`formula`, `match_score`, `intensity`, `longevity`, `prices`, `formulation_notes`, `quiz_answers`).
 
-export function isValidFormula(formula: unknown): boolean {
-  const notes = flattenFormula(formula);
-  if (notes.length === 0) return false;
-  let total = 0;
-  let hasNamedNote = false;
-  for (const n of notes) {
-    if (!n || typeof n !== "object") continue;
-    const label = (n.name ?? n.note ?? "").toString().trim();
-    if (label) hasNamedNote = true;
-    const pct = Number(n.percentage ?? 0);
-    if (Number.isFinite(pct)) total += pct;
-  }
-  return hasNamedNote && total > 0;
-}
-```
+### Client `src/pages/QuizResults.tsx`
 
-(Return type drops the array type guard since it now accepts both shapes; current call sites use it only as a boolean check, so no consumers break.)
+In `handleAddToCart`:
+
+- Remove the client-side `supabase.from('saved_scents').insert(...)` block.
+- When `!isValidUUID(scent.id)`, call the edge function with the full scent payload instead of a scentId:
+  ```ts
+  const { data, error } = await supabase.functions.invoke(
+    'create-shopify-product-from-scent',
+    { body: { scent: {
+        name: scent.name,
+        formula: scent.formula,
+        match_score: scent.matchScore,
+        intensity: scent.intensity,
+        longevity: scent.longevity,
+        prices: scent.prices,
+        formulation_notes: scent.formulationNotes,
+        quiz_answers: answers,
+      } } }
+  );
+  ```
+- When the id IS a valid UUID, keep the current `{ scentId }` call.
+- Apply the same change to `handleAddDiscoverySet` if it follows the same pattern (verify lines 321+).
+
+No DB / RLS changes. No new edge function. Cart store + Storefront API flow downstream is unchanged.
 
 ## Out of scope
 
-- Cart store / Shopify integration (already correct).
-- Quiz recommendation engine output shape.
-- The "Testing Mode Active" debug panel.
+- Touching RLS policies on `saved_scents` (they are correct).
+- Changing the recommendation engine output format.
+- The `useEngraving` / engraving panel work from prior turns.
