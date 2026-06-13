@@ -14,9 +14,10 @@ interface SaveScentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   recommendation: any;
+  onSaved?: () => void;
 }
 
-export function SaveScentDialog({ open, onOpenChange, recommendation }: SaveScentDialogProps) {
+export function SaveScentDialog({ open, onOpenChange, recommendation, onSaved }: SaveScentDialogProps) {
   const [customName, setCustomName] = useState(recommendation.name || '');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
