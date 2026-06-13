@@ -22,6 +22,28 @@ const hueToZone = (h: number): Zone => {
   return 'pink';
 };
 
+const zoneToTrait: Record<Zone, { word: string; desc: string }> = {
+  red:    { word: 'Passionate',   desc: 'Intense · Driven' },
+  orange: { word: 'Adventurous',  desc: 'Free · Spirited' },
+  yellow: { word: 'Optimistic',   desc: 'Bright · Warm' },
+  green:  { word: 'Balanced',     desc: 'Grounded · Whole' },
+  cyan:   { word: 'Calm',         desc: 'Peaceful · Focused' },
+  blue:   { word: 'Calm',         desc: 'Peaceful · Focused' },
+  purple: { word: 'Mysterious',   desc: 'Deep · Intuitive' },
+  pink:   { word: 'Romantic',     desc: 'Tender · Loving' },
+};
+
+const zoneToScentHint: Record<Zone, string> = {
+  red:    '✦ Hints at bold, spicy oriental notes',
+  orange: '✦ Points toward warm amber accords',
+  yellow: '✦ Suggests bright citrus top notes',
+  green:  '✦ Leans toward fresh herbal scents',
+  cyan:   '✦ Suggests clean aquatic freshness',
+  blue:   '✦ Suggests clean aquatic freshness',
+  purple: '✦ Points toward rich oud & musk',
+  pink:   '✦ Hints at delicate floral accords',
+};
+
 interface Trail { id: number; x: number; y: number; }
 interface BurstDot { deg: number; dist: number; }
 
@@ -44,8 +66,11 @@ export const ColorPicker = ({
   const [zoneFlashKey, setZoneFlashKey] = useState(0);
   const prevZoneRef = useRef<Zone | null>(null);
   const [entered, setEntered] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const zone = useMemo(() => hueToZone(hue), [hue]);
+  const trait = zoneToTrait[zone];
+  const scentHint = zoneToScentHint[zone];
 
   useEffect(() => {
     const t = setTimeout(() => setEntered(true), 1300);
@@ -90,6 +115,7 @@ export const ColorPicker = ({
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     setIsDragging(true);
+    setHasInteracted(true);
     updateHueFromPointer(e.clientX, e.clientY);
   };
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -170,8 +196,18 @@ export const ColorPicker = ({
       : null;
 
   return (
-    <div className="color-wheel-root flex flex-col items-center space-y-8" style={cssVars}>
+    <div className="color-wheel-root flex flex-col items-center space-y-6" style={cssVars}>
       {atmosphere}
+
+      {/* Personality subtitle */}
+      <p className="cw-subtitle">
+        This helps us understand your personality — not the color of your perfume
+      </p>
+
+      {/* Info pill */}
+      <span className="cw-info-pill" role="note">
+        ✦ Reveals your personality profile
+      </span>
 
       {/* Color Wheel */}
       <div
@@ -244,6 +280,13 @@ export const ColorPicker = ({
           <span className="cw-thumb-core" />
         </span>
 
+        {/* Personality trait in wheel center */}
+        <div className="cw-trait" key={trait.word} aria-live="polite">
+          <span className="cw-trait-dot" style={{ background: colorValue }} aria-hidden="true" />
+          <span className="cw-trait-word">{trait.word}</span>
+          <span className="cw-trait-desc">{trait.desc}</span>
+        </div>
+
         {/* Release burst */}
         {burstKey > 0 && (
           <div
@@ -284,12 +327,13 @@ export const ColorPicker = ({
           onChange={(e) => {
             onSaturationChange(Number(e.target.value));
             setSatDotKey((k) => k + 1);
+            setHasInteracted(true);
           }}
           className="w-full h-3 rounded-full appearance-none cursor-pointer mb-2 cw-slider [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-background [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-background [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary"
           style={{
             background: `linear-gradient(to right, hsl(${hue}, 0%, 50%), hsl(${hue}, 100%, 50%))`,
           }}
-          aria-label="Saturation"
+          aria-label="Personality intensity"
         />
         <span className="cw-slider-shimmer" aria-hidden="true" />
         {satDotKey > 0 && (
@@ -305,10 +349,18 @@ export const ColorPicker = ({
           />
         )}
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Desaturated</span>
-          <span>Saturated</span>
+          <span>Subtle</span>
+          <span>Vibrant</span>
         </div>
+        <p className="cw-helper">How intense is your personality?</p>
       </div>
+
+      {/* Scent connection hint — appears after first interaction */}
+      {hasInteracted && (
+        <div className="cw-scent-hint" key={zone} aria-live="polite">
+          {scentHint}
+        </div>
+      )}
 
       {/* Preview */}
       <div className="flex items-center gap-4">
