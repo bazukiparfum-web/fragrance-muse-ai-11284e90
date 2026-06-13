@@ -123,6 +123,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        scentId,
         productId: `gid://shopify/Product/${SHARED_PRODUCT_ID}`,
         variantIds: SHARED_VARIANTS.map((v) => ({
           id: `gid://shopify/ProductVariant/${v.id}`,
@@ -132,6 +133,7 @@ Deno.serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
     console.error('Error in create-shopify-product-from-scent:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
