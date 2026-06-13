@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -24,6 +24,13 @@ import { FormulaReveal } from '@/components/quiz/results/FormulaReveal';
 import { isValidFormula, EMPTY_FORMULA_MESSAGE } from '@/lib/formulaValidation';
 import { ENGRAVING_FEE } from '@/hooks/useEngraving';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  persistQuizSession,
+  fetchSessionById,
+  getFromLocalStorage,
+  getSessionCookie,
+} from '@/lib/quizSession';
+import { RetargetEmailCapture } from '@/components/quiz/results/RetargetEmailCapture';
 
 const quizResultsBreadcrumbs = buildBreadcrumbs([
   { name: 'Home', path: '/' },
@@ -608,7 +615,8 @@ const QuizResults = () => {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const { answers } = useQuiz();
+  const [searchParams] = useSearchParams();
+  const { answers, isForGift } = useQuiz();
   const { addItem } = useCartStore();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [selectedScent, setSelectedScent] = useState<Recommendation | null>(null);
@@ -617,6 +625,13 @@ const QuizResults = () => {
   const [addingDiscoverySet, setAddingDiscoverySet] = useState(false);
   const [addingToCart, setAddingToCart] = useState<{ [key: string]: boolean }>({});
   const [highlightedScentId, setHighlightedScentId] = useState<string | null>(null);
+  const [hydratedRecs, setHydratedRecs] = useState<Recommendation[] | null>(null);
+  const [restoredAt, setRestoredAt] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showPrivacyNote, setShowPrivacyNote] = useState<boolean>(() => {
+    try { return localStorage.getItem('bazuki:privacy-note-dismissed') !== '1'; } catch { return true; }
+  });
 
   useEffect(() => { saveQuizResponse(); }, []);
 
@@ -668,11 +683,83 @@ const QuizResults = () => {
     },
   ];
 
-  const recommendations: Recommendation[] = location.state?.recommendations || defaultRecommendations;
+  const recommendations: Recommendation[] =
+    hydratedRecs || location.state?.recommendations || defaultRecommendations;
   const bestId = useMemo(
     () => recommendations.reduce((b, r) => (r.matchScore > b.matchScore ? r : b), recommendations[0])?.id,
     [recommendations],
   );
+
+  // ── Phase 1: auto-save quiz session on results page load ──
+  useEffect(() => {
+    // If a session= param is present we're in hydration mode; that effect handles persistence touch.
+    const urlSessionId = searchParams.get('session');
+    if (urlSessionId) return;
+    if (!recommendations || recommendations.length === 0) return;
+    const customer_profile = {
+      name: null,
+      email: null,
+      phone: null,
+      city: (answers as any).currentCity ?? null,
+      gender: (answers as any).gender ?? (answers as any).recipientGender ?? null,
+      age_range: (answers as any).ageRange ?? (answers as any).recipientAge ?? null,
+      personality: (answers as any).personality ?? null,
+      scent_families: (answers as any).scentFamily ?? [],
+      occasion: (answers as any).occasion ?? null,
+      climate: (answers as any).climate ?? null,
+      dream_word: (answers as any).dreamWord ?? null,
+    };
+    persistQuizSession({
+      quiz_type: isForGift ? 'gift' : 'self-discovery',
+      quiz_answers: answers as any,
+      formula_results: recommendations as any,
+      customer_profile,
+    }).then((p) => {
+      if (p?.session_id) {
+        sessionIdRef.current = p.session_id;
+        setSessionId(p.session_id);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Phase 2: hydrate from ?session= URL (returning customer) ──
+  useEffect(() => {
+    const urlSessionId = searchParams.get('session');
+    if (!urlSessionId) return;
+    (async () => {
+      const row = await fetchSessionById(urlSessionId);
+      if (!row) return;
+      const recs = (row as any).formula_results;
+      if (Array.isArray(recs) && recs.length > 0 && recs[0]?.formula) {
+        setHydratedRecs(recs as Recommendation[]);
+      }
+      if ((row as any).completed_at) {
+        const days = Math.max(
+          0,
+          Math.round((Date.now() - new Date((row as any).completed_at).getTime()) / 86_400_000),
+        );
+        setRestoredAt(days === 0 ? 'today' : `${days} day${days === 1 ? '' : 's'} ago`);
+      }
+      sessionIdRef.current = urlSessionId;
+      setSessionId(urlSessionId);
+      // Persist UTM attribution back to row
+      const utm_source = searchParams.get('utm_source');
+      const utm_medium = searchParams.get('utm_medium');
+      const utm_campaign = searchParams.get('utm_campaign');
+      const utm_content = searchParams.get('utm_content');
+      const patch: Record<string, any> = { last_seen_at: new Date().toISOString() };
+      if (utm_source) patch.utm_source = utm_source;
+      if (utm_medium) patch.utm_medium = utm_medium;
+      if (utm_campaign) patch.utm_campaign = utm_campaign;
+      if (utm_content) patch.utm_content = utm_content;
+      try {
+        await (supabase as any).from('quiz_sessions').update(patch).eq('session_id', urlSessionId);
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const getNotesByCategory = (formula: any, category: 'top' | 'heart' | 'base') => {
     if (Array.isArray(formula)) return formula.filter((n: any) => n.category === category);
@@ -712,12 +799,14 @@ const QuizResults = () => {
       if (!variant) throw new Error('Variant not found');
 
       const engActive = engraving.enabled && engraving.text.length > 0;
-      const attributes = engActive
-        ? [
-            { key: '_Engraving Text', value: engraving.text },
-            { key: '_Engraving Style', value: 'Classic' },
-          ]
-        : undefined;
+      const sid = sessionIdRef.current || sessionId;
+      const baseAttrs: { key: string; value: string }[] = [];
+      if (engActive) {
+        baseAttrs.push({ key: '_Engraving Text', value: engraving.text });
+        baseAttrs.push({ key: '_Engraving Style', value: 'Classic' });
+      }
+      if (sid) baseAttrs.push({ key: '_bazuki_session_id', value: sid });
+      const attributes = baseAttrs.length > 0 ? baseAttrs : undefined;
 
       const ok = await addItem({
         product: {
@@ -780,12 +869,14 @@ const QuizResults = () => {
       const variantEdge = product?.variants?.edges?.find((e: any) => e.node.availableForSale) || product?.variants?.edges?.[0];
       const variant = variantEdge?.node;
       if (!product || !variant) { toast.error('Discovery Set is currently unavailable.'); return; }
+      const sid = sessionIdRef.current || sessionId;
       const ok = await addItem({
         product: { node: { id: product.id, title: product.title, description: product.description || '',
           handle: product.handle, priceRange: product.priceRange, images: product.images,
           variants: product.variants, options: product.options } },
         variantId: variant.id, variantTitle: variant.title, price: variant.price,
         quantity: 1, selectedOptions: variant.selectedOptions ?? [],
+        attributes: sid ? [{ key: '_bazuki_session_id', value: sid }] : undefined,
       });
       if (ok) { toast.success('Added 30ml Discovery Set to cart!'); useCartStore.getState().openDrawer(); }
       else toast.error('Failed to add Discovery Set. Please try again.');
@@ -842,6 +933,30 @@ const QuizResults = () => {
               <span style={{ color: GOLD_DIM }}>|</span>
               <span>Ships in 3–5 days</span>
             </p>
+            {restoredAt && (
+              <p className="mt-2" style={{ color: GOLD, fontSize: 12 }}>
+                ✦ Here are your saved results from {restoredAt}
+              </p>
+            )}
+            {showPrivacyNote && (
+              <p className="mt-3 inline-flex items-center gap-2" style={{ color: GOLD_DIM, fontSize: 11 }}>
+                <span>
+                  ✦ Your formula results are saved for 30 days so you can return anytime.{' '}
+                  <Link to="/legal/privacy" className="underline underline-offset-2">Privacy Policy</Link>
+                </span>
+                <button
+                  type="button"
+                  aria-label="Dismiss"
+                  onClick={() => {
+                    try { localStorage.setItem('bazuki:privacy-note-dismissed', '1'); } catch {}
+                    setShowPrivacyNote(false);
+                  }}
+                  style={{ color: GOLD_DIM, fontSize: 14, lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </p>
+            )}
           </div>
 
           {/* 2. URGENCY */}
@@ -926,6 +1041,11 @@ const QuizResults = () => {
             scrollToBottles={scrollToBottles}
           />
 
+          {/* 4b. EMAIL RETARGETING CAPTURE */}
+          <RetargetEmailCapture
+            sessionId={sessionId}
+            bestMatchName={recommendations.find((r) => r.id === bestId)?.name}
+          />
 
           {/* 5. SINGLE BOTTLE SECTION */}
           <div id="single-bottle-section" className="mb-14 scroll-mt-24">

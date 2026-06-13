@@ -953,6 +953,93 @@ export type Database = {
           },
         ]
       }
+      quiz_sessions: {
+        Row: {
+          browser_fingerprint: Json | null
+          completed_at: string
+          converted: boolean
+          converted_at: string | null
+          created_at: string
+          customer_profile: Json
+          email: string | null
+          expires_at: string
+          formula_results: Json
+          id: string
+          last_retargeted_at: string | null
+          last_seen_at: string | null
+          name: string | null
+          order_value: number | null
+          phone: string | null
+          quiz_answers: Json
+          quiz_type: string | null
+          retarget_count: number
+          retargeted: boolean
+          session_id: string
+          source_url: string | null
+          status: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          browser_fingerprint?: Json | null
+          completed_at?: string
+          converted?: boolean
+          converted_at?: string | null
+          created_at?: string
+          customer_profile?: Json
+          email?: string | null
+          expires_at?: string
+          formula_results?: Json
+          id?: string
+          last_retargeted_at?: string | null
+          last_seen_at?: string | null
+          name?: string | null
+          order_value?: number | null
+          phone?: string | null
+          quiz_answers?: Json
+          quiz_type?: string | null
+          retarget_count?: number
+          retargeted?: boolean
+          session_id: string
+          source_url?: string | null
+          status?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          browser_fingerprint?: Json | null
+          completed_at?: string
+          converted?: boolean
+          converted_at?: string | null
+          created_at?: string
+          customer_profile?: Json
+          email?: string | null
+          expires_at?: string
+          formula_results?: Json
+          id?: string
+          last_retargeted_at?: string | null
+          last_seen_at?: string | null
+          name?: string | null
+          order_value?: number | null
+          phone?: string | null
+          quiz_answers?: Json
+          quiz_type?: string | null
+          retarget_count?: number
+          retargeted?: boolean
+          session_id?: string
+          source_url?: string | null
+          status?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
       referral_rewards: {
         Row: {
           completed_at: string | null

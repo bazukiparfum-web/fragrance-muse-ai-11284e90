@@ -307,6 +307,34 @@ async function handleOrderPaid(supabaseClient: any, orderData: any) {
   }
 
   await addToProductionQueue(supabaseClient, updatedOrder.id, orderData, 'orders/paid', updatedOrder.payment_method ?? 'prepaid');
+
+  // Quiz session conversion tracking — look for our cart attribute.
+  try {
+    const allAttrs: Array<{ name?: string; key?: string; value?: string }> = [
+      ...((orderData.note_attributes as any[]) || []),
+      ...(((orderData.line_items as any[]) || []).flatMap((li) => li?.properties || [])),
+    ];
+    const sidAttr = allAttrs.find(
+      (a) => (a?.name || a?.key) === '_bazuki_session_id' || (a?.name || a?.key) === 'bazuki_session_id',
+    );
+    const bazukiSessionId = sidAttr?.value;
+    if (bazukiSessionId) {
+      const totalValue = parseFloat(orderData.total_price || orderData.current_total_price || '0') || null;
+      const { error: convErr } = await supabaseClient
+        .from('quiz_sessions')
+        .update({
+          converted: true,
+          converted_at: new Date().toISOString(),
+          order_value: totalValue,
+          status: 'converted',
+        })
+        .eq('session_id', bazukiSessionId);
+      if (convErr) console.error('⚠️ quiz_sessions conversion update failed', convErr);
+      else console.log('🎯 quiz_sessions marked converted', bazukiSessionId);
+    }
+  } catch (e) {
+    console.error('⚠️ conversion tagging error', e);
+  }
 }
 
 async function addToProductionQueue(
