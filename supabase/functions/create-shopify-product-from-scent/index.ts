@@ -65,12 +65,55 @@ Deno.serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
+      // Normalize formula to flat-array shape required by saved_scents_formula_nonempty CHECK constraint.
+      const rawFormula = scentPayload.formula;
+      const flat: any[] = [];
+      if (Array.isArray(rawFormula)) {
+        for (const n of rawFormula) {
+          if (!n || typeof n !== 'object') continue;
+          const name = (n.name ?? n.note ?? '').toString().trim();
+          if (!name) continue;
+          flat.push({
+            category: (n.category ?? 'heart').toString(),
+            name,
+            percentage: Number(n.percentage ?? 0) || 0,
+            ...(typeof n.intensity === 'number' ? { intensity: n.intensity } : {}),
+            ...(typeof n.cost === 'number' ? { cost: n.cost } : {}),
+          });
+        }
+      } else if (rawFormula && typeof rawFormula === 'object') {
+        for (const key of ['top', 'heart', 'base'] as const) {
+          const arr = (rawFormula as any)[key];
+          if (!Array.isArray(arr)) continue;
+          for (const n of arr) {
+            if (!n || typeof n !== 'object') continue;
+            const name = (n.name ?? n.note ?? '').toString().trim();
+            if (!name) continue;
+            flat.push({
+              category: key,
+              name,
+              percentage: Number(n.percentage ?? 0) || 0,
+              ...(typeof n.intensity === 'number' ? { intensity: n.intensity } : {}),
+              ...(typeof n.cost === 'number' ? { cost: n.cost } : {}),
+            });
+          }
+        }
+      }
+
+      if (flat.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'Formula is empty after normalization; cannot save scent.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const { data: inserted, error: insertError } = await supabaseAdmin
         .from('saved_scents')
         .insert([{
           user_id: userId,
           name: scentPayload.name,
-          formula: scentPayload.formula,
+          formula: flat,
           match_score: scentPayload.match_score ?? scentPayload.matchScore ?? null,
           intensity: scentPayload.intensity ?? null,
           longevity: scentPayload.longevity ?? null,
