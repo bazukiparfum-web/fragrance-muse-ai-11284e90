@@ -97,8 +97,9 @@ export function SaveScentDialog({ open, onOpenChange, recommendation, onSaved }:
       if (error) throw error;
 
       toast.success(`Saved as ${fragranceCode}!`);
+      onSaved?.();
       onOpenChange(false);
-      
+
       // Navigate to detail page
       navigate(`/shop/account/scents/${savedScent.id}`);
     } catch (error: any) {
