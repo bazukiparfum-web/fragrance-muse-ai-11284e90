@@ -20,10 +20,10 @@ import { toast } from 'sonner';
 import { useSEO } from '@/hooks/useSEO';
 import { JsonLd } from '@/components/JsonLd';
 import { buildBreadcrumbs } from '@/lib/breadcrumbs';
-import { FragrancePyramid } from '@/components/FragrancePyramid';
-import { toNotes } from '@/lib/noteDescriptions';
+import { FormulaReveal } from '@/components/quiz/results/FormulaReveal';
 import { isValidFormula, EMPTY_FORMULA_MESSAGE } from '@/lib/formulaValidation';
 import { ENGRAVING_FEE } from '@/hooks/useEngraving';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const quizResultsBreadcrumbs = buildBreadcrumbs([
   { name: 'Home', path: '/' },
@@ -394,6 +394,210 @@ function SingleBottleCard({
 }
 
 /* -------------------------------------------------------------- */
+/* Formula card (used in desktop grid + mobile tab)               */
+/* -------------------------------------------------------------- */
+function FormulaCard({
+  scent,
+  isBest,
+  replayKey,
+  handleAuthedSave,
+  scrollToBottles,
+}: {
+  scent: Recommendation;
+  isBest: boolean;
+  replayKey: string | number;
+  handleAuthedSave: (s: Recommendation, done: () => void) => void;
+  scrollToBottles: (id: string) => void;
+}) {
+  return (
+    <Card
+      className="overflow-hidden h-full flex flex-col"
+      style={{
+        background: CARD_BG,
+        border: isBest ? `2px solid ${GOLD}` : '1px solid rgba(201,168,76,0.3)',
+        borderRadius: 14,
+      }}
+    >
+      {isBest && (
+        <div
+          className="w-full text-center uppercase font-bold"
+          style={{
+            background: GOLD, color: BG, fontSize: 12, letterSpacing: '0.14em',
+            lineHeight: '26px', height: 26,
+          }}
+        >
+          ✦ Your Best Match
+        </div>
+      )}
+      <div className="p-6 flex flex-col flex-1">
+        <FormulaReveal
+          scent={scent}
+          replayKey={replayKey}
+          header={
+            <div className="text-center">
+              <h3
+                className="font-serif font-bold"
+                style={{ color: IVORY, fontSize: 22, lineHeight: 1.15 }}
+              >
+                {scent.name}
+              </h3>
+              <p
+                className="italic mt-2"
+                style={{ color: BODY, fontSize: 13, lineHeight: 1.5 }}
+              >
+                {scent.story}
+              </p>
+            </div>
+          }
+        />
+
+        {scent.formulationNotes && (
+          <div
+            className="text-xs italic pt-3 mt-3"
+            style={{ color: GOLD_DIM, borderTop: '1px solid rgba(201,168,76,0.15)' }}
+          >
+            {scent.formulationNotes}
+          </div>
+        )}
+
+        <div className="mt-auto pt-6">
+          <p className="text-center italic mb-2" style={{ color: GOLD_DIM, fontSize: 11 }}>
+            Not ready to order yet?
+          </p>
+          <SaveFormulaButton scent={scent} onAuthedSave={handleAuthedSave} />
+          <button
+            type="button"
+            onClick={() => scrollToBottles(scent.id)}
+            className="block w-full mt-3 text-center underline-offset-4 hover:underline"
+            style={{ color: GOLD_DIM, fontSize: 12 }}
+          >
+            Want full size? See below ↓
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* -------------------------------------------------------------- */
+/* Formula cards section — desktop grid OR mobile tab switcher    */
+/* -------------------------------------------------------------- */
+function FormulaCardsSection({
+  recommendations,
+  bestId,
+  handleAuthedSave,
+  scrollToBottles,
+}: {
+  recommendations: Recommendation[];
+  bestId: string | undefined;
+  handleAuthedSave: (s: Recommendation, done: () => void) => void;
+  scrollToBottles: (id: string) => void;
+}) {
+  const isMobile = useIsMobile();
+  const [activeId, setActiveId] = useState<string>(
+    bestId || recommendations[0]?.id,
+  );
+  const [replayCounter, setReplayCounter] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    if (bestId && !recommendations.find((r) => r.id === activeId)) {
+      setActiveId(bestId);
+    }
+  }, [bestId, recommendations, activeId]);
+
+  const handleTab = (id: string) => {
+    if (id === activeId) return;
+    setFading(true);
+    window.setTimeout(() => {
+      setActiveId(id);
+      setReplayCounter((n) => n + 1);
+      setFading(false);
+    }, 150);
+  };
+
+  if (isMobile) {
+    const active = recommendations.find((r) => r.id === activeId) || recommendations[0];
+    if (!active) return null;
+    return (
+      <div className="mb-14">
+        {/* Tabs */}
+        <div role="tablist" className="grid grid-cols-3 gap-2 mb-5">
+          {recommendations.map((r) => {
+            const isActive = r.id === activeId;
+            const isBest = r.id === bestId;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => handleTab(r.id)}
+                className="text-center transition-colors"
+                style={{
+                  background: isActive ? 'rgba(201,168,76,0.10)' : 'transparent',
+                  border: `1px solid ${isActive ? GOLD : 'rgba(201,168,76,0.2)'}`,
+                  borderRadius: 10,
+                  padding: '8px 6px',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ color: GOLD, fontSize: 11, fontWeight: 600 }}>
+                  {r.matchScore}%
+                </div>
+                <div
+                  className="truncate"
+                  style={{ color: IVORY, fontSize: 12, marginTop: 1 }}
+                >
+                  {r.name}
+                </div>
+                <div style={{ color: GOLD_DIM, fontSize: 10, marginTop: 2 }}>
+                  {isBest ? 'Best match' : 'Alternative'}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active card */}
+        <div
+          role="tabpanel"
+          style={{
+            opacity: fading ? 0 : 1,
+            transition: `opacity ${fading ? 150 : 200}ms ease-out`,
+          }}
+        >
+          <FormulaCard
+            key={`${active.id}-${replayCounter}`}
+            scent={active}
+            isBest={active.id === bestId}
+            replayKey={`${active.id}-${replayCounter}`}
+            handleAuthedSave={handleAuthedSave}
+            scrollToBottles={scrollToBottles}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop: 3 cards side-by-side
+  return (
+    <div className="grid md:grid-cols-3 gap-6 mb-14">
+      {recommendations.map((scent) => (
+        <FormulaCard
+          key={scent.id}
+          scent={scent}
+          isBest={scent.id === bestId}
+          replayKey={scent.id}
+          handleAuthedSave={handleAuthedSave}
+          scrollToBottles={scrollToBottles}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------- */
 /* Main page                                                       */
 /* -------------------------------------------------------------- */
 const QuizResults = () => {
@@ -715,94 +919,13 @@ const QuizResults = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-14">
-            {recommendations.map((scent) => {
-              const isBest = scent.id === bestId;
-              return (
-                <Card
-                  key={scent.id}
-                  className="overflow-hidden h-full flex flex-col"
-                  style={{
-                    background: CARD_BG,
-                    border: isBest ? `2px solid ${GOLD}` : '1px solid rgba(201,168,76,0.3)',
-                    borderRadius: 14,
-                  }}
-                >
-                  {isBest && (
-                    <div
-                      className="w-full text-center uppercase font-bold"
-                      style={{
-                        background: GOLD, color: BG, fontSize: 12, letterSpacing: '0.14em',
-                        lineHeight: '26px', height: 26,
-                      }}
-                    >
-                      ✦ Your Best Match
-                    </div>
-                  )}
-                  <div className="p-6 flex flex-col flex-1">
-                    <div className="flex items-center justify-between mb-3 gap-2">
-                      <h3 className="font-serif text-2xl font-bold" style={{ color: IVORY }}>{scent.name}</h3>
-                      <div
-                        className="shrink-0 rounded-full text-sm font-semibold"
-                        style={{ background: GOLD, color: BG, padding: '3px 10px' }}
-                      >
-                        {scent.matchScore}% Match
-                      </div>
-                    </div>
+          <FormulaCardsSection
+            recommendations={recommendations}
+            bestId={bestId}
+            handleAuthedSave={handleAuthedSave}
+            scrollToBottles={scrollToBottles}
+          />
 
-                    <p className="italic mb-5" style={{ color: BODY, fontSize: 13 }}>{scent.story}</p>
-
-                    <div className="mb-5 flex justify-center">
-                      <FragrancePyramid
-                        size="sm"
-                        topNotes={toNotes(getNotesByCategory(scent.formula, 'top'))}
-                        heartNotes={toNotes(getNotesByCategory(scent.formula, 'heart'))}
-                        baseNotes={toNotes(getNotesByCategory(scent.formula, 'base'))}
-                      />
-                    </div>
-
-                    {scent.formulationNotes && (
-                      <div
-                        className="text-xs italic pt-3 mt-1 mb-5"
-                        style={{ color: GOLD_DIM, borderTop: '1px solid rgba(201,168,76,0.15)' }}
-                      >
-                        {scent.formulationNotes}
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-4 mb-6 mt-auto">
-                      <div>
-                        <h4 className="text-xs uppercase mb-1.5" style={{ color: GOLD_DIM, letterSpacing: '0.1em' }}>Intensity</h4>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(201,168,76,0.15)' }}>
-                          <div className="h-full" style={{ width: `${scent.intensity * 10}%`, background: GOLD }} />
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="text-xs uppercase mb-1.5" style={{ color: GOLD_DIM, letterSpacing: '0.1em' }}>Longevity</h4>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(201,168,76,0.15)' }}>
-                          <div className="h-full" style={{ width: `${scent.longevity * 10}%`, background: GOLD }} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Save footer */}
-                    <p className="text-center italic mb-2" style={{ color: GOLD_DIM, fontSize: 11 }}>
-                      Not ready to order yet?
-                    </p>
-                    <SaveFormulaButton scent={scent} onAuthedSave={handleAuthedSave} />
-                    <button
-                      type="button"
-                      onClick={() => scrollToBottles(scent.id)}
-                      className="mt-3 text-center underline-offset-4 hover:underline"
-                      style={{ color: GOLD_DIM, fontSize: 12 }}
-                    >
-                      Want full size? See below ↓
-                    </button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
 
           {/* 5. SINGLE BOTTLE SECTION */}
           <div id="single-bottle-section" className="mb-14 scroll-mt-24">

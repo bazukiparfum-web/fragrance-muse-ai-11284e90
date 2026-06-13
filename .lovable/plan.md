@@ -1,116 +1,109 @@
-## Quiz results page redesign
+# Plan: Formula Reveal component on Quiz Results
 
-All changes live in `src/pages/QuizResults.tsx`, supported by 3 small new components and CSS tokens in `src/index.css`. No business logic, prices, or cart/Shopify code changes. Save still uses the existing `SaveScentDialog` flow under the hood for logged-in users; lead capture is added for anonymous users.
+Replace the `FragrancePyramid` block in each of the 3 AI-matched formula cards on `/shop/quiz/results` with a new interactive **FormulaReveal** component, plus a mobile tab switcher above the cards. No data, pricing, cart, or save logic changes.
 
-### New page order (top → bottom)
+## Scope (presentation only)
 
-1. Personalized header + trust bar
-2. Slim urgency bar (24-hour countdown)
-3. ✦ **Discovery Set** card (moved to top)
-4. ✦ **Your 3 AI-Matched Formulas** (Save-focused cards)
-5. ✦ **Order a Full-Size Bottle** (mini product cards, 50ml/100ml + engraving upsell)
-6. Bottom section (Retake quiz · Share · Machine promise)
-7. Existing "Learn more" guides + Scent Coaching CTA + Analytics (kept as-is)
+- Edit: `src/pages/QuizResults.tsx` — swap the pyramid block in the formula cards and add a mobile tab switcher around the cards grid.
+- New file: `src/components/quiz/results/FormulaReveal.tsx` — the full component (match ring, bottle, note bars, stats row).
+- New file: `src/components/quiz/results/FormulaResultsTabs.tsx` — mobile-only tab switcher wrapping the existing card.
+- Optional: small keyframes appended to `src/index.css` (`qr-shimmer-sweep`, reuse existing `qr-*` tokens).
 
-### Section-by-section changes
+The pyramid component itself is left in place (still used by `ProductDetail` and `ScentDetailDrawer`); only the import + JSX inside the results card change.
 
-**1. Header & trust bar (`QuizResults.tsx`)**
-- Heading: `✦ Your Perfect Matches`, 52px desktop / 32px mobile, ivory serif. Add gently pulsing `Sparkles` icon.
-- Subtext: `Custom-crafted by Bazuki AI — exclusively for you`, gold italic 16px.
-- Trust bar row: `✦ 2,400+ formulas created · ★★★★★ 4.8 rating · Ships in 3–5 days`, 12px `#C8C0B0`, gold separators.
+## New component: FormulaReveal
 
-**2. Urgency bar (new inline component, top of page)**
-- Slim full-width strip with `1px solid rgba(201,168,76,0.3)` border, dark bg.
-- Text: `⏱ Your formula is saved for HH:MM:SS` — live countdown using a `useEffect` interval starting at 24h from mount (no persistence; pure visual urgency).
-- Reduced-motion respected: countdown still ticks, no extra animation.
+Props: `{ scent: Recommendation, replayKey?: string | number }`. `replayKey` lets us re-trigger animations when the mobile tab switches.
 
-**3. Discovery Set — `DiscoverySetHero` (extract to `src/components/quiz/results/DiscoverySetHero.tsx`)**
-- Solid gold `⭐ BEST WAY TO START` badge above heading, `#0D0C0A` text on `#C9A84C`, gentle breathing scale (1.0 ↔ 1.03, 3s, reduced-motion safe).
-- Heading kept: `Get All 3 as 30ml Discovery Set`.
-- New subtitle: `The only way to try all 3 of your AI-matched formulas in 30ml — exclusively as a set`, 14px `#C8C0B0` italic.
-- Large savings badge: `YOU SAVE ₹600`, 22px bold `#0D0C0A` on gold, with CSS shimmer sweep (linear-gradient highlight translating across, 2.5s loop, reduced-motion safe).
-- CTA button: full-width 58px solid gold, text `Try All 3 Formulas — ₹1,500` (16px bold dark). Breathing gold glow via box-shadow keyframe.
-- Sub-line under button: `30ml each · All 3 AI-matched formulas · Save ₹600`, 11px `#8B6914`.
-- Action keeps existing `handleAddDiscoverySet`.
+Internal hooks:
+- `useInView` (already in repo, `src/hooks/useInView.ts`) to trigger animations when the card is visible.
+- `useCountUp` (already in repo) for the match number.
+- Local `expanded: 'top' | 'heart' | 'base' | null` state and `hintDismissed` boolean.
 
-**4. Formula cards — `FormulaResultCard` (extract to `src/components/quiz/results/FormulaResultCard.tsx`)**
-- Section header above cards: `✦ Your 3 AI-Matched Formulas` (22px ivory serif). Sub: `Explore each formula · Save for later · Or order a full-size bottle below`.
-- Card 1 (highest match score) gets a gold top banner `✦ YOUR BEST MATCH` (26px tall, full-width `#C9A84C` bg, `#0D0C0A` text) and a `2px solid #C9A84C` border. Other cards: `1px solid rgba(201,168,76,0.3)`.
-- Card body keeps name, % match pill, story, `FragrancePyramid`, intensity/longevity bars, formulationNotes.
-- Footer rebuilt:
-  - Tiny context line: `Not ready to order yet?` 11px `#8B6914` italic centered.
-  - **Save My Formula** button (see Save spec below).
-  - Text link beneath: `Want full size? See below ↓` — smooth-scrolls to `#single-bottle-section` and sets `highlightedScentId = scent.id` so the matching mini card gets a brief gold ring + size-pill ping.
+### 1. Match ring (80x80 SVG)
 
-**5. Save button — `SaveFormulaButton` (new, in same folder)**
-The Save button replaces today's plain `Save` button on each card.
+- Track circle, stroke `rgba(201,168,76,0.15)`, 6px.
+- Gold arc `#C9A84C`, 6px, round linecap, starts at 12 o'clock, sweeps clockwise. Animated via `stroke-dasharray` interpolated from 0 → `(matchScore/100) * circumference` over 1200ms cubic-bezier(0.22,1,0.36,1) once `inView` flips true.
+- Center: `<CountUp>`-driven number in 18px serif gold + small `%`.
+- Below center: 9px gold-dim caps `match`.
+- Centered above the fragrance name (move name + match badge wrapper).
 
-- Default visual: full-width 40px transparent button, `1px solid rgba(201,168,76,0.4)`, gold text 12px, `🔖` icon, label `Save My Formula`. Hover brightens border + `rgba(201,168,76,0.06)` bg.
-- Tooltip: built with existing `@/components/ui/tooltip` (shadcn). Dark `#1A1408` bg, `1px solid rgba(201,168,76,0.3)`, radius 8, padding 10/14, 12px `#C8C0B0`, line-height 1.6, gold arrow pointing down, 200ms fade. Text: `Save this unique formula to your profile — order it anytime later. We'll remind you so your scent is never lost.` Works on hover (desktop) and tap (mobile, via shadcn tooltip's `delayDuration={0}` + click open).
-- Click behavior:
-  - If `supabase.auth.getUser()` returns a user → open existing `SaveScentDialog` (current flow). On its success callback, transition button to the "Saved" state (described below) and fire confetti.
-  - If anonymous → inline expand below the button: small email input (same styling as quiz inputs: dark bg, gold border, gold-dim placeholder `your@email.com`) + small solid-gold pill `Save Formula →`. Submitting calls a new server route (see below) that stores the scent + email for retargeting.
-- Saved state (in-place transform of the button):
-  - Icon `🔖 → ✓`, label `Formula Saved ✓`, bg `rgba(201,168,76,0.1)`, border `1px solid #C9A84C`.
-  - 5 small gold sparkles burst from button (absolute-positioned spans with translate+fade keyframes, 500ms, reduced-motion: skipped).
-  - Below button: 3-second auto-dismissing success line `✓ Saved! We'll remind you to order this formula.` 11px gold italic. If email was just captured, swap to: `✓ Formula saved! Check your email for your formula details.`
+### 2. Mini bottle (80×160 SVG)
 
-**6. Single bottle section — rebuilt as mini product cards (`SingleBottleCard` in same folder)**
-- Section heading: `✦ Order a Full-Size Bottle` (26px ivory serif). Subtext: `Choose your favourite formula in 50ml or 100ml`. Anchor id `single-bottle-section`.
-- One card per recommendation. Layout:
-  - Top row: `✦ BEST MATCH` label (only on highest match) on the left, `75% Match` on the right (11px gold, letter-spacing 0.1em).
-  - Name (serif), short tagline (truncated story).
-  - `SELECT SIZE:` label, then two toggle pills `50ml — ₹1,099` / `100ml — ₹1,899`. Active = gold bg/dark text, inactive = transparent with `rgba(201,168,76,0.3)` border. 200ms transitions. State stored in existing `selectedSize` map.
-  - Add to Cart button: outline gold, full-width 46px, label `Add to Cart — ₹<price>` updates with size and engraving toggle. Hover fills solid gold, text dark.
-  - Engraving upsell row beneath: `+ ✦ Add personalised engraving — ₹199` with a switch. Collapsed by default; switch ON adds 199 to displayed price and stores an `engraving` flag for that scent. The actual engraving text input reuses the existing `EngravingPanel` component, mounted inline only when enabled.
-- Styling: `#141210` bg, radius 10, padding 20/24, gap 16 between cards. Best-match card: `1px solid rgba(201,168,76,0.5)`.
-- Cart wiring: keep `handleAddToCart(scent)` and existing Shopify variant resolution. When `engraving` is on, add `attributes` to the cart line (same pattern already used by `cartStore.addItem` with `attributes?: CartAttribute[]`): `[{ key: 'Engraving', value: <text> }]` and the existing engraving fee handling on the cart drawer/checkout stays unchanged (no business logic edits). If engraving wiring touches anything beyond passing attributes, defer to existing PDP engraving infra without altering it.
-- Highlight behavior: when `highlightedScentId` matches (from the "See below" link), card gets a 1500ms gold ring pulse.
-- Footer line stays: `30ml is only available in the Discovery Set above.`
+- Gold cap (rounded rect), gold collar, glass body (rounded rect, 1px gold stroke, transparent fill).
+- Inside body: three `<rect>` liquid layers clipped to bottle interior via `<clipPath>`.
+  - Base `#6B3E1A` ~35% of interior height (bottom).
+  - Heart `#B07840` ~30% (middle).
+  - Top `#C9B08A` ~25% (upper).
+- Animate each layer's `height` + `y` from 0 to final using CSS transitions triggered when `inView`:
+  - Base: 0ms delay, 600ms ease-out.
+  - Heart: 400ms delay, 500ms.
+  - Top: 700ms delay, 400ms.
+- Etched gold label rectangle outline + `BAZUKI` text (7px serif, 1px letter-spacing).
 
-**7. Bottom section (new block above the existing Learn-more grid)**
-- A: `Results don't feel right? Retake the quiz →` link, 13px `#8B6914`, navigates to `/shop/quiz`.
-- B: Share row: `Share your scent profile` + WhatsApp button + Copy Link button. Reuse existing `ShareFragranceDialog` if it fits, otherwise inline simple WhatsApp deep link (`https://wa.me/?text=...`) and `navigator.clipboard` for copy.
-- C: Machine promise: `✦ Your formula will be precision-filled by our AI algorithmic machine — exact concentrations, every time`, small `#8B6914` italic centered.
+### 3. Note layers
 
-### New backend route (only for anon Save lead capture)
+Section header: thin gold lines flanking `YOUR FORMULA` (10px gold caps, 0.15em tracking, centered).
 
-`supabase/functions/save-quiz-lead/index.ts` (small, service-role):
-- Body: `{ email, scent: { name, formula, match_score, intensity, longevity, prices, formulation_notes, quiz_answers } }`.
-- Validates email format.
-- Inserts into `saved_scents` with `user_id = ANON_TEST_USER_ID` (matches the pattern used by `create-shopify-product-from-scent`), plus a new nullable `lead_email` column.
-- Migration: `ALTER TABLE public.saved_scents ADD COLUMN IF NOT EXISTS lead_email text;` — additive, no policy change needed (already covered by existing RLS; only the edge function writes via service role).
-- Response: `{ ok: true, scentId }`.
-- Triggering the day-0/1/3/7 retargeting email sequence is **out of scope for this change** but the spec is noted in a code comment so the email worker can pick it up later (mentioned as a future enhancement; no email infra changes here).
+For each layer `top | heart | base`:
+- Row header: dot (8px circle, layer color), label (10px gold caps, 0.12em), note names joined with `, ` (13px ivory) on the left; duration on the right (11px gold-dim) — Top `1–2 hr`, Heart `3–4 hr`, Base `6–8 hr`.
+- Bar track 4px, `rgba(201,168,76,0.12)`, radius 2px. Fill animates `width` from 0 → 35% / 60% / 90% on `inView` with delays 200 / 450 / 700 ms. Shimmer overlay: 40px-wide `linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)`, looping `qr-shimmer-sweep` ~1.6s.
+- Row is a `<button>`; clicking toggles `expanded` (single-open accordion). On expand, render 3 pill descriptors (`opacity 0→1`, `translateY 4→0`, stagger 60ms). Descriptor pools per family — derived once per layer from the layer's first note's family via a small static map (Fresh/Citrus/Bright, Floral/Romantic/Soft, Warm/Woody/Lasting fallbacks). Tapping a row sets `hintDismissed = true`.
 
-### Design tokens
+Pill styling: `rgba(201,168,76,0.08)` bg, `1px solid rgba(201,168,76,0.2)`, radius 20, padding 3×10, 11px serif italic gold.
 
-Add to `src/index.css` `:root`:
-```css
---qr-bg: 13 12 10;            /* #0D0C0A */
---qr-card: 20 18 16;          /* #141210 */
---qr-bundle: 26 20 8;         /* #1A1408 */
---qr-gold: 201 168 76;        /* #C9A84C */
---qr-gold-bright: 240 192 64; /* #F0C040 */
---qr-gold-dim: 139 105 20;    /* #8B6914 */
---qr-ivory: 245 240 232;      /* #F5F0E8 */
---qr-body: 200 192 176;       /* #C8C0B0 */
-```
-Plus keyframes: `qr-breathe`, `qr-shimmer`, `qr-glow-pulse`, `qr-sparkle-burst`, `qr-highlight-ring`. Every animation wrapped in `@media (prefers-reduced-motion: reduce) { animation: none; }`.
+Helper hint below all bars: centered 11px `rgba(139,105,20,0.7)` italic — `Tap each layer to explore the notes`. Hidden once any row tapped.
 
-### Out of scope (explicitly preserved)
+### 4. Stats row (3 columns)
 
-- Fragrance names, match %, note compositions, prices.
-- Cart store, Shopify Storefront API calls, checkout flow.
-- `create-shopify-product-from-scent` edge function and its variant logic.
-- `SaveScentDialog` internals (only reused).
-- Quiz engine output shape / recommendation logic.
-- Existing "Learn more" guide grid, Scent Coaching CTA, and `QuizAnalytics`.
-- Email infrastructure / actual retargeting drip implementation.
+- Boxes: `rgba(201,168,76,0.06)` bg, `1px solid rgba(201,168,76,0.15)`, radius 8, padding 10×8, center text.
+- Top label (9px gold-dim caps, 0.12em): `INTENSITY` / `LONGEVITY` / `SILLAGE`.
+- Bottom value (14px serif gold, weight 500):
+  - Intensity: `scent.intensity` mapped → `Soft` (≤3), `Medium` (4–7), `Bold` (8–10).
+  - Longevity: mapped → `2–4 hr`, `4–6 hr`, `All-day`.
+  - Sillage: derived from intensity → `Intimate` / `Moderate` / `Strong`.
+- `SILLAGE` label wrapped in shadcn `Tooltip` showing `How far your scent projects from your skin` (dark card, gold border, 200ms fade).
+- Group fades in `opacity 0→1`, 300ms, with 900ms delay after `inView`.
 
-### File list
+## Mobile tab switcher
 
-- Edit: `src/pages/QuizResults.tsx`, `src/index.css`.
-- Create: `src/components/quiz/results/DiscoverySetHero.tsx`, `FormulaResultCard.tsx`, `SaveFormulaButton.tsx`, `SingleBottleCard.tsx`, `UrgencyCountdown.tsx`.
-- Create: `supabase/functions/save-quiz-lead/index.ts`.
-- Migration: one additive `ALTER TABLE saved_scents ADD COLUMN lead_email text`.
+In `QuizResults.tsx`, around the existing `<div className="grid md:grid-cols-3 ...">`:
+
+- Desktop (`md:` and up): unchanged — render all 3 cards side by side using the new FormulaReveal inside.
+- Mobile (`<768px`): hide the grid; render `FormulaResultsTabs` which shows 3 tab buttons + the currently active card.
+  - Tabs row: 3 full-width buttons. Inactive: transparent bg, `rgba(201,168,76,0.2)` border. Active: `rgba(201,168,76,0.1)` bg, `#C9A84C` border.
+  - Each tab content: `75%` match (11px gold) · name (12px ivory) · `Best match` or `Alternative` (10px gold-dim).
+  - On change: outgoing card `opacity 1→0` 150ms, then incoming `opacity 0→1` 200ms. Pass a new `replayKey` (the active scent id + a counter) to FormulaReveal so the IntersectionObserver re-runs (component remounts via React `key={replayKey}`), causing the ring count-up and bars to replay.
+
+Use the existing `useIsMobile` hook (`src/hooks/use-mobile.tsx`) to choose between the desktop grid and the mobile tabs container — single source of truth so we don't render both.
+
+## Final card element order (unchanged elsewhere)
+
+1. `✦ Your Best Match` banner (best card only) — existing.
+2. Match ring (new, centered) — replaces the inline `% Match` pill.
+3. Fragrance name (serif, large, centered under ring).
+4. Italic story description — existing.
+5. Mini bottle with layered liquid fill — new.
+6. `YOUR FORMULA` section label — new.
+7. 3 note layer rows with animated bars + tap-to-expand pills — new (replaces `FragrancePyramid`).
+8. Tap hint text — new.
+9. Thin gold divider — new.
+10. Stats row — replaces the existing Intensity/Longevity 2-col block; adds Sillage.
+11. `Not ready to order yet?` — existing.
+12. `Save My Formula` button (`SaveFormulaButton`) — existing, unchanged.
+13. `Want full size? See below ↓` — existing, unchanged.
+
+`scent.formulationNotes` (currently rendered between pyramid and stats) is kept as an optional small italic line just above the divider so no copy is lost.
+
+## Animation + accessibility
+
+- All animations gated behind `useInView` and a `prefers-reduced-motion: reduce` check (jump straight to final state, per project animation memory).
+- Ring SVG has `role="img"` + `aria-label="{matchScore} percent match"`.
+- Note rows are real `<button>`s with `aria-expanded` and `aria-controls` pointing at the pill region.
+- Mobile tab buttons use `role="tab"` / `aria-selected`, the card container `role="tabpanel"`.
+
+## Out of scope (explicitly not changed)
+
+- Fragrance data, match percentages, note compositions, prices.
+- `handleAddToCart`, `SaveFormulaButton`, Discovery Set, Single bottle section, urgency bar, footer.
+- `FragrancePyramid.tsx` itself (still used elsewhere) — only its usage in `QuizResults.tsx` is removed.
