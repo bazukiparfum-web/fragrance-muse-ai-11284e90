@@ -196,8 +196,18 @@ export const ColorPicker = ({
       : null;
 
   return (
-    <div className="color-wheel-root flex flex-col items-center space-y-8" style={cssVars}>
+    <div className="color-wheel-root flex flex-col items-center space-y-6" style={cssVars}>
       {atmosphere}
+
+      {/* Personality subtitle */}
+      <p className="cw-subtitle">
+        This helps us understand your personality — not the color of your perfume
+      </p>
+
+      {/* Info pill */}
+      <span className="cw-info-pill" role="note">
+        ✦ Reveals your personality profile
+      </span>
 
       {/* Color Wheel */}
       <div
