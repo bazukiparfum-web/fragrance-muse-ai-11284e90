@@ -683,11 +683,83 @@ const QuizResults = () => {
     },
   ];
 
-  const recommendations: Recommendation[] = location.state?.recommendations || defaultRecommendations;
+  const recommendations: Recommendation[] =
+    hydratedRecs || location.state?.recommendations || defaultRecommendations;
   const bestId = useMemo(
     () => recommendations.reduce((b, r) => (r.matchScore > b.matchScore ? r : b), recommendations[0])?.id,
     [recommendations],
   );
+
+  // ── Phase 1: auto-save quiz session on results page load ──
+  useEffect(() => {
+    // If a session= param is present we're in hydration mode; that effect handles persistence touch.
+    const urlSessionId = searchParams.get('session');
+    if (urlSessionId) return;
+    if (!recommendations || recommendations.length === 0) return;
+    const customer_profile = {
+      name: null,
+      email: null,
+      phone: null,
+      city: (answers as any).currentCity ?? null,
+      gender: (answers as any).gender ?? (answers as any).recipientGender ?? null,
+      age_range: (answers as any).ageRange ?? (answers as any).recipientAge ?? null,
+      personality: (answers as any).personality ?? null,
+      scent_families: (answers as any).scentFamily ?? [],
+      occasion: (answers as any).occasion ?? null,
+      climate: (answers as any).climate ?? null,
+      dream_word: (answers as any).dreamWord ?? null,
+    };
+    persistQuizSession({
+      quiz_type: isForGift ? 'gift' : 'self-discovery',
+      quiz_answers: answers as any,
+      formula_results: recommendations as any,
+      customer_profile,
+    }).then((p) => {
+      if (p?.session_id) {
+        sessionIdRef.current = p.session_id;
+        setSessionId(p.session_id);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Phase 2: hydrate from ?session= URL (returning customer) ──
+  useEffect(() => {
+    const urlSessionId = searchParams.get('session');
+    if (!urlSessionId) return;
+    (async () => {
+      const row = await fetchSessionById(urlSessionId);
+      if (!row) return;
+      const recs = (row as any).formula_results;
+      if (Array.isArray(recs) && recs.length > 0 && recs[0]?.formula) {
+        setHydratedRecs(recs as Recommendation[]);
+      }
+      if ((row as any).completed_at) {
+        const days = Math.max(
+          0,
+          Math.round((Date.now() - new Date((row as any).completed_at).getTime()) / 86_400_000),
+        );
+        setRestoredAt(days === 0 ? 'today' : `${days} day${days === 1 ? '' : 's'} ago`);
+      }
+      sessionIdRef.current = urlSessionId;
+      setSessionId(urlSessionId);
+      // Persist UTM attribution back to row
+      const utm_source = searchParams.get('utm_source');
+      const utm_medium = searchParams.get('utm_medium');
+      const utm_campaign = searchParams.get('utm_campaign');
+      const utm_content = searchParams.get('utm_content');
+      const patch: Record<string, any> = { last_seen_at: new Date().toISOString() };
+      if (utm_source) patch.utm_source = utm_source;
+      if (utm_medium) patch.utm_medium = utm_medium;
+      if (utm_campaign) patch.utm_campaign = utm_campaign;
+      if (utm_content) patch.utm_content = utm_content;
+      try {
+        await (supabase as any).from('quiz_sessions').update(patch).eq('session_id', urlSessionId);
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const getNotesByCategory = (formula: any, category: 'top' | 'heart' | 'base') => {
     if (Array.isArray(formula)) return formula.filter((n: any) => n.category === category);
