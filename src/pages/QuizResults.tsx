@@ -615,7 +615,8 @@ const QuizResults = () => {
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const { answers } = useQuiz();
+  const [searchParams] = useSearchParams();
+  const { answers, isForGift } = useQuiz();
   const { addItem } = useCartStore();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [selectedScent, setSelectedScent] = useState<Recommendation | null>(null);
@@ -624,6 +625,13 @@ const QuizResults = () => {
   const [addingDiscoverySet, setAddingDiscoverySet] = useState(false);
   const [addingToCart, setAddingToCart] = useState<{ [key: string]: boolean }>({});
   const [highlightedScentId, setHighlightedScentId] = useState<string | null>(null);
+  const [hydratedRecs, setHydratedRecs] = useState<Recommendation[] | null>(null);
+  const [restoredAt, setRestoredAt] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showPrivacyNote, setShowPrivacyNote] = useState<boolean>(() => {
+    try { return localStorage.getItem('bazuki:privacy-note-dismissed') !== '1'; } catch { return true; }
+  });
 
   useEffect(() => { saveQuizResponse(); }, []);
 
