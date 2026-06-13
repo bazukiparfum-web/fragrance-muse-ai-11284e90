@@ -66,8 +66,11 @@ export const ColorPicker = ({
   const [zoneFlashKey, setZoneFlashKey] = useState(0);
   const prevZoneRef = useRef<Zone | null>(null);
   const [entered, setEntered] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const zone = useMemo(() => hueToZone(hue), [hue]);
+  const trait = zoneToTrait[zone];
+  const scentHint = zoneToScentHint[zone];
 
   useEffect(() => {
     const t = setTimeout(() => setEntered(true), 1300);
