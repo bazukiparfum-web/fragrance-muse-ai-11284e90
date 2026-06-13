@@ -8,15 +8,16 @@ import { toast } from "sonner";
 import { generateFragranceCode } from "@/lib/fragranceCodeGenerator";
 import { generateVisualData } from "@/lib/fragranceColorMapper";
 import { useNavigate } from "react-router-dom";
-import { isValidFormula, EMPTY_FORMULA_MESSAGE } from "@/lib/formulaValidation";
+import { isValidFormula, EMPTY_FORMULA_MESSAGE, normalizeFormulaForDb } from "@/lib/formulaValidation";
 
 interface SaveScentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   recommendation: any;
+  onSaved?: () => void;
 }
 
-export function SaveScentDialog({ open, onOpenChange, recommendation }: SaveScentDialogProps) {
+export function SaveScentDialog({ open, onOpenChange, recommendation, onSaved }: SaveScentDialogProps) {
   const [customName, setCustomName] = useState(recommendation.name || '');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -67,6 +68,14 @@ export function SaveScentDialog({ open, onOpenChange, recommendation }: SaveScen
       // Generate visual data
       const visualData = generateVisualData(recommendation.formula);
 
+      // Normalize formula to flat-array shape required by saved_scents_formula_nonempty check constraint
+      const normalizedFormula = normalizeFormulaForDb(recommendation.formula);
+      if (normalizedFormula.length === 0) {
+        toast.error(EMPTY_FORMULA_MESSAGE);
+        setIsLoading(false);
+        return;
+      }
+
       // Save to database
       const { data: savedScent, error } = await supabase
         .from('saved_scents')
@@ -74,7 +83,7 @@ export function SaveScentDialog({ open, onOpenChange, recommendation }: SaveScen
           user_id: user.id,
           name: customName,
           fragrance_code: fragranceCode,
-          formula: recommendation.formula,
+          formula: normalizedFormula,
           intensity: recommendation.intensity,
           longevity: recommendation.longevity,
           match_score: recommendation.matchScore,
@@ -88,8 +97,9 @@ export function SaveScentDialog({ open, onOpenChange, recommendation }: SaveScen
       if (error) throw error;
 
       toast.success(`Saved as ${fragranceCode}!`);
+      onSaved?.();
       onOpenChange(false);
-      
+
       // Navigate to detail page
       navigate(`/shop/account/scents/${savedScent.id}`);
     } catch (error: any) {

@@ -1055,13 +1055,13 @@ const QuizResults = () => {
           open={saveDialogOpen}
           onOpenChange={(open) => {
             setSaveDialogOpen(open);
-            if (!open && savedCallbackRef.current) {
-              // Optimistically treat dialog close as success — SaveScentDialog already toasts on real success/error.
-              savedCallbackRef.current();
-              savedCallbackRef.current = null;
-            }
+            if (!open) savedCallbackRef.current = null;
           }}
           recommendation={selectedScent}
+          onSaved={() => {
+            savedCallbackRef.current?.();
+            savedCallbackRef.current = null;
+          }}
         />
       )}
     </div>

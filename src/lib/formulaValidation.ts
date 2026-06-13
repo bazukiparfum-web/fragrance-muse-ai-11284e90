@@ -13,18 +13,51 @@ export interface FormulaNoteLike {
   locked?: boolean;
 }
 
-function flattenFormula(formula: unknown): FormulaNoteLike[] {
+export function flattenFormula(formula: unknown): FormulaNoteLike[] {
   if (Array.isArray(formula)) return formula as FormulaNoteLike[];
   if (formula && typeof formula === "object") {
     const f = formula as Record<string, unknown>;
     const out: FormulaNoteLike[] = [];
     for (const key of ["top", "heart", "base"]) {
       const arr = f[key];
-      if (Array.isArray(arr)) out.push(...(arr as FormulaNoteLike[]));
+      if (Array.isArray(arr)) {
+        for (const n of arr as any[]) {
+          if (!n || typeof n !== "object") continue;
+          out.push({ ...n, category: n.category ?? key });
+        }
+      }
     }
     return out;
   }
   return [];
+}
+
+/**
+ * Normalize any formula shape into the flat array required by the
+ * saved_scents_formula_nonempty check constraint:
+ *   [{ category, name, percentage, ...}, ...]
+ */
+export function normalizeFormulaForDb(formula: unknown): Array<{
+  category: string;
+  name: string;
+  percentage: number;
+  intensity?: number;
+  cost?: number;
+}> {
+  return flattenFormula(formula)
+    .map((n) => {
+      const name = (n.name ?? n.note ?? "").toString().trim();
+      const percentage = Number(n.percentage ?? 0);
+      if (!name) return null;
+      return {
+        category: (n.category ?? "heart").toString(),
+        name,
+        percentage: Number.isFinite(percentage) ? percentage : 0,
+        ...(typeof (n as any).intensity === "number" ? { intensity: (n as any).intensity } : {}),
+        ...(typeof (n as any).cost === "number" ? { cost: (n as any).cost } : {}),
+      };
+    })
+    .filter((n): n is NonNullable<typeof n> => n !== null);
 }
 
 export function isValidFormula(formula: unknown): boolean {
