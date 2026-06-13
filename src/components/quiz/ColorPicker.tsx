@@ -327,12 +327,13 @@ export const ColorPicker = ({
           onChange={(e) => {
             onSaturationChange(Number(e.target.value));
             setSatDotKey((k) => k + 1);
+            setHasInteracted(true);
           }}
           className="w-full h-3 rounded-full appearance-none cursor-pointer mb-2 cw-slider [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-background [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-background [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-primary"
           style={{
             background: `linear-gradient(to right, hsl(${hue}, 0%, 50%), hsl(${hue}, 100%, 50%))`,
           }}
-          aria-label="Saturation"
+          aria-label="Personality intensity"
         />
         <span className="cw-slider-shimmer" aria-hidden="true" />
         {satDotKey > 0 && (
@@ -348,10 +349,18 @@ export const ColorPicker = ({
           />
         )}
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Desaturated</span>
-          <span>Saturated</span>
+          <span>Subtle</span>
+          <span>Vibrant</span>
         </div>
+        <p className="cw-helper">How intense is your personality?</p>
       </div>
+
+      {/* Scent connection hint — appears after first interaction */}
+      {hasInteracted && (
+        <div className="cw-scent-hint" key={zone} aria-live="polite">
+          {scentHint}
+        </div>
+      )}
 
       {/* Preview */}
       <div className="flex items-center gap-4">
