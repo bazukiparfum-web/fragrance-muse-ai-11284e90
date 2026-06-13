@@ -115,6 +115,7 @@ export const ColorPicker = ({
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     setIsDragging(true);
+    setHasInteracted(true);
     updateHueFromPointer(e.clientX, e.clientY);
   };
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
