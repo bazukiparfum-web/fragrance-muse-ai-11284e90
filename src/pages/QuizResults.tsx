@@ -198,51 +198,36 @@ const QuizResults = () => {
     try {
       console.log('Proceeding with add to cart');
 
-      // Save the scent if not already saved (not a UUID means it's not in database yet)
+      // Resolve / create the saved scent server-side (bypasses RLS via edge function).
       let scentId = scent.id;
-      console.log('Initial scent ID:', scentId, 'Is valid UUID?', isValidUUID(scent.id));
-      
-      if (!isValidUUID(scent.id)) {
-        console.log('Saving new scent to database...');
-        const { data: savedScent, error: saveError } = await supabase
-          .from('saved_scents')
-          .insert([{
-            user_id: '00000000-0000-0000-0000-000000000000',
-            name: scent.name,
-            formula: scent.formula as any,
-            match_score: scent.matchScore,
-            intensity: scent.intensity,
-            longevity: scent.longevity,
-            prices: scent.prices as any,
-            formulation_notes: scent.formulationNotes,
-            quiz_answers: answers as any,
-          }])
-          .select()
-          .single();
+      const invokeBody: Record<string, unknown> = isValidUUID(scent.id)
+        ? { scentId: scent.id }
+        : {
+            scent: {
+              name: scent.name,
+              formula: scent.formula,
+              match_score: scent.matchScore,
+              intensity: scent.intensity,
+              longevity: scent.longevity,
+              prices: scent.prices,
+              formulation_notes: scent.formulationNotes,
+              quiz_answers: answers,
+            },
+          };
 
-        if (saveError) {
-          console.error('Error saving scent:', saveError);
-          throw saveError;
-        }
-        
-        console.log('Scent saved successfully with ID:', savedScent.id);
-        scentId = savedScent.id;
-      } else {
-        console.log('Using existing scent ID:', scentId);
-      }
-
-      // Create Shopify product from scent
-      console.log('Calling create-shopify-product-from-scent with scentId:', scentId);
+      console.log('Calling create-shopify-product-from-scent', invokeBody);
       const { data, error } = await supabase.functions.invoke('create-shopify-product-from-scent', {
-        body: { scentId },
+        body: invokeBody,
       });
 
       if (error) {
         console.error('Edge function error:', error);
         throw error;
       }
-      
-      console.log('Shopify product created successfully:', data);
+
+      console.log('Shopify product resolved successfully:', data);
+      if (data?.scentId) scentId = data.scentId;
+
 
       // Find the variant for the selected size
       const variant = data.variantIds.find((v: any) => v.size === size);
