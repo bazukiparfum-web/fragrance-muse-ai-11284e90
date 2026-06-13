@@ -38,18 +38,36 @@ export function getNoteColor(family: string): string {
  * Generate visual data from a formula
  * Returns color data for visualization components
  */
-export function generateVisualData(formula: any[]): any {
+export function generateVisualData(formula: any): any {
   const visualData = {
     colors: [] as { color: string; percentage: number; name: string }[],
     dominantColor: '',
   };
 
-  if (!formula || formula.length === 0) {
+  // Normalize formula: supports flat array OR nested {top,heart,base}
+  let flat: any[] = [];
+  if (Array.isArray(formula)) {
+    flat = formula;
+  } else if (formula && typeof formula === 'object') {
+    for (const g of ['top', 'heart', 'base'] as const) {
+      const arr = (formula as any)[g];
+      if (Array.isArray(arr)) {
+        flat.push(
+          ...arr.map((n: any) => ({
+            name: n.name || n.note,
+            family: n.family || g,
+            percentage: Number(n.percentage) || 0,
+          }))
+        );
+      }
+    }
+  }
+
+  if (flat.length === 0) {
     return visualData;
   }
 
-  // Sort by percentage descending
-  const sortedFormula = [...formula].sort((a, b) => b.percentage - a.percentage);
+  const sortedFormula = [...flat].sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
 
   // Generate color array
   visualData.colors = sortedFormula.map(note => ({
