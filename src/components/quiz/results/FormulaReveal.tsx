@@ -464,6 +464,9 @@ export function FormulaReveal({ scent, replayKey, header }: Props) {
       {/* Match ring */}
       <MatchRing value={scent.matchScore} inView={inView} />
 
+      {/* Header slot (name + story) */}
+      {header && <div className="w-full mt-3">{header}</div>}
+
       {/* Mini bottle */}
       <div className="mt-3">
         <MiniBottle inView={inView} />
