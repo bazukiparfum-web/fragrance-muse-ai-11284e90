@@ -20,10 +20,10 @@ import { toast } from 'sonner';
 import { useSEO } from '@/hooks/useSEO';
 import { JsonLd } from '@/components/JsonLd';
 import { buildBreadcrumbs } from '@/lib/breadcrumbs';
-import { FragrancePyramid } from '@/components/FragrancePyramid';
-import { toNotes } from '@/lib/noteDescriptions';
+import { FormulaReveal } from '@/components/quiz/results/FormulaReveal';
 import { isValidFormula, EMPTY_FORMULA_MESSAGE } from '@/lib/formulaValidation';
 import { ENGRAVING_FEE } from '@/hooks/useEngraving';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const quizResultsBreadcrumbs = buildBreadcrumbs([
   { name: 'Home', path: '/' },
