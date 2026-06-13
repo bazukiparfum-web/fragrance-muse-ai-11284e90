@@ -799,12 +799,14 @@ const QuizResults = () => {
       if (!variant) throw new Error('Variant not found');
 
       const engActive = engraving.enabled && engraving.text.length > 0;
-      const attributes = engActive
-        ? [
-            { key: '_Engraving Text', value: engraving.text },
-            { key: '_Engraving Style', value: 'Classic' },
-          ]
-        : undefined;
+      const sid = sessionIdRef.current || sessionId;
+      const baseAttrs: { key: string; value: string }[] = [];
+      if (engActive) {
+        baseAttrs.push({ key: '_Engraving Text', value: engraving.text });
+        baseAttrs.push({ key: '_Engraving Style', value: 'Classic' });
+      }
+      if (sid) baseAttrs.push({ key: '_bazuki_session_id', value: sid });
+      const attributes = baseAttrs.length > 0 ? baseAttrs : undefined;
 
       const ok = await addItem({
         product: {
