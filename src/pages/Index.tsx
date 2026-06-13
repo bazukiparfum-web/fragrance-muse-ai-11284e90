@@ -119,6 +119,7 @@ const Index = () => {
       <JsonLd id="breadcrumbs-home" data={breadcrumbsJsonLd} />
       <JsonLd id="faq-home" data={faqJsonLd} />
       <JsonLd id="localbusiness-home" data={localBusinessJsonLd} />
+      <WelcomeBackBanner />
       <Header />
       <Hero />
       <HowItWorks />
