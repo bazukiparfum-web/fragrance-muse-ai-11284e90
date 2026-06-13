@@ -1383,29 +1383,128 @@ html { scroll-behavior: auto; }
   animation-play-state: paused;
 }
 
-/* HTML thumb */
+/* HTML thumb — gold ring + white core, dynamic color glow */
 .cw-thumb {
   position: absolute;
-  width: 24px; height: 24px;
-  margin-left: -12px; margin-top: -12px;
+  width: 18px; height: 18px;
+  margin-left: -9px; margin-top: -9px;
   border-radius: 9999px;
   pointer-events: none;
-  box-shadow: 0 0 15px var(--cw-color, hsl(43 56% 55%));
-  border: 1.5px solid rgba(0, 0, 0, 0.55);
-  animation: cw-thumb-pulse 1.5s ease-in-out infinite;
-  transition: background 200ms ease;
+  background: transparent !important;
+  border: 2px solid #C9A84C;
+  box-shadow: 0 0 12px var(--cw-color, #C9A84C);
+  transition: box-shadow 180ms ease;
   z-index: 2;
 }
 .cw-thumb-core {
   position: absolute;
-  inset: 5px;
+  top: 50%; left: 50%;
+  width: 10px; height: 10px;
+  margin: -5px 0 0 -5px;
   border-radius: 9999px;
-  border: 2px solid #fff;
-  background: transparent;
+  background: #FFFFFF;
+  border: none;
 }
-@keyframes cw-thumb-pulse {
-  0%, 100% { box-shadow: 0 0 8px var(--cw-color); }
-  50%      { box-shadow: 0 0 22px var(--cw-color); }
+
+/* Personality trait label (center of wheel) */
+.cw-trait {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  pointer-events: none;
+  text-align: center;
+  animation: cw-trait-enter 220ms ease-out both;
+}
+.cw-trait-dot {
+  width: 12px; height: 12px;
+  border-radius: 9999px;
+  box-shadow: 0 0 8px var(--cw-color, #C9A84C);
+}
+.cw-trait-word {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 18px;
+  color: #F5F0E8;
+  line-height: 1.1;
+}
+.cw-trait-desc {
+  font-size: 11px;
+  color: #8B6914;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+@keyframes cw-trait-enter {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Personality context elements */
+.cw-subtitle {
+  text-align: center;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #C9A84C;
+  letter-spacing: 0.02em;
+  margin-top: 12px;
+  animation: cw-fade-in 300ms ease-out 150ms both;
+}
+.cw-info-pill {
+  display: inline-block;
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 11px;
+  color: #C9A84C;
+  letter-spacing: 0.12em;
+  margin-bottom: 20px;
+  animation: cw-fade-in 400ms ease-out 900ms both;
+}
+.cw-helper {
+  text-align: center;
+  font-style: italic;
+  font-size: 11px;
+  color: #8B6914;
+  margin-top: 6px;
+}
+.cw-scent-hint {
+  width: 100%;
+  max-width: 28rem;
+  margin: 4px auto 0;
+  background: rgba(201,168,76,0.05);
+  border-top: 1px solid rgba(201,168,76,0.15);
+  padding: 12px 20px;
+  text-align: center;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: rgba(201,168,76,0.7);
+  animation: cw-fade-in 400ms ease-out both;
+}
+@keyframes cw-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (max-width: 767px) {
+  .color-wheel-root .cw-wheel-wrap,
+  .color-wheel-root .cw-wheel {
+    width: 85vw;
+    max-width: 320px;
+    height: auto;
+  }
+  .cw-subtitle { font-size: 13px; }
+  .cw-trait-word { font-size: 15px; }
+  .cw-scent-hint { font-size: 11px; }
+  .cw-info-pill { white-space: nowrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cw-trait, .cw-subtitle, .cw-info-pill, .cw-scent-hint { animation: none; }
 }
 
 /* Trail */
