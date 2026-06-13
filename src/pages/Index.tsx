@@ -7,6 +7,7 @@ import TrustProof from "@/components/home/TrustProof";
 import B2BTeaser from "@/components/home/B2BTeaser";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
+import WelcomeBackBanner from "@/components/retarget/WelcomeBackBanner";
 import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
