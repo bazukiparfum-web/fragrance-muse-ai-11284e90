@@ -22,6 +22,28 @@ const hueToZone = (h: number): Zone => {
   return 'pink';
 };
 
+const zoneToTrait: Record<Zone, { word: string; desc: string }> = {
+  red:    { word: 'Passionate',   desc: 'Intense · Driven' },
+  orange: { word: 'Adventurous',  desc: 'Free · Spirited' },
+  yellow: { word: 'Optimistic',   desc: 'Bright · Warm' },
+  green:  { word: 'Balanced',     desc: 'Grounded · Whole' },
+  cyan:   { word: 'Calm',         desc: 'Peaceful · Focused' },
+  blue:   { word: 'Calm',         desc: 'Peaceful · Focused' },
+  purple: { word: 'Mysterious',   desc: 'Deep · Intuitive' },
+  pink:   { word: 'Romantic',     desc: 'Tender · Loving' },
+};
+
+const zoneToScentHint: Record<Zone, string> = {
+  red:    '✦ Hints at bold, spicy oriental notes',
+  orange: '✦ Points toward warm amber accords',
+  yellow: '✦ Suggests bright citrus top notes',
+  green:  '✦ Leans toward fresh herbal scents',
+  cyan:   '✦ Suggests clean aquatic freshness',
+  blue:   '✦ Suggests clean aquatic freshness',
+  purple: '✦ Points toward rich oud & musk',
+  pink:   '✦ Hints at delicate floral accords',
+};
+
 interface Trail { id: number; x: number; y: number; }
 interface BurstDot { deg: number; dist: number; }
 
