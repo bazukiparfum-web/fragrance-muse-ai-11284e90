@@ -3908,3 +3908,72 @@ html { scroll-behavior: auto; }
     transform: translate(-50%, 0) !important;
   }
 }
+
+/* ========= Quiz Results redesign tokens & animations ========= */
+:root {
+  --qr-bg: #0D0C0A;
+  --qr-card: #141210;
+  --qr-bundle: #1A1408;
+  --qr-gold: #C9A84C;
+  --qr-gold-bright: #F0C040;
+  --qr-gold-dim: #8B6914;
+  --qr-ivory: #F5F0E8;
+  --qr-body: #C8C0B0;
+}
+
+@keyframes qr-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.03); }
+}
+@keyframes qr-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.55), 0 0 18px rgba(201,168,76,0.25); }
+  50%      { box-shadow: 0 0 0 6px rgba(201,168,76,0.00), 0 0 28px rgba(201,168,76,0.55); }
+}
+@keyframes qr-shimmer {
+  0%   { background-position: -160% 0; }
+  100% { background-position: 260% 0; }
+}
+@keyframes qr-sparkle-burst {
+  0%   { transform: translate(0,0) scale(0.4); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(var(--qr-x,0), var(--qr-y,-32px)) scale(1); opacity: 0; }
+}
+@keyframes qr-highlight-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+  30%      { box-shadow: 0 0 0 4px rgba(201,168,76,0.55); }
+  70%      { box-shadow: 0 0 0 6px rgba(201,168,76,0.25); }
+}
+@keyframes qr-icon-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50%      { transform: scale(1.15); opacity: 1; }
+}
+
+.qr-breathe { animation: qr-breathe 3s ease-in-out infinite; }
+.qr-glow    { animation: qr-glow-pulse 2.4s ease-in-out infinite; }
+.qr-icon-pulse { animation: qr-icon-pulse 2.6s ease-in-out infinite; }
+.qr-shimmer {
+  background-image: linear-gradient(100deg,
+    rgba(255,255,255,0) 30%,
+    rgba(255,255,255,0.55) 50%,
+    rgba(255,255,255,0) 70%);
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: qr-shimmer 2.6s linear infinite;
+}
+.qr-highlight { animation: qr-highlight-ring 1.5s ease-in-out 1; }
+.qr-sparkle {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--qr-gold-bright);
+  box-shadow: 0 0 6px rgba(240,192,64,0.8);
+  pointer-events: none;
+  animation: qr-sparkle-burst 600ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qr-breathe, .qr-glow, .qr-shimmer, .qr-icon-pulse,
+  .qr-highlight, .qr-sparkle {
+    animation: none !important;
+  }
+}
