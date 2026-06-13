@@ -50,7 +50,47 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { scentId } = await req.json();
+    const body = await req.json();
+    let { scentId } = body as { scentId?: string };
+    const scentPayload = (body as any).scent;
+
+    const isUUID = (s: unknown): s is string =>
+      typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
+    // If no UUID scentId, create the saved_scent server-side (bypasses RLS via service role).
+    if (!isUUID(scentId)) {
+      if (!scentPayload || !scentPayload.name || !scentPayload.formula) {
+        return new Response(
+          JSON.stringify({ error: 'Missing scent payload (name + formula required when scentId is not provided).' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const { data: inserted, error: insertError } = await supabaseAdmin
+        .from('saved_scents')
+        .insert([{
+          user_id: userId,
+          name: scentPayload.name,
+          formula: scentPayload.formula,
+          match_score: scentPayload.match_score ?? scentPayload.matchScore ?? null,
+          intensity: scentPayload.intensity ?? null,
+          longevity: scentPayload.longevity ?? null,
+          prices: scentPayload.prices ?? null,
+          formulation_notes: scentPayload.formulation_notes ?? scentPayload.formulationNotes ?? null,
+          quiz_answers: scentPayload.quiz_answers ?? scentPayload.quizAnswers ?? null,
+        }])
+        .select('id, name, shopify_product_id')
+        .single();
+
+      if (insertError || !inserted) {
+        console.error('[custom-scent] insert failed:', insertError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to save scent: ' + (insertError?.message ?? 'unknown') }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      scentId = inserted.id;
+    }
+
     console.log('[custom-scent] resolving variants for scent:', scentId, 'user:', userId);
 
     // Verify the scent exists (skip user filter in bypass mode for E2E testing).
@@ -70,6 +110,7 @@ Deno.serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
 
     // Track the shared product id on the scent (helps webhook / production queue
     // mapping). Best-effort — don't fail the request if this write is blocked.
