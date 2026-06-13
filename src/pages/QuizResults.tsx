@@ -460,7 +460,7 @@ function FormulaCard({
           </div>
         )}
 
-        <div className="mt-6 mt-auto pt-4">
+        <div className="mt-auto pt-6">
           <p className="text-center italic mb-2" style={{ color: GOLD_DIM, fontSize: 11 }}>
             Not ready to order yet?
           </p>
