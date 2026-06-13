@@ -43,6 +43,8 @@ interface Props {
   scent: Scent;
   /** Change to remount and replay animations (e.g. when mobile tab switches). */
   replayKey?: string | number;
+  /** Slot rendered between the match ring and the mini bottle (name + story). */
+  header?: React.ReactNode;
 }
 
 const PILL_DESCRIPTORS: Record<LayerKey, string[]> = {
