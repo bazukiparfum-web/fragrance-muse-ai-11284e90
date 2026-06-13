@@ -869,12 +869,14 @@ const QuizResults = () => {
       const variantEdge = product?.variants?.edges?.find((e: any) => e.node.availableForSale) || product?.variants?.edges?.[0];
       const variant = variantEdge?.node;
       if (!product || !variant) { toast.error('Discovery Set is currently unavailable.'); return; }
+      const sid = sessionIdRef.current || sessionId;
       const ok = await addItem({
         product: { node: { id: product.id, title: product.title, description: product.description || '',
           handle: product.handle, priceRange: product.priceRange, images: product.images,
           variants: product.variants, options: product.options } },
         variantId: variant.id, variantTitle: variant.title, price: variant.price,
         quantity: 1, selectedOptions: variant.selectedOptions ?? [],
+        attributes: sid ? [{ key: '_bazuki_session_id', value: sid }] : undefined,
       });
       if (ok) { toast.success('Added 30ml Discovery Set to cart!'); useCartStore.getState().openDrawer(); }
       else toast.error('Failed to add Discovery Set. Please try again.');
