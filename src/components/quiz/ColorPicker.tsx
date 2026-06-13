@@ -280,6 +280,13 @@ export const ColorPicker = ({
           <span className="cw-thumb-core" />
         </span>
 
+        {/* Personality trait in wheel center */}
+        <div className="cw-trait" key={trait.word} aria-live="polite">
+          <span className="cw-trait-dot" style={{ background: colorValue }} aria-hidden="true" />
+          <span className="cw-trait-word">{trait.word}</span>
+          <span className="cw-trait-desc">{trait.desc}</span>
+        </div>
+
         {/* Release burst */}
         {burstKey > 0 && (
           <div
