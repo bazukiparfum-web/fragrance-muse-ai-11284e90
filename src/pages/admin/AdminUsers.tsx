@@ -201,15 +201,20 @@ const AdminUsers = () => {
         </p>
       )}
 
-      <Card className="p-4 mb-4 flex gap-3">
-        <Input
-          placeholder="Search by email or name…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && load()}
-          className="max-w-xs"
-        />
-        <Button onClick={load}>Search</Button>
+      <Card className="p-4 mb-4 flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex gap-3 flex-1">
+          <Input
+            placeholder="Search by email or name…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && load()}
+            className="max-w-xs"
+          />
+          <Button onClick={load} variant="outline">Search</Button>
+        </div>
+        <Button onClick={() => setInviteOpen(true)}>
+          <UserPlus className="h-4 w-4 mr-2" /> Invite user
+        </Button>
       </Card>
 
       <Card>
