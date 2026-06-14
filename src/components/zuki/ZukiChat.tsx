@@ -267,6 +267,7 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
   const reducedMotion = typeof window !== "undefined"
     && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+  const panelWidth = isMobile ? "100vw" : (typeof window !== "undefined" && window.innerWidth < 1024 ? 320 : 360);
   return (
     <div
       role="dialog"
@@ -275,7 +276,7 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
       style={{
         bottom: isMobile ? 0 : 88,
         right: isMobile ? 0 : 24,
-        width: isMobile ? "100vw" : 360,
+        width: panelWidth,
         height: isMobile ? "100dvh" : 520,
         background: "#0D0C0A",
         border: "1px solid rgba(201,168,76,0.3)",
@@ -354,29 +355,42 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
       {/* Quick replies */}
       {!isStreaming && (
         <div
-          className="flex gap-2 overflow-x-auto px-3 pt-2"
+          className="relative"
           style={{ background: "#141210", borderTop: "1px solid rgba(201,168,76,0.08)" }}
         >
-          {quickReplies.map((q) => (
-            <button
-              key={q}
-              onClick={() => sendMessage(q)}
-              className="shrink-0 transition-colors"
-              style={{
-                background: "rgba(201,168,76,0.08)",
-                border: "1px solid rgba(201,168,76,0.25)",
-                borderRadius: 20,
-                padding: "6px 14px",
-                color: "#C9A84C",
-                fontSize: 12,
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.16)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.08)")}
-            >
-              {q}
-            </button>
-          ))}
+          <div
+            className="zuki-quick-replies flex gap-2 overflow-x-auto px-3 pt-2 pb-1"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollBehavior: "smooth" }}
+          >
+            {quickReplies.map((q) => (
+              <button
+                key={q}
+                onClick={() => sendMessage(q)}
+                className="shrink-0 transition-colors"
+                style={{
+                  background: "rgba(201,168,76,0.08)",
+                  border: "1px solid rgba(201,168,76,0.25)",
+                  borderRadius: 20,
+                  padding: "6px 14px",
+                  color: "#C9A84C",
+                  fontSize: 12,
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.16)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.08)")}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+          <div
+            aria-hidden
+            style={{
+              position: "absolute", right: 0, top: 0, bottom: 0, width: 32,
+              background: "linear-gradient(to right, transparent, #141210)",
+              pointerEvents: "none",
+            }}
+          />
         </div>
       )}
 
@@ -529,6 +543,8 @@ const WhatsAppCard = () => (
 
 const LazyPanel = ZukiPanel; // already a normal component; "lazy" requirement just means we don't mount it until open
 
+const NOTIF_DISMISSED_KEY = "bazuki_zuki_notif_dismissed";
+
 export default function ZukiChat() {
   const [open, setOpen] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
@@ -536,7 +552,6 @@ export default function ZukiChat() {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
-  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
@@ -544,23 +559,20 @@ export default function ZukiChat() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Inactivity → show notification
+  // Notification bubble: show after 15s, hide after 8s more, once per session
   useEffect(() => {
     if (open) { setShowNotif(false); return; }
-    const delay = isMobile ? 20000 : 15000;
-    const reset = () => {
-      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    let dismissed = false;
+    try { dismissed = sessionStorage.getItem(NOTIF_DISMISSED_KEY) === "1"; } catch { /* ignore */ }
+    if (dismissed) return;
+
+    const showTimer = setTimeout(() => setShowNotif(true), 15000);
+    const hideTimer = setTimeout(() => {
       setShowNotif(false);
-      inactivityTimer.current = setTimeout(() => setShowNotif(true), delay);
-    };
-    reset();
-    const evts = ["mousemove", "keydown", "scroll", "touchstart"];
-    evts.forEach((e) => window.addEventListener(e, reset, { passive: true }));
-    return () => {
-      evts.forEach((e) => window.removeEventListener(e, reset));
-      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-    };
-  }, [open, isMobile]);
+      try { sessionStorage.setItem(NOTIF_DISMISSED_KEY, "1"); } catch { /* ignore */ }
+    }, 23000);
+    return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
+  }, [open]);
 
   // Rotate notification messages every 4s
   useEffect(() => {
@@ -568,6 +580,11 @@ export default function ZukiChat() {
     const t = setInterval(() => setNotifIdx((i) => (i + 1) % NOTIF_MESSAGES.length), 4000);
     return () => clearInterval(t);
   }, [showNotif]);
+
+  const dismissNotif = () => {
+    setShowNotif(false);
+    try { sessionStorage.setItem(NOTIF_DISMISSED_KEY, "1"); } catch { /* ignore */ }
+  };
 
   const size = isMobile ? 52 : 56;
 
@@ -594,17 +611,32 @@ export default function ZukiChat() {
           0% { transform: translateX(20px); opacity: 0; }
           100% { transform: translateX(0); opacity: 1; }
         }
-        @keyframes zuki-spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+        @keyframes zuki-fade-in {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
         }
         .zuki-scroll::-webkit-scrollbar { width: 3px; }
         .zuki-scroll::-webkit-scrollbar-track { background: transparent; }
         .zuki-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.4); border-radius: 2px; }
+        .zuki-quick-replies::-webkit-scrollbar { display: none; }
         @media (prefers-reduced-motion: reduce) {
           .zuki-btn, .zuki-notif { animation: none !important; }
         }
       `}</style>
+
+      {/* Mobile backdrop */}
+      {open && isMobile && (
+        <div
+          aria-hidden
+          onClick={() => setOpen(false)}
+          className="fixed inset-0"
+          style={{
+            background: "rgba(13,12,10,0.85)",
+            zIndex: 9998,
+            animation: "zuki-fade-in 200ms ease-out",
+          }}
+        />
+      )}
 
       {open && (
         <Suspense fallback={null}>
@@ -634,7 +666,7 @@ export default function ZukiChat() {
             boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
             cursor: "pointer",
           }}
-          onClick={() => setOpen(true)}
+          onClick={() => { dismissNotif(); setOpen(true); }}
         >
           {NOTIF_MESSAGES[notifIdx]}
         </div>
@@ -652,14 +684,16 @@ export default function ZukiChat() {
           width: size,
           height: size,
           borderRadius: "50%",
-          background: "#C9A84C",
-          color: "#fff",
+          background: open ? "#1A1408" : "#C9A84C",
+          color: open ? "#C9A84C" : "#0D0C0A",
           zIndex: 9999,
-          border: "none",
+          border: open ? "1.5px solid #C9A84C" : "none",
           cursor: "pointer",
-          boxShadow: "0 4px 20px rgba(201,168,76,0.4)",
-          animation: open ? "zuki-spin 400ms ease" : "zuki-breathe 2.5s ease-in-out infinite",
-          transition: "transform 200ms ease",
+          boxShadow: open
+            ? "0 4px 20px rgba(0,0,0,0.5)"
+            : "0 4px 20px rgba(201,168,76,0.4)",
+          animation: open ? undefined : "zuki-breathe 2.5s ease-in-out infinite",
+          transition: "transform 200ms ease, background 200ms ease, color 200ms ease",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.08)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
