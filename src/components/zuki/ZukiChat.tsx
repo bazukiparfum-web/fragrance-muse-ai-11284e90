@@ -267,6 +267,7 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
   const reducedMotion = typeof window !== "undefined"
     && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+  const panelWidth = isMobile ? "100vw" : (typeof window !== "undefined" && window.innerWidth < 1024 ? 320 : 360);
   return (
     <div
       role="dialog"
@@ -275,7 +276,7 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
       style={{
         bottom: isMobile ? 0 : 88,
         right: isMobile ? 0 : 24,
-        width: isMobile ? "100vw" : 360,
+        width: panelWidth,
         height: isMobile ? "100dvh" : 520,
         background: "#0D0C0A",
         border: "1px solid rgba(201,168,76,0.3)",
