@@ -48,6 +48,7 @@ import {
   Ban,
   CircleCheck,
   Trash2,
+  UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -78,6 +79,9 @@ const AdminUsers = () => {
 
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [editForm, setEditForm] = useState({ full_name: '', email: '', phone: '' });
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', phone: '' });
 
   const load = async () => {
     setLoading(true);
