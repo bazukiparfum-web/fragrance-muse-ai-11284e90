@@ -339,6 +339,58 @@ const AdminUsers = () => {
         )}
       </Card>
 
+      {/* Invite dialog */}
+      <Dialog open={inviteOpen} onOpenChange={(o) => !busy && setInviteOpen(o)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite a new user</DialogTitle>
+            <DialogDescription>
+              We'll create their account and email them a secure link to set their password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite_email">Email *</Label>
+              <Input
+                id="invite_email"
+                type="email"
+                autoFocus
+                placeholder="name@example.com"
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                maxLength={254}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite_name">Full name</Label>
+              <Input
+                id="invite_name"
+                value={inviteForm.full_name}
+                onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite_phone">Phone</Label>
+              <Input
+                id="invite_phone"
+                value={inviteForm.phone}
+                onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })}
+                maxLength={32}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteOpen(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={submitInvite} disabled={busy}>
+              {busy ? 'Sending…' : 'Send invite'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
