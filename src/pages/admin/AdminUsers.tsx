@@ -113,6 +113,8 @@ const AdminUsers = () => {
       toast.success(success);
       setPending(null);
       setEditing(null);
+      setInviteOpen(false);
+      setInviteForm({ email: '', full_name: '', phone: '' });
       setDeleteConfirm('');
       load();
     } catch (e: any) {
@@ -120,6 +122,23 @@ const AdminUsers = () => {
     } finally {
       setBusy(false);
     }
+  };
+
+  const submitInvite = async () => {
+    const email = inviteForm.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Enter a valid email address');
+      return;
+    }
+    await invoke(
+      {
+        action: 'invite_user',
+        email,
+        full_name: inviteForm.full_name.trim(),
+        phone: inviteForm.phone.trim(),
+      },
+      `Invitation sent to ${email}`,
+    );
   };
 
   const confirmAction = async () => {
