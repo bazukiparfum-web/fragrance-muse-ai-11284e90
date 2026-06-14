@@ -48,6 +48,7 @@ import {
   Ban,
   CircleCheck,
   Trash2,
+  UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -79,6 +80,9 @@ const AdminUsers = () => {
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [editForm, setEditForm] = useState({ full_name: '', email: '', phone: '' });
 
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', phone: '' });
+
   const load = async () => {
     setLoading(true);
     try {
@@ -109,6 +113,8 @@ const AdminUsers = () => {
       toast.success(success);
       setPending(null);
       setEditing(null);
+      setInviteOpen(false);
+      setInviteForm({ email: '', full_name: '', phone: '' });
       setDeleteConfirm('');
       load();
     } catch (e: any) {
@@ -116,6 +122,23 @@ const AdminUsers = () => {
     } finally {
       setBusy(false);
     }
+  };
+
+  const submitInvite = async () => {
+    const email = inviteForm.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Enter a valid email address');
+      return;
+    }
+    await invoke(
+      {
+        action: 'invite_user',
+        email,
+        full_name: inviteForm.full_name.trim(),
+        phone: inviteForm.phone.trim(),
+      },
+      `Invitation sent to ${email}`,
+    );
   };
 
   const confirmAction = async () => {
@@ -178,15 +201,20 @@ const AdminUsers = () => {
         </p>
       )}
 
-      <Card className="p-4 mb-4 flex gap-3">
-        <Input
-          placeholder="Search by email or name…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && load()}
-          className="max-w-xs"
-        />
-        <Button onClick={load}>Search</Button>
+      <Card className="p-4 mb-4 flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex gap-3 flex-1">
+          <Input
+            placeholder="Search by email or name…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && load()}
+            className="max-w-xs"
+          />
+          <Button onClick={load} variant="outline">Search</Button>
+        </div>
+        <Button onClick={() => setInviteOpen(true)}>
+          <UserPlus className="h-4 w-4 mr-2" /> Invite user
+        </Button>
       </Card>
 
       <Card>
@@ -310,6 +338,58 @@ const AdminUsers = () => {
           </Table>
         )}
       </Card>
+
+      {/* Invite dialog */}
+      <Dialog open={inviteOpen} onOpenChange={(o) => !busy && setInviteOpen(o)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite a new user</DialogTitle>
+            <DialogDescription>
+              We'll create their account and email them a secure link to set their password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite_email">Email *</Label>
+              <Input
+                id="invite_email"
+                type="email"
+                autoFocus
+                placeholder="name@example.com"
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                maxLength={254}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite_name">Full name</Label>
+              <Input
+                id="invite_name"
+                value={inviteForm.full_name}
+                onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite_phone">Phone</Label>
+              <Input
+                id="invite_phone"
+                value={inviteForm.phone}
+                onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })}
+                maxLength={32}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteOpen(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={submitInvite} disabled={busy}>
+              {busy ? 'Sending…' : 'Send invite'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>

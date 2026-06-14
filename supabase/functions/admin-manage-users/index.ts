@@ -210,6 +210,72 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (action === 'invite_user') {
+      const email = (body.email ?? '').toString().trim().toLowerCase().slice(0, 254);
+      const full_name = (body.full_name ?? '').toString().trim().slice(0, 120);
+      const phone = (body.phone ?? '').toString().trim().slice(0, 32);
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+        throw new Error('Valid email is required');
+
+      const { data: existing } = await admin
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+      if (existing) throw new Error('A user with this email already exists');
+
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: { full_name: full_name || null, phone: phone || null },
+      });
+      if (createErr) throw createErr;
+      const newUserId = created.user?.id;
+      if (!newUserId) throw new Error('Failed to create user');
+
+      try {
+        const patch: Record<string, unknown> = { email };
+        if (full_name) patch.full_name = full_name;
+        if (phone) patch.phone = phone;
+        await admin.from('profiles').upsert({ id: newUserId, ...patch });
+
+        const siteUrl =
+          Deno.env.get('SITE_URL') ??
+          'https://bazukifragrance.com';
+
+        const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+          type: 'recovery',
+          email,
+          options: { redirectTo: `${siteUrl}/reset-password` },
+        });
+        if (linkErr) throw linkErr;
+        const setPasswordUrl =
+          (linkData as any)?.properties?.action_link ??
+          (linkData as any)?.action_link;
+        if (!setPasswordUrl) throw new Error('Failed to generate password link');
+
+        const { error: sendErr } = await admin.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: 'admin-user-invite',
+            recipientEmail: email,
+            idempotencyKey: `invite-${newUserId}`,
+            templateData: {
+              fullName: full_name || null,
+              setPasswordUrl,
+              siteName: 'Bazuki',
+            },
+          },
+        });
+        if (sendErr) throw sendErr;
+      } catch (e) {
+        // best-effort rollback so we don't leave an orphan account
+        try { await admin.auth.admin.deleteUser(newUserId); } catch { /* ignore */ }
+        throw e;
+      }
+
+      return json({ ok: true, userId: newUserId });
+    }
+
     throw new Error('Unknown action');
   } catch (e) {
     return json({ error: (e as Error).message }, 400);
