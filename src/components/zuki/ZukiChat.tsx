@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { Sparkles, X, Minus, Send, ArrowLeft } from "lucide-react";
+import { classifyInput, fallbackMessage } from "./safety";
+
 
 type Role = "user" | "assistant";
 type Msg = { role: Role; content: string; ts: number };
