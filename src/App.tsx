@@ -52,6 +52,8 @@ import NotFound from "./pages/NotFound";
 import FindYourSignatureScent from "./pages/guides/FindYourSignatureScent";
 import ShopifyDebugPanel from "./components/dev/ShopifyDebugPanel";
 import BazukiCartDrawer from "./components/cart/BazukiCartDrawer";
+import ZukiChat from "./components/zuki/ZukiChat";
+
 import CheckoutTestChecklist from "./components/dev/CheckoutTestChecklist";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Unsubscribe from "./pages/Unsubscribe";
@@ -133,6 +135,7 @@ const AppInner = () => {
         </Routes>
       </BrowserRouter>
       <BazukiCartDrawer />
+      <ZukiChat />
       {(import.meta.env.DEV ||
         (typeof window !== 'undefined' &&
           new URLSearchParams(window.location.search).get('debug') === '1')) && (
