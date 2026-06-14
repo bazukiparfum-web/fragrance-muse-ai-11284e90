@@ -320,6 +320,13 @@ const Hero = () => {
                 className="w-full h-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.7)]"
                 style={{ animation: "bz-bob 6s ease-in-out infinite", willChange: "transform" }}
               />
+              {/* AI Fragrance sticker — upper-left of bottle */}
+              <div
+                className="absolute"
+                style={{ top: "8%", left: "-30px", zIndex: 10 }}
+              >
+                <AIFragranceSticker />
+              </div>
             </div>
 
             {/* Fragrance pyramid */}
