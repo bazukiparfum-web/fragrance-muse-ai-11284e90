@@ -102,4 +102,9 @@ verify_jwt = false
 [functions.quiz-retarget-scheduler]
 verify_jwt = false
 
+[functions.zuki-chat]
+verify_jwt = false
+
+
+
 
