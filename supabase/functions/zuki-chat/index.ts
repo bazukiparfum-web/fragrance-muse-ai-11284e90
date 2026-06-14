@@ -129,12 +129,28 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Rate limit per IP
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (rateLimited(ip)) {
+      return sseFallback("Whoa, slow down a sec! 🌸 Try again in a moment.");
+    }
+
     const { messages, model } = await req.json();
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(JSON.stringify({ error: "messages required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Input gate: classify the latest user turn (strip the "[Context:...]\n\nUser: " wrapper)
+    const last = messages[messages.length - 1];
+    if (last?.role === "user" && typeof last.content === "string") {
+      const userText = last.content.replace(/^\[Context:[^\]]*\]\s*\n+User:\s*/i, "");
+      const verdict = classifyInput(userText);
+      if (verdict.blocked && verdict.reason) {
+        return sseFallback(fallbackMessage(verdict.reason));
+      }
     }
 
     const upstream = await fetch("https://api.anthropic.com/v1/messages", {
@@ -155,14 +171,53 @@ Deno.serve(async (req) => {
 
     if (!upstream.ok || !upstream.body) {
       const errText = await upstream.text();
-      return new Response(
-        JSON.stringify({ error: "Anthropic error", detail: errText }),
-        { status: upstream.status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      console.error("Anthropic error:", upstream.status, errText);
+      return sseFallback("Oops, I got a bit lost there! Try again? 🙈");
     }
 
-    // Pass-through SSE stream
-    return new Response(upstream.body, {
+    // Output gate: transform stream that buffers early deltas and substitutes a fallback
+    // if the model emits a refusal sentinel or unsafe content.
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let buffered = "";
+    let decision: "pending" | "pass" | "block" = "pending";
+    const INSPECT_CHARS = 200;
+
+    const transform = new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        if (decision === "block") return;
+        const text = decoder.decode(chunk, { stream: true });
+
+        if (decision === "pending") {
+          // Extract accumulated assistant text from SSE deltas to inspect
+          for (const line of text.split("\n")) {
+            if (!line.startsWith("data:")) continue;
+            const payload = line.slice(5).trim();
+            if (!payload || payload === "[DONE]") continue;
+            try {
+              const evt = JSON.parse(payload);
+              if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+                buffered += evt.delta.text || "";
+              }
+            } catch { /* ignore */ }
+          }
+          const verdict = classifyOutput(buffered);
+          if (verdict?.blocked) {
+            decision = "block";
+            const fb = fallbackMessage(verdict.reason);
+            controller.enqueue(encoder.encode(
+              `data: ${JSON.stringify({ type: "content_block_delta", delta: { type: "text_delta", text: fb } })}\n\n` +
+              `data: [DONE]\n\n`,
+            ));
+            return;
+          }
+          if (buffered.length >= INSPECT_CHARS) decision = "pass";
+        }
+        controller.enqueue(chunk);
+      },
+    });
+
+    return new Response(upstream.body.pipeThrough(transform), {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
@@ -171,9 +226,8 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("zuki-chat error:", e);
+    return sseFallback("Oops, I got a bit lost there! Try again? 🙈");
   }
 });
+
