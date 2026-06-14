@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { Sparkles, X, Minus, Send, ArrowLeft } from "lucide-react";
+import { classifyInput, fallbackMessage } from "./safety";
+
 
 type Role = "user" | "assistant";
 type Msg = { role: Role; content: string; ts: number };
@@ -154,6 +156,18 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
     const nextMessages = [...messages, userMsg].slice(-20);
     setMessages(nextMessages);
     setInput("");
+
+    // Client-side safety guardrail — block & show friendly fallback without hitting Claude
+    const verdict = classifyInput(trimmed);
+    if (verdict.blocked && verdict.reason) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: fallbackMessage(verdict.reason!), ts: Date.now() },
+      ]);
+      setShowEscalation(true);
+      return;
+    }
+
     setIsStreaming(true);
 
     // Build API payload — wrap last user message w/ context
