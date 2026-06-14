@@ -151,7 +151,7 @@ const Hero = () => {
                 maxWidth: "420px",
               }}
             >
-              A 16-question journey. Receive 3 perfumes crafted uniquely for you —
+              A personalised AI journey. Receive 3 perfumes crafted uniquely for you —
               no two bottles alike.
             </p>
 
