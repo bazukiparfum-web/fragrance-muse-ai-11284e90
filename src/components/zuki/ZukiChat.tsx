@@ -354,29 +354,42 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
       {/* Quick replies */}
       {!isStreaming && (
         <div
-          className="flex gap-2 overflow-x-auto px-3 pt-2"
+          className="relative"
           style={{ background: "#141210", borderTop: "1px solid rgba(201,168,76,0.08)" }}
         >
-          {quickReplies.map((q) => (
-            <button
-              key={q}
-              onClick={() => sendMessage(q)}
-              className="shrink-0 transition-colors"
-              style={{
-                background: "rgba(201,168,76,0.08)",
-                border: "1px solid rgba(201,168,76,0.25)",
-                borderRadius: 20,
-                padding: "6px 14px",
-                color: "#C9A84C",
-                fontSize: 12,
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.16)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.08)")}
-            >
-              {q}
-            </button>
-          ))}
+          <div
+            className="zuki-quick-replies flex gap-2 overflow-x-auto px-3 pt-2 pb-1"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollBehavior: "smooth" }}
+          >
+            {quickReplies.map((q) => (
+              <button
+                key={q}
+                onClick={() => sendMessage(q)}
+                className="shrink-0 transition-colors"
+                style={{
+                  background: "rgba(201,168,76,0.08)",
+                  border: "1px solid rgba(201,168,76,0.25)",
+                  borderRadius: 20,
+                  padding: "6px 14px",
+                  color: "#C9A84C",
+                  fontSize: 12,
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.16)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(201,168,76,0.08)")}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+          <div
+            aria-hidden
+            style={{
+              position: "absolute", right: 0, top: 0, bottom: 0, width: 32,
+              background: "linear-gradient(to right, transparent, #141210)",
+              pointerEvents: "none",
+            }}
+          />
         </div>
       )}
 
