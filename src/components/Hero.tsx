@@ -321,49 +321,9 @@ const Hero = () => {
                 style={{ animation: "bz-bob 6s ease-in-out infinite", willChange: "transform" }}
               />
               <BottleLabels />
-              {/* AI Fragrance sticker — upper-left of bottle */}
-              <div
-                className="absolute"
-                style={{ top: "8%", left: "-30px", zIndex: 10 }}
-              >
-                <AIFragranceSticker />
-              </div>
-            </div>
-
-            {/* Fragrance pyramid */}
-            <div
-              className="absolute"
-              style={{
-                bottom: "6%",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "200px",
-                color: GOLD,
-                fontSize: "9px",
-                letterSpacing: "0.3em",
-                textTransform: "uppercase",
-                opacity: 0.7,
-              }}
-            >
-              {[
-                { label: "Top", w: "60%" },
-                { label: "Heart", w: "80%" },
-                { label: "Base", w: "100%" },
-              ].map((row) => (
-                <div key={row.label} className="flex items-center gap-3 my-1.5">
-                  <span style={{ width: "44px", textAlign: "right" }}>{row.label}</span>
-                  <span
-                    style={{
-                      flex: 1,
-                      height: "1px",
-                      width: row.w,
-                      background: `linear-gradient(90deg, ${GOLD}, transparent)`,
-                    }}
-                  />
-                </div>
-              ))}
             </div>
           </div>
+
         </div>
       </div>
 
