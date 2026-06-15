@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronDown } from "lucide-react";
+import type { CSSProperties } from "react";
 import heroBottle from "@/assets/hero-bottle.png";
-import BottleLabels from "@/components/hero/BottleLabels";
+import FloatingNoteTag, { NOTE_FAMILIES } from "@/components/hero/FloatingNoteTag";
 
 const GOLD = "#C9A84C";
 const CREAM = "#F5ECD7";
@@ -10,11 +11,19 @@ const BLACK = "#080808";
 const SUB = "#8A7A6A";
 const MICRO = "#6B5D50";
 
-const NOTE_TAGS = [
-  { emoji: "🌿", label: "Vetiver", top: "12%", left: "8%", delay: "0s" },
-  { emoji: "🍊", label: "Bergamot", top: "30%", right: "6%", delay: "0.6s" },
-  { emoji: "🪵", label: "Oud", bottom: "26%", left: "4%", delay: "1.2s" },
-  { emoji: "🌸", label: "Rose Absolute", bottom: "10%", right: "10%", delay: "1.8s" },
+type NoteTag = {
+  family: keyof typeof NOTE_FAMILIES;
+  position: CSSProperties;
+  driftClass: string;
+  startIndex: number;
+  intervalMs: number;
+};
+
+const NOTE_TAGS: NoteTag[] = [
+  { family: "green",  position: { top: "12%", left: "8%" },      driftClass: "bz-drift-1", startIndex: 0, intervalMs: 3500 },
+  { family: "citrus", position: { top: "30%", right: "6%" },     driftClass: "bz-drift-2", startIndex: 1, intervalMs: 3800 },
+  { family: "wood",   position: { bottom: "26%", left: "4%" },   driftClass: "bz-drift-3", startIndex: 2, intervalMs: 3300 },
+  { family: "floral", position: { bottom: "10%", right: "10%" }, driftClass: "bz-drift-4", startIndex: 1, intervalMs: 4000 },
 ];
 
 const MARQUEE_NOTES = [
