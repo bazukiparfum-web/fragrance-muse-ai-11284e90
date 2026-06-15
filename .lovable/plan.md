@@ -1,71 +1,28 @@
 ## Goal
 
-1. Confirm the front + back bottle labels never overlap or conflict with the AI Fragrance sticker or the 4 rotating cardinal scent-note labels at desktop, tablet, and mobile.
-2. Refactor `BottleLabels.tsx` so the label copy (brand, product name, tagline lines, concentration, volume, origin) is editable via props/constants — no SVG editing required.
+Fix the messy double-label overlay on the hero bottle (the small "Signature Essence" cards floating on/beside the bottle) and bring the four note tags (Vetiver, Bergamot, Oud, Rose Absolute) to life with both drifting motion and rotating note names.
 
-## Current layout audit (Hero right column, 260×400 bottle wrap)
+## Changes
 
-- AI sticker: `top: 8%`, `left: -30px`, 140px desktop / 90px mobile → occupies roughly the top-left 0–35% of the bottle area.
-- Rotating cardinal labels: live inside the sticker SVG itself (top/right/bottom/left of the 140px circle) — bounded by the sticker, so they move with it.
-- Front label (`label-front-wrap`): centered at `top:45%, left:50%`, 130×168 SVG → spans ~30–95% vertically, full bottle width.
-- Back label (`label-back-wrap`): `top:42%, left:58%`, 110×145, rotated/perspective → peeks to the right of the front label.
-- Floating note tags (Vetiver / Bergamot / Oud / Rose Absolute): positioned on the outer hero column, not on the bottle wrap → unaffected.
+### 1. `src/components/Hero.tsx`
+- Remove `<BottleLabels />` from the bottle wrap and drop its import. The bottle image already contains its own printed label — no SVG overlay needed.
+- Replace the static `NOTE_TAGS` rendering with a small `<FloatingNoteTag />` component that:
+  - **Drifts**: each tag gets its own keyframe path (`bz-drift-1..4`) translating ±10–18px on X and ±8–14px on Y over 8–14s `ease-in-out infinite`, with unique delays so they're out of phase. Existing `bz-bob` is replaced by per-tag drift.
+  - **Cycles text + emoji**: every 3.5s the tag's label fades out (200ms), swaps to the next note from a curated pool, and fades back in. Each tag starts at a different index in the pool so they never show the same note simultaneously.
+  - Pauses cycling and drift on `:hover` (`animation-play-state: paused`) so users can read.
+  - `prefers-reduced-motion`: disables drift; text cycling interval becomes 8s with instant swap (no fade).
+- Curated pool (matches existing emoji families):
+  - Greens 🌿: Vetiver, Basil, Mint, Fig Leaf
+  - Citrus 🍊: Bergamot, Neroli, Yuzu, Mandarin
+  - Woods 🪵: Oud, Sandalwood, Cedarwood, Patchouli
+  - Florals 🌸: Rose Absolute, Jasmine, Peony, Iris
+  - Each tag stays within its family so the emoji always matches the label.
 
-### Overlap risk findings
-
-- **Desktop**: AI sticker bottom edge sits near ~50% of bottle height; front label top edge starts at ~30% (45% center − 84px half) → ~5–8% vertical overlap on the bottle's upper-left. The sticker sits slightly outside the bottle (left:-30px) but its right side still clips the front label corner.
-- **Mobile (<768px)**: back label is hidden (good). Sticker shrinks to 90px and front label scales to 0.75 → overlap shrinks but the sticker still touches the front label's top-left corner.
-- **Tablet**: same as desktop (no tablet-specific rules) — same minor clip.
-
-### Fixes to apply
-
-- Nudge front label down slightly (`top: 52%` instead of 45%) so the AI sticker clears it on desktop/tablet.
-- Add a tablet/mobile breakpoint adjustment: on `<900px`, shift AI sticker container to `top: 4%, left: -18px` and reduce front-label scale step so they stay separated.
-- Lower z-index of back label conflicts: keep sticker at `z-index: 10` (already above labels at 2/3) — confirm sticker remains readable on top; if the sticker visually covers label text, move sticker to `top: 2%, left: -36px` so it sits above the label band instead of across it.
-- Verify by screenshotting the preview at 1440px, 1024px, 768px, 414px after edits.
-
-## Editable label text API
-
-Convert `BottleLabels.tsx` from a zero-prop component into a typed, prop-driven one with sensible defaults exported as constants.
-
-```ts
-export type BottleLabelCopy = {
-  brand?: string;          // "BAZUKI"
-  brandTagline?: string;   // "LIVE PERFUME BAR" (back) / hidden on front
-  productLine1?: string;   // "Signature"
-  productLine2?: string;   // "Essence"
-  concentration?: string;  // "EAU DE PARFUM"
-  formulaNote?: string;    // "AI · ALGORITHMIC" (front only)
-  formulaNote2?: string;   // "FORMULA"          (front only)
-  volume?: string;         // "50 ML · 1.7 FL.OZ"
-  origin?: string;         // "MADE IN INDIA"
-};
-
-export type BottleLabelsProps = {
-  front?: BottleLabelCopy;
-  back?: BottleLabelCopy;
-  showBack?: boolean;      // default true
-};
-
-export const DEFAULT_FRONT_COPY: BottleLabelCopy = { ... };
-export const DEFAULT_BACK_COPY:  BottleLabelCopy = { ... };
-```
-
-Every `<text>` element in both SVGs becomes `{copy.brand}`, `{copy.productLine1}`, etc., with `??` fallbacks to the defaults. No visual change unless props are passed.
-
-`Hero.tsx` keeps the current call (`<BottleLabels />`) and continues to render the same copy via defaults. Adding `<BottleLabels front={{ productLine1: "Midnight", productLine2: "Velvet", volume: "30 ML" }} />` is all that's needed to retheme.
-
-## Files
-
-- Edit `src/components/hero/BottleLabels.tsx` — add prop types, exported defaults, swap hard-coded text for prop values, apply the position tweaks (`top: 52%` front, refined mobile clamp, optional `<900px` sticker offset hook via a new CSS class).
-- Edit `src/components/Hero.tsx` — only if the sticker position needs a responsive nudge (apply a `hero-ai-sticker` className instead of inline `top/left`, with media-query overrides defined inside `BottleLabels`'s style block or `Hero`'s existing `<style>`).
-
-## Verification
-
-- After build, screenshot preview at 1440 / 1024 / 768 / 414 widths and confirm: AI sticker fully readable, front label readable, back label peeks unobstructed at desktop only, rotating scent labels never collide with front-label gold border.
-- TypeScript: ensure `BottleLabelsProps` exports compile; default-prop usage keeps current Hero call valid.
+### 2. `src/components/hero/BottleLabels.tsx`
+- Leave the file in place (still exported with prop API for future reuse) but no longer rendered on the hero. No code changes needed beyond the Hero import removal.
 
 ## Out of scope
+Bottle photo, headline, CTAs, marquee, orbs, grain, and all other homepage sections stay untouched.
 
-- No changes to the bottle photo, headline, CTAs, floating emoji note tags, or chatbot.
-- No changes to sticker internals or rotation logic.
+## Verification
+Screenshot the homepage at desktop (1440), tablet (1024), and mobile (414) to confirm: bottle image is clean (no SVG label cards), all four tags drift gently, and labels rotate through their family pool every ~3.5s without overlapping the bottle.

@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronDown } from "lucide-react";
+import type { CSSProperties } from "react";
 import heroBottle from "@/assets/hero-bottle.png";
-import BottleLabels from "@/components/hero/BottleLabels";
+import FloatingNoteTag, { NOTE_FAMILIES } from "@/components/hero/FloatingNoteTag";
 
 const GOLD = "#C9A84C";
 const CREAM = "#F5ECD7";
@@ -10,11 +11,19 @@ const BLACK = "#080808";
 const SUB = "#8A7A6A";
 const MICRO = "#6B5D50";
 
-const NOTE_TAGS = [
-  { emoji: "🌿", label: "Vetiver", top: "12%", left: "8%", delay: "0s" },
-  { emoji: "🍊", label: "Bergamot", top: "30%", right: "6%", delay: "0.6s" },
-  { emoji: "🪵", label: "Oud", bottom: "26%", left: "4%", delay: "1.2s" },
-  { emoji: "🌸", label: "Rose Absolute", bottom: "10%", right: "10%", delay: "1.8s" },
+type NoteTag = {
+  family: keyof typeof NOTE_FAMILIES;
+  position: CSSProperties;
+  driftClass: string;
+  startIndex: number;
+  intervalMs: number;
+};
+
+const NOTE_TAGS: NoteTag[] = [
+  { family: "green",  position: { top: "12%", left: "8%" },      driftClass: "bz-drift-1", startIndex: 0, intervalMs: 3500 },
+  { family: "citrus", position: { top: "30%", right: "6%" },     driftClass: "bz-drift-2", startIndex: 1, intervalMs: 3800 },
+  { family: "wood",   position: { bottom: "26%", left: "4%" },   driftClass: "bz-drift-3", startIndex: 2, intervalMs: 3300 },
+  { family: "floral", position: { bottom: "10%", right: "10%" }, driftClass: "bz-drift-4", startIndex: 1, intervalMs: 4000 },
 ];
 
 const MARQUEE_NOTES = [
@@ -60,6 +69,19 @@ const Hero = () => {
         @keyframes bz-bottle-glow {
           0%,100% { box-shadow: 0 0 80px 20px rgba(201,168,76,0.18), inset 0 0 60px rgba(201,168,76,0.25); }
           50%     { box-shadow: 0 0 120px 40px rgba(201,168,76,0.28), inset 0 0 80px rgba(201,168,76,0.35); }
+        }
+        @keyframes bz-drift-1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-12px,10px); } }
+        @keyframes bz-drift-2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(14px,-8px); } }
+        @keyframes bz-drift-3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-10px,-12px); } }
+        @keyframes bz-drift-4 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(12px,12px); } }
+        .bz-drift-1 { animation: bz-drift-1 9s ease-in-out infinite; }
+        .bz-drift-2 { animation: bz-drift-2 11s ease-in-out infinite; animation-delay: -2s; }
+        .bz-drift-3 { animation: bz-drift-3 13s ease-in-out infinite; animation-delay: -4s; }
+        .bz-drift-4 { animation: bz-drift-4 10s ease-in-out infinite; animation-delay: -6s; }
+        .hero-bottle-wrap:hover ~ * .hero-note-tag,
+        .hero-right-col:hover .hero-note-tag { animation-play-state: paused; }
+        @media (prefers-reduced-motion: reduce) {
+          .bz-drift-1, .bz-drift-2, .bz-drift-3, .bz-drift-4 { animation: none; }
         }
       `}</style>
 
@@ -267,33 +289,17 @@ const Hero = () => {
           </div>
 
           {/* Right column — 40% (2/5) — desktop only */}
-          <div className="hidden md:flex md:col-span-2 relative items-center justify-center">
-            {/* Floating note tags */}
-            {NOTE_TAGS.map((tag) => (
-              <div
-                key={tag.label}
-                className="absolute font-sans"
-                style={{
-                  top: tag.top,
-                  bottom: tag.bottom,
-                  left: tag.left,
-                  right: tag.right,
-                  padding: "8px 16px",
-                  borderRadius: "100px",
-                  backgroundColor: "rgba(0,0,0,0.55)",
-                  border: `1px solid ${GOLD}80`,
-                  color: CREAM,
-                  fontSize: "11px",
-                  letterSpacing: "0.05em",
-                  backdropFilter: "blur(6px)",
-                  animation: `bz-bob 3s ease-in-out infinite`,
-                  animationDelay: tag.delay,
-                  zIndex: 2,
-                }}
-              >
-                <span className="mr-1.5">{tag.emoji}</span>
-                {tag.label}
-              </div>
+          <div className="hidden md:flex md:col-span-2 relative items-center justify-center hero-right-col">
+            {/* Floating note tags — drift around and cycle through note names */}
+            {NOTE_TAGS.map((tag, i) => (
+              <FloatingNoteTag
+                key={i}
+                family={tag.family}
+                position={tag.position}
+                driftClass={tag.driftClass}
+                startIndex={tag.startIndex}
+                intervalMs={tag.intervalMs}
+              />
             ))}
 
             {/* Bottle */}
@@ -320,7 +326,6 @@ const Hero = () => {
                 className="w-full h-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.7)]"
                 style={{ animation: "bz-bob 6s ease-in-out infinite", willChange: "transform" }}
               />
-              <BottleLabels />
             </div>
           </div>
 
