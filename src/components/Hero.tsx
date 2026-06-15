@@ -100,15 +100,19 @@ const Hero = () => {
         .bz-bottle-inner {
           position: relative;
           width: 100%;
+          isolation: isolate;
         }
         .bz-bottle-img {
           width: 100%;
           height: auto;
           display: block;
           object-fit: contain;
-          filter: drop-shadow(0 20px 40px rgba(0,0,0,0.8))
+          mix-blend-mode: screen;
+          filter: brightness(1.05)
+                  drop-shadow(0 20px 40px rgba(0,0,0,0.8))
                   drop-shadow(0 0 30px rgba(0,180,200,0.12));
         }
+
 
         /* Side bottles */
         .bz-bottle-side .bz-bottle-wrap {
@@ -311,11 +315,14 @@ const Hero = () => {
 
         /* Mobile */
         @media (max-width: 767px) {
+          .bz-hero-content { padding: 80px 20px 56px; gap: 32px; text-align: center; }
           .bz-bottle-side { display: none; }
+          .bz-bottles-row { gap: 0; }
           .bz-bottle-center .bz-bottle-wrap { width: 85vw; max-width: 340px; }
-          .bz-cta-row { flex-direction: column; align-items: stretch; }
+          .bz-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; }
           .bz-cta-primary, .bz-cta-secondary { justify-content: center; text-align: center; }
         }
+
 
         @media (prefers-reduced-motion: reduce) {
           .bz-bottle-inner, .bz-shimmer-loop,
