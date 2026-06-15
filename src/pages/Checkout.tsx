@@ -292,16 +292,11 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
-      // Mark discount as used
+      // Mark discount as used via secure RPC (server-side flips only the used flag)
       if (appliedDiscount) {
-        const updateData = user.id === (availableRewards.find(r => r.id === appliedDiscount.rewardId)?.referrer_id)
-          ? { referrer_discount_used: true }
-          : { referee_discount_used: true };
-
-        await supabase
-          .from('referral_rewards')
-          .update(updateData)
-          .eq('id', appliedDiscount.rewardId);
+        await (supabase as any).rpc('redeem_referral_reward', {
+          _reward_id: appliedDiscount.rewardId,
+        });
       }
 
       // Clear cart

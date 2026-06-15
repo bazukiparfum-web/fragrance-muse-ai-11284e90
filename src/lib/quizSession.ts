@@ -180,15 +180,14 @@ export const persistQuizSession = async (
     saveToLocalStorage(payload);
     setSessionCookie(session_id);
 
-    // Upsert by session_id. Use ignoreDuplicates=false so re-saves still update last_seen_at.
-    const { error } = await (supabase as any)
-      .from('quiz_sessions')
-      .upsert(
-        {
+    const { error } = await supabase.functions.invoke('quiz-session-api', {
+      body: {
+        operation: 'upsert',
+        session_id,
+        payload: {
           session_id: payload.session_id,
           completed_at: payload.completed_at,
           expires_at: payload.expires_at,
-          last_seen_at: now.toISOString(),
           quiz_type: payload.quiz_type,
           quiz_answers: payload.quiz_answers,
           formula_results: payload.formula_results,
@@ -201,8 +200,8 @@ export const persistQuizSession = async (
           utm_content: payload.utm_content,
           status: 'completed',
         },
-        { onConflict: 'session_id' }
-      );
+      },
+    });
 
     if (error) {
       console.warn('[quizSession] persist failed', error);
@@ -216,10 +215,9 @@ export const persistQuizSession = async (
 
 export const touchSessionLastSeen = async (sessionId: string): Promise<void> => {
   try {
-    await (supabase as any)
-      .from('quiz_sessions')
-      .update({ last_seen_at: new Date().toISOString() })
-      .eq('session_id', sessionId);
+    await supabase.functions.invoke('quiz-session-api', {
+      body: { operation: 'touch', session_id: sessionId },
+    });
   } catch {}
 };
 
@@ -229,30 +227,15 @@ export const updateSessionEmail = async (
   extra?: { name?: string; phone?: string }
 ): Promise<boolean> => {
   try {
-    const profileMerge: Record<string, unknown> = { email };
-    if (extra?.name) profileMerge.name = extra.name;
-    if (extra?.phone) profileMerge.phone = extra.phone;
-
-    // Fetch existing profile to merge JSONB client-side (avoid raw SQL).
-    const { data: existing } = await (supabase as any)
-      .from('quiz_sessions')
-      .select('customer_profile')
-      .eq('session_id', sessionId)
-      .maybeSingle();
-
-    const merged = { ...(existing?.customer_profile || {}), ...profileMerge };
-
-    const { error } = await (supabase as any)
-      .from('quiz_sessions')
-      .update({
+    const { error } = await supabase.functions.invoke('quiz-session-api', {
+      body: {
+        operation: 'updateEmail',
+        session_id: sessionId,
         email,
-        name: extra?.name ?? undefined,
-        phone: extra?.phone ?? undefined,
-        customer_profile: merged,
-        last_seen_at: new Date().toISOString(),
-      })
-      .eq('session_id', sessionId);
-
+        name: extra?.name,
+        phone: extra?.phone,
+      },
+    });
     if (error) {
       console.warn('[quizSession] email update failed', error);
       return false;
@@ -269,14 +252,11 @@ export const fetchSessionById = async (
   sessionId: string
 ): Promise<(QuizSessionPayload & { email?: string | null; completed_at: string; saved_at?: number }) | null> => {
   try {
-    const { data, error } = await (supabase as any)
-      .from('quiz_sessions')
-      .select('*')
-      .eq('session_id', sessionId)
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle();
-    if (error || !data) return null;
-    return data;
+    const { data, error } = await supabase.functions.invoke('quiz-session-api', {
+      body: { operation: 'get', session_id: sessionId },
+    });
+    if (error || !data?.data) return null;
+    return data.data;
   } catch {
     return null;
   }
@@ -287,15 +267,9 @@ export const markSessionConverted = async (
   orderValue?: number
 ): Promise<void> => {
   try {
-    await (supabase as any)
-      .from('quiz_sessions')
-      .update({
-        converted: true,
-        converted_at: new Date().toISOString(),
-        order_value: orderValue ?? null,
-        status: 'converted',
-      })
-      .eq('session_id', sessionId);
+    await supabase.functions.invoke('quiz-session-api', {
+      body: { operation: 'markConverted', session_id: sessionId, order_value: orderValue },
+    });
   } catch {}
 };
 

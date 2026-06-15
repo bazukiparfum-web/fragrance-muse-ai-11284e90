@@ -1415,6 +1415,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      redeem_referral_reward: {
+        Args: { _reward_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
