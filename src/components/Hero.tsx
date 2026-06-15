@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import heroBottle from "@/assets/hero-bottle.png";
-import AIFragranceSticker from "@/components/hero/AIFragranceSticker";
 import BottleLabels from "@/components/hero/BottleLabels";
 
 const GOLD = "#C9A84C";
