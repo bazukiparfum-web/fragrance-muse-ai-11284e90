@@ -1,41 +1,47 @@
-## Security scan results (re-run 2026-06-15)
 
-**Connector scan (Wiz):** 0 findings — clean.
+## Goal
+Replace the current `src/components/Hero.tsx` with a cinematic, dark, full-viewport hero featuring three teal Bazuki bottles side-by-side, each with a gold-on-black SVG label showing a different fragrance name. Center bottle ("Signature Essence") is emphasized. All other site sections, header, and Zuki chatbot stay untouched.
 
-**Supabase scans:** 9 findings (1 error, 8 warn). Plan below addresses every actionable item; intentional/by-design items get marked-as-ignored with rationale.
+## Files
 
----
+1. **`src/assets/hero-bottle-teal.jpg`** (new) — register the uploaded image (`Gemini_Generated_Image_6x6fcc6x6fcc6x6f.png`) as a Lovable asset pointer via `lovable-assets create` so it can be imported and used as both the bottle photo and the blurred background.
 
-## Fixes (single migration)
+2. **`src/components/hero/BazukiLabel.tsx`** (new) — reusable SVG label component. Props: `line1: string`, `line2: string`. Renders the full gold-on-black framed label from the spec (Cinzel "BAZUKI", diamonds, italic fragrance name, "EAU DE BAZUKI", "AI · ALGORITHMIC FORMULA", "30 ML · 1.0 FL.OZ", "MADE IN INDIA"). viewBox 300×390.
 
-### 1. `quiz_result_shares` — public SELECT exposes user_id + formula (ERROR)
-Drop `Anyone can view quiz shares` (`USING true`). All consumers (`share-quiz-result`, `quiz-share-meta`, `generate-quiz-og-image`) are edge functions using the service role, so they bypass RLS. Keep author-only SELECT for the owner (`auth.uid() = user_id`).
+3. **`src/components/hero/CampaignBottle.tsx`** (new) — single bottle unit. Props: `name1`, `name2`, `displayName`, `variant: 'center' | 'side'`, `entryDelay`. Renders:
+   - relative wrapper with float animation (4s ease-in-out infinite)
+   - bottle `<img>` with drop-shadow filter
+   - absolutely-positioned `<BazukiLabel>` overlay (top 42%, perspective rotateY(-5deg), width 62%)
+   - center-only: teal radial glow behind, shimmer pseudo-element every 8s
+   - name tag below (Cormorant Garamond italic 16px gold)
+   - center-only: "✦ Best Match" pill above name
+   - hover scale/opacity/translateY transitions per spec
+   - entry animation (slide/rise + fade) gated by delay
 
-### 2. `pumps` — internal hardware data world-readable
-Drop `Anyone can view pumps` (`USING true`). Replace with admin-only SELECT (`has_role(auth.uid(),'admin')`). Only `AdminPumps.tsx` reads this table.
+4. **`src/components/Hero.tsx`** (rewrite) — full replacement:
+   - `section` 100vw × 100vh, bg `#0A0805`, overflow hidden
+   - blurred full-bleed background `<img>` (blur 40px, brightness .25, saturate .6, scale 1.1)
+   - radial ambient overlay div
+   - centered content stack: eyebrow, h1 ("Your Scent," + italic "Engineered by AI."), subtext
+   - flex row of 3 `<CampaignBottle>` (gap 32px) — left "Timeless / Harmony", center "Signature / Essence" (variant center), right "Modern / Classic"
+   - mobile (<768px): hide left & right via responsive classes; center bottle 85vw max 340px
+   - tablet (768–1024px): center 240, sides 180
+   - desktop: center 320, sides 260 with translateY +20px on sides
+   - CTA row: primary gold "DISCOVER YOUR SCENT →" (Link to /shop/quiz), secondary outlined "BROWSE THE LIBRARY" (Link to /collection)
+   - scoped `<style>` block with all keyframes: `bz-float`, `bz-shimmer`, `bz-entry-left`, `bz-entry-right`, `bz-entry-up`, `bz-text-up`, `bz-name-in`, plus `prefers-reduced-motion` resets
+   - timing per spec: text 0ms, left 400ms, right 500ms, center 600ms, shimmer 1300ms, name tags 1700ms
 
-### 3. `ingredient_mappings` — manufacturing data exposed to every signed-in user
-Replace the `is_active = true` SELECT policy with admin-only (`has_role(auth.uid(),'admin')`). All readers are admin pages / admin edge functions.
+5. **`index.html`** — add Google Fonts `<link>` for Cormorant Garamond (ital 300/400/500) and Cinzel (400/500/600) in `<head>` so SVG label text renders correctly.
 
-### 4. `has_role` SECURITY DEFINER callable by `anon`
-`REVOKE EXECUTE ... FROM anon`. Keep `authenticated` (RLS policy expressions need it at query time).
+## Out of scope (untouched)
+- `Header.tsx`, `Footer.tsx`, Zuki chat, all other home sections, routing, business logic.
+- `FloatingNoteTag` component is no longer rendered by Hero but left in place (other code may import; safe to leave).
+- No backend, RLS, or data changes.
 
----
-
-## Findings marked as ignored (with rationale)
-
-- **`consultation_requests` INSERT `WITH CHECK (true)`** — public B2B lead form must accept anonymous submissions.
-- **`whatsapp_optins` INSERT `WITH CHECK (true)`** — public opt-in form.
-- **`quiz_sessions` INSERT `WITH CHECK (true)` + missing client SELECT/UPDATE** — intentional. Reads/updates go through `quiz-session-api` edge function using `session_id` as a bearer token (already implemented).
-- **`has_role` callable by `authenticated`** — required: RLS policies invoke it at query time as the caller.
-- **`redeem_referral_reward` callable by `authenticated`** — intentional public API; function internally validates `auth.uid()` ownership and only flips `*_discount_used` from false→true.
-
----
-
-## Verification
-
-- `supabase--linter` after migration to confirm no new warnings.
-- `security--run_security_scan` to confirm only the intentional/ignored items remain.
-- Spot-check: admin pages still load pumps/ingredients; share pages still render via edge functions.
-
-No client code changes required (all affected reads already go through edge functions or admin pages whose users have the admin role).
+## Technical notes
+- Tailwind responsive breakpoints: `hidden md:block` for side bottles, custom width via inline style + `md:` overrides.
+- Use `style` blocks for keyframes (matches existing Hero pattern); colors are local brand tokens, not design-system tokens — acceptable since spec dictates exact hex values for this campaign hero.
+- Drop shadow on bottle: `filter: drop-shadow(0 20px 40px rgba(0,0,0,0.8)) drop-shadow(0 0 30px rgba(0,180,200,0.12))`.
+- Shimmer = absolutely positioned `::before` (linear-gradient white 8%) animated translateX -100%→200% every 8s, also fired immediately on hover via class swap.
+- Image asset imported as `import heroBottleTeal from "@/assets/hero-bottle-teal.jpg.asset.json"` then `heroBottleTeal.url`.
+- All animations get `@media (prefers-reduced-motion: reduce)` fallback to static.
