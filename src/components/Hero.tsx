@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import heroBottle from "@/assets/hero-bottle.png";
 import AIFragranceSticker from "@/components/hero/AIFragranceSticker";
+import BottleLabels from "@/components/hero/BottleLabels";
 
 const GOLD = "#C9A84C";
 const CREAM = "#F5ECD7";
@@ -297,7 +298,7 @@ const Hero = () => {
             ))}
 
             {/* Bottle */}
-            <div className="relative" style={{ width: 260, height: 400 }}>
+            <div className="relative hero-bottle-wrap" style={{ width: 260, height: 400 }}>
               <div
                 aria-hidden
                 className="absolute inset-0 -z-10"
@@ -320,6 +321,7 @@ const Hero = () => {
                 className="w-full h-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.7)]"
                 style={{ animation: "bz-bob 6s ease-in-out infinite", willChange: "transform" }}
               />
+              <BottleLabels />
               {/* AI Fragrance sticker — upper-left of bottle */}
               <div
                 className="absolute"
