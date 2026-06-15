@@ -315,11 +315,14 @@ const Hero = () => {
 
         /* Mobile */
         @media (max-width: 767px) {
+          .bz-hero-content { padding: 80px 20px 56px; gap: 32px; text-align: center; }
           .bz-bottle-side { display: none; }
+          .bz-bottles-row { gap: 0; }
           .bz-bottle-center .bz-bottle-wrap { width: 85vw; max-width: 340px; }
-          .bz-cta-row { flex-direction: column; align-items: stretch; }
+          .bz-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; }
           .bz-cta-primary, .bz-cta-secondary { justify-content: center; text-align: center; }
         }
+
 
         @media (prefers-reduced-motion: reduce) {
           .bz-bottle-inner, .bz-shimmer-loop,
