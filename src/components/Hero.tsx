@@ -1,344 +1,391 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown } from "lucide-react";
-import type { CSSProperties } from "react";
-import heroBottle from "@/assets/hero-bottle.png";
-import FloatingNoteTag, { NOTE_FAMILIES } from "@/components/hero/FloatingNoteTag";
-
-const GOLD = "#C9A84C";
-const CREAM = "#F5ECD7";
-const AMBER = "#7B4A1E";
-const BLACK = "#080808";
-const SUB = "#8A7A6A";
-const MICRO = "#6B5D50";
-
-type NoteTag = {
-  family: keyof typeof NOTE_FAMILIES;
-  position: CSSProperties;
-  driftClass: string;
-  startIndex: number;
-  intervalMs: number;
-};
-
-const NOTE_TAGS: NoteTag[] = [
-  { family: "green",  position: { top: "12%", left: "8%" },      driftClass: "bz-drift-1", startIndex: 0, intervalMs: 3500 },
-  { family: "citrus", position: { top: "30%", right: "6%" },     driftClass: "bz-drift-2", startIndex: 1, intervalMs: 3800 },
-  { family: "wood",   position: { bottom: "26%", left: "4%" },   driftClass: "bz-drift-3", startIndex: 2, intervalMs: 3300 },
-  { family: "floral", position: { bottom: "10%", right: "10%" }, driftClass: "bz-drift-4", startIndex: 1, intervalMs: 4000 },
-];
-
-const MARQUEE_NOTES = [
-  "Vetiver", "Oud", "Bergamot", "Sandalwood",
-  "Rose", "Amber", "Musk", "Patchouli",
-];
-
-// Tiny inline noise SVG (data URI) for film-grain overlay
-const NOISE_DATA_URI =
-  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>";
+import { ArrowRight } from "lucide-react";
+import heroBottleTeal from "@/assets/hero-bottle-teal.png.asset.json";
+import CampaignBottle from "@/components/hero/CampaignBottle";
 
 const Hero = () => {
+  const bottleUrl = heroBottleTeal.url;
+
   return (
     <section
-      className="relative w-full h-screen min-h-[640px] overflow-hidden"
-      style={{ backgroundColor: BLACK }}
-      aria-label="Hero"
+      className="bz-hero relative w-full overflow-hidden"
+      aria-label="Bazuki signature fragrance campaign"
     >
-      {/* Scoped styles for animations */}
       <style>{`
-        @keyframes bz-orb-a {
-          0%   { transform: translate(0,0) scale(1); }
-          50%  { transform: translate(60px,-40px) scale(1.15); }
-          100% { transform: translate(0,0) scale(1); }
+        .bz-hero {
+          background-color: #0A0805;
+          min-height: 100vh;
         }
-        @keyframes bz-orb-b {
-          0%   { transform: translate(0,0) scale(1); }
-          50%  { transform: translate(-50px,30px) scale(1.1); }
-          100% { transform: translate(0,0) scale(1); }
+        .bz-hero-bg {
+          position: absolute; inset: 0;
+          width: 100%; height: 100%;
+          object-fit: cover;
+          transform: scale(1.1);
+          filter: blur(40px) brightness(0.25) saturate(0.6);
+          z-index: 0;
+          pointer-events: none;
         }
-        @keyframes bz-bounce-down {
-          0%,100% { transform: translateY(0); opacity: 0.4; }
-          50%     { transform: translateY(6px); opacity: 0.8; }
+        .bz-hero-overlay {
+          position: absolute; inset: 0;
+          background: radial-gradient(ellipse 80% 60% at center,
+            rgba(0,180,200,0.04) 0%,
+            rgba(10,8,5,0.7) 60%,
+            rgba(10,8,5,0.95) 100%);
+          z-index: 1;
+          pointer-events: none;
         }
-        @keyframes bz-marquee {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+        .bz-hero-content {
+          position: relative; z-index: 2;
+          min-height: 100vh;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          padding: 96px 24px 64px;
+          gap: 48px;
         }
-        @keyframes bz-drift-1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-12px,10px); } }
-        @keyframes bz-drift-2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(14px,-8px); } }
-        @keyframes bz-drift-3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-10px,-12px); } }
-        @keyframes bz-drift-4 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(12px,12px); } }
-        .bz-drift-1 { animation: bz-drift-1 9s ease-in-out infinite; }
-        .bz-drift-2 { animation: bz-drift-2 11s ease-in-out infinite; animation-delay: -2s; }
-        .bz-drift-3 { animation: bz-drift-3 13s ease-in-out infinite; animation-delay: -4s; }
-        .bz-drift-4 { animation: bz-drift-4 10s ease-in-out infinite; animation-delay: -6s; }
-        .hero-bottle-wrap:hover ~ * .hero-note-tag,
-        .hero-right-col:hover .hero-note-tag { animation-play-state: paused; }
+
+        /* TEXT */
+        .bz-eyebrow {
+          color: #C9A84C;
+          font-size: 10px;
+          letter-spacing: 0.4em;
+          text-transform: uppercase;
+          font-family: 'Inter', sans-serif;
+          margin-bottom: 16px;
+          opacity: 0;
+          animation: bz-text-up 500ms ease-out 0ms forwards;
+        }
+        .bz-headline {
+          font-family: 'Cormorant Garamond', serif;
+          color: #F5F0E8;
+          font-weight: 300;
+          line-height: 1.1;
+          font-size: clamp(36px, 6vw, 60px);
+          text-align: center;
+          margin-bottom: 12px;
+          opacity: 0;
+          animation: bz-text-up 500ms ease-out 80ms forwards;
+        }
+        .bz-headline .bz-italic { font-style: italic; display: block; }
+        .bz-subtext {
+          color: #C8C0B0;
+          font-size: 16px;
+          line-height: 1.7;
+          text-align: center;
+          font-family: 'Inter', sans-serif;
+          max-width: 520px;
+          margin: 0 auto;
+          opacity: 0;
+          animation: bz-text-up 500ms ease-out 160ms forwards;
+        }
+
+        /* BOTTLES ROW */
+        .bz-bottles-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 32px;
+          width: 100%;
+        }
+
+        .bz-bottle-col {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          opacity: 0;
+        }
+        .bz-bottle-wrap {
+          position: relative;
+          transition: transform 200ms ease-out, opacity 200ms ease-out;
+        }
+        .bz-bottle-inner {
+          position: relative;
+          width: 100%;
+        }
+        .bz-bottle-img {
+          width: 100%;
+          height: auto;
+          display: block;
+          object-fit: contain;
+          filter: drop-shadow(0 20px 40px rgba(0,0,0,0.8))
+                  drop-shadow(0 0 30px rgba(0,180,200,0.12));
+        }
+
+        /* Side bottles */
+        .bz-bottle-side .bz-bottle-wrap {
+          width: 260px;
+          opacity: 0.88;
+          transform: translateY(20px);
+        }
+        .bz-bottle-side .bz-bottle-wrap:hover {
+          transform: translateY(10px) scale(0.90 / 0.82);
+          opacity: 1;
+        }
+        .bz-bottle-side:hover .bz-bottle-wrap {
+          opacity: 1;
+          transform: translateY(10px) scale(1.10);
+        }
+        .bz-bottle-side:hover .bz-label-svg { filter: brightness(1.15); }
+
+        /* Center bottle */
+        .bz-bottle-center .bz-bottle-wrap {
+          width: 320px;
+          transform: translateY(0) scale(1);
+        }
+        .bz-bottle-center:hover .bz-bottle-wrap {
+          transform: scale(1.04);
+        }
+        .bz-bottle-center:hover .bz-center-glow {
+          opacity: 1;
+        }
+
+        .bz-center-glow {
+          position: absolute; inset: -10%;
+          background: radial-gradient(ellipse 60% 70% at center,
+            rgba(0,180,200,0.18) 0%,
+            rgba(201,168,76,0.06) 35%,
+            transparent 70%);
+          z-index: 0;
+          opacity: 0.7;
+          transition: opacity 300ms ease-out;
+          pointer-events: none;
+          filter: blur(8px);
+        }
+
+        /* Float animation */
+        .bz-bottle-inner {
+          animation: bz-float 4s ease-in-out infinite;
+        }
+        .bz-bottle-center .bz-bottle-inner { animation-delay: -1s; }
+        .bz-bottle-side:nth-of-type(odd) .bz-bottle-inner { animation-delay: -2s; }
+
+        /* Label */
+        .bz-label-wrap {
+          position: absolute;
+          top: 42%;
+          left: 50%;
+          width: 62%;
+          transform: translate(-50%, -50%) perspective(500px) rotateY(-5deg);
+          z-index: 2;
+          pointer-events: none;
+          overflow: hidden;
+          border-radius: 8px;
+        }
+        .bz-label-svg {
+          width: 100%; height: auto; display: block;
+          transition: filter 200ms ease-out;
+        }
+
+        /* Shimmer */
+        .bz-shimmer {
+          position: absolute;
+          top: 0; left: -40%;
+          width: 40%; height: 100%;
+          background: linear-gradient(110deg,
+            transparent 0%,
+            rgba(255,255,255,0.08) 50%,
+            transparent 100%);
+          pointer-events: none;
+          opacity: 0;
+        }
+        .bz-shimmer-loop {
+          animation: bz-shimmer 8s ease-in-out 1300ms infinite;
+        }
+        .bz-bottle-center:hover .bz-shimmer {
+          animation: bz-shimmer 800ms ease-out;
+        }
+
+        /* Name tag */
+        .bz-name-tag {
+          margin-top: 16px;
+          text-align: center;
+          opacity: 0;
+          animation: bz-name-in 400ms ease-out forwards;
+          display: flex; flex-direction: column;
+          align-items: center; gap: 8px;
+        }
+        .bz-name-text {
+          font-family: 'Cormorant Garamond', serif;
+          font-style: italic;
+          font-size: 16px;
+          color: #C9A84C;
+          letter-spacing: 0.05em;
+        }
+        .bz-best-match {
+          background: rgba(201,168,76,0.1);
+          border: 1px solid rgba(201,168,76,0.4);
+          border-radius: 20px;
+          padding: 4px 14px;
+          font-size: 10px;
+          color: #C9A84C;
+          letter-spacing: 0.1em;
+          font-family: 'Inter', sans-serif;
+          text-transform: uppercase;
+        }
+
+        /* CTAs */
+        .bz-cta-row {
+          display: flex; flex-wrap: wrap;
+          gap: 16px; justify-content: center;
+          margin-top: 12px;
+          opacity: 0;
+          animation: bz-text-up 500ms ease-out 1900ms forwards;
+        }
+        .bz-cta-primary {
+          background: #C9A84C;
+          color: #0A0805;
+          padding: 16px 36px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          font-family: 'Inter', sans-serif;
+          display: inline-flex; align-items: center; gap: 8px;
+          transition: background 200ms, transform 200ms;
+        }
+        .bz-cta-primary:hover {
+          background: #F0C040;
+          transform: scale(1.03);
+        }
+        .bz-cta-secondary {
+          background: transparent;
+          border: 1px solid rgba(201,168,76,0.5);
+          color: #C9A84C;
+          padding: 16px 36px;
+          border-radius: 4px;
+          font-size: 12px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          font-family: 'Inter', sans-serif;
+          font-weight: 500;
+          transition: background 200ms, border-color 200ms;
+        }
+        .bz-cta-secondary:hover {
+          background: rgba(201,168,76,0.06);
+          border-color: #C9A84C;
+        }
+
+        /* Entry animations */
+        .bz-entry-left { animation: bz-entry-left 600ms ease-out 400ms forwards; }
+        .bz-entry-right { animation: bz-entry-right 600ms ease-out 500ms forwards; }
+        .bz-entry-up { animation: bz-entry-up 700ms ease-out 600ms forwards; }
+
+        @keyframes bz-text-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bz-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes bz-shimmer {
+          0% { left: -40%; opacity: 0; }
+          10% { opacity: 1; }
+          50% { opacity: 1; }
+          60% { left: 110%; opacity: 0; }
+          100% { left: 110%; opacity: 0; }
+        }
+        @keyframes bz-name-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bz-entry-left {
+          from { opacity: 0; transform: translateX(-60px); }
+          to { opacity: 0.88; transform: translateX(0); }
+        }
+        @keyframes bz-entry-right {
+          from { opacity: 0; transform: translateX(60px); }
+          to { opacity: 0.88; transform: translateX(0); }
+        }
+        @keyframes bz-entry-up {
+          from { opacity: 0; transform: translateY(40px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tablet */
+        @media (max-width: 1024px) and (min-width: 768px) {
+          .bz-bottle-center .bz-bottle-wrap { width: 240px; }
+          .bz-bottle-side .bz-bottle-wrap { width: 180px; }
+          .bz-bottles-row { gap: 20px; }
+        }
+
+        /* Mobile */
+        @media (max-width: 767px) {
+          .bz-bottle-side { display: none; }
+          .bz-bottle-center .bz-bottle-wrap { width: 85vw; max-width: 340px; }
+          .bz-cta-row { flex-direction: column; align-items: stretch; }
+          .bz-cta-primary, .bz-cta-secondary { justify-content: center; text-align: center; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
-          .bz-drift-1, .bz-drift-2, .bz-drift-3, .bz-drift-4 { animation: none; }
+          .bz-bottle-inner, .bz-shimmer-loop,
+          .bz-eyebrow, .bz-headline, .bz-subtext,
+          .bz-name-tag, .bz-cta-row,
+          .bz-entry-left, .bz-entry-right, .bz-entry-up {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
         }
       `}</style>
 
-      {/* Orb A — bottom-left amber */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute"
-        style={{
-          left: "-15%",
-          bottom: "-20%",
-          width: "70vw",
-          height: "70vw",
-          maxWidth: "900px",
-          maxHeight: "900px",
-          background: `radial-gradient(closest-side, ${AMBER}26, transparent 70%)`,
-          filter: "blur(40px)",
-          animation: "bz-orb-a 20s ease-in-out infinite",
-        }}
-      />
-      {/* Orb B — top-right gold */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute"
-        style={{
-          right: "-15%",
-          top: "-20%",
-          width: "65vw",
-          height: "65vw",
-          maxWidth: "850px",
-          maxHeight: "850px",
-          background: `radial-gradient(closest-side, ${GOLD}14, transparent 70%)`,
-          filter: "blur(50px)",
-          animation: "bz-orb-b 22s ease-in-out infinite",
-        }}
-      />
+      {/* Blurred ambient background */}
+      <img src={bottleUrl} alt="" aria-hidden className="bz-hero-bg" />
+      <div className="bz-hero-overlay" aria-hidden />
 
-      {/* Film-grain noise */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage: `url("${NOISE_DATA_URI}")`,
-          backgroundRepeat: "repeat",
-          opacity: 0.03,
-          mixBlendMode: "overlay",
-        }}
-      />
-
-      {/* Content */}
-      <div className="relative z-10 h-full container mx-auto px-6 flex items-center">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-12 w-full pt-20 md:pt-0">
-          {/* Left column — 60% (3/5) */}
-          <div className="md:col-span-3 flex flex-col justify-center">
-            {/* Eyebrow */}
-            <p
-              className="font-sans uppercase mb-6"
-              style={{
-                color: GOLD,
-                fontSize: "10px",
-                letterSpacing: "0.3em",
-              }}
-            >
-              AI-Crafted · Made in India
-            </p>
-
-            {/* Headline */}
-            <h1
-              className="font-cormorant"
-              style={{
-                color: CREAM,
-                fontWeight: 300,
-                lineHeight: 1.1,
-                fontSize: "clamp(42px, 7vw, 72px)",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              <span className="block">Your Scent,</span>
-              <span className="block italic" style={{ color: CREAM }}>
-                Engineered by AI.
-              </span>
-            </h1>
-
-            {/* Sub-headline */}
-            <p
-              className="font-sans mt-6"
-              style={{
-                color: SUB,
-                fontSize: "16px",
-                lineHeight: 1.7,
-                maxWidth: "420px",
-              }}
-            >
-              A personalised AI journey. Receive 3 perfumes crafted uniquely for you —
-              no two bottles alike.
-            </p>
-
-            {/* CTAs */}
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Link
-                to="/shop/quiz"
-                className="group inline-flex items-center gap-2 transition-all duration-300"
-                style={{
-                  backgroundColor: GOLD,
-                  color: "#000",
-                  padding: "14px 32px",
-                  borderRadius: "100px",
-                  fontSize: "13px",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  fontWeight: 500,
-                }}
-                onMouseEnter={(e) => {
-                  const t = e.currentTarget as HTMLElement;
-                  t.style.filter = "brightness(1.1)";
-                  t.style.transform = "scale(1.02)";
-                }}
-                onMouseLeave={(e) => {
-                  const t = e.currentTarget as HTMLElement;
-                  t.style.filter = "";
-                  t.style.transform = "";
-                }}
-              >
-                Discover Your Scent
-                <ArrowRight size={14} strokeWidth={2} />
-              </Link>
-
-              <Link
-                to="/collection"
-                className="inline-flex items-center transition-colors duration-300"
-                style={{
-                  border: `1px solid ${GOLD}`,
-                  color: CREAM,
-                  padding: "14px 32px",
-                  borderRadius: "100px",
-                  fontSize: "13px",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  fontWeight: 500,
-                  backgroundColor: "transparent",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor = `${GOLD}33`;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-                }}
-              >
-                Browse the Library
-              </Link>
-            </div>
-
-            {/* Trust micro-stats */}
-            <div
-              className="mt-10 flex flex-wrap items-center"
-              style={{
-                color: MICRO,
-                fontSize: "11px",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              {["2,000+ Unique Formulas", "AI-Matched Accuracy", "Ships Across India"].map(
-                (t, i) => (
-                  <div key={t} className="flex items-center">
-                    {i > 0 && (
-                      <span
-                        aria-hidden
-                        className="inline-block mx-4"
-                        style={{
-                          width: "1px",
-                          height: "12px",
-                          backgroundColor: `${GOLD}80`,
-                        }}
-                      />
-                    )}
-                    <span>{t}</span>
-                  </div>
-                )
-              )}
-            </div>
-
-            {/* Mobile-only marquee */}
-            <div className="md:hidden mt-10 -mx-6 overflow-hidden" style={{ borderTop: `1px solid ${GOLD}33`, borderBottom: `1px solid ${GOLD}33` }}>
-              <div
-                className="flex whitespace-nowrap py-3"
-                style={{ animation: "bz-marquee 25s linear infinite" }}
-              >
-                {[...MARQUEE_NOTES, ...MARQUEE_NOTES].map((note, i) => (
-                  <span
-                    key={i}
-                    className="font-sans"
-                    style={{
-                      color: CREAM,
-                      fontSize: "11px",
-                      letterSpacing: "0.25em",
-                      textTransform: "uppercase",
-                      padding: "0 18px",
-                    }}
-                  >
-                    {note} ·
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Right column — 40% (2/5) — desktop only */}
-          <div className="hidden md:flex md:col-span-2 relative items-center justify-center hero-right-col">
-            {/* Floating note tags — drift around and cycle through note names */}
-            {NOTE_TAGS.map((tag, i) => (
-              <FloatingNoteTag
-                key={i}
-                family={tag.family}
-                position={tag.position}
-                driftClass={tag.driftClass}
-                startIndex={tag.startIndex}
-                intervalMs={tag.intervalMs}
-              />
-            ))}
-
-            {/* Bottle */}
-            <div className="relative hero-bottle-wrap" style={{ width: 260, height: 400 }}>
-              <div
-                aria-hidden
-                className="absolute inset-0 -z-10"
-                style={{
-                  background:
-                    "radial-gradient(closest-side, rgba(201,168,76,0.32), transparent 70%)",
-                  filter: "blur(36px)",
-                }}
-              />
-              <img
-                src={heroBottle}
-                alt="Bazuki signature perfume bottle"
-                width={1024}
-                height={1536}
-                loading="eager"
-                decoding="async"
-                // @ts-expect-error – fetchpriority is a valid HTML attribute
-                fetchpriority="low"
-                className="w-full h-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.7)]"
-              />
-
-            </div>
-          </div>
-
+      <div className="bz-hero-content">
+        {/* Text */}
+        <div className="flex flex-col items-center">
+          <p className="bz-eyebrow">AI-Crafted · Made in India</p>
+          <h1 className="bz-headline">
+            <span>Your Scent,</span>
+            <span className="bz-italic">Engineered by AI.</span>
+          </h1>
+          <p className="bz-subtext">
+            Three formulas. Crafted uniquely for you. No two bottles alike.
+          </p>
         </div>
-      </div>
 
-      {/* Scroll indicator */}
-      <div
-        className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-        style={{ bottom: "28px", color: GOLD, opacity: 0.4 }}
-      >
-        <span
-          className="font-sans"
-          style={{ fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" }}
-        >
-          Scroll to explore
-        </span>
-        <ChevronDown
-          size={18}
-          strokeWidth={1.5}
-          style={{ animation: "bz-bounce-down 1.8s ease-in-out infinite" }}
-        />
+        {/* Bottles */}
+        <div className="bz-bottles-row">
+          <CampaignBottle
+            imageUrl={bottleUrl}
+            line1="Timeless"
+            line2="Harmony"
+            displayName="Timeless Harmony"
+            variant="side"
+            entryClass="bz-entry-left"
+            nameDelayMs={1700}
+          />
+          <CampaignBottle
+            imageUrl={bottleUrl}
+            line1="Signature"
+            line2="Essence"
+            displayName="Signature Essence"
+            variant="center"
+            entryClass="bz-entry-up"
+            nameDelayMs={1700}
+          />
+          <CampaignBottle
+            imageUrl={bottleUrl}
+            line1="Modern"
+            line2="Classic"
+            displayName="Modern Classic"
+            variant="side"
+            entryClass="bz-entry-right"
+            nameDelayMs={1700}
+          />
+        </div>
+
+        {/* CTAs */}
+        <div className="bz-cta-row">
+          <Link to="/shop/quiz" className="bz-cta-primary">
+            Discover Your Scent <ArrowRight size={14} strokeWidth={2.5} />
+          </Link>
+          <Link to="/collection" className="bz-cta-secondary">
+            Browse the Library
+          </Link>
+        </div>
       </div>
     </section>
   );
