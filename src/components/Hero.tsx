@@ -303,7 +303,6 @@ const Hero = () => {
                   background:
                     "radial-gradient(closest-side, rgba(201,168,76,0.32), transparent 70%)",
                   filter: "blur(36px)",
-                  animation: "bz-bottle-glow 6s ease-in-out infinite",
                 }}
               />
               <img
@@ -316,8 +315,8 @@ const Hero = () => {
                 // @ts-expect-error – fetchpriority is a valid HTML attribute
                 fetchpriority="low"
                 className="w-full h-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.7)]"
-                style={{ animation: "bz-bob 6s ease-in-out infinite", willChange: "transform" }}
               />
+
             </div>
           </div>
 
