@@ -289,33 +289,17 @@ const Hero = () => {
           </div>
 
           {/* Right column — 40% (2/5) — desktop only */}
-          <div className="hidden md:flex md:col-span-2 relative items-center justify-center">
-            {/* Floating note tags */}
-            {NOTE_TAGS.map((tag) => (
-              <div
-                key={tag.label}
-                className="absolute font-sans"
-                style={{
-                  top: tag.top,
-                  bottom: tag.bottom,
-                  left: tag.left,
-                  right: tag.right,
-                  padding: "8px 16px",
-                  borderRadius: "100px",
-                  backgroundColor: "rgba(0,0,0,0.55)",
-                  border: `1px solid ${GOLD}80`,
-                  color: CREAM,
-                  fontSize: "11px",
-                  letterSpacing: "0.05em",
-                  backdropFilter: "blur(6px)",
-                  animation: `bz-bob 3s ease-in-out infinite`,
-                  animationDelay: tag.delay,
-                  zIndex: 2,
-                }}
-              >
-                <span className="mr-1.5">{tag.emoji}</span>
-                {tag.label}
-              </div>
+          <div className="hidden md:flex md:col-span-2 relative items-center justify-center hero-right-col">
+            {/* Floating note tags — drift around and cycle through note names */}
+            {NOTE_TAGS.map((tag, i) => (
+              <FloatingNoteTag
+                key={i}
+                family={tag.family}
+                position={tag.position}
+                driftClass={tag.driftClass}
+                startIndex={tag.startIndex}
+                intervalMs={tag.intervalMs}
+              />
             ))}
 
             {/* Bottle */}
@@ -342,7 +326,6 @@ const Hero = () => {
                 className="w-full h-full object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.7)]"
                 style={{ animation: "bz-bob 6s ease-in-out infinite", willChange: "transform" }}
               />
-              <BottleLabels />
             </div>
           </div>
 
