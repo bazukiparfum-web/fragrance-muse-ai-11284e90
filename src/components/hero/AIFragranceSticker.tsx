@@ -1,13 +1,36 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const GOLD = "#C9A84C";
+
+const FAMILIES: string[][] = [
+  ["BERGAMOT", "LEMON", "NEROLI", "GRAPEFRUIT", "MANDARIN", "YUZU"],
+  ["ROSE", "JASMINE", "IRIS", "YLANG", "VIOLET", "PEONY", "MAGNOLIA", "TUBEROSE"],
+  ["SANDALWOOD", "CEDARWOOD", "VETIVER", "PATCHOULI", "GUAIAC", "BIRCH"],
+  ["OUD", "AMBER", "BENZOIN", "FRANKINCENSE", "MYRRH", "LABDANUM"],
+  ["CARDAMOM", "SAFFRON", "PEPPER", "CINNAMON", "GINGER", "CLOVE"],
+  ["MUSK", "VANILLA", "TONKA", "CARAMEL", "HELIOTROPE"],
+  ["MINT", "BASIL", "GREEN TEA", "LAVENDER", "SAGE"],
+];
+
+type Position = "top" | "right" | "bottom" | "left";
+const POSITIONS: Position[] = ["top", "right", "bottom", "left"];
 
 interface AIFragranceStickerProps {
   notes?: [string, string, string, string]; // top, right, bottom, left
   className?: string;
   style?: React.CSSProperties;
 }
+
+const findFamilyIndex = (note: string) =>
+  FAMILIES.findIndex((f) => f.includes(note));
+
+const pickFromFamilyExcluding = (familyIdx: number, exclude: string) => {
+  const family = FAMILIES[familyIdx];
+  const available = family.filter((n) => n !== exclude);
+  const pool = available.length > 0 ? available : family;
+  return pool[Math.floor(Math.random() * pool.length)];
+};
 
 const AIFragranceSticker = ({
   notes = ["BERGAMOT", "OUD", "SANDALWOOD", "ROSE"],
@@ -18,9 +41,92 @@ const AIFragranceSticker = ({
   const [hovered, setHovered] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  const [labels, setLabels] = useState<Record<Position, string>>({
+    top: notes[0],
+    right: notes[1],
+    bottom: notes[2],
+    left: notes[3],
+  });
+  const [animState, setAnimState] = useState<Record<Position, "idle" | "out" | "in">>({
+    top: "idle",
+    right: "idle",
+    bottom: "idle",
+    left: "idle",
+  });
+
+  // Track family assigned to each position so we keep families diverse across positions.
+  const familyByPosRef = useRef<Record<Position, number>>({
+    top: findFamilyIndex(notes[0]),
+    right: findFamilyIndex(notes[1]),
+    bottom: findFamilyIndex(notes[2]),
+    left: findFamilyIndex(notes[3]),
+  });
+
+  const indexRef = useRef(0);
+  const pausedRef = useRef(false);
+  const reducedMotion = useRef(false);
+
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
+    reducedMotion.current =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    pausedRef.current = hovered;
+  }, [hovered]);
+
+  const updateLabel = (pos: Position) => {
+    setAnimState((s) => ({ ...s, [pos]: "out" }));
+
+    // Swap text while invisible
+    setTimeout(() => {
+      setLabels((prev) => {
+        // Pick a family not currently used by any other position
+        const usedFamilies = new Set(
+          POSITIONS.filter((p) => p !== pos).map(
+            (p) => familyByPosRef.current[p]
+          )
+        );
+        const candidates = FAMILIES.map((_, i) => i).filter(
+          (i) => !usedFamilies.has(i)
+        );
+        const familyIdx =
+          candidates[Math.floor(Math.random() * candidates.length)] ??
+          Math.floor(Math.random() * FAMILIES.length);
+
+        const newNote = pickFromFamilyExcluding(familyIdx, prev[pos]);
+        familyByPosRef.current[pos] = familyIdx;
+        return { ...prev, [pos]: newNote };
+      });
+      setAnimState((s) => ({ ...s, [pos]: "in" }));
+    }, 250);
+
+    // Settle
+    setTimeout(() => {
+      setAnimState((s) => ({ ...s, [pos]: "idle" }));
+    }, 950);
+  };
+
+  useEffect(() => {
+    if (reducedMotion.current) return;
+
+    let interval: number | undefined;
+    const start = window.setTimeout(() => {
+      interval = window.setInterval(() => {
+        if (pausedRef.current) return;
+        const pos = POSITIONS[indexRef.current];
+        updateLabel(pos);
+        indexRef.current = (indexRef.current + 1) % POSITIONS.length;
+      }, 1500);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(start);
+      if (interval) window.clearInterval(interval);
+    };
   }, []);
 
   // 8 radar vertices around a circle. Index 0 = top, clockwise.
@@ -34,13 +140,20 @@ const AIFragranceSticker = ({
       };
     });
 
-  const outer = verts(42.5); // 85% of 50 radius
-  const inner = verts(30); // 60% of 50
+  const outer = verts(42.5);
+  const inner = verts(30);
 
   const polyToPoints = (pts: { x: number; y: number }[]) =>
     pts.map((p) => `${p.x},${p.y}`).join(" ");
 
   const handleClick = () => navigate("/shop/quiz");
+
+  const labelClass = (pos: Position) => {
+    const s = animState[pos];
+    return `ai-label ai-label-${pos} ${
+      s === "out" ? "is-out" : s === "in" ? "is-in" : ""
+    }`;
+  };
 
   return (
     <div
@@ -51,7 +164,7 @@ const AIFragranceSticker = ({
       onClick={handleClick}
       role="button"
       tabIndex={0}
-      aria-label="AI-crafted fragrance — take the quiz"
+      aria-label="Bazuki AI Fragrance — algorithmically crafted scent formula"
     >
       <style>{`
         .ai-sticker-wrap {
@@ -121,6 +234,7 @@ const AIFragranceSticker = ({
         .ai-c1 { font-size: 12px; font-weight: 700; color: #C9A84C; letter-spacing: 1px; }
         .ai-c2 { font-size: 7px; color: #C9A84C; letter-spacing: 1.5px; margin-top: 2px; }
         .ai-c3 { font-size: 6px; color: rgba(201,168,76,0.6); letter-spacing: 1px; margin-top: 2px; }
+
         .ai-label {
           position: absolute;
           font-family: Georgia, serif;
@@ -128,12 +242,33 @@ const AIFragranceSticker = ({
           color: rgba(201,168,76,0.7);
           letter-spacing: 2px;
           white-space: nowrap;
-          transition: opacity 300ms ease;
+          opacity: 1;
+          transition: opacity 250ms ease, transform 300ms ease, color 200ms ease;
+          will-change: opacity, transform, color;
         }
-        .ai-label-top { top: -14px; left: 50%; transform: translateX(-50%); }
-        .ai-label-right { top: 50%; right: -8px; transform: translate(100%, -50%); }
+        .ai-label-top    { top: -14px; left: 50%; transform: translateX(-50%); }
+        .ai-label-right  { top: 50%; right: -8px; transform: translate(100%, -50%); }
         .ai-label-bottom { bottom: -14px; left: 50%; transform: translateX(-50%); }
-        .ai-label-left { top: 50%; left: -8px; transform: translate(-100%, -50%); }
+        .ai-label-left   { top: 50%; left: -8px; transform: translate(-100%, -50%); }
+
+        /* Animating out — push away from center, fade */
+        .ai-label-top.is-out    { opacity: 0; transform: translate(-50%, -4px); transition-duration: 250ms; transition-timing-function: ease-in; }
+        .ai-label-right.is-out  { opacity: 0; transform: translate(calc(100% + 4px), -50%); transition-duration: 250ms; transition-timing-function: ease-in; }
+        .ai-label-bottom.is-out { opacity: 0; transform: translate(-50%, 4px); transition-duration: 250ms; transition-timing-function: ease-in; }
+        .ai-label-left.is-out   { opacity: 0; transform: translate(calc(-100% - 4px), -50%); transition-duration: 250ms; transition-timing-function: ease-in; }
+
+        /* Animating in — fade back to rest with brief highlight */
+        .ai-label.is-in {
+          color: rgba(201,168,76,1);
+          animation: ai-label-highlight 700ms ease-out;
+        }
+
+        @keyframes ai-label-highlight {
+          0%   { color: rgba(201,168,76,0.7); }
+          40%  { color: rgba(201,168,76,1); }
+          100% { color: rgba(201,168,76,0.7); }
+        }
+
         .ai-node { fill: #C9A84C; transform-origin: center; }
         .ai-node.a { animation: ai-pulse 2s ease-in-out infinite; }
         .ai-node.b { animation: ai-pulse 2s ease-in-out 1s infinite; }
@@ -203,6 +338,12 @@ const AIFragranceSticker = ({
             opacity: 1 !important;
             transform: none !important;
           }
+          .ai-label {
+            animation: none !important;
+            transition: none !important;
+            opacity: 1 !important;
+            color: rgba(201,168,76,0.7) !important;
+          }
         }
       `}</style>
 
@@ -210,7 +351,6 @@ const AIFragranceSticker = ({
       <div className="ai-dashed-ring" aria-hidden />
 
       <svg className="ai-svg" viewBox="0 0 100 100" aria-hidden>
-        {/* 8 radial spokes */}
         {Array.from({ length: 8 }).map((_, i) => {
           const angle = (Math.PI * 2 * i) / 8 - Math.PI / 2;
           const x2 = 50 + 45 * Math.cos(angle);
@@ -224,7 +364,6 @@ const AIFragranceSticker = ({
             />
           );
         })}
-        {/* Outer polygon */}
         <polygon
           points={polyToPoints(outer)}
           fill="rgba(201,168,76,0.06)"
@@ -232,7 +371,6 @@ const AIFragranceSticker = ({
           strokeWidth="0.8"
           strokeOpacity="0.5"
         />
-        {/* Inner polygon */}
         <polygon
           points={polyToPoints(inner)}
           fill="rgba(201,168,76,0.04)"
@@ -240,7 +378,6 @@ const AIFragranceSticker = ({
           strokeWidth="0.5"
           strokeOpacity="0.3"
         />
-        {/* 8 nodes */}
         {outer.map((p, i) => (
           <circle
             key={i}
@@ -250,10 +387,10 @@ const AIFragranceSticker = ({
         ))}
       </svg>
 
-      <span className="ai-label ai-label-top">{notes[0]}</span>
-      <span className="ai-label ai-label-right">{notes[1]}</span>
-      <span className="ai-label ai-label-bottom">{notes[2]}</span>
-      <span className="ai-label ai-label-left">{notes[3]}</span>
+      <span className={labelClass("top")} aria-live="polite">{labels.top}</span>
+      <span className={labelClass("right")} aria-live="polite">{labels.right}</span>
+      <span className={labelClass("bottom")} aria-live="polite">{labels.bottom}</span>
+      <span className={labelClass("left")} aria-live="polite">{labels.left}</span>
 
       <div className="ai-center">
         <span className="ai-c1">AI</span>
