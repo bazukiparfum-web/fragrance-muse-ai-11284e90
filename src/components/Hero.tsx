@@ -70,6 +70,19 @@ const Hero = () => {
           0%,100% { box-shadow: 0 0 80px 20px rgba(201,168,76,0.18), inset 0 0 60px rgba(201,168,76,0.25); }
           50%     { box-shadow: 0 0 120px 40px rgba(201,168,76,0.28), inset 0 0 80px rgba(201,168,76,0.35); }
         }
+        @keyframes bz-drift-1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-12px,10px); } }
+        @keyframes bz-drift-2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(14px,-8px); } }
+        @keyframes bz-drift-3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-10px,-12px); } }
+        @keyframes bz-drift-4 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(12px,12px); } }
+        .bz-drift-1 { animation: bz-drift-1 9s ease-in-out infinite; }
+        .bz-drift-2 { animation: bz-drift-2 11s ease-in-out infinite; animation-delay: -2s; }
+        .bz-drift-3 { animation: bz-drift-3 13s ease-in-out infinite; animation-delay: -4s; }
+        .bz-drift-4 { animation: bz-drift-4 10s ease-in-out infinite; animation-delay: -6s; }
+        .hero-bottle-wrap:hover ~ * .hero-note-tag,
+        .hero-right-col:hover .hero-note-tag { animation-play-state: paused; }
+        @media (prefers-reduced-motion: reduce) {
+          .bz-drift-1, .bz-drift-2, .bz-drift-3, .bz-drift-4 { animation: none; }
+        }
       `}</style>
 
       {/* Orb A — bottom-left amber */}
