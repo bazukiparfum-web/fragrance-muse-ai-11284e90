@@ -54,10 +54,6 @@ const Hero = () => {
           50%  { transform: translate(-50px,30px) scale(1.1); }
           100% { transform: translate(0,0) scale(1); }
         }
-        @keyframes bz-bob {
-          0%,100% { transform: translateY(-8px); }
-          50%     { transform: translateY(8px); }
-        }
         @keyframes bz-bounce-down {
           0%,100% { transform: translateY(0); opacity: 0.4; }
           50%     { transform: translateY(6px); opacity: 0.8; }
@@ -65,10 +61,6 @@ const Hero = () => {
         @keyframes bz-marquee {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
-        }
-        @keyframes bz-bottle-glow {
-          0%,100% { box-shadow: 0 0 80px 20px rgba(201,168,76,0.18), inset 0 0 60px rgba(201,168,76,0.25); }
-          50%     { box-shadow: 0 0 120px 40px rgba(201,168,76,0.28), inset 0 0 80px rgba(201,168,76,0.35); }
         }
         @keyframes bz-drift-1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-12px,10px); } }
         @keyframes bz-drift-2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(14px,-8px); } }
