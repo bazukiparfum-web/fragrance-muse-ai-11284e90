@@ -100,15 +100,19 @@ const Hero = () => {
         .bz-bottle-inner {
           position: relative;
           width: 100%;
+          isolation: isolate;
         }
         .bz-bottle-img {
           width: 100%;
           height: auto;
           display: block;
           object-fit: contain;
-          filter: drop-shadow(0 20px 40px rgba(0,0,0,0.8))
+          mix-blend-mode: screen;
+          filter: brightness(1.05)
+                  drop-shadow(0 20px 40px rgba(0,0,0,0.8))
                   drop-shadow(0 0 30px rgba(0,180,200,0.12));
         }
+
 
         /* Side bottles */
         .bz-bottle-side .bz-bottle-wrap {
