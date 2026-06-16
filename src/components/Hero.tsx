@@ -481,18 +481,13 @@ const Hero = () => {
           filter: blur(20px);
         }
 
-        @media (max-width: 1280px) {
+        @media (max-width: 1024px) {
           .bottle-card.center .bottle-img-wrap { width: 230px; }
           .bottle-card.side .bottle-img-wrap { width: 170px; }
-          .hero-section { padding-top: 12px; }
-        }
-        @media (max-width: 1024px) {
-          .bottle-card.center .bottle-img-wrap { width: 200px; }
-          .bottle-card.side .bottle-img-wrap { width: 145px; }
         }
         @media (max-width: 768px) {
           .bottle-card.side { display: none; }
-          .bottle-card.center .bottle-img-wrap { width: min(85vw, 260px); }
+          .bottle-card.center .bottle-img-wrap { width: min(82vw, 300px); }
           .bottles-row { margin-top: 24px; }
           .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin-top: 24px; }
           .hero-cta-primary, .hero-cta-secondary { justify-content: center; text-align: center; }
