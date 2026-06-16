@@ -1,47 +1,30 @@
-## Verification results
+Polish hero subheadline typography and add responsive line-break controls so the new copy never crowds the bottle row or CTAs on small screens.
 
-Checked the live preview at three breakpoints and inspected the bottle/label region for each.
+### Current issue
+The `.hero-subtext` block uses a fixed `16px` / `line-height: 1.7` with no mobile refinement. On a 390 px viewport the sentence wraps into 3-4 tall lines, pushing the bottle and CTAs downward and risking overlap on very short viewports. No `letter-spacing` is set, so the copy lacks the tight editorial rhythm expected from a luxury fragrance brand.
 
-### 1024 × 900 (tablet/laptop breakpoint)
-- All three bottles render with gold cap fully visible and base (lemon/leaf props) uncut.
-- Side bottles `210px → 170px` and center `230px` from the `≤1024px` media query — no overflow into heading or CTAs.
-- Label sits inside the dark face plate, but visually it reads a touch high — closer to the top edge of the plate rather than centered on it.
+### What will change (all in `src/components/Hero.tsx`)
 
-### 768 × 1024 (tablet portrait — side bottles hidden)
-- Center bottle scales to `min(82vw, 300px)`. Cap and base both fully visible.
-- Heading, subtext, BEST MATCH badge, bottle, name tag, and CTA buttons stack cleanly with no overlap.
+1. **Luxury typography polish**
+   - Add `letter-spacing: 0.03em` for refined editorial feel.
+   - Tighten `line-height` from `1.7` → `1.6` (desktop) and `1.5` (mobile) so the block stays compact without feeling cramped.
+   - Scale `font-size` with `clamp(14px, 1.2vw + 11px, 16px)` so it drops to `14 px` on narrow screens while staying `16 px` on desktop.
 
-### 390 × 844 (phone)
-- Same single-bottle layout. Cap fully visible, base uncut, full reflection visible.
-- Label `42% / top:60%` sits on the upper portion of the dark plate, not centered on it. The plate's vertical center is closer to `~68–70%` of the image wrap.
-- CTA row stacks (full-width buttons). No collision with bottle or heading.
+2. **Responsive safe sizing**
+   - Cap `max-width` at `480 px` on desktop and `340 px` on mobile (`max-width: 480px` default, `@media (max-width: 768px)` override to `340px`).
+   - This forces the sentence to break into 2 clean lines on desktop and 3 short but balanced lines on mobile instead of 4+ ragged ones.
 
-### Overlap check (all sizes)
-- Hero heading → bottles: clean gap (`bottles-row { margin-top: 24px }` plus `BEST MATCH` badge spacer).
-- Bottles → CTAs: `hero-cta-row { margin-top: 24px }` keeps them clear; on mobile the stacked CTAs sit well below the name tag.
-- No element overlaps the heading or buttons at any tested size.
+3. **Explicit line-break control**
+   - Insert a `<br className="mobile-break" />` before the final clause "Just like you." so that phrase can sit on its own line when width permits, preventing orphan words.
+   - The `<br>` will be hidden on desktop (`display: none` above 768 px) so the sentence flows in its natural wrap there.
 
-## Proposed adjustment (single CSS tweak)
+4. **Guaranteed safe vertical spacing**
+   - Change subtext margin from `margin: 16px 0 0` to `margin: 16px 0 8px`.
+   - Keep `.bottles-row { margin-top: 24px; }` on desktop, but raise it to `margin-top: 28px` inside the `max-width: 768px` media query.
+   - Result: at least `8 px` breathing room between the text block and the bottle row, and `28 px` on mobile, ensuring no collision even when the viewport is vertically short.
 
-The crop and sizing are correct; only the label vertical position needs a nudge so it visually centers on the dark plate at every size.
-
-In `src/components/Hero.tsx`, update `.label-wrap`:
-
-```css
-.label-wrap {
-  top: 68%;        /* was 60% */
-  width: 42%;      /* unchanged */
-}
-```
-
-No other rules change. Width stays at 42% because text length ("Signature Essence", "Timeless Harmony", "Modern Classic") fits inside the plate without crowding at both 280px and 210px wraps, and scales proportionally on the mobile `min(82vw, 300px)` wrap.
-
-### Re-verification after change
-Re-screenshot at 1024, 768, and 390 and confirm:
-- Cap still fully visible (no change — label move doesn't affect crop).
-- Label visually centered on the dark plate at all three sizes.
-- No overlap with name tag below (the name tag sits outside `.bottle-img-wrap`, so moving the label inside the wrap cannot collide with it).
-
-## Out of scope
-- No changes to bottle image, label SVG, fragrance names, colors, animations, or other sections.
-- No changes to `BazukiLabel.tsx`, atmosphere glows, or CTA styling.
+### Verification
+After edits, screenshots will be captured at 1280 px, 768 px, and 390 px to confirm:
+- Subtext never touches or overlaps the bottle image or CTA buttons.
+- Line breaks look intentional and balanced.
+- Font rhythm feels premium on both desktop and mobile.
