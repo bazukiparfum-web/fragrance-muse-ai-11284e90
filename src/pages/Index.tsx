@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import QuizResultPreview from "@/components/QuizResultPreview";
+
 import TrustedByStrip from "@/components/home/TrustedByStrip";
 import HowItWorks from "@/components/home/HowItWorks";
 import FeaturedScents from "@/components/home/FeaturedScents";
@@ -123,7 +123,6 @@ const Index = () => {
       <Header />
       <Hero />
       <TrustedByStrip />
-      <QuizResultPreview />
       <HowItWorks />
 
       <FeaturedScents />
