@@ -76,13 +76,16 @@ const Hero = () => {
         .hero-headline .it { font-style: italic; display: block; }
         .hero-subtext {
           color: #C8C0B0;
-          font-size: 16px;
-          line-height: 1.7;
+          font-size: clamp(14px, 1.2vw + 11px, 16px);
+          line-height: 1.6;
+          letter-spacing: 0.03em;
           text-align: center;
           font-family: 'Inter', sans-serif;
-          max-width: 520px;
-          margin: 16px 0 0;
+          max-width: 480px;
+          margin: 16px 0 8px;
         }
+        .hero-subtext .mobile-break { display: none; }
+
 
         .bottles-row {
           display: flex;
@@ -488,11 +491,14 @@ const Hero = () => {
         @media (max-width: 768px) {
           .bottle-card.side { display: none; }
           .bottle-card.center .bottle-img-wrap { width: min(82vw, 300px); }
-          .bottles-row { margin-top: 24px; }
+          .bottles-row { margin-top: 28px; }
+          .hero-subtext { max-width: 340px; line-height: 1.5; }
+          .hero-subtext .mobile-break { display: inline; }
           .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin-top: 24px; }
           .hero-cta-primary, .hero-cta-secondary { justify-content: center; text-align: center; }
           .scroll-hint { display: none; }
         }
+
         @media (prefers-reduced-motion: reduce) {
           .bottle-card.center .bottle-img-wrap,
           .bottle-card.center .label-wrap::after,
@@ -518,7 +524,7 @@ const Hero = () => {
           <span className="it">Engineered by AI.</span>
         </h1>
         <p className="hero-subtext">
-          Fragrance crafted uniquely for you.&nbsp;No two fragrance&nbsp;alike. Just like you.
+          Fragrance crafted uniquely for you.&nbsp;No two fragrance&nbsp;alike.<br className="mobile-break" /> Just like you.
         </p>
 
         <div className="bottles-row">
