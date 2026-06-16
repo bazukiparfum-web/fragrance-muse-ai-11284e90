@@ -139,7 +139,7 @@ const Index = () => {
             href="/scent-coaching"
             className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs uppercase tracking-[0.2em] text-cream border border-luxury-gold/50 hover:bg-luxury-gold hover:text-luxury-black transition-colors"
           >
-            Scent Coaching →
+            Book a Consultation →
           </a>
         </div>
       </section>
