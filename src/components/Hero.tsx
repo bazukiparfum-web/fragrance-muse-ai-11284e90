@@ -484,11 +484,22 @@ const Hero = () => {
           .bottle-card.side { display: none; }
           .bottle-card.center .bottle-img-wrap { width: min(82vw, 300px); }
           .bottles-row { margin-top: 28px; }
-          .hero-subtext { max-width: 340px; line-height: 1.5; }
+          .hero-eyebrow { letter-spacing: 0.3em; line-height: 1.4; }
+          .hero-headline { line-height: 1.15; letter-spacing: -0.005em; }
+          .hero-subtext {
+            max-width: min(94vw, 22rem);
+            line-height: 1.55;
+            letter-spacing: 0.015em;
+          }
           .hero-subtext .mobile-break { display: inline; }
           .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin-top: 24px; }
           .hero-cta-primary, .hero-cta-secondary { justify-content: center; text-align: center; }
           .scroll-hint { display: none; }
+        }
+        @media (max-width: 380px) {
+          .hero-eyebrow { margin-top: 0.5em; letter-spacing: 0.28em; }
+          .hero-headline { font-size: clamp(1.875rem, 7vw, 2.25rem); }
+          .hero-subtext { font-size: 0.9rem; line-height: 1.5; }
         }
 
         @media (prefers-reduced-motion: reduce) {
