@@ -117,17 +117,35 @@ const Hero = () => {
           height: 100%;
           object-fit: cover;
           object-position: 50% 28%;
-          filter:
-            drop-shadow(0 24px 48px rgba(0,0,0,0.9))
-            drop-shadow(0 0 35px rgba(0,180,200,0.18));
           display: block;
         }
         .bottle-card.side .bottle-photo {
           opacity: 0.82;
           object-position: 50% 22%;
+        }
+        .bottle-card.left .bottle-photo {
           filter:
+            hue-rotate(-110deg)
+            saturate(1.4)
+            brightness(0.92)
+            sepia(0.25)
             drop-shadow(0 20px 40px rgba(0,0,0,0.9))
-            drop-shadow(0 0 20px rgba(0,180,200,0.10));
+            drop-shadow(0 0 35px rgba(180,120,20,0.25));
+        }
+        .bottle-card.right .bottle-photo {
+          filter:
+            hue-rotate(75deg)
+            saturate(1.35)
+            brightness(0.90)
+            drop-shadow(0 20px 40px rgba(0,0,0,0.9))
+            drop-shadow(0 0 35px rgba(120,40,200,0.22));
+        }
+        .bottle-card.center .bottle-photo {
+          filter:
+            saturate(1.15)
+            brightness(1.0)
+            drop-shadow(0 24px 48px rgba(0,0,0,0.9))
+            drop-shadow(0 0 40px rgba(0,180,200,0.22));
         }
 
         .label-wrap {
@@ -147,25 +165,98 @@ const Hero = () => {
             drop-shadow(0 3px 10px rgba(0,0,0,0.7))
             drop-shadow(0 0 15px rgba(201,168,76,0.10));
         }
+        .bottle-card.left .label-wrap svg {
+          filter:
+            drop-shadow(0 2px 8px rgba(0,0,0,0.8))
+            drop-shadow(0 0 10px rgba(180,120,20,0.15));
+        }
+        .bottle-card.center .label-wrap svg {
+          filter:
+            drop-shadow(0 2px 8px rgba(0,0,0,0.8))
+            drop-shadow(0 0 10px rgba(0,180,200,0.15));
+        }
+        .bottle-card.right .label-wrap svg {
+          filter:
+            drop-shadow(0 2px 8px rgba(0,0,0,0.8))
+            drop-shadow(0 0 10px rgba(120,40,200,0.15));
+        }
 
-        /* Center special effects */
-        .bottle-card.center .bottle-img-wrap::before {
+        /* Color overlays */
+        .bottle-card.left .bottle-img-wrap::after {
           content: '';
           position: absolute;
-          bottom: -10px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 80%;
-          height: 60px;
+          inset: 0;
+          background: rgba(180, 110, 10, 0.18);
+          mix-blend-mode: color;
+          pointer-events: none;
+          z-index: 1;
+          border-radius: 4px;
+        }
+        .bottle-card.center .bottle-img-wrap::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 180, 200, 0.08);
+          mix-blend-mode: screen;
+          pointer-events: none;
+          z-index: 1;
+          border-radius: 4px;
+        }
+        .bottle-card.right .bottle-img-wrap::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: rgba(100, 30, 180, 0.15);
+          mix-blend-mode: color;
+          pointer-events: none;
+          z-index: 1;
+          border-radius: 4px;
+        }
+
+        /* Behind-bottle glows */
+        .bottle-card.left .bottle-img-wrap::before {
+          content: '';
+          position: absolute;
+          inset: -15%;
           background: radial-gradient(
-            ellipse at center,
-            rgba(0,200,220,0.25) 0%,
+            ellipse 70% 80% at 50% 45%,
+            rgba(200, 130, 20, 0.14) 0%,
+            rgba(180, 100, 10, 0.06) 40%,
             transparent 70%
           );
           z-index: 0;
-          filter: blur(12px);
           pointer-events: none;
+          filter: blur(8px);
         }
+        .bottle-card.center .bottle-img-wrap::before {
+          content: '';
+          position: absolute;
+          inset: -15%;
+          background: radial-gradient(
+            ellipse 70% 80% at 50% 45%,
+            rgba(0, 200, 220, 0.14) 0%,
+            rgba(0, 160, 180, 0.06) 40%,
+            transparent 70%
+          );
+          z-index: 0;
+          pointer-events: none;
+          filter: blur(8px);
+        }
+        .bottle-card.right .bottle-img-wrap::before {
+          content: '';
+          position: absolute;
+          inset: -15%;
+          background: radial-gradient(
+            ellipse 70% 80% at 50% 45%,
+            rgba(120, 40, 220, 0.14) 0%,
+            rgba(80, 20, 160, 0.06) 40%,
+            transparent 70%
+          );
+          z-index: 0;
+          pointer-events: none;
+          filter: blur(8px);
+        }
+
         @keyframes bottleFloat {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-10px); }
@@ -197,11 +288,25 @@ const Hero = () => {
           transform: translateY(-8px);
           transition: transform 300ms ease-out;
         }
-        .bottle-card.side:hover .bottle-photo {
+        .bottle-card.left:hover .bottle-photo {
           opacity: 1;
           filter:
+            hue-rotate(-110deg)
+            saturate(1.55)
+            brightness(0.96)
+            sepia(0.25)
             drop-shadow(0 28px 50px rgba(0,0,0,0.9))
-            drop-shadow(0 0 35px rgba(0,180,200,0.25));
+            drop-shadow(0 0 40px rgba(200,140,30,0.30));
+          transition: all 300ms ease-out;
+        }
+        .bottle-card.right:hover .bottle-photo {
+          opacity: 1;
+          filter:
+            hue-rotate(75deg)
+            saturate(1.5)
+            brightness(0.95)
+            drop-shadow(0 28px 50px rgba(0,0,0,0.9))
+            drop-shadow(0 0 40px rgba(140,50,220,0.28));
           transition: all 300ms ease-out;
         }
         .bottle-card.center:hover .bottle-img-wrap {
@@ -244,6 +349,8 @@ const Hero = () => {
           color: #C9A84C;
         }
         .bottle-card.center .bottle-name-tag { margin-top: 14px; }
+        .bottle-card.left .bottle-name-tag { color: #C9943A; }
+        .bottle-card.right .bottle-name-tag { color: #A87CC9; }
 
         /* CTAs */
         .hero-cta-row {
@@ -291,6 +398,40 @@ const Hero = () => {
           border-color: rgba(201,168,76,0.8);
         }
 
+        /* Ground glow */
+        .bottle-ground-glow {
+          position: absolute;
+          bottom: -5px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 75%;
+          height: 50px;
+          filter: blur(16px);
+          z-index: 0;
+          pointer-events: none;
+        }
+        .bottle-card.left .bottle-ground-glow {
+          background: radial-gradient(
+            ellipse at center,
+            rgba(200, 140, 30, 0.20) 0%,
+            transparent 70%
+          );
+        }
+        .bottle-card.center .bottle-ground-glow {
+          background: radial-gradient(
+            ellipse at center,
+            rgba(0, 200, 220, 0.22) 0%,
+            transparent 70%
+          );
+        }
+        .bottle-card.right .bottle-ground-glow {
+          background: radial-gradient(
+            ellipse at center,
+            rgba(140, 50, 220, 0.20) 0%,
+            transparent 70%
+          );
+        }
+
         /* Scroll hint */
         .scroll-hint {
           position: absolute;
@@ -317,6 +458,54 @@ const Hero = () => {
         @keyframes scrollBounce {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(5px); }
+        }
+
+        /* Section atmosphere glows */
+        .hero-atmosphere-left {
+          position: absolute;
+          top: 30%;
+          left: 5%;
+          width: 300px;
+          height: 400px;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(180, 110, 20, 0.06) 0%,
+            transparent 70%
+          );
+          pointer-events: none;
+          z-index: 1;
+          filter: blur(20px);
+        }
+        .hero-atmosphere-center {
+          position: absolute;
+          top: 20%;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 400px;
+          height: 500px;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(0, 180, 200, 0.07) 0%,
+            transparent 65%
+          );
+          pointer-events: none;
+          z-index: 1;
+          filter: blur(20px);
+        }
+        .hero-atmosphere-right {
+          position: absolute;
+          top: 30%;
+          right: 5%;
+          width: 300px;
+          height: 400px;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(100, 30, 180, 0.07) 0%,
+            transparent 70%
+          );
+          pointer-events: none;
+          z-index: 1;
+          filter: blur(20px);
         }
 
         @media (max-width: 1280px) {
@@ -350,6 +539,10 @@ const Hero = () => {
       <div className="hero-bg-blur" aria-hidden />
       <div className="hero-bg-overlay" aria-hidden />
 
+      <div className="hero-atmosphere-left" aria-hidden />
+      <div className="hero-atmosphere-center" aria-hidden />
+      <div className="hero-atmosphere-right" aria-hidden />
+
       <div className="hero-content">
         <p className="hero-eyebrow">AI-Crafted · Made in India</p>
         <h1 className="hero-headline">
@@ -377,6 +570,7 @@ const Hero = () => {
                   <div className="label-wrap">
                     <BazukiLabel line1={b.line1} line2={b.line2} />
                   </div>
+                  <div className="bottle-ground-glow" aria-hidden />
                 </div>
                 <div className={`bottle-name-tag ${isCenter ? "center" : ""}`}>{b.name}</div>
               </div>
