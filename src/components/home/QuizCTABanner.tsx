@@ -7,7 +7,7 @@ const QuizCTABanner = () => {
   return (
     <section
       className="w-full py-16 md:py-20"
-      style={{ background: "linear-gradient(90deg, #1A0F00 0%, #080808 100%)" }}
+      style={{ backgroundColor: "#0A0805" }}
     >
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">

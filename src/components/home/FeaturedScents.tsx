@@ -31,7 +31,7 @@ const FeaturedScents = () => {
   if (!loading && products.length === 0) return null;
 
   return (
-    <section className="w-full bg-bz-primary py-16 md:py-24">
+    <section className="w-full py-16 md:py-24" style={{ backgroundColor: "#111111" }}>
       <div className="container mx-auto px-6">
         <div className="text-center mb-10 md:mb-14">
           <Reveal variant="headline" as="p" className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-4">

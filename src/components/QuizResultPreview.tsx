@@ -11,7 +11,8 @@ const QuizResultPreview = () => {
   return (
     <section
       aria-label="What you'll receive from the quiz"
-      className="w-full pb-12 md:pb-16 bg-background"
+      className="w-full pb-12 md:pb-16"
+      style={{ backgroundColor: "#0A0805" }}
     >
       <div className="container mx-auto px-6 max-w-4xl">
         <div
