@@ -240,24 +240,7 @@ const Hero = () => {
         .bottle-card.center .bottle-img-wrap {
           animation: bottleFloat 4s ease-in-out infinite;
         }
-        @keyframes labelShimmer {
-          0%, 85%, 100% { opacity: 0; }
-          88%, 96% { opacity: 1; }
-        }
-        .bottle-card.center .label-wrap::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            110deg,
-            transparent 35%,
-            rgba(255,255,255,0.07) 50%,
-            transparent 65%
-          );
-          animation: labelShimmer 8s ease-in-out infinite;
-          pointer-events: none;
-          border-radius: 4px;
-        }
+
 
         /* Hover */
         .bottle-card.side:hover .bottle-img-wrap {
@@ -303,13 +286,9 @@ const Hero = () => {
           margin-bottom: 10px;
           position: relative;
           z-index: 4;
-          animation: badgePulse 2.5s ease-in-out infinite;
           text-transform: uppercase;
         }
-        @keyframes badgePulse {
-          0%, 100% { box-shadow: 0 0 0 rgba(201,168,76,0); }
-          50% { box-shadow: 0 0 12px rgba(201,168,76,0.25); }
-        }
+
 
         /* Name tag */
         .bottle-name-tag {
@@ -347,13 +326,10 @@ const Hero = () => {
           display: inline-flex; align-items: center; gap: 8px;
           border: none;
           cursor: pointer;
-          animation: btnGlow 2.5s ease-in-out infinite;
-          transition: background 200ms, transform 200ms;
+          transition: background 200ms ease, transform 200ms ease;
         }
-        @keyframes btnGlow {
-          0%, 100% { box-shadow: 0 0 0 rgba(201,168,76,0); }
-          50% { box-shadow: 0 0 20px rgba(201,168,76,0.35), 0 4px 20px rgba(0,0,0,0.4); }
-        }
+        .hero-cta-primary:hover { background: #F0C040; transform: scale(1.03); }
+
         .hero-cta-primary:hover { background: #F0C040; transform: scale(1.03); }
         .hero-cta-secondary {
           background: transparent;
@@ -429,12 +405,13 @@ const Hero = () => {
         .scroll-arrow {
           color: rgba(201,168,76,0.4);
           font-size: 14px;
-          animation: scrollBounce 1.8s ease-in-out infinite;
+          animation: scrollPulse 3s ease-in-out infinite;
         }
-        @keyframes scrollBounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(5px); }
+        @keyframes scrollPulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.7; }
         }
+
 
         /* Section atmosphere glows */
         .hero-atmosphere-left {
