@@ -1,30 +1,34 @@
-Polish hero subheadline typography and add responsive line-break controls so the new copy never crowds the bottle row or CTAs on small screens.
+# Mini Quiz Step Cards Below Hero CTA
 
-### Current issue
-The `.hero-subtext` block uses a fixed `16px` / `line-height: 1.7` with no mobile refinement. On a 390 px viewport the sentence wraps into 3-4 tall lines, pushing the bottle and CTAs downward and risking overlap on very short viewports. No `letter-spacing` is set, so the copy lacks the tight editorial rhythm expected from a luxury fragrance brand.
+## What
 
-### What will change (all in `src/components/Hero.tsx`)
+Add a compact 3-step teaser row on the homepage directly under the hero's "Discover Your Scent" CTA, presenting the AI fragrance quiz flow as: **Take the Quiz → AI Formulates → 3 Bottles Delivered**. The whole row links to the existing `/shop/quiz` route — no new quiz logic, no inline questions.
 
-1. **Luxury typography polish**
-   - Add `letter-spacing: 0.03em` for refined editorial feel.
-   - Tighten `line-height` from `1.7` → `1.6` (desktop) and `1.5` (mobile) so the block stays compact without feeling cramped.
-   - Scale `font-size` with `clamp(14px, 1.2vw + 11px, 16px)` so it drops to `14 px` on narrow screens while staying `16 px` on desktop.
+Design follows the selected "Elite glass-morphism cards" prototype with metallic gold gradient step numbers.
 
-2. **Responsive safe sizing**
-   - Cap `max-width` at `480 px` on desktop and `340 px` on mobile (`max-width: 480px` default, `@media (max-width: 768px)` override to `340px`).
-   - This forces the sentence to break into 2 clean lines on desktop and 3 short but balanced lines on mobile instead of 4+ ragged ones.
+## Where it goes
 
-3. **Explicit line-break control**
-   - Insert a `<br className="mobile-break" />` before the final clause "Just like you." so that phrase can sit on its own line when width permits, preventing orphan words.
-   - The `<br>` will be hidden on desktop (`display: none` above 768 px) so the sentence flows in its natural wrap there.
+- New component: `src/components/QuizStepsTeaser.tsx`
+- Mounted in `src/pages/Index.tsx` immediately after the `<Hero />` component, before the next existing section.
 
-4. **Guaranteed safe vertical spacing**
-   - Change subtext margin from `margin: 16px 0 0` to `margin: 16px 0 8px`.
-   - Keep `.bottles-row { margin-top: 24px; }` on desktop, but raise it to `margin-top: 28px` inside the `max-width: 768px` media query.
-   - Result: at least `8 px` breathing room between the text block and the bottle row, and `28 px` on mobile, ensuring no collision even when the viewport is vertically short.
+## Visual spec
 
-### Verification
-After edits, screenshots will be captured at 1280 px, 768 px, and 390 px to confirm:
-- Subtext never touches or overlaps the bottle image or CTA buttons.
-- Line breaks look intentional and balanced.
-- Font rhythm feels premium on both desktop and mobile.
+- 3 cards in a connected row (joined borders on md+, stacked rounded cards on mobile)
+- Glass-morphism: `bg-white/5`, `border-white/10`, `backdrop-blur-sm`
+- Step labels ("Step 01/02/03") rendered with a metallic gold gradient (per the user's direction) using `bg-gradient-to-r from-[hsl(var(--bz-gold-light))] via-[hsl(var(--bz-gold))] to-[hsl(var(--bz-gold-dark))] bg-clip-text text-transparent` — tokens already exist in `index.css`
+- Cormorant Garamond serif titles, sans-serif uppercase eyebrows (matches site)
+- Lucide icons: `ClipboardList` (Step 1), `Sparkles` (Step 2), `Package` (Step 3)
+- Hover: card brightens (`bg-white/10`), border lifts, slight `-translate-y-1`
+- "Begin Your Journey" gold eyebrow with hairlines under the row
+- Entire row is an `<a href="/shop/quiz">` wrapping with `group` for shared hover state
+- Stagger fade-in on mount (200ms each), respects `prefers-reduced-motion`
+
+## Token compliance
+
+Replace hardcoded `bg-white/X`, `border-white/X`, `text-amber-200/X` from the prototype with semantic equivalents using existing tokens in `index.css` (`--bz-gold*`, `--card`, `--border`, `--foreground`). No raw hex.
+
+## Out of scope
+
+- No changes to `Hero.tsx` (the existing CTA still links to `/shop/quiz`)
+- No new routes, no quiz state, no DB changes
+- No edits to existing quiz pages
