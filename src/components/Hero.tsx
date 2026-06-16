@@ -16,10 +16,18 @@ const Hero = () => {
     <section className="hero-section" aria-label="Bazuki signature fragrance campaign">
       <style>{`
         .hero-section {
+          --hero-bg: #0A0805;
+          --hero-ivory: #F5F0E8;
+          --hero-body: #C8C0B0;
+          --hero-gold: #C9A84C;
+          --hero-gold-bright: #F0C040;
+          --hero-dim-gold: #8B6914;
+          --hero-warm-amber: #C9943A;
+          --hero-violet: #A87CC9;
           position: relative;
           min-height: 100vh;
           min-height: 100dvh;
-          background: #0A0805;
+          background: var(--hero-bg);
           overflow: hidden;
           display: flex;
           flex-direction: column;
