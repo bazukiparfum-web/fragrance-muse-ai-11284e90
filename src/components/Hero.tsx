@@ -18,13 +18,16 @@ const Hero = () => {
         .hero-section {
           position: relative;
           min-height: 100vh;
+          min-height: 100dvh;
           background: #0A0805;
           overflow: hidden;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 20px 24px 80px;
+          padding: clamp(1rem, 3vw, 1.75rem) clamp(1rem, 4vw, 1.5rem) clamp(3rem, 8vw, 5rem);
+          -webkit-text-size-adjust: 100%;
+          text-size-adjust: 100%;
         }
         .hero-bg-blur {
           position: absolute;
@@ -50,6 +53,7 @@ const Hero = () => {
           position: relative;
           z-index: 2;
           width: 100%;
+          max-width: 100%;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -59,30 +63,41 @@ const Hero = () => {
         .hero-eyebrow {
           color: #C9A84C;
           font-size: 10px;
-          letter-spacing: 0.4em;
+          font-size: clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem);
+          letter-spacing: 0.35em;
+          line-height: 1.4;
           text-transform: uppercase;
           font-family: 'Inter', sans-serif;
-          margin-top: 16px;
+          margin-top: 1em;
         }
         .hero-headline {
           font-family: 'Cormorant Garamond', serif;
           color: #F5F0E8;
           font-weight: 300;
-          line-height: 1.1;
-          font-size: clamp(36px, 6vw, 60px);
+          line-height: 1.15;
+          font-size: 36px;
+          font-size: clamp(2rem, 1.4rem + 3.2vw, 3.75rem);
           text-align: center;
-          margin: 16px 0 0;
+          text-wrap: balance;
+          overflow-wrap: anywhere;
+          hyphens: auto;
+          margin: 0.6em 0 0;
+          font-feature-settings: "kern";
+          -webkit-font-smoothing: antialiased;
         }
         .hero-headline .it { font-style: italic; display: block; }
         .hero-subtext {
           color: #C8C0B0;
-          font-size: clamp(14px, 1.2vw + 11px, 16px);
+          font-size: 15px;
+          font-size: clamp(0.9375rem, 0.85rem + 0.4vw, 1rem);
           line-height: 1.6;
           letter-spacing: 0.03em;
           text-align: center;
           font-family: 'Inter', sans-serif;
-          max-width: 480px;
-          margin: 16px 0 8px;
+          max-width: min(92vw, 32rem);
+          overflow-wrap: anywhere;
+          hyphens: auto;
+          margin: 1em 0 0.5em;
         }
         .hero-subtext .mobile-break { display: none; }
 
@@ -469,11 +484,22 @@ const Hero = () => {
           .bottle-card.side { display: none; }
           .bottle-card.center .bottle-img-wrap { width: min(82vw, 300px); }
           .bottles-row { margin-top: 28px; }
-          .hero-subtext { max-width: 340px; line-height: 1.5; }
+          .hero-eyebrow { letter-spacing: 0.3em; line-height: 1.4; }
+          .hero-headline { line-height: 1.15; letter-spacing: -0.005em; }
+          .hero-subtext {
+            max-width: min(94vw, 22rem);
+            line-height: 1.55;
+            letter-spacing: 0.015em;
+          }
           .hero-subtext .mobile-break { display: inline; }
           .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin-top: 24px; }
           .hero-cta-primary, .hero-cta-secondary { justify-content: center; text-align: center; }
           .scroll-hint { display: none; }
+        }
+        @media (max-width: 380px) {
+          .hero-eyebrow { margin-top: 0.5em; letter-spacing: 0.28em; }
+          .hero-headline { font-size: clamp(1.875rem, 7vw, 2.25rem); }
+          .hero-subtext { font-size: 0.9rem; line-height: 1.5; }
         }
 
         @media (prefers-reduced-motion: reduce) {
