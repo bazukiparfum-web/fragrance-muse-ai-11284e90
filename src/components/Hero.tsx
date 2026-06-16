@@ -325,8 +325,21 @@ const Hero = () => {
         /* CTAs */
         .hero-cta-row {
           display: flex; flex-wrap: wrap;
-          gap: 16px; justify-content: center;
+          gap: 16px; justify-content: center; align-items: flex-start;
           margin-top: 24px;
+        }
+        .hero-cta-primary-wrap {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .quiz-reassurance {
+          font-family: 'Inter', sans-serif;
+          font-size: 11px;
+          color: #8B6914;
+          letter-spacing: 0.05em;
+          text-align: center;
+          margin-top: 8px;
         }
         .hero-cta-primary {
           background: #C9A84C;
@@ -556,9 +569,12 @@ const Hero = () => {
         </div>
 
         <div className="hero-cta-row">
-          <Link to="/shop/quiz" className="hero-cta-primary">
-            Discover Your Scent <ArrowRight size={14} strokeWidth={2.5} />
-          </Link>
+          <div className="hero-cta-primary-wrap">
+            <Link to="/shop/quiz" className="hero-cta-primary">
+              Discover Your Scent <ArrowRight size={14} strokeWidth={2.5} />
+            </Link>
+            <p className="quiz-reassurance">Starts at ₹700 · Free delivery · Tweak before you order</p>
+          </div>
           <Link to="/collection" className="hero-cta-secondary">
             Browse the Library
           </Link>

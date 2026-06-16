@@ -37,13 +37,21 @@ const QuizCTABanner = () => {
               Take our 2-minute quiz and let Bazuki's AI engineer your personal fragrance — from
               memory to molecule.
             </p>
-            <Link
-              to="/shop/quiz"
-              className="font-body inline-flex items-center gap-2 rounded-pill px-8 py-4 text-sm font-medium uppercase tracking-[0.2em] bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md transition-all duration-200"
-            >
-              Begin Your Scent Journey
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="inline-flex flex-col items-center">
+              <Link
+                to="/shop/quiz"
+                className="font-body inline-flex items-center gap-2 rounded-pill px-8 py-4 text-sm font-medium uppercase tracking-[0.2em] bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md transition-all duration-200"
+              >
+                Begin Your Scent Journey
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <p
+                className="font-body text-center"
+                style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", color: "#8B6914", letterSpacing: "0.05em", marginTop: "8px" }}
+              >
+                Starts at ₹700 · Free delivery · Tweak before you order
+              </p>
+            </div>
           </Reveal>
         </div>
       </div>
