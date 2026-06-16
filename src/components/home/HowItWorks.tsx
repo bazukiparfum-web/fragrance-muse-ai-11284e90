@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MessageSquare, Atom, FlaskConical, ArrowRight } from "lucide-react";
+import { MessageSquare, Atom, FlaskConical, ArrowRight, ShieldCheck, Sparkles, Crown, Clock, Truck } from "lucide-react";
 import { Reveal } from "@/components/anim/Reveal";
 import { useInView } from "@/hooks/useInView";
 
@@ -24,18 +24,65 @@ const STEPS = [
   },
 ];
 
+const OUTCOMES = [
+  { Icon: ShieldCheck, label: "Safe Favorite" },
+  { Icon: Sparkles, label: "Adventurous Twist" },
+  { Icon: Crown, label: "Signature Statement" },
+];
+
 const HowItWorks = () => {
   const { ref: lineRef, inView: lineIn } = useInView<HTMLDivElement>({ threshold: 0.3 });
+  const { ref: dividerRef, inView: dividerIn } = useInView<HTMLDivElement>({ threshold: 0.4 });
 
   return (
-    <section className="relative w-full bg-bz-secondary py-24 md:py-32 overflow-hidden">
+    <section
+      className="relative w-full overflow-hidden"
+      style={{ backgroundColor: "#111111", padding: "80px 0" }}
+    >
       <div className="container mx-auto px-6">
-        <Reveal variant="headline" as="h2" className="font-display text-center text-cream text-4xl md:text-[48px] leading-tight mb-16 md:mb-20">
-          Three Steps to Your Signature Scent
+        {/* PART A — Header */}
+        <Reveal variant="headline" className="text-center max-w-2xl mx-auto">
+          <div
+            className="font-display"
+            style={{
+              fontSize: "10px",
+              color: "#C9A84C",
+              letterSpacing: "4px",
+              textTransform: "uppercase",
+              marginBottom: "16px",
+            }}
+          >
+            How It Works
+          </div>
+          <h2
+            className="font-cormorant"
+            style={{
+              color: "#F5F0E8",
+              fontWeight: 300,
+              lineHeight: 1.15,
+            }}
+          >
+            <span className="block text-[28px] md:text-[42px]">
+              Three Steps to Your Signature Scent
+            </span>
+          </h2>
+          <p
+            className="font-body mx-auto"
+            style={{
+              fontSize: "15px",
+              color: "#C8C0B0",
+              maxWidth: "520px",
+              marginTop: "16px",
+              lineHeight: 1.6,
+            }}
+          >
+            Our AI analyzes your answers across 52 curated ingredients to compose three distinct matches.
+          </p>
         </Reveal>
 
-        <div className="relative" ref={lineRef}>
-          {/* Connecting dashed gold line — animated draw (desktop) */}
+        {/* PART B — 3 step cards */}
+        <div className="relative mt-10 md:mt-10" ref={lineRef} style={{ marginTop: "40px" }}>
+          {/* Desktop dashed connector */}
           <svg
             aria-hidden
             className="hidden md:block absolute top-[120px] left-[16%] right-[16%] h-px overflow-visible pointer-events-none"
@@ -60,12 +107,21 @@ const HowItWorks = () => {
             />
           </svg>
 
+          {/* Mobile vertical dashed connector */}
+          <div
+            aria-hidden
+            className="md:hidden absolute top-12 bottom-12 left-[34px] pointer-events-none"
+            style={{
+              borderLeft: "1px dashed hsl(var(--bz-gold) / 0.25)",
+            }}
+          />
+
           <div className="grid md:grid-cols-3 gap-8 md:gap-10 relative">
             {STEPS.map(({ n, Icon, title, body }, i) => (
               <Reveal
                 key={n}
                 variant="item"
-                delay={i * 80}
+                delay={i * 100}
                 className="relative rounded-lg p-10 bg-transparent overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:glow-gold-sm"
                 style={{ border: "1px solid hsl(var(--bz-gold) / 0.1)" }}
               >
@@ -95,14 +151,113 @@ const HowItWorks = () => {
           </div>
         </div>
 
-        <Reveal variant="item" delay={300} className="mt-14 flex justify-center">
-          <Link
-            to="/shop/quiz"
-            className="font-body inline-flex items-center gap-2 rounded-pill px-8 py-3.5 text-sm font-medium uppercase tracking-[0.18em] bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md transition-all duration-200"
+        {/* PART C — Divider + WHAT YOU'LL RECEIVE */}
+        <div
+          ref={dividerRef}
+          aria-hidden
+          className="mx-auto"
+          style={{
+            height: "1px",
+            backgroundColor: "rgba(201,168,76,0.15)",
+            margin: "40px auto",
+            width: dividerIn ? "80%" : "0%",
+            transition: "width 500ms ease-out",
+          }}
+        />
+
+        <div className="text-center">
+          <div
+            className="font-display"
+            style={{
+              fontSize: "9px",
+              color: "#8B6914",
+              letterSpacing: "4px",
+              textTransform: "uppercase",
+              marginBottom: "24px",
+            }}
           >
-            CREATE MY PERFUME
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+            What You'll Receive
+          </div>
+
+          <div className="flex flex-row justify-center items-start gap-6 md:gap-12 max-w-xl mx-auto">
+            {OUTCOMES.map(({ Icon, label }, i) => (
+              <Reveal
+                key={label}
+                variant="item"
+                delay={i * 100}
+                className="flex flex-col items-center text-center gap-3 flex-1"
+              >
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{
+                    background: "hsl(var(--bz-gold) / 0.05)",
+                    border: "1px solid hsl(var(--bz-gold) / 0.2)",
+                  }}
+                >
+                  <Icon className="w-5 h-5 text-gold/80" strokeWidth={1.25} />
+                </div>
+                <span
+                  className="font-body uppercase leading-tight"
+                  style={{
+                    fontSize: "10px",
+                    letterSpacing: "0.2em",
+                    color: "#C8C0B0",
+                  }}
+                >
+                  {label}
+                </span>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+
+        {/* PART D — CTA + trust badges + reassurance */}
+        <Reveal variant="item" delay={400} className="mt-8 flex flex-col items-center" style={{ marginTop: "32px" }}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+            <Link
+              to="/shop/quiz"
+              className="font-body inline-flex items-center justify-center gap-2 rounded-pill px-8 py-3.5 text-sm font-medium uppercase tracking-[0.18em] bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md transition-all duration-200 w-full sm:w-auto"
+            >
+              Start the Quiz
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-cream/60 font-body">
+              <Clock className="w-3.5 h-3.5" />
+              Takes about 2 minutes
+            </span>
+          </div>
+
+          <div
+            className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
+            style={{ marginTop: "16px" }}
+          >
+            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-cream/50 font-body uppercase">
+              <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} />
+              <span>3 Unique Recommendations</span>
+            </div>
+            <span className="hidden sm:inline text-cream/20">·</span>
+            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-cream/50 font-body uppercase">
+              <Truck className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} />
+              <span>Fast 7-Day Delivery</span>
+            </div>
+            <span className="hidden sm:inline text-cream/20">·</span>
+            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-cream/50 font-body uppercase">
+              <ShieldCheck className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} />
+              <span>Secure Checkout</span>
+            </div>
+          </div>
+
+          <p
+            className="font-body text-center"
+            style={{
+              fontSize: "11px",
+              color: "#8B6914",
+              letterSpacing: "0.05em",
+              marginTop: "8px",
+            }}
+          >
+            Starts at ₹700 · Free delivery · Tweak before you order
+          </p>
         </Reveal>
       </div>
     </section>
