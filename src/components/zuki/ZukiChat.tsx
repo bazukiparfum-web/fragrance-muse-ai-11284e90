@@ -678,6 +678,41 @@ export default function ZukiChat() {
         .zuki-scroll::-webkit-scrollbar-track { background: transparent; }
         .zuki-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.4); border-radius: 2px; }
         .zuki-quick-replies::-webkit-scrollbar { display: none; }
+        .zuki-link {
+          color: #C9A84C;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+          font-weight: 500;
+          cursor: pointer;
+          word-break: break-all;
+        }
+        .zuki-link:hover { color: #F0C040; text-decoration: none; }
+        .zuki-quiz-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 8px;
+          padding: 10px 20px;
+          background: #C9A84C;
+          color: #0A0805;
+          font-family: 'Cinzel', serif;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 2px;
+          border-radius: 4px;
+          text-decoration: none;
+          transition: background 200ms ease, transform 200ms ease;
+        }
+        .zuki-quiz-btn:hover { background: #F0C040; transform: scale(1.02); }
+        body.chat-open-mobile {
+          overflow: hidden !important;
+          position: fixed !important;
+          width: 100% !important;
+        }
+        @media (max-width: 767px) {
+          .zuki-fab-hide-mobile { display: none !important; }
+          .zuki-bubble { max-width: 88% !important; font-size: 14px !important; line-height: 1.6 !important; }
+        }
         @media (prefers-reduced-motion: reduce) {
           .zuki-btn, .zuki-notif { animation: none !important; }
         }
