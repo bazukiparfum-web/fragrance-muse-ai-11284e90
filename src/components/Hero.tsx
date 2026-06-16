@@ -536,7 +536,7 @@ const Hero = () => {
             const sideClass = isCenter ? "center" : `side ${b.variant}`;
             return (
               <div key={b.name} className={`bottle-card ${sideClass}`}>
-                {isCenter && <div className="best-match-badge">✦ Best Match</div>}
+                {isCenter && <div className="best-match-badge">✦ Signature</div>}
                 <div className="bottle-img-wrap">
                   <img
                     src={bottleUrl}

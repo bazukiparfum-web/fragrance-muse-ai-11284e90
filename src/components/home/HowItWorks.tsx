@@ -100,7 +100,7 @@ const HowItWorks = () => {
             to="/shop/quiz"
             className="font-body inline-flex items-center gap-2 rounded-pill px-8 py-3.5 text-sm font-medium uppercase tracking-[0.18em] bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md transition-all duration-200"
           >
-            Start the Quiz
+            Start My Formula
             <ArrowRight className="w-4 h-4" />
           </Link>
         </Reveal>

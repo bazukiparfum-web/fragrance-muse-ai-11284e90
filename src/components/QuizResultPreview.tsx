@@ -51,7 +51,7 @@ const QuizResultPreview = () => {
               to="/shop/quiz"
               className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-xs uppercase tracking-[0.2em] bg-primary text-primary-foreground hover:opacity-90 transition-opacity font-sans"
             >
-              Start the Quiz
+              See Your Matches
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
             <span className="inline-flex items-center gap-1.5 text-[11px] text-foreground/50 font-sans">
