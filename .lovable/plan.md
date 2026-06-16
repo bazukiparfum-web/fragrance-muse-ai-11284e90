@@ -1,48 +1,19 @@
 ## Goal
-Add a "Meet the Machine" homepage section between HowItWorks and FeaturedScents (the "From the Library" section). This section showcases Bazuki's AI filling machine — the brand's core differentiator.
+Improve the homepage SEO so search results and social previews reflect the actual content (AI quiz, custom fragrances, the Bazuki Machine) instead of generic copy.
 
-## Files to create / edit
+## Files to edit
 
-1. **`src/components/home/MeetTheMachine.tsx`** — New section component
-2. **`src/pages/Index.tsx`** — Insert `<MeetTheMachine />` between `<HowItWorks />` and `<FeaturedScents />`
+1. **`src/pages/Index.tsx`** — Update the `useSEO` call with a sharper, keyword-rich title and description that mention the AI quiz, custom fragrances starting at ₹700, and the AI filling machine. Add an `ItemList` JSON-LD describing the main homepage sections (How It Works, Meet the Machine, Signature Collection, FAQ) so crawlers and AI search surface them as distinct page sections.
 
-## Section layout
+2. **`index.html`** — Bring the static `<title>`, `<meta name="description">`, sitewide `og:*` and `twitter:*` tags in line with the new homepage messaging (so social-preview crawlers, which don't run JS, see the same story).
 
-```text
-Full width, bg #0A0805, padding 80px 0
-┌─────────────────────────────────────────────────────┐
-│  [IMAGE — 50%]        [CONTENT — 50%]               │
-│  technology-hero.jpg                                │
-│  radius 8px, gold glow, rotateY(3deg)               │
-│                       THE BAZUKI MACHINE            │
-│                       (eyebrow, Cinzel, gold)       │
-│                                                     │
-│                       India's First AI Fragrance    │
-│                       Filling Machine               │
-│                       (Cormorant, ivory, 36px)      │
-│                                                     │
-│                       Body copy...                  │
-│                       (15px, #C8C0B0, lh 1.8)       │
-│                                                     │
-│                       [52] [±0.01ml] [Your Formula] │
-│                       stat pills row                │
-│                                                     │
-│                       See how it works →            │
-│                       (link to /guide/...)          │
-└─────────────────────────────────────────────────────┘
-```
+## Content
 
-## Technical details
+- **Title** (≤60 chars): `Bazuki – AI Custom Perfumes Made in India · From ₹700`
+- **Description** (≤160 chars): `Take a 2-minute quiz and our AI filling machine blends 3 custom fragrances from 52 ingredients. Free delivery across India. From ₹700.`
+- **Keywords** stay focused: custom perfume India, AI perfume, AI fragrance machine, personalized perfume, quiz perfume, niche fragrance India.
+- **ItemList JSON-LD** (homepage only): named entries for "How It Works", "Meet the Bazuki Machine — India's First AI Fragrance Filling Machine", "Signature Collection", and "FAQ", each pointing to `/#section-id` anchors. Add matching `id` attributes to the existing section wrappers so the anchors resolve.
 
-- **Image**: `src/assets/technology-hero.jpg` (existing asset). Styled with `border-radius: 8px`, `box-shadow: 0 0 60px rgba(201,168,76,0.08)`, and `transform: perspective(1000px) rotateY(3deg)`.
-- **Eyebrow**: 10px, `font-display`, `#C9A84C`, `letter-spacing: 4px`, uppercase.
-- **Heading**: 36px/28px responsive, `font-cormorant`, `#F5F0E8` (ivory), weight 300.
-- **Body**: 15px, `font-body`, `#C8C0B0`, `line-height: 1.8`.
-- **Stat pills**: horizontal row of 3. Background `rgba(201,168,76,0.06)`, border `1px solid rgba(201,168,76,0.2)`, radius 6px, padding `8px 16px`. Number in 16px gold serif, label in 10px dim gold.
-- **Link**: 14px, `#C9A84C`, hover underline transition.
-- **Scroll animation**: Uses existing `useInView` hook. Image slides from left (`translateX(-40px)` → `0`), content from right (`translateX(40px)` → `0`), opacity `0` → `1`, 500ms ease-out. `prefers-reduced-motion` respected via the hook's built-in fallback.
-- **Mobile** (`< md`): Stacks vertically — image full width on top, text below. Perspective tilt removed on mobile for performance. Stat pills wrap if needed.
-- **Accessibility**: Section has `aria-labelledby` pointing to heading. Link has descriptive `aria-label`. Stat pills use semantic list markup.
-
-## No changes to existing sections
-This is a pure addition. No edits to HowItWorks, FeaturedScents, or any other component.
+## Out of scope
+- No new pages, no design changes, no copy changes in visible UI beyond adding `id` anchors to existing sections.
+- og:image stays as the existing `/og-image.jpg`.
