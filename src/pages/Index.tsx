@@ -121,7 +121,9 @@ const Index = () => {
       <WelcomeBackBanner />
       <Header />
       <Hero />
+      <QuizStepsTeaser />
       <HowItWorks />
+
       <FeaturedScents />
       <QuizCTABanner />
       <TrustProof />
