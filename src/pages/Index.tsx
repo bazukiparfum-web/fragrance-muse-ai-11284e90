@@ -19,9 +19,9 @@ const SITE_URL = "https://www.bazukifragrance.com";
 
 const Index = () => {
   useSEO({
-    title: "Bazuki Perfumes – Unique, Custom- AI Inspired Fragrances from India",
+    title: "Bazuki – AI Custom Perfumes Made in India · From ₹700",
     description:
-      "Bazuki Perfumes — India's destination for unique, custom- AI inspired fragrances. Explore artisan scents crafted for those who refuse to smell like everyone else. Shop at bazukifragrance.com",
+      "Take a 2-minute quiz and our AI filling machine blends 3 custom fragrances from 52 ingredients. Free delivery across India. From ₹700.",
     image: "/og-image.jpg",
   });
 
