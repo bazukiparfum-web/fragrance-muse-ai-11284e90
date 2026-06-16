@@ -399,8 +399,11 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
         onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}
         className="flex items-center gap-2"
         style={{
-          height: 70,
-          padding: "12px 14px",
+          minHeight: 70,
+          flexShrink: 0,
+          padding: isMobile
+            ? "12px 14px max(12px, env(safe-area-inset-bottom)) 14px"
+            : "12px 14px",
           background: "#141210",
           borderTop: "1px solid rgba(201,168,76,0.15)",
         }}
@@ -446,16 +449,64 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
   );
 };
 
+const URL_REGEX = /(https?:\/\/[^\s]+|bazukiperfumes\.com\/[^\s*]+|bazukifragrance\.com\/[^\s*]+)/gi;
+const QUIZ_CTA_PHRASES = [
+  "take the quiz",
+  "jump to the quiz",
+  "go to the quiz",
+  "start the quiz",
+  "bazukiperfumes.com/quiz",
+];
+
+function parseMessageContent(text: string) {
+  const cleaned = text.replace(/\*\*/g, "");
+  const parts = cleaned.split(URL_REGEX);
+  return parts.map((part, i) => {
+    if (!part) return null;
+    if (URL_REGEX.test(part)) {
+      URL_REGEX.lastIndex = 0;
+      const href = part.startsWith("http") ? part : `https://${part}`;
+      return (
+        <a
+          key={i}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="zuki-link"
+        >
+          {part}
+        </a>
+      );
+    }
+    URL_REGEX.lastIndex = 0;
+    return <span key={i}>{part}</span>;
+  });
+}
+
+const QuizLinkButton = () => (
+  <a
+    href="https://bazukiperfumes.com/quiz"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="zuki-quiz-btn"
+  >
+    ✦ Take the Quiz →
+  </a>
+);
+
 const MessageBubble = ({ msg, reduceMotion }: { msg: Msg; reduceMotion: boolean }) => {
   const isUser = msg.role === "user";
+  const lower = msg.content.toLowerCase();
+  const showQuizCta = !isUser && QUIZ_CTA_PHRASES.some((p) => lower.includes(p));
   return (
     <div
-      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+      className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}
       style={{
         animation: reduceMotion ? undefined : "zuki-msg-in 200ms ease-out",
       }}
     >
       <div
+        className="zuki-bubble"
         style={{
           maxWidth: "80%",
           padding: "10px 14px",
@@ -470,8 +521,9 @@ const MessageBubble = ({ msg, reduceMotion }: { msg: Msg; reduceMotion: boolean 
           borderRadius: isUser ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
         }}
       >
-        {msg.content || <span style={{ opacity: 0.5 }}>…</span>}
+        {msg.content ? parseMessageContent(msg.content) : <span style={{ opacity: 0.5 }}>…</span>}
       </div>
+      {showQuizCta && <QuizLinkButton />}
     </div>
   );
 };
@@ -559,6 +611,16 @@ export default function ZukiChat() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Lock body scroll when chat is open on mobile
+  useEffect(() => {
+    if (open && isMobile) {
+      document.body.classList.add("chat-open-mobile");
+    } else {
+      document.body.classList.remove("chat-open-mobile");
+    }
+    return () => document.body.classList.remove("chat-open-mobile");
+  }, [open, isMobile]);
+
   // Notification bubble: show after 15s, hide after 8s more, once per session
   useEffect(() => {
     if (open) { setShowNotif(false); return; }
@@ -619,6 +681,41 @@ export default function ZukiChat() {
         .zuki-scroll::-webkit-scrollbar-track { background: transparent; }
         .zuki-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.4); border-radius: 2px; }
         .zuki-quick-replies::-webkit-scrollbar { display: none; }
+        .zuki-link {
+          color: #C9A84C;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+          font-weight: 500;
+          cursor: pointer;
+          word-break: break-all;
+        }
+        .zuki-link:hover { color: #F0C040; text-decoration: none; }
+        .zuki-quiz-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 8px;
+          padding: 10px 20px;
+          background: #C9A84C;
+          color: #0A0805;
+          font-family: 'Cinzel', serif;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 2px;
+          border-radius: 4px;
+          text-decoration: none;
+          transition: background 200ms ease, transform 200ms ease;
+        }
+        .zuki-quiz-btn:hover { background: #F0C040; transform: scale(1.02); }
+        body.chat-open-mobile {
+          overflow: hidden !important;
+          position: fixed !important;
+          width: 100% !important;
+        }
+        @media (max-width: 767px) {
+          .zuki-fab-hide-mobile { display: none !important; }
+          .zuki-bubble { max-width: 88% !important; font-size: 14px !important; line-height: 1.6 !important; }
+        }
         @media (prefers-reduced-motion: reduce) {
           .zuki-btn, .zuki-notif { animation: none !important; }
         }
@@ -677,7 +774,7 @@ export default function ZukiChat() {
         aria-label={open ? "Close chat" : "Chat with Zuki"}
         title="Chat with Zuki ✦"
         onClick={() => setOpen((o) => !o)}
-        className="zuki-btn fixed flex items-center justify-center"
+        className={`zuki-btn fixed flex items-center justify-center ${open ? "zuki-fab-hide-mobile" : ""}`}
         style={{
           bottom: 24,
           right: 24,
