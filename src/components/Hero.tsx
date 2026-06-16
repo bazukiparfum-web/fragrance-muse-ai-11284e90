@@ -518,7 +518,7 @@ const Hero = () => {
           <span className="it">Engineered by AI.</span>
         </h1>
         <p className="hero-subtext">
-          Three formulas. Crafted uniquely for you. No two bottles alike.
+          Fragrance crafted uniquely for you.&nbsp;No two fragrance&nbsp;alike. Just like you.
         </p>
 
         <div className="bottles-row">
