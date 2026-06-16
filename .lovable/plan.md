@@ -1,34 +1,25 @@
-# Mini Quiz Step Cards Below Hero CTA
+# Results Preview Snippet Below Quiz Teaser
 
 ## What
+Add a compact reassurance component directly under `QuizStepsTeaser` on the homepage. It previews what users receive after completing the quiz — 3 unique AI-generated fragrance recommendations — and briefly explains the next steps (view formulas, tweak, order).
 
-Add a compact 3-step teaser row on the homepage directly under the hero's "Discover Your Scent" CTA, presenting the AI fragrance quiz flow as: **Take the Quiz → AI Formulates → 3 Bottles Delivered**. The whole row links to the existing `/shop/quiz` route — no new quiz logic, no inline questions.
-
-Design follows the selected "Elite glass-morphism cards" prototype with metallic gold gradient step numbers.
-
-## Where it goes
-
-- New component: `src/components/QuizStepsTeaser.tsx`
-- Mounted in `src/pages/Index.tsx` immediately after the `<Hero />` component, before the next existing section.
+## Where
+- New component: `src/components/QuizResultPreview.tsx`
+- Mounted in: `src/pages/Index.tsx` between `<QuizStepsTeaser />` and `<HowItWorks />`
 
 ## Visual spec
-
-- 3 cards in a connected row (joined borders on md+, stacked rounded cards on mobile)
-- Glass-morphism: `bg-white/5`, `border-white/10`, `backdrop-blur-sm`
-- Step labels ("Step 01/02/03") rendered with a metallic gold gradient (per the user's direction) using `bg-gradient-to-r from-[hsl(var(--bz-gold-light))] via-[hsl(var(--bz-gold))] to-[hsl(var(--bz-gold-dark))] bg-clip-text text-transparent` — tokens already exist in `index.css`
-- Cormorant Garamond serif titles, sans-serif uppercase eyebrows (matches site)
-- Lucide icons: `ClipboardList` (Step 1), `Sparkles` (Step 2), `Package` (Step 3)
-- Hover: card brightens (`bg-white/10`), border lifts, slight `-translate-y-1`
-- "Begin Your Journey" gold eyebrow with hairlines under the row
-- Entire row is an `<a href="/shop/quiz">` wrapping with `group` for shared hover state
-- Stagger fade-in on mount (200ms each), respects `prefers-reduced-motion`
-
-## Token compliance
-
-Replace hardcoded `bg-white/X`, `border-white/X`, `text-amber-200/X` from the prototype with semantic equivalents using existing tokens in `index.css` (`--bz-gold*`, `--card`, `--border`, `--foreground`). No raw hex.
+- **Layout**: A single rounded glass-morphism panel (not 3 separate cards) so it reads as a "snippet" and doesn't compete with the step cards above or the HowItWorks section below.
+- **Background**: `bg-foreground/[0.03] border border-foreground/10 backdrop-blur-sm rounded-2xl`
+- **Content**:
+  - Headline: "3 Unique Fragrances, Crafted for You" (font-cormorant, text-foreground)
+  - Sub-copy: "Our AI analyzes your quiz answers across 52 curated ingredients to compose a Safe Favorite, an Adventurous Twist, and a Signature Statement. View your formulas, tweak the blend, then order in 30ml or 50ml."
+  - 3 micro-icons in a row: `ShieldCheck` (safe match), `Sparkles` (adventurous), `Crown` (signature) — each with a tiny label underneath, rendered in `text-primary/70`
+  - CTA line: "Takes about 2 minutes" with `Clock` icon, linking to `/shop/quiz`
+- **Typography**: Serif headline, sans-serif body (matches site). Step labels use `text-[11px] uppercase tracking-[0.25em]`.
+- **Entrance**: Fade-in + translateY(12px) on mount, 600ms ease-out, respects `prefers-reduced-motion`.
+- **Tokens**: No hardcoded hex. Uses `bg-foreground/[0.04]`, `border-foreground/10`, `text-primary`, `text-foreground/60`, etc.
 
 ## Out of scope
-
-- No changes to `Hero.tsx` (the existing CTA still links to `/shop/quiz`)
+- No changes to `QuizStepsTeaser` or `HowItWorks`
 - No new routes, no quiz state, no DB changes
-- No edits to existing quiz pages
+- No mock product cards or dynamic data — this is a static reassurance snippet

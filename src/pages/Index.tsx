@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import QuizStepsTeaser from "@/components/QuizStepsTeaser";
+import QuizResultPreview from "@/components/QuizResultPreview";
 import HowItWorks from "@/components/home/HowItWorks";
 import FeaturedScents from "@/components/home/FeaturedScents";
 import QuizCTABanner from "@/components/home/QuizCTABanner";
