@@ -102,10 +102,15 @@ const FAQ = () => {
           ))}
         </Accordion>
 
-        <div className="flex justify-center mt-10">
+        <div className="flex flex-col items-center mt-10">
           <Button size="lg" onClick={() => navigate("/shop/quiz")}>
             Take the Quiz
           </Button>
+          <p
+            style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", color: "#8B6914", letterSpacing: "0.05em", marginTop: "8px", textAlign: "center" }}
+          >
+            Starts at ₹700 · Free delivery · Tweak before you order
+          </p>
         </div>
       </div>
     </section>
