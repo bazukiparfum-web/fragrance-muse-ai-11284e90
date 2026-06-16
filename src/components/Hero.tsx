@@ -106,55 +106,53 @@ const Hero = () => {
         .bottle-img-wrap {
           position: relative;
           overflow: hidden;
-          border-radius: 4px;
-          aspect-ratio: 3 / 4;
+          border-radius: 8px;
+          aspect-ratio: 2 / 3;
         }
-        .bottle-card.center .bottle-img-wrap { width: 260px; }
-        .bottle-card.side .bottle-img-wrap { width: 190px; aspect-ratio: 3 / 4.5; }
+        .bottle-card.center .bottle-img-wrap { width: 280px; }
+        .bottle-card.side .bottle-img-wrap { width: 210px; }
 
         .bottle-photo {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          object-position: 50% 28%;
+          object-position: 50% 18%;
           display: block;
         }
         .bottle-card.side .bottle-photo {
-          opacity: 0.82;
-          object-position: 50% 22%;
+          opacity: 0.80;
         }
         .bottle-card.left .bottle-photo {
           filter:
             hue-rotate(-110deg)
-            saturate(1.4)
-            brightness(0.92)
-            sepia(0.25)
+            saturate(1.3)
+            brightness(0.9)
             drop-shadow(0 20px 40px rgba(0,0,0,0.9))
-            drop-shadow(0 0 35px rgba(180,120,20,0.25));
+            drop-shadow(0 0 30px rgba(180,120,20,0.20));
         }
         .bottle-card.right .bottle-photo {
           filter:
             hue-rotate(75deg)
-            saturate(1.35)
-            brightness(0.90)
+            saturate(1.3)
+            brightness(0.88)
             drop-shadow(0 20px 40px rgba(0,0,0,0.9))
-            drop-shadow(0 0 35px rgba(120,40,200,0.22));
+            drop-shadow(0 0 30px rgba(120,40,200,0.20));
         }
         .bottle-card.center .bottle-photo {
           filter:
-            saturate(1.15)
+            saturate(1.2)
             brightness(1.0)
-            drop-shadow(0 24px 48px rgba(0,0,0,0.9))
+            drop-shadow(0 24px 50px rgba(0,0,0,0.9))
             drop-shadow(0 0 40px rgba(0,180,200,0.22));
         }
 
         .label-wrap {
           position: absolute;
-          top: 62%;
+          top: 60%;
           left: 50%;
-          width: 68%;
-          transform: translate(-50%, -50%) perspective(800px) rotateY(-4deg);
-          z-index: 2;
+          width: 42%;
+          transform: translate(-50%, -50%) perspective(600px) rotateY(-4deg);
+          z-index: 3;
           pointer-events: none;
         }
         .label-wrap svg {
@@ -162,23 +160,8 @@ const Hero = () => {
           height: auto;
           display: block;
           filter:
-            drop-shadow(0 3px 10px rgba(0,0,0,0.7))
-            drop-shadow(0 0 15px rgba(201,168,76,0.10));
-        }
-        .bottle-card.left .label-wrap svg {
-          filter:
-            drop-shadow(0 2px 8px rgba(0,0,0,0.8))
-            drop-shadow(0 0 10px rgba(180,120,20,0.15));
-        }
-        .bottle-card.center .label-wrap svg {
-          filter:
-            drop-shadow(0 2px 8px rgba(0,0,0,0.8))
-            drop-shadow(0 0 10px rgba(0,180,200,0.15));
-        }
-        .bottle-card.right .label-wrap svg {
-          filter:
-            drop-shadow(0 2px 8px rgba(0,0,0,0.8))
-            drop-shadow(0 0 10px rgba(120,40,200,0.15));
+            drop-shadow(0 4px 12px rgba(0,0,0,0.8))
+            drop-shadow(0 0 8px rgba(201,168,76,0.12));
         }
 
         /* Color overlays */
@@ -186,31 +169,21 @@ const Hero = () => {
           content: '';
           position: absolute;
           inset: 0;
-          background: rgba(180, 110, 10, 0.18);
+          background: rgba(160, 90, 10, 0.15);
           mix-blend-mode: color;
           pointer-events: none;
-          z-index: 1;
-          border-radius: 4px;
-        }
-        .bottle-card.center .bottle-img-wrap::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: rgba(0, 180, 200, 0.08);
-          mix-blend-mode: screen;
-          pointer-events: none;
-          z-index: 1;
-          border-radius: 4px;
+          z-index: 2;
+          border-radius: 8px;
         }
         .bottle-card.right .bottle-img-wrap::after {
           content: '';
           position: absolute;
           inset: 0;
-          background: rgba(100, 30, 180, 0.15);
+          background: rgba(90, 20, 170, 0.14);
           mix-blend-mode: color;
           pointer-events: none;
-          z-index: 1;
-          border-radius: 4px;
+          z-index: 2;
+          border-radius: 8px;
         }
 
         /* Behind-bottle glows */
