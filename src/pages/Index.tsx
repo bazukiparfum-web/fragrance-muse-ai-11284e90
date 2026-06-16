@@ -115,19 +115,58 @@ const Index = () => {
     sameAs: ["https://www.instagram.com/bazukiperfume/", "https://www.facebook.com/Bazukiperfume"],
   };
 
+  const sectionsJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Bazuki Homepage Sections",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "How It Works — Three Steps to Your Signature Scent",
+        url: `${SITE_URL}/#how-it-works`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Meet the Bazuki Machine — India's First AI Fragrance Filling Machine",
+        url: `${SITE_URL}/#meet-the-machine`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "Signature Collection — Explore Bazuki Scents",
+        url: `${SITE_URL}/#signature-collection`,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: "Frequently Asked Questions",
+        url: `${SITE_URL}/#faq`,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen">
       <JsonLd id="breadcrumbs-home" data={breadcrumbsJsonLd} />
       <JsonLd id="faq-home" data={faqJsonLd} />
       <JsonLd id="localbusiness-home" data={localBusinessJsonLd} />
+      <JsonLd id="sections-home" data={sectionsJsonLd} />
       <WelcomeBackBanner />
       <Header />
       <Hero />
       <TrustedByStrip />
-      <HowItWorks />
-      <MeetTheMachine />
+      <div id="how-it-works" style={{ scrollMarginTop: "80px" }}>
+        <HowItWorks />
+      </div>
+      <div id="meet-the-machine" style={{ scrollMarginTop: "80px" }}>
+        <MeetTheMachine />
+      </div>
 
-      <FeaturedScents />
+      <div id="signature-collection" style={{ scrollMarginTop: "80px" }}>
+        <FeaturedScents />
+      </div>
       <QuizCTABanner />
       <TrustProof />
       <B2BTeaser />
@@ -144,7 +183,9 @@ const Index = () => {
           </a>
         </div>
       </section>
-      <FAQ />
+      <div id="faq" style={{ scrollMarginTop: "80px" }}>
+        <FAQ />
+      </div>
       <Footer />
     </div>
   );
