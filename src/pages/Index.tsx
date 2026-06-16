@@ -123,6 +123,7 @@ const Index = () => {
       <Header />
       <Hero />
       <QuizStepsTeaser />
+      <QuizResultPreview />
       <HowItWorks />
 
       <FeaturedScents />
