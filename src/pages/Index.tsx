@@ -3,6 +3,7 @@ import Hero from "@/components/Hero";
 
 import TrustedByStrip from "@/components/home/TrustedByStrip";
 import HowItWorks from "@/components/home/HowItWorks";
+import MeetTheMachine from "@/components/home/MeetTheMachine";
 import FeaturedScents from "@/components/home/FeaturedScents";
 import QuizCTABanner from "@/components/home/QuizCTABanner";
 import TrustProof from "@/components/home/TrustProof";
@@ -124,6 +125,7 @@ const Index = () => {
       <Hero />
       <TrustedByStrip />
       <HowItWorks />
+      <MeetTheMachine />
 
       <FeaturedScents />
       <QuizCTABanner />
