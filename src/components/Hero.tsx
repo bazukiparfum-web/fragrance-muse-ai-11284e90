@@ -24,7 +24,7 @@ const Hero = () => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 60px 24px 80px;
+          padding: 20px 24px 80px;
         }
         .hero-bg-blur {
           position: absolute;
@@ -53,7 +53,7 @@ const Hero = () => {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 36px;
+          gap: 0;
         }
 
         .hero-eyebrow {
@@ -62,6 +62,7 @@ const Hero = () => {
           letter-spacing: 0.4em;
           text-transform: uppercase;
           font-family: 'Inter', sans-serif;
+          margin-top: 16px;
         }
         .hero-headline {
           font-family: 'Cormorant Garamond', serif;
@@ -70,7 +71,7 @@ const Hero = () => {
           line-height: 1.1;
           font-size: clamp(36px, 6vw, 60px);
           text-align: center;
-          margin: 0;
+          margin: 16px 0 0;
         }
         .hero-headline .it { font-style: italic; display: block; }
         .hero-subtext {
@@ -80,7 +81,7 @@ const Hero = () => {
           text-align: center;
           font-family: 'Inter', sans-serif;
           max-width: 520px;
-          margin: 0;
+          margin: 16px 0 0;
         }
 
         .bottles-row {
@@ -88,7 +89,7 @@ const Hero = () => {
           align-items: flex-end;
           justify-content: center;
           gap: 0px;
-          margin-top: 48px;
+          margin-top: 24px;
         }
         .bottle-card {
           display: flex;
@@ -98,7 +99,7 @@ const Hero = () => {
           position: relative;
           transition: transform 300ms ease-out;
         }
-        .bottle-card.center { transform: translateY(0); z-index: 3; }
+        .bottle-card.center { transform: translateY(0); z-index: 3; gap: 0; }
         .bottle-card.left { transform: translateY(30px); z-index: 2; }
         .bottle-card.right { transform: translateY(30px); z-index: 2; }
 
@@ -108,8 +109,8 @@ const Hero = () => {
           border-radius: 4px;
           aspect-ratio: 3 / 4;
         }
-        .bottle-card.center .bottle-img-wrap { width: 300px; }
-        .bottle-card.side .bottle-img-wrap { width: 220px; }
+        .bottle-card.center .bottle-img-wrap { width: 260px; }
+        .bottle-card.side .bottle-img-wrap { width: 190px; aspect-ratio: 3 / 4.5; }
 
         .bottle-photo {
           width: 100%;
@@ -123,6 +124,7 @@ const Hero = () => {
         }
         .bottle-card.side .bottle-photo {
           opacity: 0.82;
+          object-position: 50% 22%;
           filter:
             drop-shadow(0 20px 40px rgba(0,0,0,0.9))
             drop-shadow(0 0 20px rgba(0,180,200,0.10));
@@ -150,13 +152,18 @@ const Hero = () => {
         .bottle-card.center .bottle-img-wrap::before {
           content: '';
           position: absolute;
-          inset: -20%;
+          bottom: -10px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 80%;
+          height: 60px;
           background: radial-gradient(
-            ellipse 70% 80% at 50% 45%,
-            rgba(0,200,220,0.12) 0%,
-            transparent 65%
+            ellipse at center,
+            rgba(0,200,220,0.25) 0%,
+            transparent 70%
           );
           z-index: 0;
+          filter: blur(12px);
           pointer-events: none;
         }
         @keyframes bottleFloat {
@@ -212,7 +219,9 @@ const Hero = () => {
           color: #C9A84C;
           letter-spacing: 0.12em;
           font-family: 'Cinzel', serif;
-          margin-bottom: 8px;
+          margin-bottom: 10px;
+          position: relative;
+          z-index: 4;
           animation: badgePulse 2.5s ease-in-out infinite;
           text-transform: uppercase;
         }
@@ -234,60 +243,105 @@ const Hero = () => {
           font-size: 16px;
           color: #C9A84C;
         }
+        .bottle-card.center .bottle-name-tag { margin-top: 14px; }
 
         /* CTAs */
         .hero-cta-row {
           display: flex; flex-wrap: wrap;
           gap: 16px; justify-content: center;
-          margin-top: 28px;
+          margin-top: 24px;
         }
         .hero-cta-primary {
           background: #C9A84C;
           color: #0A0805;
-          padding: 16px 36px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 700;
-          letter-spacing: 0.12em;
+          padding: 15px 36px;
+          border-radius: 3px;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 2px;
           text-transform: uppercase;
-          font-family: 'Inter', sans-serif;
+          font-family: 'Cinzel', serif;
           display: inline-flex; align-items: center; gap: 8px;
+          border: none;
+          cursor: pointer;
+          animation: btnGlow 2.5s ease-in-out infinite;
           transition: background 200ms, transform 200ms;
+        }
+        @keyframes btnGlow {
+          0%, 100% { box-shadow: 0 0 0 rgba(201,168,76,0); }
+          50% { box-shadow: 0 0 20px rgba(201,168,76,0.35), 0 4px 20px rgba(0,0,0,0.4); }
         }
         .hero-cta-primary:hover { background: #F0C040; transform: scale(1.03); }
         .hero-cta-secondary {
           background: transparent;
-          border: 1px solid rgba(201,168,76,0.5);
+          border: 1px solid rgba(201,168,76,0.45);
           color: #C9A84C;
-          padding: 16px 36px;
-          border-radius: 4px;
-          font-size: 12px;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          font-family: 'Inter', sans-serif;
+          padding: 15px 36px;
+          border-radius: 3px;
+          font-size: 11px;
           font-weight: 500;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          font-family: 'Cinzel', serif;
+          cursor: pointer;
           transition: background 200ms, border-color 200ms;
         }
         .hero-cta-secondary:hover {
-          background: rgba(201,168,76,0.06);
-          border-color: #C9A84C;
+          background: rgba(201,168,76,0.08);
+          border-color: rgba(201,168,76,0.8);
         }
 
-        @media (max-width: 1024px) {
-          .bottle-card.center .bottle-img-wrap { width: 240px; }
+        /* Scroll hint */
+        .scroll-hint {
+          position: absolute;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          z-index: 5;
+        }
+        .scroll-hint span {
+          font-size: 9px;
+          letter-spacing: 3px;
+          color: rgba(201,168,76,0.4);
+          font-family: 'Cinzel', serif;
+        }
+        .scroll-arrow {
+          color: rgba(201,168,76,0.4);
+          font-size: 14px;
+          animation: scrollBounce 1.8s ease-in-out infinite;
+        }
+        @keyframes scrollBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(5px); }
+        }
+
+        @media (max-width: 1280px) {
+          .bottle-card.center .bottle-img-wrap { width: 230px; }
           .bottle-card.side .bottle-img-wrap { width: 170px; }
+          .hero-section { padding-top: 12px; }
+        }
+        @media (max-width: 1024px) {
+          .bottle-card.center .bottle-img-wrap { width: 200px; }
+          .bottle-card.side .bottle-img-wrap { width: 145px; }
         }
         @media (max-width: 768px) {
           .bottle-card.side { display: none; }
-          .bottle-card.center .bottle-img-wrap { width: min(85vw, 300px); }
-          .bottles-row { margin-top: 32px; }
-          .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; }
+          .bottle-card.center .bottle-img-wrap { width: min(85vw, 260px); }
+          .bottles-row { margin-top: 24px; }
+          .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin-top: 24px; }
           .hero-cta-primary, .hero-cta-secondary { justify-content: center; text-align: center; }
+          .scroll-hint { display: none; }
         }
         @media (prefers-reduced-motion: reduce) {
           .bottle-card.center .bottle-img-wrap,
           .bottle-card.center .label-wrap::after,
-          .best-match-badge {
+          .best-match-badge,
+          .scroll-arrow,
+          .hero-cta-primary {
             animation: none !important;
           }
         }
@@ -338,6 +392,11 @@ const Hero = () => {
             Browse the Library
           </Link>
         </div>
+      </div>
+
+      <div className="scroll-hint">
+        <span>SCROLL TO EXPLORE</span>
+        <span className="scroll-arrow">∨</span>
       </div>
     </section>
   );
