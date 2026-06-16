@@ -69,7 +69,7 @@ const Hero = () => {
         }
 
         .hero-eyebrow {
-          color: #C9A84C;
+          color: var(--hero-gold);
           font-size: 10px;
           font-size: clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem);
           letter-spacing: 0.35em;
@@ -80,7 +80,7 @@ const Hero = () => {
         }
         .hero-headline {
           font-family: 'Cormorant Garamond', serif;
-          color: #F5F0E8;
+          color: var(--hero-ivory);
           font-weight: 300;
           line-height: 1.15;
           font-size: 36px;
@@ -95,7 +95,7 @@ const Hero = () => {
         }
         .hero-headline .it { font-style: italic; display: block; }
         .hero-subtext {
-          color: #C8C0B0;
+          color: var(--hero-body);
           font-size: 15px;
           font-size: clamp(0.9375rem, 0.85rem + 0.4vw, 1rem);
           line-height: 1.6;
@@ -303,7 +303,7 @@ const Hero = () => {
           border-radius: 20px;
           padding: 5px 16px;
           font-size: 10px;
-          color: #C9A84C;
+          color: var(--hero-gold);
           letter-spacing: 0.12em;
           font-family: 'Cinzel', serif;
           margin-bottom: 10px;
@@ -318,17 +318,17 @@ const Hero = () => {
           font-family: 'Cormorant Garamond', serif;
           font-style: italic;
           font-size: 14px;
-          color: #8B6914;
+          color: var(--hero-dim-gold);
           letter-spacing: 0.04em;
           text-align: center;
         }
         .bottle-name-tag.center {
           font-size: 16px;
-          color: #C9A84C;
+          color: var(--hero-gold);
         }
         .bottle-card.center .bottle-name-tag { margin-top: 14px; }
-        .bottle-card.left .bottle-name-tag { color: #C9943A; }
-        .bottle-card.right .bottle-name-tag { color: #A87CC9; }
+        .bottle-card.left .bottle-name-tag { color: var(--hero-warm-amber); }
+        .bottle-card.right .bottle-name-tag { color: var(--hero-violet); }
 
         /* CTAs */
         .hero-cta-row {
@@ -344,14 +344,14 @@ const Hero = () => {
         .quiz-reassurance {
           font-family: 'Inter', sans-serif;
           font-size: 11px;
-          color: #8B6914;
+          color: var(--hero-dim-gold);
           letter-spacing: 0.05em;
           text-align: center;
           margin-top: 8px;
         }
         .hero-cta-primary {
-          background: #C9A84C;
-          color: #0A0805;
+          background: var(--hero-gold);
+          color: var(--hero-bg);
           padding: 15px 36px;
           border-radius: 3px;
           font-size: 11px;
@@ -364,13 +364,13 @@ const Hero = () => {
           cursor: pointer;
           transition: background 200ms ease, transform 200ms ease;
         }
-        .hero-cta-primary:hover { background: #F0C040; transform: scale(1.03); }
+        .hero-cta-primary:hover { background: var(--hero-gold-bright); transform: scale(1.03); }
 
-        .hero-cta-primary:hover { background: #F0C040; transform: scale(1.03); }
+        .hero-cta-primary:hover { background: var(--hero-gold-bright); transform: scale(1.03); }
         .hero-cta-secondary {
           background: transparent;
           border: 1px solid rgba(201,168,76,0.45);
-          color: #C9A84C;
+          color: var(--hero-gold);
           padding: 15px 36px;
           border-radius: 3px;
           font-size: 11px;
