@@ -608,6 +608,16 @@ export default function ZukiChat() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Lock body scroll when chat is open on mobile
+  useEffect(() => {
+    if (open && isMobile) {
+      document.body.classList.add("chat-open-mobile");
+    } else {
+      document.body.classList.remove("chat-open-mobile");
+    }
+    return () => document.body.classList.remove("chat-open-mobile");
+  }, [open, isMobile]);
+
   // Notification bubble: show after 15s, hide after 8s more, once per session
   useEffect(() => {
     if (open) { setShowNotif(false); return; }
