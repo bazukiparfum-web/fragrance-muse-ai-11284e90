@@ -771,7 +771,7 @@ export default function ZukiChat() {
         aria-label={open ? "Close chat" : "Chat with Zuki"}
         title="Chat with Zuki ✦"
         onClick={() => setOpen((o) => !o)}
-        className="zuki-btn fixed flex items-center justify-center"
+        className={`zuki-btn fixed flex items-center justify-center ${open ? "zuki-fab-hide-mobile" : ""}`}
         style={{
           bottom: 24,
           right: 24,
