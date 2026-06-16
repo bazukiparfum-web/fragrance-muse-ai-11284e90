@@ -399,8 +399,11 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
         onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}
         className="flex items-center gap-2"
         style={{
-          height: 70,
-          padding: "12px 14px",
+          minHeight: 70,
+          flexShrink: 0,
+          padding: isMobile
+            ? "12px 14px max(12px, env(safe-area-inset-bottom)) 14px"
+            : "12px 14px",
           background: "#141210",
           borderTop: "1px solid rgba(201,168,76,0.15)",
         }}
