@@ -446,16 +446,64 @@ const ZukiPanel = ({ onClose, onMinimize, isMobile }: {
   );
 };
 
+const URL_REGEX = /(https?:\/\/[^\s]+|bazukiperfumes\.com\/[^\s*]+|bazukifragrance\.com\/[^\s*]+)/gi;
+const QUIZ_CTA_PHRASES = [
+  "take the quiz",
+  "jump to the quiz",
+  "go to the quiz",
+  "start the quiz",
+  "bazukiperfumes.com/quiz",
+];
+
+function parseMessageContent(text: string) {
+  const cleaned = text.replace(/\*\*/g, "");
+  const parts = cleaned.split(URL_REGEX);
+  return parts.map((part, i) => {
+    if (!part) return null;
+    if (URL_REGEX.test(part)) {
+      URL_REGEX.lastIndex = 0;
+      const href = part.startsWith("http") ? part : `https://${part}`;
+      return (
+        <a
+          key={i}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="zuki-link"
+        >
+          {part}
+        </a>
+      );
+    }
+    URL_REGEX.lastIndex = 0;
+    return <span key={i}>{part}</span>;
+  });
+}
+
+const QuizLinkButton = () => (
+  <a
+    href="https://bazukiperfumes.com/quiz"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="zuki-quiz-btn"
+  >
+    ✦ Take the Quiz →
+  </a>
+);
+
 const MessageBubble = ({ msg, reduceMotion }: { msg: Msg; reduceMotion: boolean }) => {
   const isUser = msg.role === "user";
+  const lower = msg.content.toLowerCase();
+  const showQuizCta = !isUser && QUIZ_CTA_PHRASES.some((p) => lower.includes(p));
   return (
     <div
-      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+      className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}
       style={{
         animation: reduceMotion ? undefined : "zuki-msg-in 200ms ease-out",
       }}
     >
       <div
+        className="zuki-bubble"
         style={{
           maxWidth: "80%",
           padding: "10px 14px",
@@ -470,8 +518,9 @@ const MessageBubble = ({ msg, reduceMotion }: { msg: Msg; reduceMotion: boolean 
           borderRadius: isUser ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
         }}
       >
-        {msg.content || <span style={{ opacity: 0.5 }}>…</span>}
+        {msg.content ? parseMessageContent(msg.content) : <span style={{ opacity: 0.5 }}>…</span>}
       </div>
+      {showQuizCta && <QuizLinkButton />}
     </div>
   );
 };
