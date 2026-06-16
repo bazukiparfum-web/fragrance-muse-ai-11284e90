@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShieldCheck, Sparkles, Crown, Clock, ArrowRight } from "lucide-react";
+import { ShieldCheck, Sparkles, Crown, Clock, ArrowRight, Truck } from "lucide-react";
 
 const previews = [
   { icon: ShieldCheck, label: "Safe Favorite" },
@@ -58,6 +58,23 @@ const QuizResultPreview = () => {
               <Clock className="w-3.5 h-3.5" />
               Takes about 2 minutes
             </span>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-foreground/10 flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
+            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-foreground/50 font-sans uppercase">
+              <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} />
+              <span>3 Unique Recommendations</span>
+            </div>
+            <span className="hidden sm:inline text-foreground/20">·</span>
+            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-foreground/50 font-sans uppercase">
+              <Truck className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} />
+              <span>Fast 7-Day Delivery</span>
+            </div>
+            <span className="hidden sm:inline text-foreground/20">·</span>
+            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-foreground/50 font-sans uppercase">
+              <ShieldCheck className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} />
+              <span>Secure Checkout</span>
+            </div>
           </div>
         </div>
       </div>
