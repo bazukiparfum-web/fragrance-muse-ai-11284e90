@@ -36,6 +36,7 @@ const HowItWorks = () => {
 
   return (
     <section
+      aria-labelledby="how-it-works-heading"
       className="relative w-full overflow-hidden"
       style={{ backgroundColor: "#111111", padding: "80px 0" }}
     >
@@ -55,6 +56,7 @@ const HowItWorks = () => {
             How It Works
           </div>
           <h2
+            id="how-it-works-heading"
             className="font-cormorant"
             style={{
               color: "#F5F0E8",
@@ -109,46 +111,51 @@ const HowItWorks = () => {
 
           {/* Mobile vertical dashed connector */}
           <div
-            aria-hidden
-            className="md:hidden absolute top-12 bottom-12 left-[34px] pointer-events-none"
+            aria-hidden="true"
+            className="md:hidden absolute top-20 bottom-20 left-[68px] pointer-events-none z-0"
             style={{
               borderLeft: "1px dashed hsl(var(--bz-gold) / 0.25)",
             }}
           />
 
-          <div className="grid md:grid-cols-3 gap-8 md:gap-10 relative">
+          <ol role="list" className="grid md:grid-cols-3 gap-8 md:gap-10 relative list-none p-0 m-0">
             {STEPS.map(({ n, Icon, title, body }, i) => (
-              <Reveal
-                key={n}
-                variant="item"
-                delay={i * 100}
-                className="relative rounded-lg p-10 bg-transparent overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:glow-gold-sm"
-                style={{ border: "1px solid hsl(var(--bz-gold) / 0.1)" }}
-              >
-                <span
-                  aria-hidden
-                  className="font-display absolute -top-6 -left-2 text-gold pointer-events-none select-none"
-                  style={{ fontSize: "120px", lineHeight: 1, opacity: 0.05 }}
+              <li key={n} className="relative z-10">
+                <Reveal
+                  variant="item"
+                  delay={i * 100}
+                  className="relative rounded-lg p-10 bg-transparent overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:glow-gold-sm h-full"
+                  style={{ border: "1px solid hsl(var(--bz-gold) / 0.1)", background: "#111111" }}
                 >
-                  {n}
-                </span>
-
-                <div className="relative">
-                  <div
-                    className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-6"
-                    style={{
-                      border: "1px solid hsl(var(--bz-gold) / 0.3)",
-                      background: "hsl(var(--bz-bg-primary))",
-                    }}
+                  <span
+                    aria-hidden="true"
+                    className="font-display absolute -top-6 -left-2 text-gold pointer-events-none select-none"
+                    style={{ fontSize: "120px", lineHeight: 1, opacity: 0.05 }}
                   >
-                    <Icon className="w-6 h-6 text-gold" strokeWidth={1.25} />
+                    {n}
+                  </span>
+
+                  <div className="relative">
+                    <div
+                      aria-hidden="true"
+                      className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-6"
+                      style={{
+                        border: "1px solid hsl(var(--bz-gold) / 0.3)",
+                        background: "hsl(var(--bz-bg-primary))",
+                      }}
+                    >
+                      <Icon className="w-6 h-6 text-gold" strokeWidth={1.25} />
+                    </div>
+                    <h3 className="font-display text-cream text-2xl md:text-[28px] mb-3">
+                      <span className="sr-only">{`Step ${i + 1}: `}</span>
+                      {title}
+                    </h3>
+                    <p className="font-body text-body text-sm leading-relaxed">{body}</p>
                   </div>
-                  <h3 className="font-display text-cream text-2xl md:text-[28px] mb-3">{title}</h3>
-                  <p className="font-body text-body text-sm leading-relaxed">{body}</p>
-                </div>
-              </Reveal>
+                </Reveal>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
 
         {/* PART C — Divider + WHAT YOU'LL RECEIVE */}
@@ -165,8 +172,9 @@ const HowItWorks = () => {
           }}
         />
 
-        <div className="text-center">
+        <div className="text-center" aria-labelledby="what-youll-receive-label">
           <div
+            id="what-youll-receive-label"
             className="font-display"
             style={{
               fontSize: "9px",
@@ -179,36 +187,41 @@ const HowItWorks = () => {
             What You'll Receive
           </div>
 
-          <div className="flex flex-row justify-center items-start gap-6 md:gap-12 max-w-xl mx-auto">
+          <ul
+            role="list"
+            className="flex flex-row justify-center items-start gap-6 md:gap-12 max-w-xl mx-auto list-none p-0 m-0"
+          >
             {OUTCOMES.map(({ Icon, label }, i) => (
-              <Reveal
-                key={label}
-                variant="item"
-                delay={i * 100}
-                className="flex flex-col items-center text-center gap-3 flex-1"
-              >
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{
-                    background: "hsl(var(--bz-gold) / 0.05)",
-                    border: "1px solid hsl(var(--bz-gold) / 0.2)",
-                  }}
+              <li key={label} className="flex-1 min-w-0">
+                <Reveal
+                  variant="item"
+                  delay={i * 100}
+                  className="flex flex-col items-center text-center gap-3"
                 >
-                  <Icon className="w-5 h-5 text-gold/80" strokeWidth={1.25} />
-                </div>
-                <span
-                  className="font-body uppercase leading-tight"
-                  style={{
-                    fontSize: "10px",
-                    letterSpacing: "0.2em",
-                    color: "#C8C0B0",
-                  }}
-                >
-                  {label}
-                </span>
-              </Reveal>
+                  <div
+                    aria-hidden="true"
+                    className="w-12 h-12 rounded-full flex items-center justify-center"
+                    style={{
+                      background: "hsl(var(--bz-gold) / 0.05)",
+                      border: "1px solid hsl(var(--bz-gold) / 0.2)",
+                    }}
+                  >
+                    <Icon className="w-5 h-5 text-gold/80" strokeWidth={1.25} />
+                  </div>
+                  <span
+                    className="font-body uppercase leading-tight"
+                    style={{
+                      fontSize: "10px",
+                      letterSpacing: "0.2em",
+                      color: "#C8C0B0",
+                    }}
+                  >
+                    {label}
+                  </span>
+                </Reveal>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
         {/* PART D — CTA + trust badges + reassurance */}
@@ -216,36 +229,39 @@ const HowItWorks = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
             <Link
               to="/shop/quiz"
-              className="font-body inline-flex items-center justify-center gap-2 rounded-pill px-8 py-3.5 text-sm font-medium uppercase tracking-[0.18em] bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md transition-all duration-200 w-full sm:w-auto"
+              aria-label="Start the fragrance quiz — takes about 2 minutes"
+              className="font-body inline-flex items-center justify-center gap-2 rounded-pill px-8 py-3.5 text-sm font-medium uppercase tracking-[0.18em] bg-gold text-[hsl(var(--bz-bg-primary))] hover:glow-gold-md transition-all duration-200 w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--bz-gold))] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
             >
               Start the Quiz
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
             <span className="inline-flex items-center gap-1.5 text-[11px] text-cream/60 font-body">
-              <Clock className="w-3.5 h-3.5" />
+              <Clock className="w-3.5 h-3.5" aria-hidden="true" />
               Takes about 2 minutes
             </span>
           </div>
 
-          <div
-            className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
+          <ul
+            role="list"
+            aria-label="Order benefits"
+            className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 list-none p-0"
             style={{ marginTop: "16px" }}
           >
-            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-cream/50 font-body uppercase">
-              <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} />
+            <li className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-cream/50 font-body uppercase">
+              <Sparkles className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} aria-hidden="true" />
               <span>3 Unique Recommendations</span>
-            </div>
-            <span className="hidden sm:inline text-cream/20">·</span>
-            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-cream/50 font-body uppercase">
-              <Truck className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} />
+            </li>
+            <li aria-hidden="true" className="hidden sm:inline text-cream/20">·</li>
+            <li className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-cream/50 font-body uppercase">
+              <Truck className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} aria-hidden="true" />
               <span>Fast 7-Day Delivery</span>
-            </div>
-            <span className="hidden sm:inline text-cream/20">·</span>
-            <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-cream/50 font-body uppercase">
-              <ShieldCheck className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} />
+            </li>
+            <li aria-hidden="true" className="hidden sm:inline text-cream/20">·</li>
+            <li className="flex items-center gap-1.5 text-[10px] md:text-[11px] tracking-[0.15em] text-cream/50 font-body uppercase">
+              <ShieldCheck className="w-3.5 h-3.5 text-[hsl(var(--bz-gold-muted))]" strokeWidth={1.5} aria-hidden="true" />
               <span>Secure Checkout</span>
-            </div>
-          </div>
+            </li>
+          </ul>
 
           <p
             className="font-body text-center"
