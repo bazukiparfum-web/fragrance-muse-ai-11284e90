@@ -29,7 +29,7 @@ const TESTIMONIALS = [
 
 const TrustProof = () => {
   return (
-    <section className="w-full py-16 md:py-24" style={{ backgroundColor: "#0A0A0A" }}>
+    <section className="w-full py-16 md:py-24" style={{ backgroundColor: "#111111" }}>
       <div className="container mx-auto px-6">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10">

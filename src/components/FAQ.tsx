@@ -78,24 +78,43 @@ const faqs: { q: string; a: React.ReactNode }[] = [
 const FAQ = () => {
   const navigate = useNavigate();
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section className="py-16 md:py-24" style={{ backgroundColor: "#0A0805" }}>
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="text-center mb-10">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold heading-luxury mb-3">
+          <h2
+            className="font-display text-3xl md:text-4xl mb-3"
+            style={{ color: "#F5F0E8", fontWeight: 400 }}
+          >
             How AI Matching Works
           </h2>
-          <p className="text-muted-foreground">
+          <p style={{ color: "#C8C0B0" }}>
             Everything you need to know about your personalized fragrance journey.
           </p>
         </div>
 
         <Accordion type="single" collapsible className="w-full">
           {faqs.map((item, i) => (
-            <AccordionItem key={i} value={`item-${i}`}>
-              <AccordionTrigger className="text-left text-base md:text-lg">
+            <AccordionItem
+              key={i}
+              value={`item-${i}`}
+              style={{ borderBottom: "1px solid rgba(201,168,76,0.15)" }}
+            >
+              <AccordionTrigger
+                className="text-left text-base md:text-lg px-3 rounded-md hover:no-underline transition-colors"
+                style={{ color: "#F5F0E8" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(201,168,76,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                }}
+              >
                 {item.q}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground leading-relaxed">
+              <AccordionContent
+                className="leading-relaxed px-3"
+                style={{ color: "#C8C0B0" }}
+              >
                 {item.a}
               </AccordionContent>
             </AccordionItem>

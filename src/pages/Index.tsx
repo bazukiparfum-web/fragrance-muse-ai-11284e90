@@ -170,7 +170,7 @@ const Index = () => {
       <QuizCTABanner />
       <TrustProof />
       <B2BTeaser />
-      <section className="w-full py-10 border-t border-luxury-gold/15" style={{ backgroundColor: "#0A0A0A" }}>
+      <section className="w-full py-10 border-t border-luxury-gold/15" style={{ backgroundColor: "#0A0805" }}>
         <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-4 text-center">
           <p className="font-cormorant text-xl md:text-2xl text-cream">
             Want personal guidance? Book a free 15-min call with a scent expert.
