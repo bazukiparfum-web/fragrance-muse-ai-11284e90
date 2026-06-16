@@ -196,20 +196,17 @@ const Header = () => {
             {/* CTA */}
             <Link
               to="/shop/quiz"
-              className="hidden md:inline-flex items-center px-5 py-2 rounded-full text-[11px] uppercase font-medium transition-colors duration-300"
+              className="hidden md:inline-flex items-center px-5 py-2 rounded-full text-[11px] uppercase font-semibold transition-all duration-200 ease-out hover:scale-[1.02]"
               style={{
-                border: `1px solid ${GOLD}`,
-                color: CREAM,
+                background: GOLD,
+                color: '#0A0805',
                 letterSpacing: '0.14em',
-                backgroundColor: 'transparent',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = GOLD;
-                (e.currentTarget as HTMLElement).style.color = '#000';
+                (e.currentTarget as HTMLElement).style.backgroundColor = '#F0C040';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                (e.currentTarget as HTMLElement).style.color = CREAM;
+                (e.currentTarget as HTMLElement).style.backgroundColor = GOLD;
               }}
             >
               Take the Quiz
