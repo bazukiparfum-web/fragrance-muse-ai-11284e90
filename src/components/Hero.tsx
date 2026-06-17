@@ -103,9 +103,14 @@ const Hero = () => {
           text-align: center;
           font-family: 'Inter', sans-serif;
           max-width: min(92vw, 32rem);
-          overflow-wrap: anywhere;
-          hyphens: auto;
+          overflow-wrap: break-word;
+          word-break: keep-all;
+          hyphens: none;
+          -webkit-hyphens: none;
           margin: 1em 0 0.5em;
+        }
+        .hero-cta-mobile-inline {
+          display: none;
         }
         .hero-subtext .mobile-break { display: none; }
 
