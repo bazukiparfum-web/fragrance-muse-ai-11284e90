@@ -74,6 +74,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cta_events: {
+        Row: {
+          created_at: string
+          cta: string
+          id: string
+          path: string | null
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          viewport_h: number | null
+          viewport_w: number | null
+        }
+        Insert: {
+          created_at?: string
+          cta: string
+          id?: string
+          path?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          viewport_h?: number | null
+          viewport_w?: number | null
+        }
+        Update: {
+          created_at?: string
+          cta?: string
+          id?: string
+          path?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          viewport_h?: number | null
+          viewport_w?: number | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
