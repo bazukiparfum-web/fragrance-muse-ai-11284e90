@@ -103,9 +103,14 @@ const Hero = () => {
           text-align: center;
           font-family: 'Inter', sans-serif;
           max-width: min(92vw, 32rem);
-          overflow-wrap: anywhere;
-          hyphens: auto;
+          overflow-wrap: break-word;
+          word-break: keep-all;
+          hyphens: none;
+          -webkit-hyphens: none;
           margin: 1em 0 0.5em;
+        }
+        .hero-cta-mobile-inline {
+          display: none;
         }
         .hero-subtext .mobile-break { display: none; }
 
@@ -502,18 +507,42 @@ const Hero = () => {
           .bottle-card.side .bottle-img-wrap { width: 170px; }
         }
         @media (max-width: 768px) {
+          .hero-section { padding-top: clamp(4.5rem, 16vw, 6rem); }
+          .hero-eyebrow { display: none; }
           .bottle-card.side { display: none; }
-          .bottle-card.center .bottle-img-wrap { width: min(82vw, 300px); }
-          .bottles-row { margin-top: 28px; }
-          .hero-eyebrow { letter-spacing: 0.3em; line-height: 1.4; }
+          .bottle-card.center .bottle-img-wrap {
+            width: min(70vw, 260px);
+            aspect-ratio: 3 / 4;
+          }
+          .bottle-card.center .bottle-photo { object-position: 50% 15%; }
+          .bottles-row { margin-top: 20px; }
           .hero-headline { line-height: 1.15; letter-spacing: -0.005em; }
           .hero-subtext {
-            max-width: min(94vw, 22rem);
+            max-width: 340px;
+            margin: 1em auto 0.5em;
+            padding: 0 20px;
             line-height: 1.55;
             letter-spacing: 0.015em;
           }
           .hero-subtext .mobile-break { display: inline; }
-          .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin-top: 24px; }
+          .hero-cta-mobile-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--hero-gold);
+            color: var(--hero-bg);
+            padding: 14px 32px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            font-family: 'Cinzel', serif;
+            margin: 18px auto 8px;
+            text-decoration: none;
+          }
+          .hero-cta-primary-wrap { display: none; }
+          .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin-top: 20px; }
           .hero-cta-primary, .hero-cta-secondary { justify-content: center; text-align: center; }
           .scroll-hint { display: none; }
         }
@@ -548,8 +577,12 @@ const Hero = () => {
           <span className="it">Crafted by AI</span>
         </h1>
         <p className="hero-subtext">
-          India's first AI based perfume machine crafts your unique formula from 52 curated ingredients — no two fragrance alike.
+          India's first AI based perfume machine crafts your unique formula from 52 curated ingredients — no two fragrances alike.
         </p>
+
+        <Link to="/shop/quiz" className="hero-cta-mobile-inline">
+          Discover Your Scent <ArrowRight size={14} strokeWidth={2.5} />
+        </Link>
 
         <div className="bottles-row">
           {BOTTLES.map((b) => {
@@ -557,7 +590,7 @@ const Hero = () => {
             const sideClass = isCenter ? "center" : `side ${b.variant}`;
             return (
               <div key={b.name} className={`bottle-card ${sideClass}`}>
-                {isCenter && <div className="best-match-badge">✦ Signature</div>}
+                {isCenter && <div className="best-match-badge">✦ AI Crafted · Unique Formula</div>}
                 <div className="bottle-img-wrap">
                   <img
                     src={bottleUrl}
