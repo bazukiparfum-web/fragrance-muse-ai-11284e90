@@ -11,6 +11,7 @@ import B2BTeaser from "@/components/home/B2BTeaser";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import WelcomeBackBanner from "@/components/retarget/WelcomeBackBanner";
+import WhatsAppFab from "@/components/WhatsAppFab";
 import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
@@ -187,6 +188,7 @@ const Index = () => {
         <FAQ />
       </div>
       <Footer />
+      <WhatsAppFab />
     </div>
   );
 };

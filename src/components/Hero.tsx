@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import bottleAsset from "@/assets/bazuki-bottle-clean.png.asset.json";
 import BazukiLabel from "@/components/hero/BazukiLabel";
+import { trackCta } from "@/lib/trackCta";
 
 const BOTTLES = [
   { line1: "Timeless", line2: "Harmony", name: "Timeless Harmony", variant: "left" as const },
@@ -580,7 +581,7 @@ const Hero = () => {
           India's first AI based perfume machine crafts your unique formula from 52 curated ingredients — no two fragrances alike.
         </p>
 
-        <Link to="/shop/quiz" className="hero-cta-mobile-inline">
+        <Link to="/shop/quiz" className="hero-cta-mobile-inline" onClick={() => trackCta("hero_quiz_mobile")}>
           Discover Your Scent <ArrowRight size={14} strokeWidth={2.5} />
         </Link>
 
@@ -611,7 +612,7 @@ const Hero = () => {
 
         <div className="hero-cta-row">
           <div className="hero-cta-primary-wrap">
-            <Link to="/shop/quiz" className="hero-cta-primary">
+            <Link to="/shop/quiz" className="hero-cta-primary" onClick={() => trackCta("hero_quiz_desktop")}>
               Discover Your Scent <ArrowRight size={14} strokeWidth={2.5} />
             </Link>
             <p className="quiz-reassurance">Starts at ₹700 · Free delivery · Tweak before you order</p>
