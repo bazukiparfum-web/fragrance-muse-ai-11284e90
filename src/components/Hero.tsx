@@ -507,18 +507,42 @@ const Hero = () => {
           .bottle-card.side .bottle-img-wrap { width: 170px; }
         }
         @media (max-width: 768px) {
+          .hero-section { padding-top: clamp(4.5rem, 16vw, 6rem); }
+          .hero-eyebrow { display: none; }
           .bottle-card.side { display: none; }
-          .bottle-card.center .bottle-img-wrap { width: min(82vw, 300px); }
-          .bottles-row { margin-top: 28px; }
-          .hero-eyebrow { letter-spacing: 0.3em; line-height: 1.4; }
+          .bottle-card.center .bottle-img-wrap {
+            width: min(70vw, 260px);
+            aspect-ratio: 3 / 4;
+          }
+          .bottle-card.center .bottle-photo { object-position: 50% 15%; }
+          .bottles-row { margin-top: 20px; }
           .hero-headline { line-height: 1.15; letter-spacing: -0.005em; }
           .hero-subtext {
-            max-width: min(94vw, 22rem);
+            max-width: 340px;
+            margin: 1em auto 0.5em;
+            padding: 0 20px;
             line-height: 1.55;
             letter-spacing: 0.015em;
           }
           .hero-subtext .mobile-break { display: inline; }
-          .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin-top: 24px; }
+          .hero-cta-mobile-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--hero-gold);
+            color: var(--hero-bg);
+            padding: 14px 32px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            font-family: 'Cinzel', serif;
+            margin: 18px auto 8px;
+            text-decoration: none;
+          }
+          .hero-cta-primary-wrap { display: none; }
+          .hero-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; margin-top: 20px; }
           .hero-cta-primary, .hero-cta-secondary { justify-content: center; text-align: center; }
           .scroll-hint { display: none; }
         }
