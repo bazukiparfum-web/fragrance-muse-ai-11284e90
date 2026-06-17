@@ -545,7 +545,7 @@ const Hero = () => {
         <p className="hero-eyebrow">India's First AI Perfume Machine</p>
         <h1 className="hero-headline">
           <span>Your Custom Fragrance,</span>
-          <span className="it">Mixed by AI in India.</span>
+          <span className="it">Crafted by AI</span>
         </h1>
         <p className="hero-subtext">
           India's first AI based perfume machine crafts your unique formula from 52 curated ingredients — no two fragrance alike.
