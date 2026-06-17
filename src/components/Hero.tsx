@@ -577,8 +577,12 @@ const Hero = () => {
           <span className="it">Crafted by AI</span>
         </h1>
         <p className="hero-subtext">
-          India's first AI based perfume machine crafts your unique formula from 52 curated ingredients — no two fragrance alike.
+          India's first AI based perfume machine crafts your unique formula from 52 curated ingredients — no two fragrances alike.
         </p>
+
+        <Link to="/shop/quiz" className="hero-cta-mobile-inline">
+          Discover Your Scent <ArrowRight size={14} strokeWidth={2.5} />
+        </Link>
 
         <div className="bottles-row">
           {BOTTLES.map((b) => {
@@ -586,7 +590,7 @@ const Hero = () => {
             const sideClass = isCenter ? "center" : `side ${b.variant}`;
             return (
               <div key={b.name} className={`bottle-card ${sideClass}`}>
-                {isCenter && <div className="best-match-badge">✦ Signature</div>}
+                {isCenter && <div className="best-match-badge">✦ AI Crafted · Unique Formula</div>}
                 <div className="bottle-img-wrap">
                   <img
                     src={bottleUrl}
