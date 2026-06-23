@@ -1430,12 +1430,36 @@ export type Database = {
         }
         Returns: string
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
+      get_shared_fragrance: {
+        Args: { _share_token: string }
+        Returns: {
+          created_at: string | null
+          creator_tag: string | null
+          formula: Json
+          formulation_notes: string | null
+          fragrance_code: string | null
+          id: string
+          intensity: number | null
+          is_public: boolean | null
+          last_shared_at: string | null
+          longevity: number | null
+          match_score: number | null
+          name: string
+          prices: Json | null
+          quiz_answers: Json | null
+          share_count: number | null
+          share_token: string | null
+          shopify_product_id: string | null
+          shopify_variant_id: string | null
+          user_id: string
+          visual_data: Json | null
         }
-        Returns: boolean
+        SetofOptions: {
+          from: "*"
+          to: "saved_scents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       move_to_dlq: {
         Args: {
