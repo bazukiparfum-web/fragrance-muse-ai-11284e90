@@ -52,15 +52,19 @@ export default function WelcomeBackBanner() {
       role="region"
       aria-label="Welcome back"
       style={{
-        background: 'rgba(201,168,76,0.08)',
-        borderBottom: '1px solid rgba(201,168,76,0.2)',
+        background: '#0A0805',
+        borderBottom: '1px solid rgba(201,168,76,0.25)',
         height: 52,
         transform: mounted ? 'translateY(0)' : 'translateY(-100%)',
         transition: 'transform 400ms ease-out',
-        position: 'relative',
-        zIndex: 30,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 60,
       }}
       className="w-full flex items-center justify-center px-12"
+
     >
       <p style={{ color: GOLD, fontSize: 13 }} className="text-center">
         ✦ Welcome back! Your formula is saved —{' '}
