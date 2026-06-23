@@ -26,6 +26,15 @@ export default function WelcomeBackBanner() {
     }
   }, [loading, session, dismissed]);
 
+  useEffect(() => {
+    if (!loading && session && !dismissed) {
+      document.documentElement.style.setProperty('--bz-banner-h', '52px');
+      return () => {
+        document.documentElement.style.setProperty('--bz-banner-h', '0px');
+      };
+    }
+  }, [loading, session, dismissed]);
+
   if (loading || !session || dismissed) return null;
 
   const handleDismiss = () => {
@@ -33,23 +42,29 @@ export default function WelcomeBackBanner() {
       sessionStorage.setItem(DISMISS_KEY, '1');
     } catch {}
     setMounted(false);
+    document.documentElement.style.setProperty('--bz-banner-h', '0px');
     setTimeout(() => setDismissed(true), 400);
   };
+
 
   return (
     <div
       role="region"
       aria-label="Welcome back"
       style={{
-        background: 'rgba(201,168,76,0.08)',
-        borderBottom: '1px solid rgba(201,168,76,0.2)',
+        background: '#0A0805',
+        borderBottom: '1px solid rgba(201,168,76,0.25)',
         height: 52,
         transform: mounted ? 'translateY(0)' : 'translateY(-100%)',
         transition: 'transform 400ms ease-out',
-        position: 'relative',
-        zIndex: 30,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 60,
       }}
       className="w-full flex items-center justify-center px-12"
+
     >
       <p style={{ color: GOLD, fontSize: 13 }} className="text-center">
         ✦ Welcome back! Your formula is saved —{' '}
