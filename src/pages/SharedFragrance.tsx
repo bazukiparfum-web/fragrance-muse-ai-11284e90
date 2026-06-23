@@ -45,15 +45,13 @@ export default function SharedFragrance() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('saved_scents')
-        .select('*')
-        .eq('share_token', shareToken)
-        .eq('is_public', true)
-        .maybeSingle();
+      const { data, error } = await (supabase as any).rpc('get_shared_fragrance', {
+        _share_token: shareToken,
+      });
 
       if (error) throw error;
-      setScent(data);
+      // RPC returns the row (or null when no match)
+      setScent(Array.isArray(data) ? data[0] ?? null : data);
     } catch (error: any) {
       console.error('Error fetching shared fragrance:', error);
       toast({

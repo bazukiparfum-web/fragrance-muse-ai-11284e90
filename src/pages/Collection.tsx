@@ -57,7 +57,7 @@ export default function Collection() {
       supabase
         .from("saved_scents")
         .select(
-          "id, name, formulation_notes, formula, visual_data, prices, fragrance_code, creator_tag, shopify_product_id, shopify_variant_id",
+          "id, name, visual_data, prices, fragrance_code, creator_tag, shopify_product_id, shopify_variant_id",
         )
         .eq("is_public", true)
         .order("created_at", { ascending: false })
