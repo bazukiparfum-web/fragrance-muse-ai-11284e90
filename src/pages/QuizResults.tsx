@@ -731,8 +731,20 @@ const QuizResults = () => {
       const row = await fetchSessionById(urlSessionId);
       if (!row) return;
       const recs = (row as any).formula_results;
-      if (Array.isArray(recs) && recs.length > 0 && recs[0]?.formula) {
+      // Only hydrate if every recommendation has a valid, non-empty formula.
+      // Older/legacy sessions can contain placeholder recs with `formula: []`,
+      // which would otherwise render empty bars and block Save / Add to cart.
+      if (
+        Array.isArray(recs) &&
+        recs.length > 0 &&
+        recs.every((r: any) => isValidFormula(r?.formula))
+      ) {
         setHydratedRecs(recs as Recommendation[]);
+      } else if (Array.isArray(recs) && recs.length > 0) {
+        console.warn('[QuizResults] Ignoring hydrated session with empty formulas', {
+          sessionId: urlSessionId,
+        });
+        toast.message('Your saved results are incomplete — showing fresh recommendations.');
       }
       if ((row as any).completed_at) {
         const days = Math.max(
