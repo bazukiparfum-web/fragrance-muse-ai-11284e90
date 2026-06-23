@@ -95,8 +95,9 @@ const Header = () => {
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-50 transition-[background-color,border-color] duration-300 ease-in-out"
+        className="fixed left-0 right-0 z-50 transition-[background-color,border-color,top] duration-300 ease-in-out"
         style={{
+          top: 'var(--bz-banner-h, 0px)',
           backgroundColor: scrolled ? BLACK : 'transparent',
           borderBottom: scrolled ? `1px solid ${GOLD}1A` : '1px solid transparent',
         }}
