@@ -26,6 +26,15 @@ export default function WelcomeBackBanner() {
     }
   }, [loading, session, dismissed]);
 
+  useEffect(() => {
+    if (!loading && session && !dismissed) {
+      document.documentElement.style.setProperty('--bz-banner-h', '52px');
+      return () => {
+        document.documentElement.style.setProperty('--bz-banner-h', '0px');
+      };
+    }
+  }, [loading, session, dismissed]);
+
   if (loading || !session || dismissed) return null;
 
   const handleDismiss = () => {
@@ -33,8 +42,10 @@ export default function WelcomeBackBanner() {
       sessionStorage.setItem(DISMISS_KEY, '1');
     } catch {}
     setMounted(false);
+    document.documentElement.style.setProperty('--bz-banner-h', '0px');
     setTimeout(() => setDismissed(true), 400);
   };
+
 
   return (
     <div
