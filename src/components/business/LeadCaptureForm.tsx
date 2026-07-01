@@ -190,6 +190,23 @@ const LeadCaptureForm = () => {
           ) : (
             <>
               <div className="text-center">
+                {prefillArchetype && (
+                  <div className="mb-4 flex justify-center">
+                    <span
+                      className="inline-flex items-center gap-2 rounded-full border border-gold-strong/40 bg-gold/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-gold"
+                    >
+                      ✦ For archetype: {prefillArchetype}
+                      <button
+                        type="button"
+                        onClick={clearPrefill}
+                        aria-label="Clear archetype prefill"
+                        className="ml-1 flex h-4 w-4 items-center justify-center rounded-full hover:bg-gold/20"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  </div>
+                )}
                 <h2 className="font-serif text-[28px] font-light leading-tight text-cream md:text-[32px]">
                   Start Your Aroma Journey
                 </h2>
@@ -197,6 +214,7 @@ const LeadCaptureForm = () => {
                   Fill this in and our scent consultant will reach out within 24 hours.
                 </p>
               </div>
+
 
               <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
