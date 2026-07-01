@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, MessageCircle } from "lucide-react";
+import { Check, MessageCircle, X } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { z } from "zod";
+
 
 const industries = [
   "Hotel / Resort",
@@ -70,8 +71,52 @@ const LeadCaptureForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ name: string } | null>(null);
+  const [prefillArchetype, setPrefillArchetype] = useState<string | null>(null);
+  const autoFilledRef = useRef(false);
+
+  useEffect(() => {
+    type PrefillDetail = {
+      name: string;
+      tone: string;
+      notes: string[];
+      useCases: string[];
+    };
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<PrefillDetail>).detail;
+      if (!detail?.name) return;
+      const msg =
+        `I'm interested in a fragrance formula aligned with the "${detail.name}" archetype (${detail.tone}).\n` +
+        `Signature notes we're drawn to: ${detail.notes.join(", ")}.\n` +
+        `Ideal use cases: ${detail.useCases.join(", ")}.\n` +
+        `Please help us craft a scent that reflects this brand identity.`;
+      setForm((p) => {
+        const canOverwrite = p.message.trim() === "" || autoFilledRef.current;
+        return canOverwrite ? { ...p, message: msg } : p;
+      });
+      autoFilledRef.current = true;
+      setPrefillArchetype(detail.name);
+      setErrors((p) => {
+        if (!p.message) return p;
+        const n = { ...p };
+        delete n.message;
+        return n;
+      });
+      setSuccess(null);
+    };
+    window.addEventListener("bz:prefill-lead-form", handler);
+    return () => window.removeEventListener("bz:prefill-lead-form", handler);
+  }, []);
+
+  const clearPrefill = () => {
+    if (autoFilledRef.current) {
+      setForm((p) => ({ ...p, message: "" }));
+      autoFilledRef.current = false;
+    }
+    setPrefillArchetype(null);
+  };
 
   const setField = <K extends keyof FormState>(k: K, v: string) => {
+    if (k === "message") autoFilledRef.current = false;
     setForm((p) => ({ ...p, [k]: v }));
     if (errors[k]) {
       setErrors((p) => {
@@ -81,6 +126,7 @@ const LeadCaptureForm = () => {
       });
     }
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,6 +190,23 @@ const LeadCaptureForm = () => {
           ) : (
             <>
               <div className="text-center">
+                {prefillArchetype && (
+                  <div className="mb-4 flex justify-center">
+                    <span
+                      className="inline-flex items-center gap-2 rounded-full border border-gold-strong/40 bg-gold/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-gold"
+                    >
+                      ✦ For archetype: {prefillArchetype}
+                      <button
+                        type="button"
+                        onClick={clearPrefill}
+                        aria-label="Clear archetype prefill"
+                        className="ml-1 flex h-4 w-4 items-center justify-center rounded-full hover:bg-gold/20"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  </div>
+                )}
                 <h2 className="font-serif text-[28px] font-light leading-tight text-cream md:text-[32px]">
                   Start Your Aroma Journey
                 </h2>
@@ -151,6 +214,7 @@ const LeadCaptureForm = () => {
                   Fill this in and our scent consultant will reach out within 24 hours.
                 </p>
               </div>
+
 
               <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
