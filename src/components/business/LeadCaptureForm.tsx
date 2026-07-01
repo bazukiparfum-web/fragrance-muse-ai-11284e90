@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, MessageCircle } from "lucide-react";
+import { Check, MessageCircle, X } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { z } from "zod";
+
 
 const industries = [
   "Hotel / Resort",
@@ -70,8 +71,52 @@ const LeadCaptureForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ name: string } | null>(null);
+  const [prefillArchetype, setPrefillArchetype] = useState<string | null>(null);
+  const autoFilledRef = useRef(false);
+
+  useEffect(() => {
+    type PrefillDetail = {
+      name: string;
+      tone: string;
+      notes: string[];
+      useCases: string[];
+    };
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<PrefillDetail>).detail;
+      if (!detail?.name) return;
+      const msg =
+        `I'm interested in a fragrance formula aligned with the "${detail.name}" archetype (${detail.tone}).\n` +
+        `Signature notes we're drawn to: ${detail.notes.join(", ")}.\n` +
+        `Ideal use cases: ${detail.useCases.join(", ")}.\n` +
+        `Please help us craft a scent that reflects this brand identity.`;
+      setForm((p) => {
+        const canOverwrite = p.message.trim() === "" || autoFilledRef.current;
+        return canOverwrite ? { ...p, message: msg } : p;
+      });
+      autoFilledRef.current = true;
+      setPrefillArchetype(detail.name);
+      setErrors((p) => {
+        if (!p.message) return p;
+        const n = { ...p };
+        delete n.message;
+        return n;
+      });
+      setSuccess(null);
+    };
+    window.addEventListener("bz:prefill-lead-form", handler);
+    return () => window.removeEventListener("bz:prefill-lead-form", handler);
+  }, []);
+
+  const clearPrefill = () => {
+    if (autoFilledRef.current) {
+      setForm((p) => ({ ...p, message: "" }));
+      autoFilledRef.current = false;
+    }
+    setPrefillArchetype(null);
+  };
 
   const setField = <K extends keyof FormState>(k: K, v: string) => {
+    if (k === "message") autoFilledRef.current = false;
     setForm((p) => ({ ...p, [k]: v }));
     if (errors[k]) {
       setErrors((p) => {
@@ -81,6 +126,7 @@ const LeadCaptureForm = () => {
       });
     }
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -11,9 +11,20 @@ const BrandArchetypes = () => {
     setSelectedId((prev) => (prev === id ? null : id));
   };
 
-  const scrollToLeadForm = () => {
+  const handleRequestFormula = (a: BrandArchetype) => {
+    window.dispatchEvent(
+      new CustomEvent("bz:prefill-lead-form", {
+        detail: {
+          name: a.name,
+          tone: a.tone,
+          notes: a.notes,
+          useCases: a.useCases,
+        },
+      }),
+    );
     document.getElementById("lead-form")?.scrollIntoView({ behavior: "smooth" });
   };
+
 
   return (
     <section
@@ -147,9 +158,10 @@ const BrandArchetypes = () => {
           <ExpandedPanel
             archetype={selected}
             onClose={() => setSelectedId(null)}
-            onCta={scrollToLeadForm}
+            onCta={() => handleRequestFormula(selected)}
           />
         )}
+
 
         {/* Bottom banner */}
         <div
