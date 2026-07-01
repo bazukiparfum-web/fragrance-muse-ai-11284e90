@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import HeroB2B from "@/components/business/HeroB2B";
 import ScentScience from "@/components/business/ScentScience";
 import UseCasesGrid from "@/components/business/UseCasesGrid";
+import BrandArchetypes from "@/components/business/BrandArchetypes";
 import B2BPackages from "@/components/business/B2BPackages";
 import ClientStories from "@/components/business/ClientStories";
 import HowItWorks from "@/components/business/HowItWorks";
@@ -52,6 +53,7 @@ const Business = () => {
         <HeroB2B />
         <ScentScience />
         <UseCasesGrid />
+        <BrandArchetypes />
         <B2BPackages />
         <TrustedByCarousel
           logos={CLIENT_LOGOS}
