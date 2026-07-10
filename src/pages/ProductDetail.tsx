@@ -25,6 +25,9 @@ import AIFormulaCallout from '@/components/product/AIFormulaCallout';
 import TrustBadges from '@/components/product/TrustBadges';
 import QuizCTABanner from '@/components/product/QuizCTABanner';
 import RelatedProducts from '@/components/product/RelatedProducts';
+import customAiFragranceImage from '@/assets/custom-ai-fragrance.jpg';
+
+const CUSTOM_SCENT_HANDLE_PATTERN = /^custom-(ai-fragrance|scent)/i;
 
 
 type ProductNode = ShopifyProduct['node'];
@@ -126,6 +129,9 @@ export default function ProductDetail() {
     [variants, selectedVariantId],
   );
   const images = product?.images.edges ?? [];
+  const isCustomScent = !!product?.handle && CUSTOM_SCENT_HANDLE_PATTERN.test(product.handle);
+  const fallbackImage = isCustomScent && images.length === 0 ? customAiFragranceImage : undefined;
+  const displayImageSrc = images[selectedImage]?.node.url ?? fallbackImage;
   const currency = selectedVariant?.price.currencyCode
     || product?.priceRange.minVariantPrice.currencyCode
     || 'INR';
@@ -165,7 +171,7 @@ export default function ProductDetail() {
   const seoDescription = product
     ? (product.description || `Shop ${product.title} from Bazuki — AI-crafted luxury fragrance, made-to-order in India.`).slice(0, 155)
     : '';
-  const seoImage = images[0]?.node.url;
+  const seoImage = images[0]?.node.url ?? fallbackImage;
   useSEO({ title: seoTitle, description: seoDescription, image: seoImage, type: 'product' });
 
   const buildEngravingAttrs = () => {
@@ -318,7 +324,7 @@ export default function ProductDetail() {
           {/* Gallery */}
           <div>
             <EngravedBottlePreview
-              src={images[selectedImage]?.node.url}
+              src={displayImageSrc}
               alt={images[selectedImage]?.node.altText || product.title}
               enabled={engraving.enabled}
               text={engraving.text}
