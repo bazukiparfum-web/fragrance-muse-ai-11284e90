@@ -151,11 +151,17 @@ const CarFreshenersPage = () => {
                 Six scents. One considered ritual.
               </h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {CAR_FRESHENERS.map((item) => (
-                <CarFreshenerCard key={item.id} item={item} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-gold" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {items.map((item) => (
+                  <CarFreshenerCard key={item.handle} item={item} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
