@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Loader2, Check, ShoppingBag, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  Check,
+  ShoppingBag,
+  ArrowLeft,
+  Truck,
+  Wallet,
+  ShieldCheck,
+  Minus,
+  Plus,
+  Zap,
+} from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -18,6 +29,8 @@ import {
 } from "@/components/ui/tooltip";
 import CarFreshenerCard from "@/components/car-fresheners/CarFreshenerCard";
 import CarFreshenerGallery from "@/components/car-fresheners/CarFreshenerGallery";
+import PurityPromiseStrip from "@/components/car-fresheners/PurityPromiseStrip";
+import StandOutFeatures from "@/components/car-fresheners/StandOutFeatures";
 import {
   getCarFreshenerByHandle,
   fetchCarFreshenerCatalog,
@@ -33,17 +46,17 @@ const USE_STEPS = [
   {
     step: "01",
     title: "Unwrap",
-    copy: "Slide the card out of its pouch. Handle by the edges to keep the finish clean.",
+    copy: "Slide the bottle out of its box. Handle by the cord to keep the glass clean.",
   },
   {
     step: "02",
     title: "Hang from your mirror",
-    copy: "Loop the cord over your rear-view mirror. The card sits flush, no rattle.",
+    copy: "Loop the cord over your rear-view mirror. It sits flush, no rattle.",
   },
   {
     step: "03",
     title: "Refresh in ~45 days",
-    copy: "Swap for a new disc every 30–45 days to keep the scent vivid.",
+    copy: "Swap for a new bottle every 30–45 days to keep the scent vivid.",
   },
 ];
 
@@ -51,6 +64,18 @@ const SAFETY = [
   "IFRA-compliant fragrance oils — the same standards used in fine perfumery.",
   "Alcohol-free, low-VOC formulation.",
   "Recyclable card and cord. No plastic in packaging.",
+];
+
+const BENEFITS = [
+  "Pure fragrance-oil formula",
+  "30–45 days of scent",
+  "Leak-proof glass · hand-finished cord",
+];
+
+const TRUST_BADGES = [
+  { Icon: Truck, label: "Pan-India delivery" },
+  { Icon: Wallet, label: "COD available" },
+  { Icon: ShieldCheck, label: "Secure payment" },
 ];
 
 const FAQS = [
@@ -86,6 +111,7 @@ export default function CarFreshenerDetail() {
   const [status, setStatus] = useState<"idle" | "adding" | "added" | "error">(
     "idle",
   );
+  const [quantity, setQuantity] = useState(1);
 
   const addItem = useCartStore((s) => s.addItem);
   const openDrawer = useCartStore((s) => s.openDrawer);
@@ -119,8 +145,9 @@ export default function CarFreshenerDetail() {
 
   const canBuy = !!(item?.shopify && item.variantId);
 
-  const handleAdd = async () => {
-    if (!canBuy || !item?.shopify || !item.variantId || status === "adding") return;
+  const handleAdd = async (openAfter = true) => {
+    if (!canBuy || !item?.shopify || !item.variantId || status === "adding")
+      return;
     setStatus("adding");
     const variant = item.shopify.node.variants.edges[0]?.node;
     const ok = await addItem({
@@ -128,12 +155,12 @@ export default function CarFreshenerDetail() {
       variantId: item.variantId,
       variantTitle: variant?.title ?? "Default",
       price: { amount: String(item.price), currencyCode: item.currency },
-      quantity: 1,
+      quantity,
       selectedOptions: variant?.selectedOptions ?? [],
     });
     if (ok) {
       setStatus("added");
-      openDrawer();
+      if (openAfter) openDrawer();
       setTimeout(() => setStatus("idle"), 1500);
     } else {
       setStatus("error");
@@ -216,17 +243,35 @@ export default function CarFreshenerDetail() {
                     accentHsl={item.accentHsl}
                   />
 
-                  {/* Summary */}
+                  {/* Summary / buy-box */}
                   <div>
                     <p className="text-gold text-[11px] uppercase tracking-[0.3em] mb-4">
                       Hanging Car Perfume
                     </p>
-                    <h1 className="font-cormorant text-4xl md:text-5xl text-cream leading-tight mb-4">
+                    <h1 className="font-cormorant text-4xl md:text-5xl text-cream leading-tight mb-3">
                       {item.name}
                     </h1>
-                    <p className="text-cream-muted text-lg leading-relaxed mb-6">
+                    <p className="text-cream-muted text-base md:text-lg leading-relaxed mb-5">
                       {item.tagline}
                     </p>
+
+                    {/* Benefit bullets */}
+                    <ul className="space-y-2.5 mb-6">
+                      {BENEFITS.map((b) => (
+                        <li
+                          key={b}
+                          className="flex items-start gap-2.5 text-cream text-sm"
+                        >
+                          <span
+                            className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-gold/40"
+                            aria-hidden
+                          >
+                            <Check className="h-2.5 w-2.5 text-gold" strokeWidth={3} />
+                          </span>
+                          <span>{b}</span>
+                        </li>
+                      ))}
+                    </ul>
 
                     {item.notes.length > 0 && (
                       <div className="mb-6">
@@ -249,26 +294,64 @@ export default function CarFreshenerDetail() {
                       </div>
                     )}
 
-                    <div className="flex items-baseline gap-3 mb-2">
-                      <span className="font-cormorant text-3xl text-cream">
-                        {formatPrice(item.price, item.currency)}
-                      </span>
-                      <span className="text-cream-muted text-sm">
-                        · Card diffuser · ~45 days
-                      </span>
+                    <div className="border-t border-gold/10 pt-5">
+                      <div className="flex items-baseline gap-3">
+                        <span className="font-cormorant text-3xl text-cream">
+                          {formatPrice(item.price, item.currency)}
+                        </span>
+                        <span className="text-cream-muted text-sm">
+                          · ~45 days
+                        </span>
+                      </div>
+                      <p className="text-cream-muted text-xs mt-1">
+                        Tax included · Shipping calculated at checkout
+                      </p>
                     </div>
 
-                    <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                    {/* Qty + Add to cart */}
+                    <div className="mt-5 flex items-stretch gap-3">
+                      <div className="flex items-center rounded-md border border-gold/25 bg-bz-card">
+                        <button
+                          type="button"
+                          aria-label="Decrease quantity"
+                          onClick={() =>
+                            setQuantity((q) => Math.max(1, q - 1))
+                          }
+                          className="flex h-11 w-10 items-center justify-center text-cream hover:text-gold transition-colors disabled:opacity-40"
+                          disabled={quantity <= 1}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <span
+                          className="min-w-[2ch] px-2 text-center text-cream tabular-nums"
+                          aria-live="polite"
+                        >
+                          {quantity}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Increase quantity"
+                          onClick={() =>
+                            setQuantity((q) => Math.min(10, q + 1))
+                          }
+                          className="flex h-11 w-10 items-center justify-center text-cream hover:text-gold transition-colors disabled:opacity-40"
+                          disabled={quantity >= 10}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+
                       {canBuy ? (
                         <Button
                           size="lg"
-                          onClick={handleAdd}
+                          onClick={() => handleAdd(true)}
                           disabled={status === "adding"}
                           className={cn(
-                            "gap-2",
+                            "flex-1 gap-2",
                             status === "added" &&
                               "bg-emerald-600 hover:bg-emerald-600",
-                            status === "error" && "bg-red-600 hover:bg-red-600",
+                            status === "error" &&
+                              "bg-red-600 hover:bg-red-600",
                           )}
                         >
                           {status === "adding" ? (
@@ -294,12 +377,12 @@ export default function CarFreshenerDetail() {
                         <TooltipProvider delayDuration={150}>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span tabIndex={0} className="inline-flex">
+                              <span tabIndex={0} className="inline-flex flex-1">
                                 <Button
                                   size="lg"
                                   variant="outline"
                                   disabled
-                                  className="gap-2"
+                                  className="w-full gap-2"
                                 >
                                   <ShoppingBag className="h-4 w-4" />
                                   Coming soon
@@ -312,9 +395,71 @@ export default function CarFreshenerDetail() {
                           </Tooltip>
                         </TooltipProvider>
                       )}
-                      <Button asChild size="lg" variant="outline">
-                        <Link to="/business#lead-form">Bulk / gifting</Link>
-                      </Button>
+                    </div>
+
+                    {/* Buy it now */}
+                    {canBuy && (
+                      <button
+                        type="button"
+                        onClick={() => handleAdd(true)}
+                        disabled={status === "adding"}
+                        className="mt-3 w-full rounded-md border border-gold/40 bg-transparent py-3 text-cream transition-colors hover:bg-gold/10 disabled:opacity-60"
+                      >
+                        <span className="flex items-center justify-center gap-2 font-medium">
+                          <Zap className="h-4 w-4 text-gold" />
+                          Buy it now
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-cream-muted">
+                          10% off on prepaid orders
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Trust badges */}
+                    <div className="mt-6 grid grid-cols-3 gap-3 pt-5 border-t border-gold/10">
+                      {TRUST_BADGES.map(({ Icon, label }) => (
+                        <div
+                          key={label}
+                          className="flex flex-col items-center gap-2 text-center"
+                        >
+                          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-gold/30">
+                            <Icon className="h-4 w-4 text-gold" strokeWidth={1.5} />
+                          </span>
+                          <span className="text-cream-muted text-[11px] leading-tight">
+                            {label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Description accordion */}
+                    <Accordion
+                      type="single"
+                      collapsible
+                      className="mt-6 border-t border-gold/10"
+                      defaultValue="desc"
+                    >
+                      <AccordionItem value="desc" className="border-gold/10">
+                        <AccordionTrigger className="text-cream hover:no-underline text-sm uppercase tracking-[0.2em]">
+                          Description
+                        </AccordionTrigger>
+                        <AccordionContent className="text-cream-muted leading-relaxed">
+                          {item.name} is a hanging car perfume composed like
+                          fine fragrance — a slow-diffusing blend that keeps
+                          your cabin considered for 30–45 days. Leak-proof
+                          glass, hand-finished cord, IFRA-safe oils. Made in
+                          India in small batches.
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+
+                    <div className="mt-4 text-center">
+                      <Link
+                        to="/business#lead-form"
+                        className="text-xs text-cream-muted hover:text-gold underline underline-offset-4"
+                      >
+                        Bulk / corporate gifting →
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -351,7 +496,7 @@ export default function CarFreshenerDetail() {
             </section>
 
             {/* Safety / what's inside */}
-            <section className="py-16 md:py-20 border-b border-gold/10">
+            <section className="py-14 md:py-16 border-b border-gold/10">
               <div className="container mx-auto px-6 max-w-3xl">
                 <h2 className="font-cormorant text-3xl md:text-4xl text-cream mb-6 text-center">
                   What's inside
@@ -369,6 +514,15 @@ export default function CarFreshenerDetail() {
                 </ul>
               </div>
             </section>
+
+            {/* Our promise */}
+            <PurityPromiseStrip />
+
+            {/* What makes Bazuki different */}
+            <StandOutFeatures
+              images={item.images}
+              accentHsl={item.accentHsl}
+            />
 
             {/* FAQ */}
             <section className="py-16 md:py-20 border-b border-gold/10">
@@ -434,7 +588,7 @@ export default function CarFreshenerDetail() {
             {canBuy ? (
               <Button
                 size="sm"
-                onClick={handleAdd}
+                onClick={() => handleAdd(true)}
                 disabled={status === "adding"}
                 className="shrink-0"
               >

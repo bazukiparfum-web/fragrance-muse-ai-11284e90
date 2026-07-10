@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import CarFreshenerCard from "@/components/car-fresheners/CarFreshenerCard";
+import PurityPromiseStrip from "@/components/car-fresheners/PurityPromiseStrip";
 import {
   fetchCarFreshenerCatalog,
   type CarFreshenerListItem,
@@ -164,6 +165,11 @@ const CarFreshenersPage = () => {
             )}
           </div>
         </section>
+
+        {/* Our promise */}
+        <PurityPromiseStrip />
+
+
 
         {/* How it works */}
         <section className="border-y border-gold/10 py-20 md:py-24 bg-bz-secondary">
