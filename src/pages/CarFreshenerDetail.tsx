@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import CarFreshenerCard from "@/components/car-fresheners/CarFreshenerCard";
+import CarFreshenerGallery from "@/components/car-fresheners/CarFreshenerGallery";
 import {
   getCarFreshenerByHandle,
   fetchCarFreshenerCatalog,
@@ -154,7 +155,7 @@ export default function CarFreshenerDetail() {
         "@type": "Product",
         name: item.name,
         description: item.tagline,
-        image: [item.image],
+        image: item.images.length > 0 ? item.images : [item.image],
         brand: { "@type": "Brand", name: "Bazuki" },
         offers: {
           "@type": "Offer",
@@ -208,18 +209,12 @@ export default function CarFreshenerDetail() {
                   </Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16 items-start">
-                  {/* Image */}
-                  <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-gold/15 bg-bz-secondary">
-                    <img
-                      src={item.image}
-                      alt={`${item.name} hanging car freshener`}
-                      className="h-full w-full object-cover"
-                    />
-                    <span className="pointer-events-none absolute left-3 top-3 h-5 w-5 border-l border-t border-gold/50" />
-                    <span className="pointer-events-none absolute right-3 top-3 h-5 w-5 border-r border-t border-gold/50" />
-                    <span className="pointer-events-none absolute bottom-3 left-3 h-5 w-5 border-b border-l border-gold/50" />
-                    <span className="pointer-events-none absolute bottom-3 right-3 h-5 w-5 border-b border-r border-gold/50" />
-                  </div>
+                  {/* Image gallery */}
+                  <CarFreshenerGallery
+                    images={item.images}
+                    alt={`${item.name} hanging car freshener`}
+                    accentHsl={item.accentHsl}
+                  />
 
                   {/* Summary */}
                   <div>
