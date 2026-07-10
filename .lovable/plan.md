@@ -1,73 +1,39 @@
+# Plan — Reference-style images for car freshener dummy products
 
-## Reference read
+Replace the current 6 placeholder car freshener images in `src/assets/car-fresheners/` with new AI-generated images that mirror the uploaded reference:
 
-**PDP (mittiymade Ultimate Combo)** uses this stack, top → bottom:
+- Light neutral background (soft warm grey / cream)
+- Bazuki-branded frosted glass bottle with wooden cap, black cord, on a round pedestal
+- Matching branded outer box (deep colored, floral line-art, scent name in gold script) beside bottle
+- Left side: large light-grey "UPTO **60** DAYS LASTING" typographic block (navy accent digits)
+- Right side: vertical light-grey scent name (e.g. "JASMINE", "OUD", "AMBER")
+- A single hero natural element (flower / spice / wood) at the base for scent cue
 
-1. Two-column top: gallery left, buy-box right.
-2. Buy-box: title → short tagline → 3 checkmark benefit bullets → price with "Tax included / Inclusive of all taxes" → qty stepper + Add to cart → prominent "Buy It Now — 10% off on prepaid orders" → row of 3 trust badges (Free Delivery / COD / Secure Payment) → collapsible Description.
-3. "Shop Our Bestsellers" recommended-products rail.
-4. "Our Promise of Purity" 4-icon strip (Vegan / Paraben-Free / Sulphate-Free / Toxin-Free).
-5. Customer reviews block.
-6. FAQs.
-7. "What makes us stand out" — image + caption feature cards.
+## Per-scent variations
 
-**Collection page** (couldn't fully load — rate-limited) follows the same Shopify pattern: promo strip, product grid with dual price display, then trust/USP bands.
+| id | Scent word (vertical) | Hero element | Box color |
+|---|---|---|---|
+| midnight-oud | OUD | dark oud wood chips | deep charcoal + gold |
+| amber-drive | AMBER | amber resin + tonka bean | burnt sienna + gold |
+| citrus-highway | CITRUS | fresh bergamot slice + leaf | citrus yellow + gold |
+| white-musk-cabin | MUSK | white cotton bloom | pale ivory + silver |
+| sandalwood-cruise | SANDAL | sandalwood sticks | warm tan + gold |
+| rose-noir | ROSE | dark red rose | wine burgundy + gold |
 
-## What we borrow (structure only — no design changes)
+## Files touched (build phase)
 
-Bazuki keeps its dark theme, cream/gold tokens, Cormorant headings, gold corner brackets, `bg-bz-primary/secondary/card`. We only reorganise sections and add a few missing ones.
+- Regenerate (overwrite) via `imagegen--generate_image` at `standard` quality (text legibility matters):
+  - `src/assets/car-fresheners/midnight-oud.jpg`
+  - `src/assets/car-fresheners/amber-drive.jpg`
+  - `src/assets/car-fresheners/citrus-highway.jpg`
+  - `src/assets/car-fresheners/white-musk-cabin.jpg`
+  - `src/assets/car-fresheners/sandalwood-cruise.jpg`
+  - `src/assets/car-fresheners/rose-noir.jpg`
 
-### `src/pages/CarFreshenerDetail.tsx` — insert/reshape sections
-
-- **Buy-box (right column)** — add above price:
-  - 3 checkmark bullets: "Pure fragrance-oil formula", "30–45 days of scent", "Leak-proof glass · hand-finished cord". Use `Check` in gold on `bg-bz-card` rows.
-  - Under price: small "Tax included · Shipping calculated at checkout" line.
-- **Qty stepper** — add a `−  1  +` control (local state) next to Add to cart, styled with `border-gold/20` pill.
-- **Secondary CTA** — replace current "Bulk / gifting" outline with a full-width "Buy it now" outline button under Add to cart, with sub-label "10% off on prepaid orders" (visual only for now; wires to same checkout flow via `openDrawer`). Keep Bulk link as a small text link below.
-- **Trust badge row** — new 3-up icon row under CTAs: Truck (Pan-India delivery), Wallet (COD available), ShieldCheck (Secure payment). Uses existing gold-outline circle style from `CarFreshenersPage` TRUST strip.
-- **Description accordion** — wrap the existing tagline/long copy in a collapsible `Accordion` labelled "Description", matching FAQ styling.
-
-### New section order on PDP (after buy-box)
-
-```text
-Gallery + Buy-box
-  ↓
-"How to use" (existing 3 steps — keep)
-  ↓
-"What's inside" checklist (existing — keep, condense)
-  ↓
-"Our promise" 4-icon strip  ← NEW (IFRA-safe / Alcohol-free / Recyclable card / Made in India)
-  ↓
-"What makes Bazuki different" 3–4 image+caption cards  ← NEW
-     (Slow diffusion · Balanced, never harsh · Leak-proof glass · Fine-fragrance oils)
-     Reuses each freshener's own gallery images — no new assets needed.
-  ↓
-FAQ (existing — keep)
-  ↓
-Related "Other scents in the collection" (existing — keep)
-```
-
-### `src/pages/CarFresheners.tsx` (collection) — light additions only
-
-- Add a **"Best-sellers"** rail at the top of the collection grid section (first 3 items marked by handle order) as an embla carousel above the full grid, mirroring mittiymade's "Shop Our Bestsellers" pattern. Uses existing `CarFreshenerCard`.
-- Add a **"Our promise" 4-icon strip** between the collection grid and "How it works" (same component as PDP for consistency).
-- Keep hero, existing trust strip, how-it-works, bulk CTA, FAQ, final CTA exactly as-is.
-
-### Shared new component
-
-- `src/components/car-fresheners/PurityPromiseStrip.tsx` — 4 gold-outline circle icons + label + one-line copy. Used by both pages.
-- `src/components/car-fresheners/StandOutFeatures.tsx` — 3–4 image+caption cards for the PDP "what makes Bazuki different" band.
+No code changes — `src/data/carFresheners.ts` already imports these paths, and Shopify-backed products (when present) override placeholders automatically. Aspect ratio kept wide (~1600x1000) to match the reference banner composition; existing gallery/card components handle `object-cover` cropping.
 
 ## Out of scope
 
-- No changes to colors, fonts, spacing scale, or existing components (`CarFreshenerCard`, `CarFreshenerGallery`).
-- No new product images or Shopify data changes.
-- Reviews block (mittiymade shows one) — skipped; we don't have per-product review data yet.
-- Promo bar / discount codes — skipped; not part of current pricing strategy.
-
-## Technical notes
-
-- Qty state is local to PDP; passed as `quantity` to `addItem`.
-- "Buy it now" reuses `handleAdd` then calls `openDrawer()` — no new checkout path.
-- All new copy is static in the component; no schema/data changes.
-- Icons: `Truck`, `Wallet`, `ShieldCheck`, `Leaf`, `Sparkles`, `Check` — already imported from `lucide-react` elsewhere.
+- No layout, component, or copy changes.
+- Real Shopify product images are not touched — this only refreshes local dummy fallbacks.
+- Text inside generated images is AI-rendered; if any letters render imperfectly on a specific scent, I'll re-roll only that one.
