@@ -171,7 +171,7 @@ export default function ProductDetail() {
   const seoDescription = product
     ? (product.description || `Shop ${product.title} from Bazuki — AI-crafted luxury fragrance, made-to-order in India.`).slice(0, 155)
     : '';
-  const seoImage = images[0]?.node.url;
+  const seoImage = images[0]?.node.url ?? fallbackImage;
   useSEO({ title: seoTitle, description: seoDescription, image: seoImage, type: 'product' });
 
   const buildEngravingAttrs = () => {
