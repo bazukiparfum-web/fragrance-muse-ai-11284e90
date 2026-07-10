@@ -63,6 +63,7 @@ import AIPerfumeVsTraditional from "./pages/guides/AIPerfumeVsTraditional";
 import CustomPerfumeIndia from "./pages/seo/CustomPerfumeIndia";
 import UniquePerfume from "./pages/seo/UniquePerfume";
 import NichePerfumeIndia from "./pages/seo/NichePerfumeIndia";
+import CarFresheners from "./pages/CarFresheners";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const AppInner = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/shop/cart" element={<Cart />} />
+          <Route path="/shop/car-fresheners" element={<CarFresheners />} />
           <Route path="/shop/checkout" element={<Checkout />} />
           <Route path="/shop/account" element={<Account />} />
           <Route path="/shop/account/scents/:id" element={<ScentDetail />} />
