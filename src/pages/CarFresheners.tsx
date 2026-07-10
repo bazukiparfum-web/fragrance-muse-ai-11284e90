@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Leaf, ShieldCheck, Sparkles, Factory } from "lucide-react";
+import { Leaf, ShieldCheck, Sparkles, Factory, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import CarFreshenerCard from "@/components/car-fresheners/CarFreshenerCard";
-import { CAR_FRESHENERS } from "@/data/carFresheners";
+import {
+  fetchCarFreshenerCatalog,
+  type CarFreshenerListItem,
+} from "@/lib/carFreshenerCatalog";
 import { useSEO } from "@/hooks/useSEO";
 import { JsonLd } from "@/components/JsonLd";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
@@ -54,6 +58,21 @@ const CarFreshenersPage = () => {
       "Luxury hanging car fresheners by Bazuki — IFRA-safe fragrance oils, 30–45 days of scent, crafted like fine perfume. Made in India.",
   });
 
+  const [items, setItems] = useState<CarFreshenerListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCarFreshenerCatalog().then((res) => {
+      if (cancelled) return;
+      setItems(res);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const breadcrumbs = buildBreadcrumbs([
     { name: "Home", path: "/" },
     { name: "Car Fresheners", path: "/shop/car-fresheners" },
@@ -63,7 +82,7 @@ const CarFreshenersPage = () => {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "Bazuki Hanging Car Fresheners",
-    itemListElement: CAR_FRESHENERS.map((f, i) => ({
+    itemListElement: items.map((f, i) => ({
       "@type": "ListItem",
       position: i + 1,
       name: f.name,
@@ -132,11 +151,17 @@ const CarFreshenersPage = () => {
                 Six scents. One considered ritual.
               </h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {CAR_FRESHENERS.map((item) => (
-                <CarFreshenerCard key={item.id} item={item} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-gold" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {items.map((item) => (
+                  <CarFreshenerCard key={item.handle} item={item} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
