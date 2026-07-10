@@ -166,6 +166,11 @@ const CarFreshenersPage = () => {
           </div>
         </section>
 
+        {/* Our promise */}
+        <PurityPromiseStrip />
+
+
+
         {/* How it works */}
         <section className="border-y border-gold/10 py-20 md:py-24 bg-bz-secondary">
           <div className="container mx-auto px-6">
