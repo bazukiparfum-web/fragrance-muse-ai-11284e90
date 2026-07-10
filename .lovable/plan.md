@@ -1,17 +1,29 @@
-## Generic image for Custom AI Fragrance
+## Verification: OG/Twitter image fallback for Custom AI Fragrance
 
-The Custom AI Fragrance product page shows a bag icon because the Shopify product has no image. Rather than uploading to Shopify, I'll add a local fallback image used any time a custom-scent product has no Shopify image — matches the existing "Custom Scent Default Image" convention in project memory.
+Reviewed the flow end-to-end and this is already correctly wired — no code changes needed.
 
-### What I'll do
+### What's already in place
 
-1. **Generate one image** with `imagegen` (premium) → `src/assets/custom-ai-fragrance.jpg`
-   - Prompt: a dark, luxury Bazuki-style bottle render on a warm black backdrop with soft gold rim-light, subtle particle/note glow around it, cinematic and understated. Matches the dark/gold aesthetic of the rest of the PDP.
-2. **Wire it as a fallback** in `src/components/product/ProductImageStage.tsx`:
-   - Accept an optional `fallbackSrc` prop. When `src` is falsy, render `fallbackSrc` if provided, else keep the current bag icon.
-3. **Pass the fallback from `ProductDetail.tsx`** only when the product handle starts with `custom-` or equals `custom-ai-fragrance` / `custom-scent-*`. Every other product without an image keeps the current bag icon.
-4. **Also use it as `seoImage`** when no Shopify image exists, so the OG tag and JSON-LD have a valid image for the custom AI fragrance.
+1. `src/pages/ProductDetail.tsx`
+   - Imports `customAiFragranceImage` from `@/assets/custom-ai-fragrance.jpg` (Vite emits a hashed absolute path like `/assets/custom-ai-fragrance-xxxx.jpg`).
+   - `fallbackImage = isCustomScent && images.length === 0 ? customAiFragranceImage : undefined`
+   - `seoImage = images[0]?.node.url ?? fallbackImage` — passed to `useSEO({ image: seoImage })`.
 
-### Out of scope
-- No changes to Shopify product data.
-- No global replacement of the bag-icon fallback for all products.
-- No new routes, DB, or edge functions.
+2. `src/hooks/useSEO.ts` already:
+   - Converts any non-`http` image to absolute via `${window.location.origin}${image}` (so the Vite-hashed `/assets/...` fallback becomes `https://www.bazukifragrance.com/assets/...`).
+   - When an image resolves, sets `og:image`, `og:image:width` (1200), `og:image:height` (630), `og:image:alt`, `twitter:card = summary_large_image`, `twitter:image`, `twitter:image:alt`.
+   - When no image resolves, downgrades `twitter:card` to `summary` and omits image tags — which does NOT trigger for Custom AI Fragrance because the fallback is always present.
+
+### Net result
+
+On `/products/custom-ai-fragrance` (or any `custom-scent-*` handle) with no Shopify images:
+- `og:image` = `https://<origin>/assets/custom-ai-fragrance-<hash>.jpg`
+- `twitter:image` = same absolute URL
+- `twitter:card` = `summary_large_image`
+- Width/height/alt tags all populated.
+
+### Note on crawler visibility
+
+`useSEO` mutates `document.head` client-side after hydration. JS-executing crawlers (Googlebot, Twitterbot with JS) will see the fallback image; non-JS social preview crawlers (LinkedIn, Slack, Facebook) only see the static `index.html` head. Lovable hosting injects a project-level social preview at serve time for those crawlers, so previews still render — they just aren't the per-route custom fallback. Making the per-route fallback visible to non-JS crawlers requires SSR, which this stack doesn't have.
+
+If you want, I can also mirror the fallback into the static `index.html` `og:image` so non-JS crawlers use it as the sitewide default — otherwise no build changes needed.
