@@ -47,6 +47,7 @@ const Footer = () => {
             <h4 className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">Shop</h4>
             <ul className="space-y-3 text-sm">
               <li><Link to="/collection" className="text-cream-muted hover:text-gold transition-colors">Signature Collection</Link></li>
+              <li><Link to="/shop/car-fresheners" className="text-cream-muted hover:text-gold transition-colors">Hanging Car Fresheners</Link></li>
               <li><Link to="/shop/quiz" className="text-cream-muted hover:text-gold transition-colors">AI Scent Quiz</Link></li>
               <li><Link to="/gift-cards" className="text-cream-muted hover:text-gold transition-colors">Gift Cards</Link></li>
               <li><Link to="/collection" className="text-cream-muted hover:text-gold transition-colors">Discovery Sets</Link></li>

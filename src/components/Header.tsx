@@ -7,6 +7,7 @@ import { SearchOverlay } from './SearchOverlay';
 
 const NAV_LINKS = [
   { label: 'Shop', path: '/collection' },
+  { label: 'Car Fresheners', path: '/shop/car-fresheners' },
   { label: 'Scent Quiz', path: '/shop/quiz' },
   { label: 'Scent Coaching', path: '/scent-coaching' },
   { label: 'Scent Marketing', path: '/business' },
