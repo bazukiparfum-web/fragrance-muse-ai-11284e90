@@ -129,6 +129,9 @@ export default function ProductDetail() {
     [variants, selectedVariantId],
   );
   const images = product?.images.edges ?? [];
+  const isCustomScent = !!product?.handle && CUSTOM_SCENT_HANDLE_PATTERN.test(product.handle);
+  const fallbackImage = isCustomScent && images.length === 0 ? customAiFragranceImage : undefined;
+  const displayImageSrc = images[selectedImage]?.node.url ?? fallbackImage;
   const currency = selectedVariant?.price.currencyCode
     || product?.priceRange.minVariantPrice.currencyCode
     || 'INR';
