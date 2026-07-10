@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import CarFreshenerCard from "@/components/car-fresheners/CarFreshenerCard";
+import CarFreshenerGallery from "@/components/car-fresheners/CarFreshenerGallery";
 import {
   getCarFreshenerByHandle,
   fetchCarFreshenerCatalog,

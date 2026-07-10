@@ -15,6 +15,7 @@ export interface CarFreshenerListItem {
   currency: string;
   accentHsl: string;
   image: string;
+  images: string[];
   /** Present only when backed by a real Shopify product */
   shopify?: ShopifyProduct;
   variantId?: string;
@@ -30,14 +31,20 @@ function fromPlaceholder(item: CarFreshener): CarFreshenerListItem {
     currency: "INR",
     accentHsl: item.accentHsl,
     image: item.image,
+    images: [item.image],
   };
 }
 
 function fromShopify(p: ShopifyProduct): CarFreshenerListItem {
   const local = CAR_FRESHENERS.find((f) => f.id === p.node.handle);
   const firstVariant = p.node.variants.edges[0]?.node;
-  const image =
-    p.node.images.edges[0]?.node.url ?? local?.image ?? "";
+  const shopifyImages = p.node.images.edges.map((e) => e.node.url).filter(Boolean);
+  const images = shopifyImages.length > 0
+    ? shopifyImages
+    : local?.image
+      ? [local.image]
+      : [];
+  const image = images[0] ?? "";
   return {
     handle: p.node.handle,
     name: p.node.title,
@@ -52,6 +59,7 @@ function fromShopify(p: ShopifyProduct): CarFreshenerListItem {
       "INR",
     accentHsl: local?.accentHsl ?? "43 56% 55%",
     image,
+    images,
     shopify: p,
     variantId: firstVariant?.id,
   };
