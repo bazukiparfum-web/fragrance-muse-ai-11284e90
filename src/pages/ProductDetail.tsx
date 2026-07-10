@@ -25,6 +25,9 @@ import AIFormulaCallout from '@/components/product/AIFormulaCallout';
 import TrustBadges from '@/components/product/TrustBadges';
 import QuizCTABanner from '@/components/product/QuizCTABanner';
 import RelatedProducts from '@/components/product/RelatedProducts';
+import customAiFragranceImage from '@/assets/custom-ai-fragrance.jpg';
+
+const CUSTOM_SCENT_HANDLE_PATTERN = /^custom-(ai-fragrance|scent)/i;
 
 
 type ProductNode = ShopifyProduct['node'];
