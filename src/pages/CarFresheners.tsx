@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import CarFreshenerCard from "@/components/car-fresheners/CarFreshenerCard";
+import PurityPromiseStrip from "@/components/car-fresheners/PurityPromiseStrip";
 import {
   fetchCarFreshenerCatalog,
   type CarFreshenerListItem,
