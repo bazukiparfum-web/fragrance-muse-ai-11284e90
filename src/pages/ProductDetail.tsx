@@ -324,7 +324,7 @@ export default function ProductDetail() {
           {/* Gallery */}
           <div>
             <EngravedBottlePreview
-              src={images[selectedImage]?.node.url}
+              src={displayImageSrc}
               alt={images[selectedImage]?.node.altText || product.title}
               enabled={engraving.enabled}
               text={engraving.text}
