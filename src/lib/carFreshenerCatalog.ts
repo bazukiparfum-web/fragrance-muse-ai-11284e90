@@ -31,7 +31,7 @@ function fromPlaceholder(item: CarFreshener): CarFreshenerListItem {
     currency: "INR",
     accentHsl: item.accentHsl,
     image: item.image,
-    images: [item.image],
+    images: item.images ?? [item.image],
   };
 }
 
