@@ -52,6 +52,8 @@ export default function OrderConfirmation() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [summary, setSummary] = useState<OrderSummaryItem[] | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  const [paymentGateway, setPaymentGateway] = useState<string | null>(null);
 
   useEffect(() => {
     if (!orderNumber) return;
