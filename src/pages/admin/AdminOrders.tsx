@@ -151,21 +151,34 @@ const AdminOrders = () => {
                         <Badge variant="secondary">{o.status}</Badge>
                       </TableCell>
                       <TableCell>
-                        {o.payment_method === 'cod' ? (
-                          <Badge
-                            variant="outline"
-                            className="border-amber-500/40 text-amber-500"
-                            title={o.payment_gateway ?? 'Cash on Delivery'}
-                          >
-                            COD
-                          </Badge>
-                        ) : o.payment_method === 'prepaid' ? (
-                          <Badge variant="secondary" title={o.payment_gateway ?? 'Prepaid'}>
-                            Prepaid
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {o.payment_method === 'cod' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500/40 text-amber-500 w-fit"
+                              title={o.payment_gateway ?? 'Cash on Delivery'}
+                            >
+                              COD
+                            </Badge>
+                          ) : o.payment_method === 'prepaid' ? (
+                            <Badge variant="secondary" className="w-fit" title={o.payment_gateway ?? 'Prepaid'}>
+                              Prepaid
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                          {o.payment_gateway && (
+                            <span
+                              className={`text-[10px] uppercase tracking-wider ${
+                                /gokwik/i.test(o.payment_gateway)
+                                  ? 'text-emerald-500 font-medium'
+                                  : 'text-muted-foreground'
+                              }`}
+                            >
+                              {o.payment_gateway}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {o.shopify_order_number ?? '—'}
