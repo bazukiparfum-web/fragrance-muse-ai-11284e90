@@ -63,6 +63,8 @@ export default function OrderConfirmation() {
       .then(({ data, error }) => {
         if (cancelled || error || !data?.items) return;
         setSummary(data.items as OrderSummaryItem[]);
+        setPaymentMethod((data.paymentMethod as string | null) ?? null);
+        setPaymentGateway((data.paymentGateway as string | null) ?? null);
       })
       .catch((e) => console.error("get-order-summary failed", e));
     return () => {
