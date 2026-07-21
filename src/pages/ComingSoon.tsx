@@ -202,12 +202,16 @@ export default function ComingSoon() {
         .cs-footer { border-top: 1px solid var(--hair); padding-top: 1.6rem; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .cs-footer .brand { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 14px; letter-spacing: 0.28em; color: var(--gold-dim); text-transform: uppercase; }
         .cs-footer .ig { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.08em; }
+        .cs-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        .cs-capture input:focus-visible { outline: 2px solid var(--gold); outline-offset: -1px; }
+        .cs-footer .brand:focus-visible, .cs-footer .ig:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
         @media (prefers-reduced-motion: reduce) {
           .cs-capture button { transition: none; }
+          .cs-glow { display: none; }
         }
       `}</style>
 
-      <CollectionAmbience particleCount={18} />
+      {prefersReducedMotion ? null : <CollectionAmbience particleCount={18} />}
 
       <div className="cs-glow cs-glow-amber" aria-hidden />
       <div className="cs-glow cs-glow-teal" aria-hidden />
@@ -225,8 +229,14 @@ export default function ComingSoon() {
           50+ raw ingredients, one bottle built for you.
         </p>
 
-        <div className="cs-bottle" aria-hidden="true">
-          <svg viewBox="0 0 130 210" xmlns="http://www.w3.org/2000/svg">
+        <div className="cs-bottle">
+          <svg
+            viewBox="0 0 130 210"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label={progressLabel}
+          >
+            <title>{progressLabel}</title>
             <defs>
               <clipPath id="cs-liquidClip">
                 <rect ref={liquidRectRef} x="30" y="200" width="70" height="0" rx="2" />
@@ -262,15 +272,24 @@ export default function ComingSoon() {
           </svg>
         </div>
 
-        <div className="cs-readout" aria-label="Time until launch on 29 August 2026">
-          <div className="cs-unit"><span className="cs-num">{d}</span><span className="cs-lbl">days</span></div>
+        <div
+          className="cs-readout"
+          role="timer"
+          aria-label="Time until launch on 29 August 2026"
+        >
+          <div className="cs-unit"><span className="cs-num" aria-label={`${d} days`}>{d}</span><span className="cs-lbl" aria-hidden>days</span></div>
           <span className="cs-colon" aria-hidden>:</span>
-          <div className="cs-unit"><span className="cs-num">{h}</span><span className="cs-lbl">hrs</span></div>
+          <div className="cs-unit"><span className="cs-num" aria-label={`${h} hours`}>{h}</span><span className="cs-lbl" aria-hidden>hrs</span></div>
           <span className="cs-colon" aria-hidden>:</span>
-          <div className="cs-unit"><span className="cs-num">{m}</span><span className="cs-lbl">min</span></div>
+          <div className="cs-unit"><span className="cs-num" aria-label={`${m} minutes`}>{m}</span><span className="cs-lbl" aria-hidden>min</span></div>
           <span className="cs-colon" aria-hidden>:</span>
-          <div className="cs-unit"><span className="cs-num">{s}</span><span className="cs-lbl">sec</span></div>
+          <div className="cs-unit"><span className="cs-num" aria-label={`${s} seconds`}>{s}</span><span className="cs-lbl" aria-hidden>sec</span></div>
         </div>
+
+        <div className="cs-sr-only" aria-live="polite" aria-atomic="true">
+          {announcement}
+        </div>
+
 
         <div className="cs-launch">
           Launching <span>29 August, 12:00 AM IST</span>
