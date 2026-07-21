@@ -65,6 +65,7 @@ import UniquePerfume from "./pages/seo/UniquePerfume";
 import NichePerfumeIndia from "./pages/seo/NichePerfumeIndia";
 import CarFresheners from "./pages/CarFresheners";
 import CarFreshenerDetail from "./pages/CarFreshenerDetail";
+import ComingSoon from "./pages/ComingSoon";
 
 const queryClient = new QueryClient();
 
