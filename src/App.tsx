@@ -65,6 +65,7 @@ import UniquePerfume from "./pages/seo/UniquePerfume";
 import NichePerfumeIndia from "./pages/seo/NichePerfumeIndia";
 import CarFresheners from "./pages/CarFresheners";
 import CarFreshenerDetail from "./pages/CarFreshenerDetail";
+import ComingSoon from "./pages/ComingSoon";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +113,7 @@ const AppInner = () => {
           <Route path="/niche-perfume-india" element={<NichePerfumeIndia />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
+          <Route path="/coming-soon" element={<ComingSoon />} />
 
           <Route path="/scent-library" element={<Navigate to="/collection" replace />} />
           <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
