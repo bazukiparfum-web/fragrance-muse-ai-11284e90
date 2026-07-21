@@ -1365,6 +1365,30 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          referral_code: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          referral_code?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          referral_code?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_optins: {
         Row: {
           cart_id: string | null
