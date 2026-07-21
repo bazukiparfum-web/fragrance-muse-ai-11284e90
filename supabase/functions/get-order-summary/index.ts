@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
     const { data: order } = await supabase
       .from('orders')
-      .select('id, order_number, total, shopify_order_number')
+      .select('id, order_number, total, shopify_order_number, payment_method, payment_gateway')
       .or(candidates.map((c) => `order_number.eq.${c}`).join(','))
       .maybeSingle()
 
@@ -74,6 +74,8 @@ Deno.serve(async (req) => {
         orderNumber: order.order_number,
         total: order.total,
         items: mapped,
+        paymentMethod: (order as any).payment_method ?? null,
+        paymentGateway: (order as any).payment_gateway ?? null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
