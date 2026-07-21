@@ -220,6 +220,31 @@ export default function OrderConfirmation() {
                 );
               })}
             </ul>
+            {(paymentMethod || paymentGateway) && (() => {
+              const method = (paymentMethod || '').toLowerCase();
+              const gwRaw = (paymentGateway || '').toLowerCase().trim();
+              const isCOD = method === 'cod' || gwRaw === 'cash_on_delivery' || gwRaw === 'cod' || gwRaw === 'manual';
+              const gwMap: Record<string, string> = {
+                gokwik: 'GoKwik',
+                shopify_payments: 'Shopify Payments',
+                razorpay: 'Razorpay',
+                stripe: 'Stripe',
+                paypal: 'PayPal',
+              };
+              const prettyGw = gwMap[gwRaw] || (gwRaw ? gwRaw.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '');
+              const typeLabel = isCOD ? 'Cash on Delivery' : 'Prepaid';
+              const value = isCOD
+                ? (prettyGw && prettyGw !== 'Cash On Delivery' && prettyGw !== 'Manual' ? `${prettyGw} · ${typeLabel}` : typeLabel)
+                : (prettyGw ? `${prettyGw} · ${typeLabel}` : typeLabel);
+              return (
+                <div className="mt-4 pt-3" style={{ borderTop: '1px solid hsl(var(--bz-gold) / 0.2)' }}>
+                  <p className="text-cream-muted uppercase tracking-[0.12em] mb-1" style={{ fontSize: 10 }}>
+                    Payment
+                  </p>
+                  <p className="text-cream font-sans" style={{ fontSize: 14 }}>{value}</p>
+                </div>
+              );
+            })()}
           </div>
         )}
 
