@@ -1,49 +1,54 @@
-## Goal
+## GoKwik Integration Plan
 
-Give each of the 6 car freshener dummy products a multi-image PDP gallery in the same visual style as the current hero image — so the existing `CarFreshenerGallery` (already used on the PDP) actually swaps between multiple frames instead of showing a single still.
+Since GoKwik is Shopify-native and your store already routes checkout through Shopify, the cleanest path is **installing the GoKwik Shopify app**. No Lovable code changes are required for the checkout itself — GoKwik automatically intercepts Shopify's checkout URL that our cart already generates.
 
-The PDP gallery component already exists and already reads `item.images[]`. Today, placeholder-backed items only expose one image, so the carousel has nothing to swap. This plan adds companion images and wires them through.
+### Recommended path: GoKwik Shopify App (no-code + minimal wiring)
 
-## What to build
+**Why this over a headless integration:**
+- Our `cartStore.ts` already opens Shopify's `checkoutUrl` (with `channel=online_store`). Once GoKwik is installed on the Shopify store, that same URL automatically renders GoKwik's 1-click checkout — no frontend changes needed.
+- COD verification, RTO shield, UPI/cards, and abandoned-cart recovery are all delivered by GoKwik's app inside Shopify.
+- Orders continue to flow through the same Shopify `orders/create`, `orders/updated`, `orders/paid` webhooks our `shopify-webhook-handler` edge function already handles.
+- A headless GoKwik API integration would bypass Shopify checkout entirely, break our current cart flow, and require rebuilding COD, payments, and order sync from scratch — not worth it given Shopify is already the source of truth.
 
-### 1. Generate 2 additional images per scent (12 new files)
+### Steps
 
-For each scent, generate two more frames in the exact same style (light neutral background, gold botanical line-art, silver-grey "UPTO 60 DAYS LASTING" typography, vertical scent word, Bazuki branding):
+**1. GoKwik-side setup (you do this in dashboards; no Lovable action)**
+- In your GoKwik merchant dashboard, add your Shopify store domain (`bazukifragrance.myshopify.com`).
+- In Shopify Admin → Apps, install the **GoKwik Checkout** app (GoKwik will send an install link once they whitelist your store).
+- Enable the checkout replacement + COD suite from inside the GoKwik app.
+- Enable analytics + abandoned cart flows in the GoKwik dashboard.
 
-- **`-boxed.jpg`** — hero shot of the **closed gift box** on the pedestal, bottle *inside* the box tucked behind the lid; front-facing gold script scent name on the box; hero natural element at the base.
-- **`-bottle.jpg`** — hero shot of **just the frosted glass bottle** hanging from its wooden cap + black cord on the pedestal, box removed; natural element still at base as scent cue.
+**2. Verify cart → checkout flow still works (no code change expected)**
+- Add an item to cart on the site → click checkout → confirm the new tab loads GoKwik checkout (not Shopify's default).
+- Confirm `channel=online_store` param survives (it does — we already set it in `formatCheckoutUrl`).
 
-Combined with the existing hero image (bottle + box together), each scent ends up with 3 frames the carousel can rotate through.
+**3. Verify order sync into our DB**
+- Place one test COD order + one test prepaid order via GoKwik.
+- Confirm rows appear in our `orders` and `order_items` tables via the existing `shopify-webhook-handler` edge function.
+- If GoKwik posts order events under a different Shopify order tag/source, add a small tag/source pass-through in the webhook handler so we can distinguish GoKwik orders in `orders.metadata` (optional; only if you want to filter by them in admin).
 
-New files under `src/assets/car-fresheners/`:
+**4. Admin visibility (optional, small change)**
+- Add a "Payment source" column in `/admin/orders` reading from Shopify's `payment_gateway_names` / `source_name` (already on the webhook payload) so ops can see which orders came via GoKwik vs. others.
 
-```
-midnight-oud-boxed.jpg          midnight-oud-bottle.jpg
-amber-drive-boxed.jpg           amber-drive-bottle.jpg
-citrus-highway-boxed.jpg        citrus-highway-bottle.jpg
-white-musk-cabin-boxed.jpg      white-musk-cabin-bottle.jpg
-sandalwood-cruise-boxed.jpg     sandalwood-cruise-bottle.jpg
-rose-noir-boxed.jpg             rose-noir-bottle.jpg
-```
+**5. Frontend microcopy (optional)**
+- Update the cart drawer's checkout button subtext from "Checkout with Shopify" to something neutral like "Secure Checkout · UPI · Cards · COD" so the branding matches what users will see.
 
-All generated at 1600x1000 with `imagegen--generate_image` premium tier (for legible typography), matching the color palette already assigned to each scent.
+### Technical details
 
-### 2. Wire images through the catalog
+- **No new secrets required.** GoKwik authenticates against Shopify via its app install — we do not need a `GOKWIK_API_KEY` on our side.
+- **No edge function changes required** for the core flow. `shopify-webhook-handler` already covers `orders/create`, `orders/updated`, `orders/paid`.
+- **No changes to `cartStore.ts`, `useCheckoutRedirect.ts`, or Storefront API mutations.** The Storefront API's `checkoutUrl` is what GoKwik hooks into.
+- **What we would change (if you approve the optional items above):**
+  - `supabase/functions/shopify-webhook-handler/index.ts` — persist `source_name` / `payment_gateway_names` into `orders.metadata` (JSONB) for GoKwik traceability.
+  - `src/pages/admin/AdminOrders.tsx` — new "Source" column.
+  - `src/components/cart/BazukiCartDrawer.tsx` — checkout button copy.
 
-Two small code changes:
+### When headless GoKwik would be needed instead
 
-- **`src/data/carFresheners.ts`** — add an `images: string[]` field to the `CarFreshener` type and populate `[hero, boxed, bottle]` per scent. Keep the existing `image` field pointing at the hero for backwards compatibility (cards, JSON-LD fallback).
-- **`src/lib/carFreshenerCatalog.ts`** — in `fromPlaceholder`, return `images: item.images` instead of `[item.image]`. Shopify-backed products are untouched — they already use real product photos.
+Only if you want to (a) offer GoKwik checkout on non-Shopify products, or (b) skip Shopify entirely. Neither applies to Bazuki today — every product (signature scents, custom AI scents, car fresheners) is a real Shopify product. So we stay with the Shopify app path.
 
-That's it. `CarFreshenerGallery` already handles thumbnails, prev/next arrows, counter, lightbox, and keyboard nav for any `images[]` length ≥ 2.
+### Out of scope for this plan
 
-## Out of scope
-
-- No changes to `CarFreshenerGallery` component, PDP layout, styling, or copy.
-- No changes to card grid on the collection page (still uses `item.image`, the hero frame).
-- Shopify-backed items are unaffected — their images come from Shopify and already flow through the same gallery.
-
-## Technical notes
-
-- Aspect ratio stays 1600x1000 to match the current hero and the gallery's `object-cover` square crop.
-- Ordering `[hero, boxed, bottle]` puts the most recognizable frame first (bottle + box together), which is what the PDP thumbnails and share previews will highlight.
+- Building a custom GoKwik checkout UI in Lovable.
+- Migrating orders off Shopify.
+- Refunds / partial refunds automation (handled inside Shopify + GoKwik dashboards).
