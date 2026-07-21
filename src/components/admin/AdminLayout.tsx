@@ -16,6 +16,7 @@ const titles: Record<string, string> = {
   '/admin/reviews': 'Reviews',
   '/admin/users': 'Users & Roles',
   '/admin/testing': 'Manual Testing',
+  '/admin/waitlist': 'Waitlist Signups',
 };
 
 const AdminLayout = () => {
