@@ -87,7 +87,7 @@ export default function ComingSoon() {
       return;
     }
 
-    trackCta("waitlist_signup", { location: "coming_soon" });
+    trackCta("waitlist_signup");
     setStatus("success");
   };
 
