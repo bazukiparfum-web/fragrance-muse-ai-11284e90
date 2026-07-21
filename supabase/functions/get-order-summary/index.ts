@@ -74,6 +74,8 @@ Deno.serve(async (req) => {
         orderNumber: order.order_number,
         total: order.total,
         items: mapped,
+        paymentMethod: (order as any).payment_method ?? null,
+        paymentGateway: (order as any).payment_gateway ?? null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
