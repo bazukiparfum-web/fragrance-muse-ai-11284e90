@@ -282,7 +282,7 @@ export default function BazukiCartDrawer() {
                 {isLoading || isSyncing || isLaunching ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Proceed to Checkout"
+                  "Secure Checkout · UPI · Cards · COD"
                 )}
               </button>
 
