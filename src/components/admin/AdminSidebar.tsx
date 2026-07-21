@@ -15,6 +15,7 @@ import {
   FlaskConical,
   Droplets,
   BookOpen,
+  Mail,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -52,6 +53,7 @@ const groups = [
       { title: 'Formula Library', url: '/admin/formulas', icon: BookOpen },
       { title: 'Consultations', url: '/admin/consultations', icon: MessageSquare },
       { title: 'Reviews', url: '/admin/reviews', icon: Star },
+      { title: 'Waitlist', url: '/admin/waitlist', icon: Mail },
     ],
   },
   {

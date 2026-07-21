@@ -5,6 +5,7 @@ import { template as quizFollowupDay3 } from './quiz-followup-day3.tsx'
 import { template as quizFollowupDay7 } from './quiz-followup-day7.tsx'
 import { template as quizFollowupDay25 } from './quiz-followup-day25.tsx'
 import { template as adminUserInvite } from './admin-user-invite.tsx'
+import { template as waitlistConfirmation } from './waitlist-confirmation.tsx'
 
 export interface TemplateEntry {
   // deno-lint-ignore no-explicit-any
@@ -23,4 +24,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'quiz-followup-day7': quizFollowupDay7,
   'quiz-followup-day25': quizFollowupDay25,
   'admin-user-invite': adminUserInvite,
+  'waitlist-confirmation': waitlistConfirmation,
 }

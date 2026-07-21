@@ -48,6 +48,7 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail";
 import AdminTesting from "./pages/admin/AdminTesting";
 import ShopifyRedirectSetup from "./pages/admin/ShopifyRedirectSetup";
+import AdminWaitlist from "./pages/admin/AdminWaitlist";
 import NotFound from "./pages/NotFound";
 import FindYourSignatureScent from "./pages/guides/FindYourSignatureScent";
 import ShopifyDebugPanel from "./components/dev/ShopifyDebugPanel";
@@ -134,6 +135,7 @@ const AppInner = () => {
             <Route path="customers" element={<AdminCustomers />} />
             <Route path="customers/:id" element={<AdminCustomerDetail />} />
             <Route path="testing" element={<AdminTesting />} />
+            <Route path="waitlist" element={<AdminWaitlist />} />
             <Route path="shopify-redirect-setup" element={<ShopifyRedirectSetup />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

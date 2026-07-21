@@ -25,24 +25,47 @@ export default function ComingSoon() {
   const [h, setH] = useState("00");
   const [m, setM] = useState("00");
   const [s, setS] = useState("00");
+  const [announcement, setAnnouncement] = useState("");
+  const [progressLabel, setProgressLabel] = useState("Formula 0% ready");
   const liquidRectRef = useRef<SVGRectElement | null>(null);
+  const lastAnnounceRef = useRef<string>("");
 
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
   useEffect(() => {
-    const tick = () => {
-      if (document.visibilityState === "hidden") return;
+    const applyState = () => {
       const now = Date.now();
       const remain = Math.max(0, LAUNCH_MS - now);
       const elapsed = Math.min(TOTAL_MS, Math.max(0, now - START_MS));
       const pct = TOTAL_MS > 0 ? elapsed / TOTAL_MS : 1;
 
-      setD(pad(Math.floor(remain / 86400000)));
-      setH(pad(Math.floor((remain % 86400000) / 3600000)));
-      setM(pad(Math.floor((remain % 3600000) / 60000)));
-      setS(pad(Math.floor((remain % 60000) / 1000)));
+      const days = Math.floor(remain / 86400000);
+      const hours = Math.floor((remain % 86400000) / 3600000);
+      const mins = Math.floor((remain % 3600000) / 60000);
+      const secs = Math.floor((remain % 60000) / 1000);
+
+      setD(pad(days));
+      setH(pad(hours));
+      setM(pad(mins));
+      setS(pad(secs));
+
+      const pctInt = Math.round(pct * 100);
+      setProgressLabel(`Formula ${pctInt}% ready`);
+
+      // Announce at minute granularity only, so SR isn't spammed each second.
+      const minuteKey = `${days}d${hours}h${mins}m`;
+      if (minuteKey !== lastAnnounceRef.current) {
+        lastAnnounceRef.current = minuteKey;
+        setAnnouncement(
+          `${days} day${days !== 1 ? "s" : ""}, ${hours} hour${hours !== 1 ? "s" : ""}, ${mins} minute${mins !== 1 ? "s" : ""} until launch on 29 August 2026.`,
+        );
+      }
 
       const rect = liquidRectRef.current;
       if (rect) {
@@ -52,10 +75,21 @@ export default function ComingSoon() {
         rect.setAttribute("y", String(202 - fillHeight));
       }
     };
-    tick();
+
+    applyState();
+
+    if (prefersReducedMotion) {
+      // Static snapshot — no per-second ticking, no animation churn.
+      return;
+    }
+
+    const tick = () => {
+      if (document.visibilityState === "hidden") return;
+      applyState();
+    };
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [prefersReducedMotion]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,14 +114,36 @@ export default function ComingSoon() {
       referral_code,
     });
 
+    const isDuplicate = error && (error as { code?: string }).code === "23505";
+
     // Treat unique-violation (23505) as success — don't leak email presence.
-    if (error && (error as { code?: string }).code !== "23505") {
+    if (error && !isDuplicate) {
       setStatus("error");
       setErrorMsg("Something went wrong. Try again in a moment.");
       return;
     }
 
     trackCta("waitlist_signup");
+
+    // Send confirmation email for new signups only (fire-and-forget).
+    if (!isDuplicate) {
+      supabase.functions
+        .invoke("send-transactional-email", {
+          body: {
+            templateName: "waitlist-confirmation",
+            recipientEmail: parsed.data,
+            idempotencyKey: `waitlist-confirm-${parsed.data}`,
+            templateData: {
+              email: parsed.data,
+              referralCode: referral_code,
+            },
+          },
+        })
+        .catch(() => {
+          /* non-blocking */
+        });
+    }
+
     setStatus("success");
   };
 
@@ -146,12 +202,16 @@ export default function ComingSoon() {
         .cs-footer { border-top: 1px solid var(--hair); padding-top: 1.6rem; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .cs-footer .brand { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 14px; letter-spacing: 0.28em; color: var(--gold-dim); text-transform: uppercase; }
         .cs-footer .ig { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.08em; }
+        .cs-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        .cs-capture input:focus-visible { outline: 2px solid var(--gold); outline-offset: -1px; }
+        .cs-footer .brand:focus-visible, .cs-footer .ig:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
         @media (prefers-reduced-motion: reduce) {
           .cs-capture button { transition: none; }
+          .cs-glow { display: none; }
         }
       `}</style>
 
-      <CollectionAmbience particleCount={18} />
+      {prefersReducedMotion ? null : <CollectionAmbience particleCount={18} />}
 
       <div className="cs-glow cs-glow-amber" aria-hidden />
       <div className="cs-glow cs-glow-teal" aria-hidden />
@@ -169,8 +229,14 @@ export default function ComingSoon() {
           50+ raw ingredients, one bottle built for you.
         </p>
 
-        <div className="cs-bottle" aria-hidden="true">
-          <svg viewBox="0 0 130 210" xmlns="http://www.w3.org/2000/svg">
+        <div className="cs-bottle">
+          <svg
+            viewBox="0 0 130 210"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label={progressLabel}
+          >
+            <title>{progressLabel}</title>
             <defs>
               <clipPath id="cs-liquidClip">
                 <rect ref={liquidRectRef} x="30" y="200" width="70" height="0" rx="2" />
@@ -206,15 +272,24 @@ export default function ComingSoon() {
           </svg>
         </div>
 
-        <div className="cs-readout" aria-label="Time until launch on 29 August 2026">
-          <div className="cs-unit"><span className="cs-num">{d}</span><span className="cs-lbl">days</span></div>
+        <div
+          className="cs-readout"
+          role="timer"
+          aria-label="Time until launch on 29 August 2026"
+        >
+          <div className="cs-unit"><span className="cs-num" aria-label={`${d} days`}>{d}</span><span className="cs-lbl" aria-hidden>days</span></div>
           <span className="cs-colon" aria-hidden>:</span>
-          <div className="cs-unit"><span className="cs-num">{h}</span><span className="cs-lbl">hrs</span></div>
+          <div className="cs-unit"><span className="cs-num" aria-label={`${h} hours`}>{h}</span><span className="cs-lbl" aria-hidden>hrs</span></div>
           <span className="cs-colon" aria-hidden>:</span>
-          <div className="cs-unit"><span className="cs-num">{m}</span><span className="cs-lbl">min</span></div>
+          <div className="cs-unit"><span className="cs-num" aria-label={`${m} minutes`}>{m}</span><span className="cs-lbl" aria-hidden>min</span></div>
           <span className="cs-colon" aria-hidden>:</span>
-          <div className="cs-unit"><span className="cs-num">{s}</span><span className="cs-lbl">sec</span></div>
+          <div className="cs-unit"><span className="cs-num" aria-label={`${s} seconds`}>{s}</span><span className="cs-lbl" aria-hidden>sec</span></div>
         </div>
+
+        <div className="cs-sr-only" aria-live="polite" aria-atomic="true">
+          {announcement}
+        </div>
+
 
         <div className="cs-launch">
           Launching <span>29 August, 12:00 AM IST</span>
