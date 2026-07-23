@@ -1,84 +1,64 @@
-## Naming note
+## Goal
 
-Your spec refers to `prelaunch_signups` and `/prelaunch`, but the existing table is `waitlist_signups` and the page is `/coming-soon`. I'll extend those existing assets rather than rename (no data migration, no route churn). Say the word if you'd rather rename both.
+Randomly assign every new waitlist signup to one of two subject variants for the welcome email, then measure sent / open / click / conversion rates separately for each variant. Results appear in a new section on `/admin/waitlist`.
 
-## 1. Database changes (single migration)
+**Subject A:** `Your early access is open — at half price.`
+**Subject B:** `You're in first. Here's 50% off on your purchase.`
 
-**Extend `waitlist_signups`:**
+## What gets measured per variant
 
-- Add `referral_code text unique` (auto-generated, format `BZK-XXXX`, 4 uppercase alphanumerics, ambiguous chars excluded).
-- Add `referred_by text` (nullable; validated against existing `referral_code`).
-- Backfill codes for existing rows.
-- Trigger `before insert`: if `referral_code` null, generate a unique one via a `gen_bzk_code()` function (loop until unique).
-- Trigger validates `referred_by` exists in `waitlist_signups.referral_code` and is not the row's own email (self-ref guard also enforced at checkout).
+- **Sent** — email successfully enqueued
+- **Opens** — tracking pixel loaded (unique by recipient)
+- **Clicks** — any link in the email clicked (CTA button + WhatsApp share + code copy fallback)
+- **Conversions** (any of these count, tracked separately too):
+  1. Referral code copied or WhatsApp share button clicked on `/coming-soon`
+  2. Referral code redeemed at checkout (`referral_redemptions` insert)
+  3. Return visit to `/home` from the email link
 
-**New table `referral_redemptions`:**
+## Database changes
 
-- `id uuid pk`, `referral_code text not null`, `redeemer_email text not null`, `redeemed_at timestamptz default now()`, `order_id text null`.
-- Index on `referral_code`; unique on `(redeemer_email)` so one redemption per email.
-- RLS: no public read; service role only. Insert happens server-side from the checkout/webhook edge function.
-- GRANTs per platform rules (service_role all; authenticated select own via `redeemer_email = auth.email()` if needed later).
+- New column `waitlist_signups.email_variant` (`text`, nullable) — stores `A` or `B` at signup time so the assignment is stable and joinable.
+- New table `email_events` — one row per open/click/conversion event, columns: `id`, `message_id`, `template_name`, `recipient_email`, `variant`, `event_type` (`open` / `click` / `conversion`), `conversion_kind` (nullable: `share`, `redeem`, `return_visit`), `metadata` jsonb, `created_at`. RLS: admins read; service role writes. GRANTs per platform rules.
+- Store the assigned `variant` in `email_send_log.metadata` (already jsonb) so sends dedupe correctly by `message_id` and stats can join.
 
-**Cap helpers (SECURITY DEFINER, search_path=public):**
+## Email template + send flow
 
-- `public.total_redemptions() returns int` — `select count(*) from referral_redemptions`.
-- `public.spots_remaining() returns int` — `greatest(0, 5000 - total_redemptions())`.
-- `public.referrals_open() returns boolean`.
-- Grant execute to `anon, authenticated` so the prelaunch page can call them via RPC without exposing the table.
+- `waitlist-confirmation.tsx` subject becomes a function of `templateData.variant` returning A or B copy. Body copy unchanged.
+- `ComingSoon.tsx` picks the variant with a deterministic hash of the email (50/50, so re-sends land on the same variant), writes it to `waitlist_signups.email_variant`, and passes it to `send-transactional-email` as `templateData.variant`.
+- Every link in the email (CTA button, share URL, WhatsApp link) is rewritten to go through a new `email-link` edge function that records a `click` event, then 302-redirects to the real URL.
+- A 1×1 tracking pixel `<img>` at the bottom of the template points to a new `email-open` edge function that records an `open` event and returns a transparent GIF. Both endpoints accept `?mid=<message_id>&v=<A|B>&e=<recipient>` query params.
 
-## 2. `/coming-soon` page updates (`src/pages/ComingSoon.tsx`)
+## Conversion capture
 
-- On mount: read `?ref=BZK-XXXX`, RPC-validate it exists; if invalid, silently drop (don't block signup).
-- Fetch `spots_remaining` on mount + poll every 30s. Render gold line: **"{N} of 5,000 early blends remaining."**
-- If `spots_remaining === 0`: hide referral card, swap CTA copy to **"Early access closed — join the waitlist for launch."** (email capture still works, but no code issued in the confirmation — email template branches on this).
-- On submit: insert with `referred_by` set from the `ref` param. Read back the generated `referral_code` via `.select()`.
-- Replace the current success confirmation with a card containing:
-  - Headline: **"You're in. Early access at 50% off is yours."**
-  - Personal code chip (`BZK-XXXX`) with one-tap copy button (uses `navigator.clipboard`, toast on success).
-  - WhatsApp share button (`https://wa.me/?text=...`) prefilled with the spec's message and the site URL.
-- Track `waitlist_signup` cta_event with `referral_code`, `referred_by`, `spots_remaining_at_signup`.
+- **share / copy** (`/coming-soon`): existing copy + WhatsApp handlers already fire; extend them to also insert an `email_events` row with `event_type='conversion'`, `conversion_kind='share'` when the visitor's email matches a `waitlist_signups` row that has a `variant`.
+- **redeem** (checkout): `apply-referral-code` edge function additionally inserts a `conversion` event with `conversion_kind='redeem'` when the redeemer's email is a signup with a variant, or when the code owner has a variant.
+- **return_visit** (`/home`): when a visit arrives with `?utm_source=welcome_email` (added by the click redirect), log a `conversion` event with `conversion_kind='return_visit'` once per session.
 
-## 3. Waitlist confirmation email
+## Admin dashboard section
 
-Rewrite `supabase/functions/_shared/transactional-email-templates/waitlist-confirmation.tsx` to match your copy exactly:
+New "Welcome Email A/B Test" block above the existing waitlist table on `/admin/waitlist`:
 
-- Subject: **"Your early access is open — at half price."** (plus alt subject stored as a comment for A/B later).
-- Body sections: "You're one of the first." → intro → **[Discover your formula — 50% off →]** button (links to `/home` for now; swap to `/quiz` at launch).
-- Personal code block: `{{referral_code}}` styled as the current gold monospace chip.
-- Line: **"{{spots_remaining}} of 5,000 remaining."**
-- Sign-off: "Welcome to the first blend, Vishvam & the Bazuki team."
-- P.S. about auto-linked discount.
-- Props: `referralCode`, `spotsRemaining`, `email`. Remove `utmSource` from body (keep behind the scenes if you still want it logged).
-- `ComingSoon.tsx` computes `spots_remaining` at send time and passes both fields via `templateData`.
-- Deploy `send-transactional-email` after template change.
+- Two side-by-side cards (A and B) showing: assigned, sent, unique opens + open rate, unique clicks + CTR, conversions broken out by kind, overall conversion rate.
+- Winner badge on whichever variant leads by conversion rate, with a "not enough data" hint until each side has ≥ 50 assignments.
+- Time-range filter (Last 7d / 30d / All) driven by `waitlist_signups.created_at`.
+- Data loaded via a new `get-email-experiment-stats` edge function (admin-guarded) that joins `waitlist_signups`, deduped `email_send_log`, and `email_events`.
 
-## 4. Checkout integration (spec + stubs)
+## Technical notes
 
-Checkout runs through Shopify + GoKwik, so the DB/edge pieces land now and the Shopify wiring is documented for the launch cutover:
+- Variant assignment: `variant = (fnv1a(email) & 1) === 0 ? 'A' : 'B'` — deterministic, no cookies, stable across retries.
+- Tracking endpoints are public (no JWT) so email clients can hit them; they never accept user-controlled writes — variant + email are re-derived from `message_id` server-side and cross-checked against `email_send_log` to prevent spoofed stat inflation.
+- Pixel endpoint always returns a 43-byte transparent GIF with `Cache-Control: no-store`; click endpoint whitelists redirect targets to `bazukifragrance.com` domains to prevent open-redirect abuse.
+- Existing `waitlist-confirmation` sends continue to work; missing `variant` in older rows is treated as "unassigned" and excluded from rate math.
+- All new edge functions get expanded CORS headers per project convention.
 
-- New edge function `apply-referral-code`:
-  - Input: `code`, `email`, `order_id?`.
-  - Validates: code exists in `waitlist_signups`, `referrals_open()` is true, `redeemer_email` not already in `referral_redemptions`, `code`'s owning email ≠ `redeemer_email` (self-referral guard).
-  - On success (with `order_id`): inserts `referral_redemptions` row and returns `{ discount: 50 }`.
-  - Without `order_id`: validation-only (used by the checkout field for live feedback).
-- Auto-discount for members: extend `shopify-webhook-handler` `orders/paid` path — if the buyer email matches a `waitlist_signups.email` and no redemption row exists yet for that email, insert a self-redemption (`referral_code = own code`, `order_id = shopify order id`) so the 5,000 cap accounts for it. Discount application itself is a Shopify Script/Function or GoKwik rule — I'll document the exact rule to configure, since it can't be enforced from our side alone.
-- Checkout UI field: add a referral input on `src/pages/Checkout.tsx` that calls `apply-referral-code` for validation and shows the 50% badge; final discount is applied by the Shopify/GoKwik rule tied to the code.
+## Files touched
 
-## 5. Files touched
-
-- `supabase/migrations/*` — schema, triggers, RPCs, RLS, grants.
-- `supabase/functions/_shared/transactional-email-templates/waitlist-confirmation.tsx` — rewrite.
-- `supabase/functions/apply-referral-code/index.ts` — new.
-- `supabase/functions/shopify-webhook-handler/index.ts` — auto-redemption on paid.
-- `src/pages/ComingSoon.tsx` — ref param handling, live counter, new confirmation card, share/copy.
-- `src/pages/Checkout.tsx` — referral field + validation call.
-- `src/lib/trackCta.ts` call sites — enrich waitlist event.
-
-## Open questions before I build
-
-1. Confirm you want me to keep the table name `waitlist_signups` and route `/coming-soon` (vs. renaming to `prelaunch_signups` / `/prelaunch`).   
-answer:  keep the table name `waitlist_signups` and route `/coming-soon`
-2. Share link target in WhatsApp + email button: `https://www.bazukifragrance.com/coming-soon?ref={code}` now, switch to `/quiz?ref={code}` at launch — OK?  
-Answer: Yes 
-3. GoKwik/Shopify 50% rule: do you want me to also create the Shopify discount codes automatically (one per `BZK-XXXX`) via the Admin API, or will you configure a single "any BZK-* code = 50% off first order" price rule in Shopify?  
-Answer: Want you to also create the Shopify discount codes automatically (one per `BZK-XXXX`) via the Admin API**.**
+- Migration: add `email_variant` column, create `email_events` table + RLS + grants.
+- `supabase/functions/_shared/transactional-email-templates/waitlist-confirmation.tsx` — dynamic subject + tracked links + pixel.
+- `supabase/functions/email-open/index.ts` — new.
+- `supabase/functions/email-link/index.ts` — new.
+- `supabase/functions/get-email-experiment-stats/index.ts` — new.
+- `supabase/functions/apply-referral-code/index.ts` — log `redeem` conversion.
+- `src/pages/ComingSoon.tsx` — assign + persist variant, pass to email, log `share` conversion on copy/WhatsApp.
+- `src/pages/Home.tsx` (or wherever `/home` lives) — log `return_visit` conversion when `utm_source=welcome_email`.
+- `src/pages/admin/Waitlist.tsx` — new A/B stats section + fetch hook.
