@@ -62,10 +62,12 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /coming-soon
 Disallow: /shop/cart
 Disallow: /shop/checkout
 Disallow: /shop/account
 Disallow: /reset-password
 Disallow: /admin/
+
 
 Sitemap: https://www.bazukifragrance.com/sitemap.xml
