@@ -137,6 +137,7 @@ export default function ComingSoon() {
         email: parsed.data,
         utm_source,
         referred_by,
+        referral_code: "", // trigger overwrites with unique BZK-XXXX
       })
       .select("referral_code")
       .maybeSingle();
