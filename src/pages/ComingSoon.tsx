@@ -125,32 +125,56 @@ export default function ComingSoon() {
     setStatus("loading");
     const params = new URLSearchParams(window.location.search);
     const utm_source = (params.get("utm_source") || "").slice(0, 64) || null;
-    const referral_code =
-      (params.get("ref") || params.get("referral_code") || "").slice(0, 64) || null;
+    const referred_by =
+      (params.get("ref") || params.get("referral_code") || "")
+        .trim()
+        .toUpperCase()
+        .slice(0, 32) || null;
 
-    const { error } = await supabase.from("waitlist_signups").insert({
-      email: parsed.data,
-      utm_source,
-      referral_code,
-    });
+    const { data: inserted, error } = await supabase
+      .from("waitlist_signups")
+      .insert({
+        email: parsed.data,
+        utm_source,
+        referred_by,
+      })
+      .select("referral_code")
+      .maybeSingle();
 
     const isDuplicate = error && (error as { code?: string }).code === "23505";
 
-    // Treat unique-violation (23505) as success — don't leak email presence.
-    if (error && !isDuplicate) {
+    // Duplicate email → look up their existing code so we can still show it.
+    let code: string | null = inserted?.referral_code ?? null;
+    if (isDuplicate) {
+      const { data: existing } = await supabase
+        .from("waitlist_signups")
+        .select("referral_code")
+        .eq("email", parsed.data)
+        .maybeSingle();
+      code = existing?.referral_code ?? null;
+    } else if (error) {
       setStatus("error");
       setErrorMsg("Something went wrong. Try again in a moment.");
       return;
     }
 
+    setPersonalCode(code);
+
     trackCta("waitlist_signup", {
       utm_source,
-      referral_code,
+      referred_by,
+      referral_code: code,
       duplicate: isDuplicate,
+      spots_remaining: spotsRemaining,
     });
 
-    // Send confirmation email for new signups only (fire-and-forget).
-    if (!isDuplicate) {
+    // Fire-and-forget: create Shopify discount + send email for new signups only.
+    if (!isDuplicate && code) {
+      supabase.functions
+        .invoke("create-referral-shopify-discount", { body: { code } })
+        .catch(() => { /* non-blocking */ });
+
+      const shareUrl = `https://www.bazukifragrance.com/coming-soon?ref=${code}`;
       supabase.functions
         .invoke("send-transactional-email", {
           body: {
@@ -159,19 +183,37 @@ export default function ComingSoon() {
             idempotencyKey: `waitlist-confirm-${parsed.data}`,
             templateData: {
               email: parsed.data,
-              referralCode: referral_code,
-              utmSource: utm_source,
+              referralCode: code,
+              spotsRemaining: spotsRemaining ?? 5000,
+              ctaUrl: "https://www.bazukifragrance.com/home",
+              shareUrl,
             },
           },
         })
-        .catch(() => {
-          /* non-blocking */
-        });
+        .catch(() => { /* non-blocking */ });
     }
-
 
     setStatus("success");
   };
+
+  const shareUrl = personalCode
+    ? `https://www.bazukifragrance.com/coming-soon?ref=${personalCode}`
+    : "";
+  const whatsappHref = personalCode
+    ? `https://wa.me/?text=${encodeURIComponent(
+        `I got early access to Bazuki — India's first AI-crafted fragrance. Use my code ${personalCode} for 50% off your first formula: ${shareUrl}`,
+      )}`
+    : "#";
+
+  const copyCode = async () => {
+    if (!personalCode) return;
+    try {
+      await navigator.clipboard.writeText(personalCode);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch { /* noop */ }
+  };
+
 
   return (
     <div className="cs-root">
