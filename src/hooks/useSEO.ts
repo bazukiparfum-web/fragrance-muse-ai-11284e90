@@ -101,5 +101,6 @@ export function useSEO({ title, description, image, type = "website", noindex, c
       document.title = prevTitle;
       restorers.forEach((r) => r());
     };
-  }, [title, description, image, type]);
+  }, [title, description, image, type, noindex, canonical]);
 }
+
