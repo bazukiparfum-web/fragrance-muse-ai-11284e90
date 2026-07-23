@@ -133,5 +133,5 @@ export const template = {
   component: Email,
   subject: "You're on the Bazuki list ✦",
   displayName: 'Waitlist Confirmation',
-  previewData: { email: 'jane@example.com', referralCode: 'FRIEND-1234' },
+  previewData: { email: 'jane@example.com', referralCode: 'FRIEND-1234', utmSource: 'instagram' },
 } satisfies TemplateEntry
