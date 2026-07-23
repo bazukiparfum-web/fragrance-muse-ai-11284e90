@@ -422,11 +422,11 @@ export default function ComingSoon() {
 
         {spotsRemaining !== null && (
           <p className="cs-spots" role="status" aria-live="polite">
-            {referralsOpen ? (
-              <>Subscribe to get an early discount</>
-            ) : (
-              <>Early access closed — join the waitlist for launch.</>
-            )}
+            <span>
+              {referralsOpen
+                ? "Subscribe to get an early discount"
+                : "Early access closed — join the waitlist for launch."}
+            </span>
           </p>
         )}
 
