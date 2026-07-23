@@ -364,10 +364,49 @@ export default function ComingSoon() {
           Launching <span>29 August, 12:00 AM IST</span>
         </div>
 
-        {status === "success" ? (
-          <p className="cs-confirm" role="status" aria-live="polite">
-            You're on the list. We'll write when the machine is ready.
+        {spotsRemaining !== null && (
+          <p className="cs-spots" role="status" aria-live="polite">
+            {referralsOpen ? (
+              <><span>{spotsRemaining.toLocaleString()}</span> of 5,000 early blends remaining</>
+            ) : (
+              <>Early access closed — join the waitlist for launch.</>
+            )}
           </p>
+        )}
+
+        {status === "success" ? (
+          <div className="cs-success" role="status" aria-live="polite">
+            {referralsOpen && personalCode ? (
+              <>
+                <p className="cs-success-head">You're in. Early access at 50% off is yours.</p>
+                <div className="cs-code-card">
+                  <div className="cs-code-label">Your personal code</div>
+                  <div className="cs-code-row">
+                    <span className="cs-code" aria-label={`Referral code ${personalCode}`}>{personalCode}</span>
+                    <button type="button" className="cs-code-copy" onClick={copyCode} aria-label="Copy code">
+                      {copied ? "Copied ✓" : "Copy"}
+                    </button>
+                  </div>
+                  <a
+                    className="cs-share"
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackCta("waitlist_share_whatsapp", { referral_code: personalCode })}
+                  >
+                    Share on WhatsApp →
+                  </a>
+                  <p className="cs-share-hint">
+                    Anyone who uses your code gets 50% off their first formula.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <p className="cs-confirm">
+                You're on the list. We'll write when the machine is ready.
+              </p>
+            )}
+          </div>
         ) : (
           <>
             <form className="cs-capture" onSubmit={onSubmit} noValidate>
@@ -385,13 +424,15 @@ export default function ComingSoon() {
                 required
               />
               <button type="submit" disabled={status === "loading"}>
-                {status === "loading" ? "Reserving…" : "Reserve early access"}
+                {status === "loading" ? "Reserving…" : referralsOpen ? "Claim 50% early access" : "Join launch waitlist"}
               </button>
             </form>
             <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
               {status === "error" && errorMsg
                 ? errorMsg
-                : "First 500 on the list get priority quiz access and a launch-week formula credit."}
+                : referralsOpen
+                  ? "Get your personal code + 50% off your first formula. First 5,000 blends only."
+                  : "Early access is fully claimed — we'll email you when we open to everyone."}
             </p>
           </>
         )}
