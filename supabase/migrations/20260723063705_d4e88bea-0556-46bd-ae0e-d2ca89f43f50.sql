@@ -1,0 +1,1 @@
+ALTER TABLE public.cta_events ADD COLUMN IF NOT EXISTS meta jsonb;
