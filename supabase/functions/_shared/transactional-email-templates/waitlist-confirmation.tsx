@@ -7,6 +7,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Preview,
   Section,
   Text,
@@ -19,6 +20,9 @@ interface Props {
   spotsRemaining?: number
   ctaUrl?: string
   shareUrl?: string
+  variant?: 'A' | 'B'
+  trackingBase?: string
+  messageId?: string
 }
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Helvetica, Arial, sans-serif', color: '#1a1a1a' }
@@ -93,15 +97,67 @@ const brand = {
 const footer = { fontSize: 12, color: '#8a8378', margin: '18px 0 0', textAlign: 'center' as const }
 const ps = { fontSize: 13, lineHeight: '20px', color: '#6b6258', margin: '20px 0 0', fontStyle: 'italic' as const }
 
-const Email = ({ referralCode, spotsRemaining, ctaUrl, shareUrl }: Props) => {
-  const discoverUrl = ctaUrl || 'https://www.bazukifragrance.com/home'
+const TEMPLATE_NAME = 'waitlist-confirmation'
+
+const buildTracked = (
+  trackingBase: string | undefined,
+  messageId: string | undefined,
+  variant: string | undefined,
+  target: string,
+) => {
+  if (!trackingBase || !messageId) return target
+  const qs = new URLSearchParams({
+    a: 'click',
+    t: TEMPLATE_NAME,
+    mid: messageId,
+    v: variant ?? '',
+    u: target,
+  })
+  return `${trackingBase}?${qs.toString()}`
+}
+
+const buildPixel = (
+  trackingBase: string | undefined,
+  messageId: string | undefined,
+  variant: string | undefined,
+) => {
+  if (!trackingBase || !messageId) return ''
+  const qs = new URLSearchParams({
+    a: 'open',
+    t: TEMPLATE_NAME,
+    mid: messageId,
+    v: variant ?? '',
+  })
+  return `${trackingBase}?${qs.toString()}`
+}
+
+const Email = ({ referralCode, spotsRemaining, ctaUrl, shareUrl, variant, trackingBase, messageId }: Props) => {
+  const discoverBase = ctaUrl || 'https://www.bazukifragrance.com/home'
+  const discoverWithUtm = (() => {
+    try {
+      const u = new URL(discoverBase)
+      u.searchParams.set('utm_source', 'welcome_email')
+      if (variant) u.searchParams.set('utm_content', `variant_${variant}`)
+      if (messageId) u.searchParams.set('emid', messageId)
+      if (variant) u.searchParams.set('ev', variant)
+      return u.toString()
+    } catch { return discoverBase }
+  })()
+
+  const trackedCta = buildTracked(trackingBase, messageId, variant, discoverWithUtm)
+  const trackedShare = shareUrl ? buildTracked(trackingBase, messageId, variant, shareUrl) : ''
+  const pixel = buildPixel(trackingBase, messageId, variant)
   const spots = typeof spotsRemaining === 'number' ? spotsRemaining : 5000
   const code = referralCode || 'BZK-XXXX'
+
+  const previewText = variant === 'B'
+    ? "You're in first. Here's 50% off your purchase."
+    : "You're in first. Half-price on your first formula."
 
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>You're in first. Half-price on your first formula.</Preview>
+      <Preview>{previewText}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Text style={eyebrow}>— Early access confirmed —</Text>
@@ -118,7 +174,7 @@ const Email = ({ referralCode, spotsRemaining, ctaUrl, shareUrl }: Props) => {
           </Text>
 
           <Section style={{ textAlign: 'center', margin: '26px 0 8px' }}>
-            <Button href={discoverUrl} style={cta}>
+            <Button href={trackedCta} style={cta}>
               Discover your formula — 50% off →
             </Button>
           </Section>
@@ -133,9 +189,11 @@ const Email = ({ referralCode, spotsRemaining, ctaUrl, shareUrl }: Props) => {
           <Section style={codeBox}>
             <Text style={codeLabel}>Your referral code</Text>
             <Text style={codeStyle}>{code}</Text>
-            {shareUrl ? (
+            {trackedShare ? (
               <Text style={{ ...body, fontSize: 12, margin: '10px 0 0', color: '#6b6258' }}>
-                {shareUrl}
+                <a href={trackedShare} style={{ color: '#8B6914', textDecoration: 'underline' }}>
+                  {shareUrl}
+                </a>
               </Text>
             ) : null}
           </Section>
@@ -171,15 +229,23 @@ const Email = ({ referralCode, spotsRemaining, ctaUrl, shareUrl }: Props) => {
             <br />
             discover your formula — @bazukiperfumes
           </Text>
+
+          {pixel ? (
+            <Img src={pixel} alt="" width="1" height="1" style={{ display: 'block', width: 1, height: 1, opacity: 0 }} />
+          ) : null}
         </Container>
       </Body>
     </Html>
   )
 }
 
+const SUBJECT_A = 'Your early access is open — at half price.'
+const SUBJECT_B = "You're in first. Here's 50% off on your purchase."
+
 export const template = {
   component: Email,
-  subject: 'Your early access is open — at half price.',
+  subject: (data: Record<string, unknown>) =>
+    (data?.variant === 'B' ? SUBJECT_B : SUBJECT_A),
   displayName: 'Waitlist Confirmation',
   previewData: {
     email: 'jane@example.com',
@@ -187,5 +253,6 @@ export const template = {
     spotsRemaining: 4823,
     ctaUrl: 'https://www.bazukifragrance.com/home',
     shareUrl: 'https://www.bazukifragrance.com/coming-soon?ref=BZK-7XK2',
+    variant: 'A',
   },
 } satisfies TemplateEntry
