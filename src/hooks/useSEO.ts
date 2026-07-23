@@ -45,7 +45,7 @@ export function useSEO({ title, description, image, type = "website", noindex, c
       return { el, created, previousHref };
     };
 
-    const url = `${window.location.origin}${window.location.pathname}`;
+    const url = canonical || `${window.location.origin}${window.location.pathname}`;
     const absImage = image
       ? image.startsWith("http")
         ? image
