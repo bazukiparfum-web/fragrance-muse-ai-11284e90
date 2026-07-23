@@ -30,7 +30,7 @@ export function trackCta(cta: string, meta?: Record<string, unknown>): void {
       viewport_h: typeof window !== "undefined" ? window.innerHeight : null,
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
       session_id: getSessionId(),
-      meta: meta ?? null,
+      meta: (meta ?? null) as any,
     };
     // Don't await — let the click navigate immediately.
     void supabase
