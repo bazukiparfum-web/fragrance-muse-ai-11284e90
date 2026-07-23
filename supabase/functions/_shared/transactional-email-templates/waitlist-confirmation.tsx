@@ -69,7 +69,7 @@ const brand = {
   margin: '0 0 6px',
 }
 
-const Email = ({ email, referralCode }: Props) => (
+const Email = ({ email, referralCode, utmSource }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>You're on the Bazuki list — launching 29 August 2026.</Preview>
