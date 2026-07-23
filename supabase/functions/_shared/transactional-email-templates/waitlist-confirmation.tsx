@@ -15,7 +15,9 @@ import type { TemplateEntry } from './registry.ts'
 interface Props {
   email?: string
   referralCode?: string | null
+  utmSource?: string | null
 }
+
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Helvetica, Arial, sans-serif', color: '#1a1a1a' }
 const container = { maxWidth: 560, margin: '0 auto', padding: '32px 24px' }
