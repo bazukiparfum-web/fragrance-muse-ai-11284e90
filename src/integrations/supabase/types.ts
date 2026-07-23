@@ -1535,6 +1535,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_waitlist_signup: {
+        Args: {
+          _email: string
+          _email_variant?: string
+          _first_name?: string
+          _referred_by?: string
+          _utm_source?: string
+        }
+        Returns: Json
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
