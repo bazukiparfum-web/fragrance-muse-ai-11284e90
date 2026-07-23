@@ -480,7 +480,7 @@ export default function ComingSoon() {
                 required
               />
               <button type="submit" disabled={status === "loading"}>
-                {status === "loading" ? "Reserving…" : referralsOpen ? "Claim 50% early access" : "Join launch waitlist"}
+                {status === "loading" ? "Reserving…" : referralsOpen ? "CLAIM 50% DISCOUNT" : "Join launch waitlist"}
               </button>
             </form>
             <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
