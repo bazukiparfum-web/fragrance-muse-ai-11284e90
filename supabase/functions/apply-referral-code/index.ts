@@ -64,6 +64,29 @@ Deno.serve(async (req) => {
       return json({ error: insertErr.message }, 500);
     }
 
+    // Log A/B conversion (redeem) for both parties if either is in a variant.
+    try {
+      for (const target of [normalizedEmail, owner.email.toLowerCase()]) {
+        const { data: wl } = await supabase
+          .from('waitlist_signups')
+          .select('email_variant')
+          .eq('email', target)
+          .maybeSingle();
+        const v = wl?.email_variant;
+        if (v === 'A' || v === 'B') {
+          await supabase.from('email_events').insert({
+            message_id: `waitlist-confirm-${target}`,
+            template_name: 'waitlist-confirmation',
+            recipient_email: target,
+            variant: v,
+            event_type: 'conversion',
+            conversion_kind: 'redeem',
+            metadata: { order_id: String(order_id), referral_code: normalizedCode },
+          });
+        }
+      }
+    } catch (_e) { /* non-blocking */ }
+
     return json({ valid: true, discount: 50, redeemed: true }, 200);
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
