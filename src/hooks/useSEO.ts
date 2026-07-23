@@ -72,6 +72,8 @@ export function useSEO({ title, description, image, type = "website", noindex, c
 
     trackMeta(upsertMeta('meta[name="description"]', "name", "description", description));
     trackLink(upsertLink("canonical", url));
+    trackMeta(upsertMeta('meta[name="robots"]', "name", "robots", noindex ? "noindex, nofollow" : "index, follow"));
+
 
     trackMeta(upsertMeta('meta[property="og:title"]', "property", "og:title", title));
     trackMeta(upsertMeta('meta[property="og:description"]', "property", "og:description", description));
