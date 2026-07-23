@@ -126,7 +126,11 @@ export default function ComingSoon() {
       return;
     }
 
-    trackCta("waitlist_signup");
+    trackCta("waitlist_signup", {
+      utm_source,
+      referral_code,
+      duplicate: isDuplicate,
+    });
 
     // Send confirmation email for new signups only (fire-and-forget).
     if (!isDuplicate) {
@@ -139,6 +143,7 @@ export default function ComingSoon() {
             templateData: {
               email: parsed.data,
               referralCode: referral_code,
+              utmSource: utm_source,
             },
           },
         })
@@ -146,6 +151,7 @@ export default function ComingSoon() {
           /* non-blocking */
         });
     }
+
 
     setStatus("success");
   };
