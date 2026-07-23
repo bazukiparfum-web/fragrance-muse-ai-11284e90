@@ -89,15 +89,32 @@ const Email = ({ email, referralCode, utmSource }: Props) => (
           <Text style={perks}>✦ First look at the 52-ingredient library</Text>
         </Section>
 
-        {referralCode ? (
+        {referralCode || utmSource ? (
           <Section style={referralBox}>
-            <Text style={referralLabel}>Referral applied</Text>
-            <Text style={referralCodeStyle}>{referralCode}</Text>
-            <Text style={{ ...body, fontSize: 12, margin: '6px 0 0', color: '#6b6258' }}>
-              We've noted your referrer — they'll be credited at launch.
-            </Text>
+            {referralCode ? (
+              <>
+                <Text style={referralLabel}>Referral applied</Text>
+                <Text style={referralCodeStyle}>{referralCode}</Text>
+                <Text style={{ ...body, fontSize: 12, margin: '6px 0 0', color: '#6b6258' }}>
+                  We've noted your referrer — they'll be credited at launch.
+                </Text>
+              </>
+            ) : null}
+            {utmSource ? (
+              <Text
+                style={{
+                  ...body,
+                  fontSize: 12,
+                  margin: referralCode ? '10px 0 0' : '0',
+                  color: '#6b6258',
+                }}
+              >
+                Source: <strong style={{ color: '#8B6914' }}>{utmSource}</strong>
+              </Text>
+            ) : null}
           </Section>
         ) : null}
+
 
         <Hr style={{ borderColor: '#ece5d8', margin: '28px 0 16px' }} />
 
