@@ -131,33 +131,34 @@ export default function ComingSoon() {
         .toUpperCase()
         .slice(0, 32) || null;
 
-    const { data: inserted, error } = await supabase
-      .from("waitlist_signups")
-      .insert({
-        email: parsed.data,
-        utm_source,
-        referred_by,
-        referral_code: "", // trigger overwrites with unique BZK-XXXX
-      })
-      .select("referral_code")
-      .maybeSingle();
+    // Deterministic A/B assignment: FNV-1a hash of email → 50/50 A vs B.
+    const hash = (() => {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < parsed.data.length; i++) {
+        h ^= parsed.data.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return h >>> 0;
+    })();
+    const variant: "A" | "B" = (hash & 1) === 0 ? "A" : "B";
 
-    const isDuplicate = error && (error as { code?: string }).code === "23505";
+    const { data: rpcData, error } = await supabase.rpc("create_waitlist_signup", {
+      _email: parsed.data,
+      _utm_source: utm_source,
+      _referred_by: referred_by,
+      _first_name: null,
+      _email_variant: variant,
+    });
 
-    // Duplicate email → look up their existing code so we can still show it.
-    let code: string | null = inserted?.referral_code ?? null;
-    if (isDuplicate) {
-      const { data: existing } = await supabase
-        .from("waitlist_signups")
-        .select("referral_code")
-        .eq("email", parsed.data)
-        .maybeSingle();
-      code = existing?.referral_code ?? null;
-    } else if (error) {
+    if (error) {
       setStatus("error");
       setErrorMsg("Something went wrong. Try again in a moment.");
       return;
     }
+
+    const result = (rpcData ?? {}) as { referral_code?: string; duplicate?: boolean };
+    const code: string | null = result.referral_code ?? null;
+    const isDuplicate = !!result.duplicate;
 
     setPersonalCode(code);
 
@@ -171,24 +172,6 @@ export default function ComingSoon() {
 
     // Fire-and-forget: create Shopify discount + send email for new signups only.
     if (!isDuplicate && code) {
-      // Deterministic A/B assignment: FNV-1a hash of email → 50/50 A vs B.
-      const hash = (() => {
-        let h = 0x811c9dc5;
-        for (let i = 0; i < parsed.data.length; i++) {
-          h ^= parsed.data.charCodeAt(i);
-          h = Math.imul(h, 0x01000193);
-        }
-        return h >>> 0;
-      })();
-      const variant: "A" | "B" = (hash & 1) === 0 ? "A" : "B";
-
-      // Persist the assignment (stable & joinable for analytics)
-      supabase
-        .from("waitlist_signups")
-        .update({ email_variant: variant })
-        .eq("email", parsed.data)
-        .then(() => {}, () => {});
-
       supabase.functions
         .invoke("create-referral-shopify-discount", { body: { code } })
         .catch(() => { /* non-blocking */ });
@@ -218,6 +201,7 @@ export default function ComingSoon() {
         })
         .catch(() => { /* non-blocking */ });
     }
+
 
     setStatus("success");
   };
