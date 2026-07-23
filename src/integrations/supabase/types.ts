@@ -1082,6 +1082,30 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_redemptions: {
+        Row: {
+          id: string
+          order_id: string | null
+          redeemed_at: string
+          redeemer_email: string
+          referral_code: string
+        }
+        Insert: {
+          id?: string
+          order_id?: string | null
+          redeemed_at?: string
+          redeemer_email: string
+          referral_code: string
+        }
+        Update: {
+          id?: string
+          order_id?: string | null
+          redeemed_at?: string
+          redeemer_email?: string
+          referral_code?: string
+        }
+        Relationships: []
+      }
       referral_rewards: {
         Row: {
           completed_at: string | null
@@ -1373,21 +1397,24 @@ export type Database = {
           created_at: string
           email: string
           id: string
-          referral_code: string | null
+          referral_code: string
+          referred_by: string | null
           utm_source: string | null
         }
         Insert: {
           created_at?: string
           email: string
           id?: string
-          referral_code?: string | null
+          referral_code: string
+          referred_by?: string | null
           utm_source?: string | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
-          referral_code?: string | null
+          referral_code?: string
+          referred_by?: string | null
           utm_source?: string | null
         }
         Relationships: []
@@ -1448,6 +1475,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      gen_bzk_code: { Args: never; Returns: string }
       generate_machine_formula: {
         Args: {
           p_formula_name: string
@@ -1510,6 +1538,10 @@ export type Database = {
         Args: { _reward_id: string }
         Returns: undefined
       }
+      referrals_open: { Args: never; Returns: boolean }
+      spots_remaining: { Args: never; Returns: number }
+      total_redemptions: { Args: never; Returns: number }
+      validate_referral_code: { Args: { _code: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"

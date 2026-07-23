@@ -1,6 +1,7 @@
 import * as React from 'npm:react@18.3.1'
 import {
   Body,
+  Button,
   Container,
   Head,
   Heading,
@@ -15,9 +16,10 @@ import type { TemplateEntry } from './registry.ts'
 interface Props {
   email?: string
   referralCode?: string | null
-  utmSource?: string | null
+  spotsRemaining?: number
+  ctaUrl?: string
+  shareUrl?: string
 }
-
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Helvetica, Arial, sans-serif', color: '#1a1a1a' }
 const container = { maxWidth: 560, margin: '0 auto', padding: '32px 24px' }
@@ -30,35 +32,55 @@ const eyebrow = {
 }
 const h1 = {
   fontFamily: 'Georgia, "Cormorant Garamond", serif',
-  fontSize: 28,
-  lineHeight: '36px',
-  margin: '0 0 12px',
+  fontSize: 30,
+  lineHeight: '38px',
+  margin: '0 0 14px',
   color: '#0A0908',
 }
 const body = { fontSize: 15, lineHeight: '24px', color: '#3a342d', margin: '10px 0' }
-const perks = { fontSize: 14, lineHeight: '22px', color: '#3a342d', margin: '4px 0' }
-const referralBox = {
-  marginTop: 20,
-  padding: '14px 16px',
+const cta = {
+  display: 'inline-block',
+  background: '#0A0908',
+  color: '#EDE7D9',
+  padding: '14px 22px',
+  borderRadius: 2,
+  fontSize: 13,
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase' as const,
+  textDecoration: 'none',
+  fontWeight: 600 as const,
+}
+const codeBox = {
+  marginTop: 22,
+  padding: '18px 20px',
   border: '1px solid #C9A45C',
   background: '#fdf8ec',
   borderRadius: 4,
+  textAlign: 'center' as const,
 }
-const referralLabel = {
+const codeLabel = {
   fontSize: 11,
-  letterSpacing: '0.16em',
+  letterSpacing: '0.24em',
   textTransform: 'uppercase' as const,
   color: '#8B6914',
-  margin: 0,
+  margin: '0 0 6px',
 }
-const referralCodeStyle = {
+const codeStyle = {
   fontFamily: 'ui-monospace, Menlo, monospace',
-  fontSize: 18,
+  fontSize: 24,
   color: '#8B6914',
-  margin: '4px 0 0',
-  fontWeight: 600 as const,
+  margin: '0',
+  fontWeight: 700 as const,
+  letterSpacing: '0.08em',
 }
-const footer = { fontSize: 12, color: '#8a8378', margin: '24px 0 0', textAlign: 'center' as const }
+const spotsLine = {
+  fontFamily: 'ui-monospace, Menlo, monospace',
+  fontSize: 13,
+  color: '#8B6914',
+  margin: '18px 0 0',
+  textAlign: 'center' as const,
+  letterSpacing: '0.04em',
+}
 const brand = {
   fontFamily: 'Georgia, "Cormorant Garamond", serif',
   fontSize: 14,
@@ -68,70 +90,102 @@ const brand = {
   textAlign: 'center' as const,
   margin: '0 0 6px',
 }
+const footer = { fontSize: 12, color: '#8a8378', margin: '18px 0 0', textAlign: 'center' as const }
+const ps = { fontSize: 13, lineHeight: '20px', color: '#6b6258', margin: '20px 0 0', fontStyle: 'italic' as const }
 
-const Email = ({ email, referralCode, utmSource }: Props) => (
-  <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>You're on the Bazuki list — launching 29 August 2026.</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Text style={eyebrow}>— Reservation confirmed —</Text>
-        <Heading style={h1}>You're on the list.</Heading>
-        <Text style={body}>
-          Thanks for reserving early access to Bazuki — India's first AI-algorithmic
-          perfume house. We'll write when the machine is ready.
-        </Text>
+const Email = ({ referralCode, spotsRemaining, ctaUrl, shareUrl }: Props) => {
+  const discoverUrl = ctaUrl || 'https://www.bazukifragrance.com/home'
+  const spots = typeof spotsRemaining === 'number' ? spotsRemaining : 5000
+  const code = referralCode || 'BZK-XXXX'
 
-        <Section style={{ margin: '20px 0 8px' }}>
-          <Text style={{ ...eyebrow, margin: '0 0 8px' }}>What you get</Text>
-          <Text style={perks}>✦ Priority quiz access before public launch</Text>
-          <Text style={perks}>✦ A launch-week formula credit (first 500 signups)</Text>
-          <Text style={perks}>✦ First look at the 52-ingredient library</Text>
-        </Section>
+  return (
+    <Html lang="en" dir="ltr">
+      <Head />
+      <Preview>You're in first. Half-price on your first formula.</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Text style={eyebrow}>— Early access confirmed —</Text>
+          <Heading style={h1}>You're one of the first.</Heading>
 
-        {referralCode || utmSource ? (
-          <Section style={referralBox}>
-            {referralCode ? (
-              <>
-                <Text style={referralLabel}>Referral applied</Text>
-                <Text style={referralCodeStyle}>{referralCode}</Text>
-                <Text style={{ ...body, fontSize: 12, margin: '6px 0 0', color: '#6b6258' }}>
-                  We've noted your referrer — they'll be credited at launch.
-                </Text>
-              </>
-            ) : null}
-            {utmSource ? (
-              <Text
-                style={{
-                  ...body,
-                  fontSize: 12,
-                  margin: referralCode ? '10px 0 0' : '0',
-                  color: '#6b6258',
-                }}
-              >
-                Source: <strong style={{ color: '#8B6914' }}>{utmSource}</strong>
+          <Text style={body}>
+            Before Bazuki opens to the world, our machine blends for a select few — and you're on
+            that list.
+          </Text>
+          <Text style={body}>
+            As an early-access member, your first personalized formula is crafted at{' '}
+            <strong>50% off</strong>. Take the quiz, let the machine blend from 50+ ingredients,
+            and receive a fragrance that exists for no one else.
+          </Text>
+
+          <Section style={{ textAlign: 'center', margin: '26px 0 8px' }}>
+            <Button href={discoverUrl} style={cta}>
+              Discover your formula — 50% off →
+            </Button>
+          </Section>
+
+          <Hr style={{ borderColor: '#ece5d8', margin: '30px 0 22px' }} />
+
+          <Heading style={{ ...h1, fontSize: 22, lineHeight: '30px' }}>
+            And bring your people.
+          </Heading>
+          <Text style={body}>Your personal code:</Text>
+
+          <Section style={codeBox}>
+            <Text style={codeLabel}>Your referral code</Text>
+            <Text style={codeStyle}>{code}</Text>
+            {shareUrl ? (
+              <Text style={{ ...body, fontSize: 12, margin: '10px 0 0', color: '#6b6258' }}>
+                {shareUrl}
               </Text>
             ) : null}
           </Section>
-        ) : null}
 
+          <Text style={body}>
+            Share it with friends and family — anyone who uses it gets the same 50% off their first
+            formula. But move quickly: this is limited to the first 5,000 blends, and once they're
+            claimed, early access closes.
+          </Text>
 
-        <Hr style={{ borderColor: '#ece5d8', margin: '28px 0 16px' }} />
+          <Text style={spotsLine}>{spots.toLocaleString()} of 5,000 remaining.</Text>
 
-        <Text style={brand}>Bazuki</Text>
-        <Text style={footer}>
-          Launching 29 August 2026 · 12:00 AM IST
-          <br />
-          discover your formula — @bazukiperfumes
-        </Text>
-      </Container>
-    </Body>
-  </Html>
-)
+          <Text style={{ ...body, marginTop: 24 }}>
+            No two bottles we make are ever the same. Neither is this offer.
+          </Text>
+
+          <Text style={{ ...body, marginTop: 20 }}>
+            Welcome to the first blend,
+            <br />
+            Vishvam &amp; the Bazuki team
+          </Text>
+
+          <Text style={ps}>
+            P.S. Your discount is already linked to your email — no code needed for you. The code
+            is purely yours to give.
+          </Text>
+
+          <Hr style={{ borderColor: '#ece5d8', margin: '28px 0 16px' }} />
+
+          <Text style={brand}>Bazuki</Text>
+          <Text style={footer}>
+            Launching 29 August 2026 · 12:00 AM IST
+            <br />
+            discover your formula — @bazukiperfumes
+          </Text>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
 
 export const template = {
   component: Email,
-  subject: "You're on the Bazuki list ✦",
+  subject: 'Your early access is open — at half price.',
   displayName: 'Waitlist Confirmation',
-  previewData: { email: 'jane@example.com', referralCode: 'FRIEND-1234', utmSource: 'instagram' },
+  previewData: {
+    email: 'jane@example.com',
+    referralCode: 'BZK-7XK2',
+    spotsRemaining: 4823,
+    ctaUrl: 'https://www.bazukifragrance.com/home',
+    shareUrl: 'https://www.bazukifragrance.com/coming-soon?ref=BZK-7XK2',
+  },
 } satisfies TemplateEntry
