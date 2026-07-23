@@ -15,7 +15,9 @@ import type { TemplateEntry } from './registry.ts'
 interface Props {
   email?: string
   referralCode?: string | null
+  utmSource?: string | null
 }
+
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Helvetica, Arial, sans-serif', color: '#1a1a1a' }
 const container = { maxWidth: 560, margin: '0 auto', padding: '32px 24px' }
@@ -67,7 +69,7 @@ const brand = {
   margin: '0 0 6px',
 }
 
-const Email = ({ email, referralCode }: Props) => (
+const Email = ({ email, referralCode, utmSource }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>You're on the Bazuki list — launching 29 August 2026.</Preview>
@@ -87,15 +89,32 @@ const Email = ({ email, referralCode }: Props) => (
           <Text style={perks}>✦ First look at the 52-ingredient library</Text>
         </Section>
 
-        {referralCode ? (
+        {referralCode || utmSource ? (
           <Section style={referralBox}>
-            <Text style={referralLabel}>Referral applied</Text>
-            <Text style={referralCodeStyle}>{referralCode}</Text>
-            <Text style={{ ...body, fontSize: 12, margin: '6px 0 0', color: '#6b6258' }}>
-              We've noted your referrer — they'll be credited at launch.
-            </Text>
+            {referralCode ? (
+              <>
+                <Text style={referralLabel}>Referral applied</Text>
+                <Text style={referralCodeStyle}>{referralCode}</Text>
+                <Text style={{ ...body, fontSize: 12, margin: '6px 0 0', color: '#6b6258' }}>
+                  We've noted your referrer — they'll be credited at launch.
+                </Text>
+              </>
+            ) : null}
+            {utmSource ? (
+              <Text
+                style={{
+                  ...body,
+                  fontSize: 12,
+                  margin: referralCode ? '10px 0 0' : '0',
+                  color: '#6b6258',
+                }}
+              >
+                Source: <strong style={{ color: '#8B6914' }}>{utmSource}</strong>
+              </Text>
+            ) : null}
           </Section>
         ) : null}
+
 
         <Hr style={{ borderColor: '#ece5d8', margin: '28px 0 16px' }} />
 
@@ -114,5 +133,5 @@ export const template = {
   component: Email,
   subject: "You're on the Bazuki list ✦",
   displayName: 'Waitlist Confirmation',
-  previewData: { email: 'jane@example.com', referralCode: 'FRIEND-1234' },
+  previewData: { email: 'jane@example.com', referralCode: 'FRIEND-1234', utmSource: 'instagram' },
 } satisfies TemplateEntry

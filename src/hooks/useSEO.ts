@@ -5,6 +5,8 @@ interface SEOOptions {
   description: string;
   image?: string;
   type?: "website" | "article" | "product";
+  noindex?: boolean;
+  canonical?: string;
 }
 
 /**
@@ -12,7 +14,8 @@ interface SEOOptions {
  * tags on mount and restores prior values on unmount so route changes don't
  * leave stale metadata behind.
  */
-export function useSEO({ title, description, image, type = "website" }: SEOOptions) {
+export function useSEO({ title, description, image, type = "website", noindex, canonical }: SEOOptions) {
+
   useEffect(() => {
     const prevTitle = document.title;
 
@@ -42,7 +45,7 @@ export function useSEO({ title, description, image, type = "website" }: SEOOptio
       return { el, created, previousHref };
     };
 
-    const url = `${window.location.origin}${window.location.pathname}`;
+    const url = canonical || `${window.location.origin}${window.location.pathname}`;
     const absImage = image
       ? image.startsWith("http")
         ? image
@@ -69,6 +72,8 @@ export function useSEO({ title, description, image, type = "website" }: SEOOptio
 
     trackMeta(upsertMeta('meta[name="description"]', "name", "description", description));
     trackLink(upsertLink("canonical", url));
+    trackMeta(upsertMeta('meta[name="robots"]', "name", "robots", noindex ? "noindex, nofollow" : "index, follow"));
+
 
     trackMeta(upsertMeta('meta[property="og:title"]', "property", "og:title", title));
     trackMeta(upsertMeta('meta[property="og:description"]', "property", "og:description", description));
@@ -96,5 +101,6 @@ export function useSEO({ title, description, image, type = "website" }: SEOOptio
       document.title = prevTitle;
       restorers.forEach((r) => r());
     };
-  }, [title, description, image, type]);
+  }, [title, description, image, type, noindex, canonical]);
 }
+

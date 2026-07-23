@@ -79,6 +79,7 @@ export type Database = {
           created_at: string
           cta: string
           id: string
+          meta: Json | null
           path: string | null
           referrer: string | null
           session_id: string | null
@@ -91,6 +92,7 @@ export type Database = {
           created_at?: string
           cta: string
           id?: string
+          meta?: Json | null
           path?: string | null
           referrer?: string | null
           session_id?: string | null
@@ -103,6 +105,7 @@ export type Database = {
           created_at?: string
           cta?: string
           id?: string
+          meta?: Json | null
           path?: string | null
           referrer?: string | null
           session_id?: string | null

@@ -20,7 +20,7 @@ function getSessionId(): string {
 /**
  * Fire-and-forget CTA click logger. Never throws; never blocks navigation.
  */
-export function trackCta(cta: string): void {
+export function trackCta(cta: string, meta?: Record<string, unknown>): void {
   try {
     const payload = {
       cta,
@@ -30,6 +30,7 @@ export function trackCta(cta: string): void {
       viewport_h: typeof window !== "undefined" ? window.innerHeight : null,
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
       session_id: getSessionId(),
+      meta: (meta ?? null) as any,
     };
     // Don't await — let the click navigate immediately.
     void supabase
@@ -42,3 +43,4 @@ export function trackCta(cta: string): void {
     console.warn("[trackCta] error", err);
   }
 }
+
