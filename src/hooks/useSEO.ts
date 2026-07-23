@@ -5,6 +5,8 @@ interface SEOOptions {
   description: string;
   image?: string;
   type?: "website" | "article" | "product";
+  noindex?: boolean;
+  canonical?: string;
 }
 
 /**
@@ -12,7 +14,8 @@ interface SEOOptions {
  * tags on mount and restores prior values on unmount so route changes don't
  * leave stale metadata behind.
  */
-export function useSEO({ title, description, image, type = "website" }: SEOOptions) {
+export function useSEO({ title, description, image, type = "website", noindex, canonical }: SEOOptions) {
+
   useEffect(() => {
     const prevTitle = document.title;
 
