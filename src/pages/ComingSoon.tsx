@@ -268,6 +268,21 @@ export default function ComingSoon() {
         .cs-micro { font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.02em; margin-bottom: 3.2rem; }
         .cs-error { color: #E07A6B; }
         .cs-confirm { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--teal); letter-spacing: 0.05em; margin-bottom: 3.2rem; }
+        .cs-spots { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--gold); letter-spacing: 0.06em; margin: 0 0 1.8rem; }
+        .cs-spots span { color: var(--gold); font-weight: 500; }
+        .cs-success { margin-bottom: 3rem; }
+        .cs-success-head { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 20px; color: var(--ivory); margin: 0 0 1.2rem; letter-spacing: 0.01em; }
+        .cs-code-card { max-width: 400px; margin: 0 auto; padding: 20px 22px; border: 1px solid var(--gold); background: rgba(201,164,92,0.05); border-radius: 2px; }
+        .cs-code-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 8px; }
+        .cs-code-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px; }
+        .cs-code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: var(--gold); letter-spacing: 0.12em; }
+        .cs-code-copy { background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); padding: 6px 12px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s ease, color 0.2s ease; }
+        .cs-code-copy:hover { background: var(--gold); color: var(--ink); }
+        .cs-code-copy:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+        .cs-share { display: inline-block; background: #25D366; color: #0A0908; padding: 10px 18px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; text-decoration: none; border-radius: 2px; margin-bottom: 10px; }
+        .cs-share:hover { filter: brightness(1.1); }
+        .cs-share:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
+        .cs-share-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 4px 0 0; }
         .cs-footer { border-top: 1px solid var(--hair); padding-top: 1.6rem; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .cs-footer .brand { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 14px; letter-spacing: 0.28em; color: var(--gold-dim); text-transform: uppercase; }
         .cs-footer .ig { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.08em; }
