@@ -15,6 +15,8 @@ import WhatsAppFab from "@/components/WhatsAppFab";
 import { JsonLd } from "@/components/JsonLd";
 import { useSEO } from "@/hooks/useSEO";
 import { buildBreadcrumbs } from "@/lib/breadcrumbs";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const SITE_URL = "https://www.bazukifragrance.com";
 
