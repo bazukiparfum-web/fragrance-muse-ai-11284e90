@@ -1,4 +1,17 @@
 import { useCallback, useRef, useState } from "react";
+import { readStoredRef } from "@/lib/referral";
+
+function withReferralDiscount(url: string): string {
+  try {
+    const code = readStoredRef();
+    if (!code) return url;
+    const u = new URL(url);
+    if (!u.searchParams.has("discount")) u.searchParams.set("discount", code);
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
 
 export type CheckoutStatus = "idle" | "launching" | "error";
 
@@ -34,7 +47,7 @@ export function useCheckoutRedirect() {
       const t1 = window.setTimeout(() => {
         let opened: Window | null = null;
         try {
-          opened = window.open(url, "_blank");
+          opened = window.open(withReferralDiscount(url), "_blank");
         } catch (e) {
           console.error("Failed to open checkout URL", e);
         }
