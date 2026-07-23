@@ -31,6 +31,33 @@ const Index = () => {
   });
 
 
+  // Log return_visit conversion when arriving from the welcome email.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("utm_source") !== "welcome_email") return;
+      const mid = params.get("emid");
+      if (!mid) return;
+      const sessionKey = `email_return_visit_logged:${mid}`;
+      if (sessionStorage.getItem(sessionKey)) return;
+      sessionStorage.setItem(sessionKey, "1");
+      const match = mid.match(/^waitlist-confirm-(.+)$/i);
+      const email = match ? match[1].toLowerCase() : null;
+      if (!email) return;
+      supabase.functions
+        .invoke("email-track", {
+          body: {
+            template_name: "waitlist-confirmation",
+            recipient_email: email,
+            conversion_kind: "return_visit",
+            message_id: mid,
+            variant: params.get("ev") || undefined,
+          },
+        })
+        .catch(() => { /* non-blocking */ });
+    } catch { /* noop */ }
+  }, []);
+
   const breadcrumbsJsonLd = buildBreadcrumbs([{ name: "Home", path: "/" }]);
 
   const faqJsonLd = {
