@@ -423,7 +423,7 @@ export default function ComingSoon() {
         {spotsRemaining !== null && (
           <p className="cs-spots" role="status" aria-live="polite">
             {referralsOpen ? (
-              <><span>{spotsRemaining.toLocaleString()}</span> of 5,000 early blends remaining</>
+              <>Subscribe to get an early discount</>
             ) : (
               <>Early access closed — join the waitlist for launch.</>
             )}
