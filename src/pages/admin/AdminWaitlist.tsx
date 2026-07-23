@@ -8,6 +8,127 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+
+interface VariantStats {
+  assigned: number;
+  sent: number;
+  opens: number;
+  clicks: number;
+  conversions: number;
+  breakdown: { share: number; redeem: number; return_visit: number };
+  open_rate: number;
+  click_rate: number;
+  conversion_rate: number;
+}
+
+function EmailABSection() {
+  const [days, setDays] = useState<number | null>(7);
+  const [stats, setStats] = useState<{ A: VariantStats; B: VariantStats } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = async (d: number | null) => {
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke('get-email-experiment-stats', {
+      body: { template_name: 'waitlist-confirmation', days: d },
+    });
+    if (error) toast.error('Failed to load A/B stats');
+    else setStats(data?.variants ?? null);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(days); }, [days]);
+
+  const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+  const winner: 'A' | 'B' | null = (() => {
+    if (!stats) return null;
+    if (stats.A.assigned < 50 || stats.B.assigned < 50) return null;
+    if (stats.A.conversion_rate === stats.B.conversion_rate) return null;
+    return stats.A.conversion_rate > stats.B.conversion_rate ? 'A' : 'B';
+  })();
+
+  const SUBJECTS = {
+    A: 'Your early access is open — at half price.',
+    B: "You're in first. Here's 50% off on your purchase.",
+  };
+
+  const renderCard = (v: 'A' | 'B') => {
+    const s = stats?.[v];
+    const isWinner = winner === v;
+    return (
+      <Card className={`p-5 ${isWinner ? 'border-primary ring-1 ring-primary/40' : ''}`}>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-muted-foreground">VARIANT {v}</span>
+            {isWinner && <Badge variant="default">Leading</Badge>}
+          </div>
+          <span className="text-xs text-muted-foreground">{s?.assigned ?? 0} assigned</span>
+        </div>
+        <p className="text-sm font-medium text-foreground mb-4 min-h-[2.5em]">
+          "{SUBJECTS[v]}"
+        </p>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <Stat label="Sent" value={s?.sent ?? 0} />
+          <Stat label="Conv. rate" value={s ? pct(s.conversion_rate) : '—'} highlight />
+          <Stat label="Opens" value={`${s?.opens ?? 0} · ${s ? pct(s.open_rate) : '—'}`} />
+          <Stat label="Clicks" value={`${s?.clicks ?? 0} · ${s ? pct(s.click_rate) : '—'}`} />
+        </div>
+        <div className="mt-3 pt-3 border-t text-xs text-muted-foreground space-y-1">
+          <div className="flex justify-between"><span>Shares (copy/WhatsApp)</span><span className="font-mono">{s?.breakdown.share ?? 0}</span></div>
+          <div className="flex justify-between"><span>Redemptions</span><span className="font-mono">{s?.breakdown.redeem ?? 0}</span></div>
+          <div className="flex justify-between"><span>Return visits</span><span className="font-mono">{s?.breakdown.return_visit ?? 0}</span></div>
+        </div>
+      </Card>
+    );
+  };
+
+  const notEnough = stats && (stats.A.assigned < 50 || stats.B.assigned < 50);
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Welcome Email A/B Test</h2>
+          <p className="text-xs text-muted-foreground">
+            Subject-line experiment on the waitlist confirmation email.
+            {notEnough && ' Need ≥50 assignments per variant for a call.'}
+          </p>
+        </div>
+        <div className="flex gap-1">
+          {[
+            { l: '7d', v: 7 }, { l: '30d', v: 30 }, { l: 'All', v: null },
+          ].map((r) => (
+            <Button
+              key={r.l}
+              size="sm"
+              variant={days === r.v ? 'default' : 'outline'}
+              onClick={() => setDays(r.v)}
+            >
+              {r.l}
+            </Button>
+          ))}
+        </div>
+      </div>
+      {loading && !stats ? (
+        <div className="text-sm text-muted-foreground py-6 text-center">Loading…</div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {renderCard('A')}
+          {renderCard('B')}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function Stat({ label, value, highlight }: { label: string; value: React.ReactNode; highlight?: boolean }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className={`font-mono ${highlight ? 'text-primary text-lg font-semibold' : ''}`}>{value}</div>
+    </div>
+  );
+}
 
 interface Row {
   id: string;
