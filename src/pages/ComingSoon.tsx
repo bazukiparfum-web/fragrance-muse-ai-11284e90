@@ -448,7 +448,7 @@ export default function ComingSoon() {
                     href={whatsappHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => trackCta("waitlist_share_whatsapp", { referral_code: personalCode })}
+                    onClick={() => { trackCta("waitlist_share_whatsapp", { referral_code: personalCode }); logShareConversion("whatsapp"); }}
                   >
                     Share on WhatsApp →
                   </a>
