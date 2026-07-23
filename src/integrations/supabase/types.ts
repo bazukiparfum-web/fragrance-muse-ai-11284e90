@@ -1205,6 +1205,33 @@ export type Database = {
           },
         ]
       }
+      referral_visits: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string | null
+          path: string | null
+          referral_code: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          path?: string | null
+          referral_code: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          path?: string | null
+          referral_code?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           created_at: string | null
@@ -1433,6 +1460,7 @@ export type Database = {
           created_at: string
           email: string
           email_variant: string | null
+          first_name: string | null
           id: string
           referral_code: string
           referred_by: string | null
@@ -1442,6 +1470,7 @@ export type Database = {
           created_at?: string
           email: string
           email_variant?: string | null
+          first_name?: string | null
           id?: string
           referral_code: string
           referred_by?: string | null
@@ -1451,6 +1480,7 @@ export type Database = {
           created_at?: string
           email?: string
           email_variant?: string | null
+          first_name?: string | null
           id?: string
           referral_code?: string
           referred_by?: string | null
@@ -1580,7 +1610,7 @@ export type Database = {
       referrals_open: { Args: never; Returns: boolean }
       spots_remaining: { Args: never; Returns: number }
       total_redemptions: { Args: never; Returns: number }
-      validate_referral_code: { Args: { _code: string }; Returns: boolean }
+      validate_referral_code: { Args: { _code: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
