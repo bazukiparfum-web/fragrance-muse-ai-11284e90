@@ -19,7 +19,10 @@ export default function ComingSoon() {
     description:
       "India's first AI-algorithmic perfume house. Reserve early access to your custom formula.",
     type: "website",
+    noindex: true,
+    canonical: "https://www.bazukifragrance.com/home",
   });
+
 
   const [d, setD] = useState("00");
   const [h, setH] = useState("00");
