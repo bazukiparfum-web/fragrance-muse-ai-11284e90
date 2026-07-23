@@ -116,6 +116,42 @@ export type Database = {
         }
         Relationships: []
       }
+      email_events: {
+        Row: {
+          conversion_kind: string | null
+          created_at: string
+          event_type: string
+          id: string
+          message_id: string | null
+          metadata: Json
+          recipient_email: string
+          template_name: string
+          variant: string | null
+        }
+        Insert: {
+          conversion_kind?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          message_id?: string | null
+          metadata?: Json
+          recipient_email: string
+          template_name: string
+          variant?: string | null
+        }
+        Update: {
+          conversion_kind?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          message_id?: string | null
+          metadata?: Json
+          recipient_email?: string
+          template_name?: string
+          variant?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -1396,6 +1432,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          email_variant: string | null
           id: string
           referral_code: string
           referred_by: string | null
@@ -1404,6 +1441,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          email_variant?: string | null
           id?: string
           referral_code: string
           referred_by?: string | null
@@ -1412,6 +1450,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          email_variant?: string | null
           id?: string
           referral_code?: string
           referred_by?: string | null
