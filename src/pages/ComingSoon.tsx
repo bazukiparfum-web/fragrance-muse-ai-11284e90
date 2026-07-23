@@ -171,23 +171,48 @@ export default function ComingSoon() {
 
     // Fire-and-forget: create Shopify discount + send email for new signups only.
     if (!isDuplicate && code) {
+      // Deterministic A/B assignment: FNV-1a hash of email → 50/50 A vs B.
+      const hash = (() => {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < parsed.data.length; i++) {
+          h ^= parsed.data.charCodeAt(i);
+          h = Math.imul(h, 0x01000193);
+        }
+        return h >>> 0;
+      })();
+      const variant: "A" | "B" = (hash & 1) === 0 ? "A" : "B";
+
+      // Persist the assignment (stable & joinable for analytics)
+      supabase
+        .from("waitlist_signups")
+        .update({ email_variant: variant })
+        .eq("email", parsed.data)
+        .then(() => {}, () => {});
+
       supabase.functions
         .invoke("create-referral-shopify-discount", { body: { code } })
         .catch(() => { /* non-blocking */ });
 
       const shareUrl = `https://www.bazukifragrance.com/coming-soon?ref=${code}`;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+      const trackingBase = `${supabaseUrl}/functions/v1/email-track`;
+      const messageId = `waitlist-confirm-${parsed.data}`;
+
       supabase.functions
         .invoke("send-transactional-email", {
           body: {
             templateName: "waitlist-confirmation",
             recipientEmail: parsed.data,
-            idempotencyKey: `waitlist-confirm-${parsed.data}`,
+            idempotencyKey: messageId,
             templateData: {
               email: parsed.data,
               referralCode: code,
               spotsRemaining: spotsRemaining ?? 5000,
               ctaUrl: "https://www.bazukifragrance.com/home",
               shareUrl,
+              variant,
+              trackingBase,
+              messageId,
             },
           },
         })
