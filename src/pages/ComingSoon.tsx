@@ -36,10 +36,27 @@ export default function ComingSoon() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [personalCode, setPersonalCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null);
+
+  const referralsOpen = spotsRemaining === null ? true : spotsRemaining > 0;
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  // Poll spots remaining
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase.rpc("spots_remaining");
+      if (!cancelled && typeof data === "number") setSpotsRemaining(data);
+    };
+    load();
+    const id = window.setInterval(load, 30000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, []);
 
   useEffect(() => {
     const applyState = () => {
@@ -108,32 +125,57 @@ export default function ComingSoon() {
     setStatus("loading");
     const params = new URLSearchParams(window.location.search);
     const utm_source = (params.get("utm_source") || "").slice(0, 64) || null;
-    const referral_code =
-      (params.get("ref") || params.get("referral_code") || "").slice(0, 64) || null;
+    const referred_by =
+      (params.get("ref") || params.get("referral_code") || "")
+        .trim()
+        .toUpperCase()
+        .slice(0, 32) || null;
 
-    const { error } = await supabase.from("waitlist_signups").insert({
-      email: parsed.data,
-      utm_source,
-      referral_code,
-    });
+    const { data: inserted, error } = await supabase
+      .from("waitlist_signups")
+      .insert({
+        email: parsed.data,
+        utm_source,
+        referred_by,
+        referral_code: "", // trigger overwrites with unique BZK-XXXX
+      })
+      .select("referral_code")
+      .maybeSingle();
 
     const isDuplicate = error && (error as { code?: string }).code === "23505";
 
-    // Treat unique-violation (23505) as success — don't leak email presence.
-    if (error && !isDuplicate) {
+    // Duplicate email → look up their existing code so we can still show it.
+    let code: string | null = inserted?.referral_code ?? null;
+    if (isDuplicate) {
+      const { data: existing } = await supabase
+        .from("waitlist_signups")
+        .select("referral_code")
+        .eq("email", parsed.data)
+        .maybeSingle();
+      code = existing?.referral_code ?? null;
+    } else if (error) {
       setStatus("error");
       setErrorMsg("Something went wrong. Try again in a moment.");
       return;
     }
 
+    setPersonalCode(code);
+
     trackCta("waitlist_signup", {
       utm_source,
-      referral_code,
+      referred_by,
+      referral_code: code,
       duplicate: isDuplicate,
+      spots_remaining: spotsRemaining,
     });
 
-    // Send confirmation email for new signups only (fire-and-forget).
-    if (!isDuplicate) {
+    // Fire-and-forget: create Shopify discount + send email for new signups only.
+    if (!isDuplicate && code) {
+      supabase.functions
+        .invoke("create-referral-shopify-discount", { body: { code } })
+        .catch(() => { /* non-blocking */ });
+
+      const shareUrl = `https://www.bazukifragrance.com/coming-soon?ref=${code}`;
       supabase.functions
         .invoke("send-transactional-email", {
           body: {
@@ -142,19 +184,37 @@ export default function ComingSoon() {
             idempotencyKey: `waitlist-confirm-${parsed.data}`,
             templateData: {
               email: parsed.data,
-              referralCode: referral_code,
-              utmSource: utm_source,
+              referralCode: code,
+              spotsRemaining: spotsRemaining ?? 5000,
+              ctaUrl: "https://www.bazukifragrance.com/home",
+              shareUrl,
             },
           },
         })
-        .catch(() => {
-          /* non-blocking */
-        });
+        .catch(() => { /* non-blocking */ });
     }
-
 
     setStatus("success");
   };
+
+  const shareUrl = personalCode
+    ? `https://www.bazukifragrance.com/coming-soon?ref=${personalCode}`
+    : "";
+  const whatsappHref = personalCode
+    ? `https://wa.me/?text=${encodeURIComponent(
+        `I got early access to Bazuki — India's first AI-crafted fragrance. Use my code ${personalCode} for 50% off your first formula: ${shareUrl}`,
+      )}`
+    : "#";
+
+  const copyCode = async () => {
+    if (!personalCode) return;
+    try {
+      await navigator.clipboard.writeText(personalCode);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch { /* noop */ }
+  };
+
 
   return (
     <div className="cs-root">
@@ -208,6 +268,21 @@ export default function ComingSoon() {
         .cs-micro { font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.02em; margin-bottom: 3.2rem; }
         .cs-error { color: #E07A6B; }
         .cs-confirm { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--teal); letter-spacing: 0.05em; margin-bottom: 3.2rem; }
+        .cs-spots { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--gold); letter-spacing: 0.06em; margin: 0 0 1.8rem; }
+        .cs-spots span { color: var(--gold); font-weight: 500; }
+        .cs-success { margin-bottom: 3rem; }
+        .cs-success-head { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 20px; color: var(--ivory); margin: 0 0 1.2rem; letter-spacing: 0.01em; }
+        .cs-code-card { max-width: 400px; margin: 0 auto; padding: 20px 22px; border: 1px solid var(--gold); background: rgba(201,164,92,0.05); border-radius: 2px; }
+        .cs-code-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 8px; }
+        .cs-code-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px; }
+        .cs-code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: var(--gold); letter-spacing: 0.12em; }
+        .cs-code-copy { background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); padding: 6px 12px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s ease, color 0.2s ease; }
+        .cs-code-copy:hover { background: var(--gold); color: var(--ink); }
+        .cs-code-copy:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+        .cs-share { display: inline-block; background: #25D366; color: #0A0908; padding: 10px 18px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; text-decoration: none; border-radius: 2px; margin-bottom: 10px; }
+        .cs-share:hover { filter: brightness(1.1); }
+        .cs-share:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
+        .cs-share-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 4px 0 0; }
         .cs-footer { border-top: 1px solid var(--hair); padding-top: 1.6rem; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .cs-footer .brand { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 14px; letter-spacing: 0.28em; color: var(--gold-dim); text-transform: uppercase; }
         .cs-footer .ig { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.08em; }
@@ -304,10 +379,49 @@ export default function ComingSoon() {
           Launching <span>29 August, 12:00 AM IST</span>
         </div>
 
-        {status === "success" ? (
-          <p className="cs-confirm" role="status" aria-live="polite">
-            You're on the list. We'll write when the machine is ready.
+        {spotsRemaining !== null && (
+          <p className="cs-spots" role="status" aria-live="polite">
+            {referralsOpen ? (
+              <><span>{spotsRemaining.toLocaleString()}</span> of 5,000 early blends remaining</>
+            ) : (
+              <>Early access closed — join the waitlist for launch.</>
+            )}
           </p>
+        )}
+
+        {status === "success" ? (
+          <div className="cs-success" role="status" aria-live="polite">
+            {referralsOpen && personalCode ? (
+              <>
+                <p className="cs-success-head">You're in. Early access at 50% off is yours.</p>
+                <div className="cs-code-card">
+                  <div className="cs-code-label">Your personal code</div>
+                  <div className="cs-code-row">
+                    <span className="cs-code" aria-label={`Referral code ${personalCode}`}>{personalCode}</span>
+                    <button type="button" className="cs-code-copy" onClick={copyCode} aria-label="Copy code">
+                      {copied ? "Copied ✓" : "Copy"}
+                    </button>
+                  </div>
+                  <a
+                    className="cs-share"
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackCta("waitlist_share_whatsapp", { referral_code: personalCode })}
+                  >
+                    Share on WhatsApp →
+                  </a>
+                  <p className="cs-share-hint">
+                    Anyone who uses your code gets 50% off their first formula.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <p className="cs-confirm">
+                You're on the list. We'll write when the machine is ready.
+              </p>
+            )}
+          </div>
         ) : (
           <>
             <form className="cs-capture" onSubmit={onSubmit} noValidate>
@@ -325,13 +439,15 @@ export default function ComingSoon() {
                 required
               />
               <button type="submit" disabled={status === "loading"}>
-                {status === "loading" ? "Reserving…" : "Reserve early access"}
+                {status === "loading" ? "Reserving…" : referralsOpen ? "Claim 50% early access" : "Join launch waitlist"}
               </button>
             </form>
             <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
               {status === "error" && errorMsg
                 ? errorMsg
-                : "First 500 on the list get priority quiz access and a launch-week formula credit."}
+                : referralsOpen
+                  ? "Get your personal code + 50% off your first formula. First 5,000 blends only."
+                  : "Early access is fully claimed — we'll email you when we open to everyone."}
             </p>
           </>
         )}
