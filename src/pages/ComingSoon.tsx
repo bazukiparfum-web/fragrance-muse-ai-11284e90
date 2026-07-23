@@ -231,12 +231,28 @@ export default function ComingSoon() {
       )}`
     : "#";
 
+  const logShareConversion = (kind: "copy" | "whatsapp") => {
+    if (!email) return;
+    supabase.functions
+      .invoke("email-track", {
+        body: {
+          template_name: "waitlist-confirmation",
+          recipient_email: email,
+          conversion_kind: "share",
+          message_id: `waitlist-confirm-${email.trim().toLowerCase()}`,
+          metadata: { source: kind },
+        },
+      })
+      .catch(() => { /* non-blocking */ });
+  };
+
   const copyCode = async () => {
     if (!personalCode) return;
     try {
       await navigator.clipboard.writeText(personalCode);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
+      logShareConversion("copy");
     } catch { /* noop */ }
   };
 
