@@ -143,10 +143,11 @@ const AppInner = () => {
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <ReferralWelcomeOverlay />
       </BrowserRouter>
       <BazukiCartDrawer />
       <ZukiChat />
-      <ReferralWelcomeOverlay />
+
       {(import.meta.env.DEV ||
         (typeof window !== 'undefined' &&
           new URLSearchParams(window.location.search).get('debug') === '1')) && (
