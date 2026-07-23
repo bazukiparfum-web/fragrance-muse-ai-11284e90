@@ -36,10 +36,27 @@ export default function ComingSoon() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [personalCode, setPersonalCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null);
+
+  const referralsOpen = spotsRemaining === null ? true : spotsRemaining > 0;
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  // Poll spots remaining
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase.rpc("spots_remaining");
+      if (!cancelled && typeof data === "number") setSpotsRemaining(data);
+    };
+    load();
+    const id = window.setInterval(load, 30000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, []);
 
   useEffect(() => {
     const applyState = () => {
