@@ -117,18 +117,14 @@ export default function ComingSoon() {
     return () => window.clearInterval(id);
   }, [prefersReducedMotion]);
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg(null);
+  // Resend countdown
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const id = window.setInterval(() => setResendIn((v) => Math.max(0, v - 1)), 1000);
+    return () => window.clearInterval(id);
+  }, [resendIn]);
 
-    const parsed = emailSchema.safeParse(email);
-    if (!parsed.success) {
-      setStatus("error");
-      setErrorMsg("Please enter a valid email address.");
-      return;
-    }
-
-    setStatus("loading");
+  const utmParams = () => {
     const params = new URLSearchParams(window.location.search);
     const utm_source = (params.get("utm_source") || "").slice(0, 64) || null;
     const referred_by =
@@ -136,65 +132,136 @@ export default function ComingSoon() {
         .trim()
         .toUpperCase()
         .slice(0, 32) || null;
+    return { utm_source, referred_by };
+  };
 
-    // Deterministic A/B assignment: FNV-1a hash of email → 50/50 A vs B.
-    const hash = (() => {
-      let h = 0x811c9dc5;
-      for (let i = 0; i < parsed.data.length; i++) {
-        h ^= parsed.data.charCodeAt(i);
-        h = Math.imul(h, 0x01000193);
-      }
-      return h >>> 0;
-    })();
-    const variant: "A" | "B" = (hash & 1) === 0 ? "A" : "B";
+  const emailVariant = (addr: string | null): "A" | "B" | null => {
+    if (!addr) return null;
+    let h = 0x811c9dc5;
+    for (let i = 0; i < addr.length; i++) {
+      h ^= addr.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return ((h >>> 0) & 1) === 0 ? "A" : "B";
+  };
 
-    const { data: rpcData, error } = await supabase.rpc("create_waitlist_signup", {
-      _email: parsed.data,
-      _utm_source: utm_source,
-      _referred_by: referred_by,
-      _first_name: null,
-      _email_variant: variant,
-    });
+  const requestOtp = async (opts: { resend?: boolean } = {}) => {
+    setErrorMsg(null);
 
-    if (error) {
+    const phoneOk = phoneSchema.safeParse(phone);
+    if (!phoneOk.success) {
       setStatus("error");
-      setErrorMsg("Something went wrong. Try again in a moment.");
+      setErrorMsg(phoneOk.error.issues[0]?.message ?? "Enter a valid mobile number.");
+      return;
+    }
+    if (email.trim() && !emailSchema.safeParse(email).success) {
+      setStatus("error");
+      setErrorMsg("Please enter a valid email address or leave it blank.");
       return;
     }
 
-    const result = (rpcData ?? {}) as { referral_code?: string; duplicate?: boolean };
-    const code: string | null = result.referral_code ?? null;
-    const isDuplicate = !!result.duplicate;
+    setStatus("loading");
+    const { error } = await supabase.functions.invoke("whatsapp-send-otp", {
+      body: { phone },
+    });
+    if (error) {
+      let msg = "Could not send WhatsApp OTP. Try again in a moment.";
+      try {
+        // @ts-ignore FunctionsHttpError context
+        const detail = error.context ? await error.context.text() : null;
+        if (detail) {
+          const parsed = JSON.parse(detail);
+          if (parsed?.error) msg = parsed.error;
+        }
+      } catch { /* ignore */ }
+      setStatus("error");
+      setErrorMsg(msg);
+      return;
+    }
 
+    setStep("verify");
+    setStatus("idle");
+    setOtp("");
+    setResendIn(30);
+    if (!opts.resend) {
+      trackCta("waitlist_phone_otp_sent", { spots_remaining: spotsRemaining });
+    }
+  };
+
+  const submitDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await requestOtp();
+  };
+
+  const submitOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    if (!/^\d{6}$/.test(otp)) {
+      setStatus("error");
+      setErrorMsg("Enter the 6-digit code from WhatsApp.");
+      return;
+    }
+    setStatus("loading");
+
+    const { utm_source, referred_by } = utmParams();
+    const cleanEmail = email.trim() ? email.trim().toLowerCase() : null;
+    const variant = emailVariant(cleanEmail);
+
+    const { data, error } = await supabase.functions.invoke("whatsapp-verify-waitlist-otp", {
+      body: {
+        phone,
+        otp,
+        email: cleanEmail,
+        first_name: firstName.trim() || null,
+        utm_source,
+        referred_by,
+        email_variant: variant,
+      },
+    });
+
+    if (error) {
+      let msg = "Could not verify OTP. Try again.";
+      try {
+        // @ts-ignore
+        const detail = error.context ? await error.context.text() : null;
+        if (detail) {
+          const parsed = JSON.parse(detail);
+          if (parsed?.error) msg = parsed.error;
+        }
+      } catch { /* ignore */ }
+      setStatus("error");
+      setErrorMsg(msg);
+      return;
+    }
+
+    const result = (data ?? {}) as { referral_code?: string; duplicate?: boolean };
+    const code = result.referral_code ?? null;
+    const isDuplicate = !!result.duplicate;
     setPersonalCode(code);
 
-    trackCta("waitlist_signup", {
+    trackCta("waitlist_phone_signup", {
       utm_source,
       referred_by,
       referral_code: code,
       duplicate: isDuplicate,
+      has_email: !!cleanEmail,
       spots_remaining: spotsRemaining,
     });
 
-    // Fire-and-forget: create Shopify discount + send email for new signups only.
-    if (!isDuplicate && code) {
-      supabase.functions
-        .invoke("create-referral-shopify-discount", { body: { code } })
-        .catch(() => { /* non-blocking */ });
-
+    // Optional welcome email if email provided and this is a fresh signup
+    if (!isDuplicate && code && cleanEmail && variant) {
       const shareUrl = `https://www.bazukifragrance.com/coming-soon?ref=${code}`;
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const trackingBase = `${supabaseUrl}/functions/v1/email-track`;
-      const messageId = `waitlist-confirm-${parsed.data}`;
-
+      const messageId = `waitlist-confirm-${cleanEmail}`;
       supabase.functions
         .invoke("send-transactional-email", {
           body: {
             templateName: "waitlist-confirmation",
-            recipientEmail: parsed.data,
+            recipientEmail: cleanEmail,
             idempotencyKey: messageId,
             templateData: {
-              email: parsed.data,
+              email: cleanEmail,
               referralCode: code,
               spotsRemaining: spotsRemaining ?? 5000,
               ctaUrl: "https://www.bazukifragrance.com/home",
@@ -207,7 +274,6 @@ export default function ComingSoon() {
         })
         .catch(() => { /* non-blocking */ });
     }
-
 
     setStatus("success");
   };
