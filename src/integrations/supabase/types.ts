@@ -1458,30 +1458,36 @@ export type Database = {
       waitlist_signups: {
         Row: {
           created_at: string
-          email: string
+          email: string | null
           email_variant: string | null
           first_name: string | null
           id: string
+          phone: string | null
+          phone_verified_at: string | null
           referral_code: string
           referred_by: string | null
           utm_source: string | null
         }
         Insert: {
           created_at?: string
-          email: string
+          email?: string | null
           email_variant?: string | null
           first_name?: string | null
           id?: string
+          phone?: string | null
+          phone_verified_at?: string | null
           referral_code: string
           referred_by?: string | null
           utm_source?: string | null
         }
         Update: {
           created_at?: string
-          email?: string
+          email?: string | null
           email_variant?: string | null
           first_name?: string | null
           id?: string
+          phone?: string | null
+          phone_verified_at?: string | null
           referral_code?: string
           referred_by?: string | null
           utm_source?: string | null
@@ -1537,9 +1543,11 @@ export type Database = {
     Functions: {
       create_waitlist_signup: {
         Args: {
-          _email: string
+          _email?: string
           _email_variant?: string
           _first_name?: string
+          _phone?: string
+          _phone_verified?: boolean
           _referred_by?: string
           _utm_source?: string
         }
