@@ -17,7 +17,11 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-async function sendReferralWhatsApp(phoneE164: string, referralCode: string) {
+async function sendReferralWhatsApp(
+  phoneE164: string,
+  referralCode: string,
+  firstName: string | null,
+) {
   const authToken = Deno.env.get("WHATSAPP_11ZA_AUTH_TOKEN");
   const templateName = Deno.env.get("WHATSAPP_11ZA_REFERRAL_TEMPLATE");
   const originWebsite = Deno.env.get("WHATSAPP_11ZA_ORIGIN_WEBSITE") ?? "bazukifragrance.com";
@@ -25,15 +29,18 @@ async function sendReferralWhatsApp(phoneE164: string, referralCode: string) {
     console.warn("Skipping referral WhatsApp send: template or token not configured");
     return;
   }
-  const shareUrl = `https://www.bazukifragrance.com/coming-soon?ref=${referralCode}`;
+  const cleanName = (firstName ?? "").trim() || "A friend";
+  // Template base URL registered in 11za: https://www.bazukifragrance.com/coming-soon
+  // buttonValue is appended to that base, so send only the query suffix.
+  const buttonValue = `?ref=${referralCode}`;
   const body = {
     authToken,
     sendto: phoneE164.replace(/^\+/, ""),
     originWebsite,
     templateName,
     language: "en",
-    data: [referralCode, shareUrl],
-    buttonValue: referralCode,
+    data: [cleanName, referralCode],
+    buttonValue,
   };
   try {
     const res = await fetch("https://api.11za.in/apis/template/sendTemplate", {
@@ -164,7 +171,11 @@ Deno.serve(async (req: Request) => {
 
     // Send WhatsApp confirmation with referral code (best-effort)
     if (referralCode) {
-      await sendReferralWhatsApp(phoneE164, referralCode);
+      await sendReferralWhatsApp(
+        phoneE164,
+        referralCode,
+        typeof first_name === "string" ? first_name : null,
+      );
     }
 
     return new Response(
