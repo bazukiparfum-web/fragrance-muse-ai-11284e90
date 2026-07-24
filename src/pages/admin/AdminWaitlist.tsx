@@ -214,11 +214,11 @@ export default function AdminWaitlist() {
       return;
     }
     const allRows: Row[] = data.rows ?? [];
-    const header = ['email', 'utm_source', 'referral_code', 'created_at'];
+    const header = ['email', 'phone', 'utm_source', 'referral_code', 'created_at'];
     const csv = [
       header.join(','),
       ...allRows.map((r) =>
-        [r.email, r.utm_source, r.referral_code, r.created_at].map(escapeCsv).join(','),
+        [r.email, r.phone, r.utm_source, r.referral_code, r.created_at].map(escapeCsv).join(','),
       ),
     ].join('\n');
 
