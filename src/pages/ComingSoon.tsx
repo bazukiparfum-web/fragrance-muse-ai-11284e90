@@ -10,6 +10,7 @@ const START_MS = new Date("2026-07-21T00:00:00+05:30").getTime();
 const TOTAL_MS = LAUNCH_MS - START_MS;
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
+const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number.");
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
