@@ -132,7 +132,8 @@ function Stat({ label, value, highlight }: { label: string; value: React.ReactNo
 
 interface Row {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
   utm_source: string | null;
   referral_code: string | null;
   created_at: string;
