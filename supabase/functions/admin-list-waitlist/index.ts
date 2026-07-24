@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
     let query = admin
       .from('waitlist_signups')
-      .select('id, email, utm_source, referral_code, created_at', { count: 'exact' })
+      .select('id, email, phone, utm_source, referral_code, created_at', { count: 'exact' })
       .order('created_at', { ascending: false });
 
     if (utmSource !== 'all') {
