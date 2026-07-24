@@ -34,7 +34,12 @@ export default function ComingSoon() {
   const liquidRectRef = useRef<SVGRectElement | null>(null);
   const lastAnnounceRef = useRef<string>("");
 
+  const [step, setStep] = useState<"details" | "verify">("details");
+  const [firstName, setFirstName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [resendIn, setResendIn] = useState(0);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [personalCode, setPersonalCode] = useState<string | null>(null);
