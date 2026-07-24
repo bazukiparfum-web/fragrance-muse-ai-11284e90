@@ -171,7 +171,11 @@ Deno.serve(async (req: Request) => {
 
     // Send WhatsApp confirmation with referral code (best-effort)
     if (referralCode) {
-      await sendReferralWhatsApp(phoneE164, referralCode);
+      await sendReferralWhatsApp(
+        phoneE164,
+        referralCode,
+        typeof first_name === "string" ? first_name : null,
+      );
     }
 
     return new Response(
