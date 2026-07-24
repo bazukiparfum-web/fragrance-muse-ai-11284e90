@@ -10,6 +10,7 @@ const START_MS = new Date("2026-07-21T00:00:00+05:30").getTime();
 const TOTAL_MS = LAUNCH_MS - START_MS;
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
+const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number.");
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -33,7 +34,12 @@ export default function ComingSoon() {
   const liquidRectRef = useRef<SVGRectElement | null>(null);
   const lastAnnounceRef = useRef<string>("");
 
+  const [step, setStep] = useState<"details" | "verify">("details");
+  const [firstName, setFirstName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [resendIn, setResendIn] = useState(0);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [personalCode, setPersonalCode] = useState<string | null>(null);
@@ -111,18 +117,14 @@ export default function ComingSoon() {
     return () => window.clearInterval(id);
   }, [prefersReducedMotion]);
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg(null);
+  // Resend countdown
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const id = window.setInterval(() => setResendIn((v) => Math.max(0, v - 1)), 1000);
+    return () => window.clearInterval(id);
+  }, [resendIn]);
 
-    const parsed = emailSchema.safeParse(email);
-    if (!parsed.success) {
-      setStatus("error");
-      setErrorMsg("Please enter a valid email address.");
-      return;
-    }
-
-    setStatus("loading");
+  const utmParams = () => {
     const params = new URLSearchParams(window.location.search);
     const utm_source = (params.get("utm_source") || "").slice(0, 64) || null;
     const referred_by =
@@ -130,65 +132,136 @@ export default function ComingSoon() {
         .trim()
         .toUpperCase()
         .slice(0, 32) || null;
+    return { utm_source, referred_by };
+  };
 
-    // Deterministic A/B assignment: FNV-1a hash of email → 50/50 A vs B.
-    const hash = (() => {
-      let h = 0x811c9dc5;
-      for (let i = 0; i < parsed.data.length; i++) {
-        h ^= parsed.data.charCodeAt(i);
-        h = Math.imul(h, 0x01000193);
-      }
-      return h >>> 0;
-    })();
-    const variant: "A" | "B" = (hash & 1) === 0 ? "A" : "B";
+  const emailVariant = (addr: string | null): "A" | "B" | null => {
+    if (!addr) return null;
+    let h = 0x811c9dc5;
+    for (let i = 0; i < addr.length; i++) {
+      h ^= addr.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return ((h >>> 0) & 1) === 0 ? "A" : "B";
+  };
 
-    const { data: rpcData, error } = await supabase.rpc("create_waitlist_signup", {
-      _email: parsed.data,
-      _utm_source: utm_source,
-      _referred_by: referred_by,
-      _first_name: null,
-      _email_variant: variant,
-    });
+  const requestOtp = async (opts: { resend?: boolean } = {}) => {
+    setErrorMsg(null);
 
-    if (error) {
+    const phoneOk = phoneSchema.safeParse(phone);
+    if (!phoneOk.success) {
       setStatus("error");
-      setErrorMsg("Something went wrong. Try again in a moment.");
+      setErrorMsg(phoneOk.error.issues[0]?.message ?? "Enter a valid mobile number.");
+      return;
+    }
+    if (email.trim() && !emailSchema.safeParse(email).success) {
+      setStatus("error");
+      setErrorMsg("Please enter a valid email address or leave it blank.");
       return;
     }
 
-    const result = (rpcData ?? {}) as { referral_code?: string; duplicate?: boolean };
-    const code: string | null = result.referral_code ?? null;
-    const isDuplicate = !!result.duplicate;
+    setStatus("loading");
+    const { error } = await supabase.functions.invoke("whatsapp-send-otp", {
+      body: { phone },
+    });
+    if (error) {
+      let msg = "Could not send WhatsApp OTP. Try again in a moment.";
+      try {
+        // @ts-ignore FunctionsHttpError context
+        const detail = error.context ? await error.context.text() : null;
+        if (detail) {
+          const parsed = JSON.parse(detail);
+          if (parsed?.error) msg = parsed.error;
+        }
+      } catch { /* ignore */ }
+      setStatus("error");
+      setErrorMsg(msg);
+      return;
+    }
 
+    setStep("verify");
+    setStatus("idle");
+    setOtp("");
+    setResendIn(30);
+    if (!opts.resend) {
+      trackCta("waitlist_phone_otp_sent", { spots_remaining: spotsRemaining });
+    }
+  };
+
+  const submitDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await requestOtp();
+  };
+
+  const submitOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    if (!/^\d{6}$/.test(otp)) {
+      setStatus("error");
+      setErrorMsg("Enter the 6-digit code from WhatsApp.");
+      return;
+    }
+    setStatus("loading");
+
+    const { utm_source, referred_by } = utmParams();
+    const cleanEmail = email.trim() ? email.trim().toLowerCase() : null;
+    const variant = emailVariant(cleanEmail);
+
+    const { data, error } = await supabase.functions.invoke("whatsapp-verify-waitlist-otp", {
+      body: {
+        phone,
+        otp,
+        email: cleanEmail,
+        first_name: firstName.trim() || null,
+        utm_source,
+        referred_by,
+        email_variant: variant,
+      },
+    });
+
+    if (error) {
+      let msg = "Could not verify OTP. Try again.";
+      try {
+        // @ts-ignore
+        const detail = error.context ? await error.context.text() : null;
+        if (detail) {
+          const parsed = JSON.parse(detail);
+          if (parsed?.error) msg = parsed.error;
+        }
+      } catch { /* ignore */ }
+      setStatus("error");
+      setErrorMsg(msg);
+      return;
+    }
+
+    const result = (data ?? {}) as { referral_code?: string; duplicate?: boolean };
+    const code = result.referral_code ?? null;
+    const isDuplicate = !!result.duplicate;
     setPersonalCode(code);
 
-    trackCta("waitlist_signup", {
+    trackCta("waitlist_phone_signup", {
       utm_source,
       referred_by,
       referral_code: code,
       duplicate: isDuplicate,
+      has_email: !!cleanEmail,
       spots_remaining: spotsRemaining,
     });
 
-    // Fire-and-forget: create Shopify discount + send email for new signups only.
-    if (!isDuplicate && code) {
-      supabase.functions
-        .invoke("create-referral-shopify-discount", { body: { code } })
-        .catch(() => { /* non-blocking */ });
-
+    // Optional welcome email if email provided and this is a fresh signup
+    if (!isDuplicate && code && cleanEmail && variant) {
       const shareUrl = `https://www.bazukifragrance.com/coming-soon?ref=${code}`;
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const trackingBase = `${supabaseUrl}/functions/v1/email-track`;
-      const messageId = `waitlist-confirm-${parsed.data}`;
-
+      const messageId = `waitlist-confirm-${cleanEmail}`;
       supabase.functions
         .invoke("send-transactional-email", {
           body: {
             templateName: "waitlist-confirmation",
-            recipientEmail: parsed.data,
+            recipientEmail: cleanEmail,
             idempotencyKey: messageId,
             templateData: {
-              email: parsed.data,
+              email: cleanEmail,
               referralCode: code,
               spotsRemaining: spotsRemaining ?? 5000,
               ctaUrl: "https://www.bazukifragrance.com/home",
@@ -201,7 +274,6 @@ export default function ComingSoon() {
         })
         .catch(() => { /* non-blocking */ });
     }
-
 
     setStatus("success");
   };
@@ -290,6 +362,27 @@ export default function ComingSoon() {
         .cs-capture button:hover { background: #DDB876; }
         .cs-capture button:disabled { opacity: 0.6; cursor: not-allowed; }
         .cs-capture button:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
+        .cs-stack { display: flex; flex-direction: column; gap: 10px; max-width: 380px; margin: 0 auto 1rem; }
+        .cs-field { background: rgba(255,255,255,0.02); border: 1px solid var(--hair); border-radius: 2px; padding: 14px 16px; color: var(--ivory); font-family: inherit; font-size: 13px; font-weight: 300; letter-spacing: 0.02em; outline: none; width: 100%; }
+        .cs-field::placeholder { color: var(--ivory-dim); }
+        .cs-field:focus-visible { outline: 2px solid var(--gold); outline-offset: -1px; border-color: var(--gold); }
+        .cs-phone { display: flex; align-items: stretch; background: rgba(255,255,255,0.02); border: 1px solid var(--hair); border-radius: 2px; overflow: hidden; }
+        .cs-phone:focus-within { border-color: var(--gold); }
+        .cs-phone-prefix { display: flex; align-items: center; padding: 0 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--ivory); border-right: 1px solid var(--hair); background: rgba(201,164,92,0.04); }
+        .cs-phone-input { border: none; border-radius: 0; background: transparent; }
+        .cs-phone-input:focus-visible { outline: none; }
+        .cs-otp-input { text-align: center; letter-spacing: 0.55em; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 20px; font-weight: 500; color: var(--gold); }
+        .cs-otp-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 0 0 2px; text-align: center; }
+        .cs-otp-hint strong { color: var(--gold); font-weight: 500; }
+        .cs-btn { background: var(--gold); color: var(--ink); border: none; padding: 14px 22px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500; cursor: pointer; border-radius: 2px; transition: background 0.25s ease; }
+        .cs-btn:hover { background: #DDB876; }
+        .cs-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .cs-btn:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
+        .cs-otp-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+        .cs-link { background: none; border: none; color: var(--ivory-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; padding: 4px 2px; }
+        .cs-link:hover:not(:disabled) { color: var(--gold); }
+        .cs-link:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cs-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
         .cs-micro { font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.02em; margin-bottom: 3.2rem; }
         .cs-error { color: #E07A6B; }
         .cs-confirm { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--teal); letter-spacing: 0.05em; margin-bottom: 3.2rem; }
@@ -447,32 +540,108 @@ export default function ComingSoon() {
               </p>
             )}
           </div>
-        ) : (
+        ) : step === "details" ? (
           <>
-            <form className="cs-capture" onSubmit={onSubmit} noValidate>
+            <form className="cs-stack" onSubmit={submitDetails} noValidate>
               <input
+                className="cs-field"
+                type="text"
+                autoComplete="given-name"
+                aria-label="First name (optional)"
+                placeholder="First name (optional)"
+                value={firstName}
+                maxLength={80}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+              <div className="cs-phone">
+                <span className="cs-phone-prefix" aria-hidden>🇮🇳 +91</span>
+                <input
+                  className="cs-field cs-phone-input"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  aria-label="WhatsApp mobile number"
+                  placeholder="98765 43210"
+                  value={phone}
+                  maxLength={10}
+                  onChange={(e) => {
+                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                    if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                  }}
+                  required
+                />
+              </div>
+              <input
+                className="cs-field"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
-                aria-label="Email address"
-                placeholder="your@email.com"
+                aria-label="Email address (optional)"
+                placeholder="Email (optional)"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   if (status === "error") { setStatus("idle"); setErrorMsg(null); }
                 }}
-                required
               />
-              <button type="submit" disabled={status === "loading"}>
-                {status === "loading" ? "Reserving…" : referralsOpen ? "JOIN THE WAITLIST" : "Join launch waitlist"}
+              <button className="cs-btn" type="submit" disabled={status === "loading"}>
+                {status === "loading" ? "Sending…" : referralsOpen ? "SEND WHATSAPP OTP" : "JOIN LAUNCH WAITLIST"}
               </button>
             </form>
             <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
               {status === "error" && errorMsg
                 ? errorMsg
                 : referralsOpen
-                  ? "Get your personal code + 50% off your first formula. First 5,000 blends only."
-                  : "Early access is fully claimed — we'll email you when we open to everyone."}
+                  ? "We'll send a 6-digit code to your WhatsApp. Email is optional."
+                  : "Early access is fully claimed — we'll message you when we open to everyone."}
+            </p>
+          </>
+        ) : (
+          <>
+            <form className="cs-stack" onSubmit={submitOtp} noValidate>
+              <p className="cs-otp-hint">
+                Code sent on WhatsApp to <strong>+91 {phone}</strong>
+              </p>
+              <input
+                className="cs-field cs-otp-input"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-label="6-digit verification code"
+                placeholder="••••••"
+                value={otp}
+                maxLength={6}
+                onChange={(e) => {
+                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                  if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                }}
+                required
+              />
+              <button className="cs-btn" type="submit" disabled={status === "loading"}>
+                {status === "loading" ? "Verifying…" : "VERIFY & JOIN"}
+              </button>
+              <div className="cs-otp-actions">
+                <button
+                  type="button"
+                  className="cs-link"
+                  onClick={() => { setStep("details"); setOtp(""); setStatus("idle"); setErrorMsg(null); }}
+                >
+                  ← Edit number
+                </button>
+                <button
+                  type="button"
+                  className="cs-link"
+                  disabled={resendIn > 0 || status === "loading"}
+                  onClick={() => requestOtp({ resend: true })}
+                >
+                  {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
+                </button>
+              </div>
+            </form>
+            <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
+              {status === "error" && errorMsg
+                ? errorMsg
+                : "Check WhatsApp for a 6-digit code from Bazuki."}
             </p>
           </>
         )}

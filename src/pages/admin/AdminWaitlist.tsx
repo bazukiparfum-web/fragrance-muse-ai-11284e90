@@ -132,7 +132,8 @@ function Stat({ label, value, highlight }: { label: string; value: React.ReactNo
 
 interface Row {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
   utm_source: string | null;
   referral_code: string | null;
   created_at: string;
@@ -213,11 +214,11 @@ export default function AdminWaitlist() {
       return;
     }
     const allRows: Row[] = data.rows ?? [];
-    const header = ['email', 'utm_source', 'referral_code', 'created_at'];
+    const header = ['email', 'phone', 'utm_source', 'referral_code', 'created_at'];
     const csv = [
       header.join(','),
       ...allRows.map((r) =>
-        [r.email, r.utm_source, r.referral_code, r.created_at].map(escapeCsv).join(','),
+        [r.email, r.phone, r.utm_source, r.referral_code, r.created_at].map(escapeCsv).join(','),
       ),
     ].join('\n');
 
@@ -328,6 +329,7 @@ export default function AdminWaitlist() {
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
               <TableHead>UTM source</TableHead>
               <TableHead>Referral code</TableHead>
               <TableHead className="text-right">Signed up</TableHead>
@@ -336,14 +338,15 @@ export default function AdminWaitlist() {
           <TableBody>
             {rows.length === 0 && !loading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   No signups match these filters.
                 </TableCell>
               </TableRow>
             ) : (
               rows.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium">{r.email}</TableCell>
+                  <TableCell className="font-medium">{r.email ?? '—'}</TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">{r.phone ?? '—'}</TableCell>
                   <TableCell className="text-muted-foreground">{r.utm_source ?? '—'}</TableCell>
                   <TableCell className="text-muted-foreground font-mono text-xs">
                     {r.referral_code ?? '—'}
