@@ -362,6 +362,27 @@ export default function ComingSoon() {
         .cs-capture button:hover { background: #DDB876; }
         .cs-capture button:disabled { opacity: 0.6; cursor: not-allowed; }
         .cs-capture button:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
+        .cs-stack { display: flex; flex-direction: column; gap: 10px; max-width: 380px; margin: 0 auto 1rem; }
+        .cs-field { background: rgba(255,255,255,0.02); border: 1px solid var(--hair); border-radius: 2px; padding: 14px 16px; color: var(--ivory); font-family: inherit; font-size: 13px; font-weight: 300; letter-spacing: 0.02em; outline: none; width: 100%; }
+        .cs-field::placeholder { color: var(--ivory-dim); }
+        .cs-field:focus-visible { outline: 2px solid var(--gold); outline-offset: -1px; border-color: var(--gold); }
+        .cs-phone { display: flex; align-items: stretch; background: rgba(255,255,255,0.02); border: 1px solid var(--hair); border-radius: 2px; overflow: hidden; }
+        .cs-phone:focus-within { border-color: var(--gold); }
+        .cs-phone-prefix { display: flex; align-items: center; padding: 0 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--ivory); border-right: 1px solid var(--hair); background: rgba(201,164,92,0.04); }
+        .cs-phone-input { border: none; border-radius: 0; background: transparent; }
+        .cs-phone-input:focus-visible { outline: none; }
+        .cs-otp-input { text-align: center; letter-spacing: 0.55em; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 20px; font-weight: 500; color: var(--gold); }
+        .cs-otp-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 0 0 2px; text-align: center; }
+        .cs-otp-hint strong { color: var(--gold); font-weight: 500; }
+        .cs-btn { background: var(--gold); color: var(--ink); border: none; padding: 14px 22px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 500; cursor: pointer; border-radius: 2px; transition: background 0.25s ease; }
+        .cs-btn:hover { background: #DDB876; }
+        .cs-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .cs-btn:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
+        .cs-otp-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+        .cs-link { background: none; border: none; color: var(--ivory-dim); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; padding: 4px 2px; }
+        .cs-link:hover:not(:disabled) { color: var(--gold); }
+        .cs-link:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cs-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
         .cs-micro { font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.02em; margin-bottom: 3.2rem; }
         .cs-error { color: #E07A6B; }
         .cs-confirm { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--teal); letter-spacing: 0.05em; margin-bottom: 3.2rem; }
