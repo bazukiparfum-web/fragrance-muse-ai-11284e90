@@ -519,32 +519,108 @@ export default function ComingSoon() {
               </p>
             )}
           </div>
-        ) : (
+        ) : step === "details" ? (
           <>
-            <form className="cs-capture" onSubmit={onSubmit} noValidate>
+            <form className="cs-stack" onSubmit={submitDetails} noValidate>
               <input
+                className="cs-field"
+                type="text"
+                autoComplete="given-name"
+                aria-label="First name (optional)"
+                placeholder="First name (optional)"
+                value={firstName}
+                maxLength={80}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+              <div className="cs-phone">
+                <span className="cs-phone-prefix" aria-hidden>🇮🇳 +91</span>
+                <input
+                  className="cs-field cs-phone-input"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  aria-label="WhatsApp mobile number"
+                  placeholder="98765 43210"
+                  value={phone}
+                  maxLength={10}
+                  onChange={(e) => {
+                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                    if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                  }}
+                  required
+                />
+              </div>
+              <input
+                className="cs-field"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
-                aria-label="Email address"
-                placeholder="your@email.com"
+                aria-label="Email address (optional)"
+                placeholder="Email (optional)"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   if (status === "error") { setStatus("idle"); setErrorMsg(null); }
                 }}
-                required
               />
-              <button type="submit" disabled={status === "loading"}>
-                {status === "loading" ? "Reserving…" : referralsOpen ? "JOIN THE WAITLIST" : "Join launch waitlist"}
+              <button className="cs-btn" type="submit" disabled={status === "loading"}>
+                {status === "loading" ? "Sending…" : referralsOpen ? "SEND WHATSAPP OTP" : "JOIN LAUNCH WAITLIST"}
               </button>
             </form>
             <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
               {status === "error" && errorMsg
                 ? errorMsg
                 : referralsOpen
-                  ? "Get your personal code + 50% off your first formula. First 5,000 blends only."
-                  : "Early access is fully claimed — we'll email you when we open to everyone."}
+                  ? "We'll send a 6-digit code to your WhatsApp. Email is optional."
+                  : "Early access is fully claimed — we'll message you when we open to everyone."}
+            </p>
+          </>
+        ) : (
+          <>
+            <form className="cs-stack" onSubmit={submitOtp} noValidate>
+              <p className="cs-otp-hint">
+                Code sent on WhatsApp to <strong>+91 {phone}</strong>
+              </p>
+              <input
+                className="cs-field cs-otp-input"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-label="6-digit verification code"
+                placeholder="••••••"
+                value={otp}
+                maxLength={6}
+                onChange={(e) => {
+                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                  if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                }}
+                required
+              />
+              <button className="cs-btn" type="submit" disabled={status === "loading"}>
+                {status === "loading" ? "Verifying…" : "VERIFY & JOIN"}
+              </button>
+              <div className="cs-otp-actions">
+                <button
+                  type="button"
+                  className="cs-link"
+                  onClick={() => { setStep("details"); setOtp(""); setStatus("idle"); setErrorMsg(null); }}
+                >
+                  ← Edit number
+                </button>
+                <button
+                  type="button"
+                  className="cs-link"
+                  disabled={resendIn > 0 || status === "loading"}
+                  onClick={() => requestOtp({ resend: true })}
+                >
+                  {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
+                </button>
+              </div>
+            </form>
+            <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
+              {status === "error" && errorMsg
+                ? errorMsg
+                : "Check WhatsApp for a 6-digit code from Bazuki."}
             </p>
           </>
         )}
