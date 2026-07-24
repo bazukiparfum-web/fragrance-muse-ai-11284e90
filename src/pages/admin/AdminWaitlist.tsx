@@ -329,6 +329,7 @@ export default function AdminWaitlist() {
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
               <TableHead>UTM source</TableHead>
               <TableHead>Referral code</TableHead>
               <TableHead className="text-right">Signed up</TableHead>
@@ -337,14 +338,15 @@ export default function AdminWaitlist() {
           <TableBody>
             {rows.length === 0 && !loading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   No signups match these filters.
                 </TableCell>
               </TableRow>
             ) : (
               rows.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium">{r.email}</TableCell>
+                  <TableCell className="font-medium">{r.email ?? '—'}</TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">{r.phone ?? '—'}</TableCell>
                   <TableCell className="text-muted-foreground">{r.utm_source ?? '—'}</TableCell>
                   <TableCell className="text-muted-foreground font-mono text-xs">
                     {r.referral_code ?? '—'}
