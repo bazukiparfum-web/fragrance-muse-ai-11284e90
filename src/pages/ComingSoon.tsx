@@ -383,15 +383,69 @@ export default function ComingSoon() {
     [prefFamilies, prefIntensity, prefWearTime],
   );
 
+  // ---- Branded share card (client-side PNG) ----
+  const [cardUrl, setCardUrl] = useState<string | null>(null);
+  const [cardFile, setCardFile] = useState<File | null>(null);
+  const cardBlobRef = useRef<Blob | null>(null);
+  const cardKeyRef = useRef<string>("");
+
+  useEffect(() => {
+    if (stage !== "result") return;
+    const key = `${direction.name}|${greetingName || ""}`;
+    if (cardKeyRef.current === key && cardBlobRef.current) return;
+    let cancelled = false;
+    const id = window.setTimeout(async () => {
+      try {
+        const blob = await generateDirectionCard(direction, greetingName);
+        if (cancelled) return;
+        cardBlobRef.current = blob;
+        cardKeyRef.current = key;
+        const file = new File([blob], "bazuki-direction.png", { type: "image/png" });
+        setCardFile(file);
+        setCardUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(blob);
+        });
+      } catch (e) {
+        console.warn("card generation failed", e);
+      }
+    }, 60);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, direction.name, greetingName]);
+
+  useEffect(() => {
+    return () => {
+      if (cardUrl) URL.revokeObjectURL(cardUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const shareUrl = "https://www.bazukifragrance.com/coming-soon";
   const shareMessage = useMemo(
     () =>
-      "Bazuki is launching India's first AI-algorithmic perfume house — your own formula, blended to you. Early subscribers get 50% off the first batch. Reserve your spot: " +
-      shareUrl,
-    [],
+      `My Bazuki scent direction: ${direction.name.replace(/^The\s+/, "").replace(/\s+direction$/i, "")}. India's first AI-algorithmic perfume house launches 29 August — early subscribers get 50% off. Reserve yours: ${shareUrl}`,
+    [direction.name],
   );
-  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+  const whatsappTextHref = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+
+  const shareWhatsApp = async () => {
+    trackCta("waitlist_share_whatsapp");
+    if (cardFile && typeof navigator !== "undefined" && (navigator as any).canShare?.({ files: [cardFile] })) {
+      try {
+        await (navigator as any).share({ text: shareMessage, files: [cardFile], url: shareUrl });
+        return;
+      } catch { /* user cancelled or unsupported — fall through */ }
+    }
+    if (cardBlobRef.current) {
+      downloadBlob(cardBlobRef.current, "bazuki-direction.png");
+      trackCta("waitlist_share_download");
+    }
+    window.open(whatsappTextHref, "_blank", "noopener,noreferrer");
+  };
 
   const copyShare = async () => {
     try {
@@ -409,8 +463,19 @@ export default function ComingSoon() {
       setShareCopied(true);
       window.setTimeout(() => setShareCopied(false), 2400);
     } catch { /* ignore */ }
+    if (cardBlobRef.current) {
+      downloadBlob(cardBlobRef.current, "bazuki-direction.png");
+      trackCta("waitlist_share_download");
+    }
     window.open("https://www.instagram.com/bazukiperfume/", "_blank", "noopener,noreferrer");
   };
+
+  const downloadCard = () => {
+    if (!cardBlobRef.current) return;
+    downloadBlob(cardBlobRef.current, "bazuki-direction.png");
+    trackCta("waitlist_share_download");
+  };
+
 
   const spotsLine = "LAST 10% SPOTS LEFT";
   const greetingName = (firstName || "").trim().split(/\s+/)[0];
