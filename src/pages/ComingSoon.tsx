@@ -476,9 +476,8 @@ export default function ComingSoon() {
     trackCta("waitlist_share_download");
   };
 
-
   const spotsLine = "LAST 10% SPOTS LEFT";
-  const greetingName = (firstName || "").trim().split(/\s+/)[0];
+
 
   return (
     <div className="cs-root">
