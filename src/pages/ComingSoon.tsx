@@ -608,9 +608,9 @@ export default function ComingSoon() {
                   type="button"
                   className="cs-share-btn"
                   onClick={nativeShare}
-                  aria-label="Copy link or share"
+                  aria-label="Copy share message"
                 >
-                  {shareCopied ? "Copied ✓" : "Copy link"}
+                  {shareCopied ? "Copied ✓" : "Copy message"}
                 </button>
               </div>
               <p className="cs-share-hint">
