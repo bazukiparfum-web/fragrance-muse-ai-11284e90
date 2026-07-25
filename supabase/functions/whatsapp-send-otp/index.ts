@@ -47,35 +47,21 @@ function generateOtp(): string {
   return n.toString().padStart(6, "0");
 }
 
-function getOriginCandidates(configuredOrigin: string | undefined): string[] {
-  const normalized = configuredOrigin?.trim().replace(/\/+$/, "");
-  const candidates = [
-    configuredOrigin?.trim(),
-    normalized,
-    normalized ? `${normalized}/` : undefined,
-    normalized?.replace(/^https?:\/\//, ""),
-    normalized?.replace(/^https?:\/\//, "") ? `${normalized.replace(/^https?:\/\//, "")}/` : undefined,
-    normalized && !normalized.startsWith("http") ? `https://${normalized}` : undefined,
-    normalized && !normalized.startsWith("http") ? `https://${normalized}/` : undefined,
-    "https://www.bazukifragrance.com",
-    "https://www.bazukifragrance.com/",
-    "https://bazukifragrance.com",
-    "https://bazukifragrance.com/",
-    "www.bazukifragrance.com",
-    "www.bazukifragrance.com/",
-    "bazukifragrance.com",
-    "bazukifragrance.com/",
-  ]
-    .map((origin) => origin?.trim())
-    .filter((origin): origin is string => Boolean(origin));
+function normalizeOriginWebsite(configuredOrigin: string | undefined): string {
+  return (configuredOrigin ?? "bazukifragrance.com")
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/+$/, "");
+}
 
-  return Array.from(new Set(candidates));
+function isOriginWebsiteError(message: string): boolean {
+  return /originWebsites?/i.test(message);
 }
 
 async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
   const authToken = Deno.env.get("WHATSAPP_11ZA_AUTH_TOKEN");
   const templateName = Deno.env.get("WHATSAPP_11ZA_TEMPLATE_NAME") ?? "otp_login";
-  const originWebsite = Deno.env.get("WHATSAPP_11ZA_ORIGIN_WEBSITE") ?? "bazukifragrance.com";
+  const originWebsite = normalizeOriginWebsite(Deno.env.get("WHATSAPP_11ZA_ORIGIN_WEBSITE"));
 
   if (!authToken) {
     throw new Error("WHATSAPP_11ZA_AUTH_TOKEN is not configured");
@@ -98,54 +84,53 @@ async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
 
   let lastFailure = "";
   for (const url of urls) {
-    for (const candidateOrigin of getOriginCandidates(originWebsite)) {
-      const jsonRes = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...baseBody, originWebsite: candidateOrigin }),
-      });
+    const payload = { ...baseBody, originWebsite };
+    const jsonRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      const jsonText = await jsonRes.text();
-      let parsed: any = null;
-      try { parsed = JSON.parse(jsonText); } catch { /* not JSON */ }
+    const jsonText = await jsonRes.text();
+    let parsed: any = null;
+    try { parsed = JSON.parse(jsonText); } catch { /* not JSON */ }
 
-      // 11za returns 200 with { Status, IsSuccess, Message } even on logical failures
-      if (jsonRes.ok && (!parsed || parsed.IsSuccess !== false)) {
-        console.log("11za send ok", jsonText.slice(0, 200));
-        return;
-      }
+    // 11za returns 200 with { Status, IsSuccess, Message } even on logical failures
+    if (jsonRes.ok && (!parsed || parsed.IsSuccess !== false)) {
+      console.log("11za send ok", jsonText.slice(0, 200));
+      return;
+    }
 
-      lastFailure = `WhatsApp send failed [${jsonRes.status}]: ${jsonText.slice(0, 300)}`;
-      let message = typeof parsed?.Message === "string" ? parsed.Message : jsonText;
-      if (!/originWebsites?/i.test(message)) {
-        console.error("11za send failed", jsonRes.status, jsonText);
-        throw new Error(lastFailure);
-      }
+    lastFailure = `WhatsApp send failed [${jsonRes.status}]: ${jsonText.slice(0, 300)}`;
+    let message = typeof parsed?.Message === "string" ? parsed.Message : jsonText;
+    if (!isOriginWebsiteError(message)) {
+      console.error("11za send failed", jsonRes.status, jsonText);
+      throw new Error(lastFailure);
+    }
 
-      const formData = new FormData();
-      Object.entries({ ...baseBody, originWebsite: candidateOrigin }).forEach(([key, value]) => {
-        formData.append(key, Array.isArray(value) ? value.join(",") : String(value));
-      });
-      const formRes = await fetch(url, { method: "POST", body: formData });
-      const formText = await formRes.text();
-      parsed = null;
-      try { parsed = JSON.parse(formText); } catch { /* not JSON */ }
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      formData.append(key, Array.isArray(value) ? value.join(",") : String(value));
+    });
+    const formRes = await fetch(url, { method: "POST", body: formData });
+    const formText = await formRes.text();
+    parsed = null;
+    try { parsed = JSON.parse(formText); } catch { /* not JSON */ }
 
-      if (formRes.ok && (!parsed || parsed.IsSuccess !== false)) {
-        console.log("11za send ok", formText.slice(0, 200));
-        return;
-      }
+    if (formRes.ok && (!parsed || parsed.IsSuccess !== false)) {
+      console.log("11za send ok", formText.slice(0, 200));
+      return;
+    }
 
-      lastFailure = `WhatsApp send failed [${formRes.status}]: ${formText.slice(0, 300)}`;
-      message = typeof parsed?.Message === "string" ? parsed.Message : formText;
-      if (!/originWebsites?/i.test(message)) {
-        console.error("11za send failed", formRes.status, formText);
-        throw new Error(lastFailure);
-      }
+    lastFailure = `WhatsApp send failed [${formRes.status}]: ${formText.slice(0, 300)}`;
+    message = typeof parsed?.Message === "string" ? parsed.Message : formText;
+    if (!isOriginWebsiteError(message)) {
+      console.error("11za send failed", formRes.status, formText);
+      throw new Error(lastFailure);
     }
   }
 
-  console.error("11za send failed for all configured Bazuki origins", lastFailure);
+  console.error("11za rejected configured originWebsite", { originWebsite, lastFailure });
   throw new Error("WhatsApp provider rejected the configured website. Please check the 11za originWebsite setting.");
 }
 
@@ -217,8 +202,11 @@ Deno.serve(async (req: Request) => {
       await sendVia11za(phoneE164, otp);
     } catch (err) {
       console.error("WhatsApp send error", err);
+      const message = err instanceof Error && /originWebsite/i.test(err.message)
+        ? "WhatsApp OTP is temporarily unavailable because the 11za website setting is not approved. Please contact Bazuki or try again later."
+        : "Could not send WhatsApp message. Please try again.";
       return new Response(
-        JSON.stringify({ error: "Could not send WhatsApp message. Please try again." }),
+        JSON.stringify({ error: message }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
