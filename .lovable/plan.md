@@ -1,33 +1,41 @@
-## Changes
+## What the error means
 
-### 1. Copy-to-clipboard: include full pitch, not just URL
-In `src/pages/ComingSoon.tsx` (`nativeShare` handler around line 256):
-- Define a single `shareMessage` constant: `"I just joined Bazuki early access for 50% off my first AI-crafted fragrance. Join too: https://www.bazukifragrance.com/coming-soon"` (same text WhatsApp already uses).
-- `navigator.share` payload: pass `text: shareMessage` alongside title/url.
-- Clipboard fallback: `navigator.clipboard.writeText(shareMessage)` instead of just the URL.
-- Update the button label from "Copy link" → "Copy message" (keeps "Copied ✓" confirmation).
+The error is coming from the WhatsApp OTP send step, not from the removed referral feature.
 
-### 2. WhatsApp share button
-Already implemented and functioning (line 583–589) with the generic 50% pitch + link via `wa.me/?text=...`. No change needed — will confirm during QA.
+Current backend logs show `whatsapp-send-otp` is failing because the 11za WhatsApp provider rejects the configured website/origin:
 
-### 3. Branded OG share card for `/coming-soon`
-- Generate a 1200×630 branded JPG via `imagegen--generate_image` (premium tier for legible typography): dark ink background, gold accents, headline "50% OFF Early Access", subline "India's first AI-crafted perfumes", `bazukifragrance.com/coming-soon` lockup. Style consistent with the existing luxury dark/gold system.
-- Save to `public/coming-soon-og.jpg`.
-- Update `index.html` head so link previews on WhatsApp / Instagram / iMessage / Slack pull the new card:
-  - `og:title` → "Bazuki Early Access — 50% OFF your first AI-crafted fragrance"
-  - `og:description` → "Join the waitlist for India's first AI perfume machine. Early members get 50% off their first bottle."
-  - `og:image` + `twitter:image` → `https://www.bazukifragrance.com/coming-soon-og.jpg`
-  - `og:url` → `https://www.bazukifragrance.com/coming-soon`
-  - Mirror on `twitter:title` / `twitter:description`.
-- Rationale: `/` currently renders `ComingSoon`, so `index.html`'s static tags are exactly what crawlers see — no `react-helmet` install needed.
+```text
+Invalid originWebsites! Please try again with valid originWebsites
+WhatsApp provider rejected the configured website. Please check the 11za originWebsite setting.
+```
 
-### QA
-- Build passes.
-- Manual click on "Copy message" → clipboard contains full pitch + URL.
-- Visual check of generated OG image (open the PNG) to confirm typography is legible and on-brand.
-- Note to user: crawlers cache old previews; a refresh via WhatsApp/Facebook debugger may be needed to see the new card in existing shared links.
+So the waitlist form reaches the backend, generates/stores an OTP, then fails when trying to send that OTP through 11za.
 
-## Files touched
-- `src/pages/ComingSoon.tsx` — update `nativeShare` + button label.
-- `index.html` — update OG/Twitter meta for the coming-soon landing.
-- `public/coming-soon-og.jpg` — new generated asset.
+## Why it still happens after removing referrals
+
+Referral removal affected post-signup sharing/discount-code logic. This failure happens earlier: when the user clicks **Send WhatsApp OTP**. The same 11za provider and `originWebsite` validation are still required for basic OTP delivery.
+
+## Fix plan
+
+1. **Confirm the exact 11za origin format**
+   - Check the stored `WHATSAPP_11ZA_ORIGIN_WEBSITE` secret/config value.
+   - Compare it with the website/origin registered in the 11za account.
+   - The provider is rejecting every current candidate: `bazukifragrance.com`, `www.bazukifragrance.com`, and `https://...` variants.
+
+2. **Update the WhatsApp OTP function**
+   - Make the provider payload use the exact registered 11za origin value instead of trying many guessed formats.
+   - Keep clear logging for provider rejection without exposing private tokens.
+   - Return a friendlier user-facing error if 11za rejects configuration.
+
+3. **Test the deployed function directly**
+   - Call the OTP function with a valid test mobile number.
+   - Confirm the provider no longer returns `Invalid originWebsites`.
+   - Check function logs after the test.
+
+4. **Optional fallback improvement**
+   - If 11za remains blocked by account-side settings, keep the page usable by showing a clearer message like: “WhatsApp OTP is temporarily unavailable. Please try again later.”
+   - Do not re-add referrals.
+
+## What may need manual action
+
+If the 11za account has a different approved `originWebsite` than the website currently configured in the app, the value must be corrected either in the app secret or in the 11za provider settings. The code alone cannot bypass 11za’s origin whitelist.
