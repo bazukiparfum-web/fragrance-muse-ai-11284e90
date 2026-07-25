@@ -673,33 +673,6 @@ export type Database = {
         }
         Relationships: []
       }
-      prelaunch_signups: {
-        Row: {
-          created_at: string
-          email: string
-          first_name: string
-          id: string
-          phone: string
-          utm_source: string | null
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          first_name: string
-          id?: string
-          phone: string
-          utm_source?: string | null
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          first_name?: string
-          id?: string
-          phone?: string
-          utm_source?: string | null
-        }
-        Relationships: []
-      }
       product_reviews: {
         Row: {
           body: string
