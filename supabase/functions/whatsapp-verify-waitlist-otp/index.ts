@@ -18,14 +18,23 @@ async function sha256Hex(input: string): Promise<string> {
 }
 
 function getOriginCandidates(configuredOrigin: string | undefined): string[] {
+  const normalized = configuredOrigin?.trim().replace(/\/+$/, "");
   const candidates = [
-    configuredOrigin,
-    configuredOrigin?.replace(/^https?:\/\//, ""),
-    configuredOrigin && !configuredOrigin.startsWith("http") ? `https://${configuredOrigin}` : undefined,
+    configuredOrigin?.trim(),
+    normalized,
+    normalized ? `${normalized}/` : undefined,
+    normalized?.replace(/^https?:\/\//, ""),
+    normalized?.replace(/^https?:\/\//, "") ? `${normalized.replace(/^https?:\/\//, "")}/` : undefined,
+    normalized && !normalized.startsWith("http") ? `https://${normalized}` : undefined,
+    normalized && !normalized.startsWith("http") ? `https://${normalized}/` : undefined,
     "https://www.bazukifragrance.com",
+    "https://www.bazukifragrance.com/",
     "https://bazukifragrance.com",
+    "https://bazukifragrance.com/",
     "www.bazukifragrance.com",
+    "www.bazukifragrance.com/",
     "bazukifragrance.com",
+    "bazukifragrance.com/",
   ]
     .map((origin) => origin?.trim())
     .filter((origin): origin is string => Boolean(origin));
