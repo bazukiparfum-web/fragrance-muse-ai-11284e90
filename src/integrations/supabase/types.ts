@@ -1541,6 +1541,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_referral_reward: {
+        Args: { _referral_code: string }
+        Returns: string
+      }
       create_waitlist_signup: {
         Args: {
           _email?: string
