@@ -17,109 +17,8 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-function getOriginCandidates(configuredOrigin: string | undefined): string[] {
-  const normalized = configuredOrigin?.trim().replace(/\/+$/, "");
-  const candidates = [
-    configuredOrigin?.trim(),
-    normalized,
-    normalized ? `${normalized}/` : undefined,
-    normalized?.replace(/^https?:\/\//, ""),
-    normalized?.replace(/^https?:\/\//, "") ? `${normalized.replace(/^https?:\/\//, "")}/` : undefined,
-    normalized && !normalized.startsWith("http") ? `https://${normalized}` : undefined,
-    normalized && !normalized.startsWith("http") ? `https://${normalized}/` : undefined,
-    "https://www.bazukifragrance.com",
-    "https://www.bazukifragrance.com/",
-    "https://bazukifragrance.com",
-    "https://bazukifragrance.com/",
-    "www.bazukifragrance.com",
-    "www.bazukifragrance.com/",
-    "bazukifragrance.com",
-    "bazukifragrance.com/",
-  ]
-    .map((origin) => origin?.trim())
-    .filter((origin): origin is string => Boolean(origin));
-
-  return Array.from(new Set(candidates));
-}
-
-async function sendReferralWhatsApp(
-  phoneE164: string,
-  referralCode: string,
-  firstName: string | null,
-) {
-  const authToken = Deno.env.get("WHATSAPP_11ZA_AUTH_TOKEN");
-  const templateName = Deno.env.get("WHATSAPP_11ZA_REFERRAL_TEMPLATE");
-  const originWebsite = Deno.env.get("WHATSAPP_11ZA_ORIGIN_WEBSITE") ?? "bazukifragrance.com";
-  if (!authToken || !templateName) {
-    console.warn("Skipping referral WhatsApp send: template or token not configured");
-    return;
-  }
-  const cleanName = (firstName ?? "").trim() || "A friend";
-  // Template base URL registered in 11za: https://www.bazukifragrance.com/coming-soon
-  // buttonValue is appended to that base, so send only the query suffix.
-  const buttonValue = `?ref=${referralCode}`;
-  const baseBody = {
-    authToken,
-    name: cleanName,
-    sendto: phoneE164.replace(/^\+/, ""),
-    templateName,
-    language: "en",
-    data: [cleanName, referralCode],
-    buttonValue,
-  };
-  try {
-    const urls = [
-      "https://api.11za.in/apis/template/sendTemplate",
-      "https://app.11za.in/apis/template/sendTemplate",
-    ];
-
-    for (const url of urls) {
-      for (const candidateOrigin of getOriginCandidates(originWebsite)) {
-        const jsonRes = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...baseBody, originWebsite: candidateOrigin }),
-        });
-        const jsonText = await jsonRes.text();
-        let parsed: any = null;
-        try { parsed = JSON.parse(jsonText); } catch { /* not JSON */ }
-        if (jsonRes.ok && (!parsed || parsed.IsSuccess !== false)) {
-          console.log("11za referral send ok", jsonText.slice(0, 200));
-          return;
-        }
-        let message = typeof parsed?.Message === "string" ? parsed.Message : jsonText;
-        if (!/originWebsites?/i.test(message)) {
-          console.error("11za referral send failed", jsonRes.status, jsonText.slice(0, 300));
-          return;
-        }
-
-        const formData = new FormData();
-        Object.entries({ ...baseBody, originWebsite: candidateOrigin }).forEach(([key, value]) => {
-          formData.append(key, Array.isArray(value) ? value.join(",") : String(value));
-        });
-        const formRes = await fetch(url, { method: "POST", body: formData });
-        const formText = await formRes.text();
-        parsed = null;
-        try { parsed = JSON.parse(formText); } catch { /* not JSON */ }
-        if (formRes.ok && (!parsed || parsed.IsSuccess !== false)) {
-          console.log("11za referral send ok", formText.slice(0, 200));
-          return;
-        }
-        message = typeof parsed?.Message === "string" ? parsed.Message : formText;
-        if (!/originWebsites?/i.test(message)) {
-          console.error("11za referral send failed", formRes.status, formText.slice(0, 300));
-          return;
-        }
-      }
-    }
-    console.error("11za referral send failed for all configured Bazuki origins");
-  } catch (err) {
-    console.error("11za referral send error", err);
-  }
-}
-
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
     if (req.method !== "POST") {
@@ -136,7 +35,6 @@ Deno.serve(async (req: Request) => {
       email,
       first_name,
       utm_source,
-      referred_by,
       email_variant,
     } = payload ?? {};
 
@@ -207,7 +105,6 @@ Deno.serve(async (req: Request) => {
       _email: cleanEmail,
       _first_name: typeof first_name === "string" ? first_name.slice(0, 80) : null,
       _utm_source: typeof utm_source === "string" ? utm_source.slice(0, 64) : null,
-      _referred_by: typeof referred_by === "string" ? referred_by.toUpperCase().slice(0, 32) : null,
       _email_variant: typeof email_variant === "string" ? email_variant : null,
       _phone_verified: true,
     });
@@ -220,28 +117,10 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const result = (rpcData ?? {}) as { referral_code?: string; duplicate?: boolean };
-    const referralCode = result.referral_code ?? null;
-    const duplicate = !!result.duplicate;
-
-    if (referralCode && !duplicate) {
-      // Provision Shopify discount (non-blocking)
-      supabase.functions
-        .invoke("create-referral-shopify-discount", { body: { code: referralCode } })
-        .catch((e) => console.error("shopify discount error", e));
-    }
-
-    // Send WhatsApp confirmation with referral code (best-effort)
-    if (referralCode) {
-      await sendReferralWhatsApp(
-        phoneE164,
-        referralCode,
-        typeof first_name === "string" ? first_name : null,
-      );
-    }
+    const result = (rpcData ?? {}) as { duplicate?: boolean };
 
     return new Response(
-      JSON.stringify({ success: true, referral_code: referralCode, duplicate }),
+      JSON.stringify({ success: true, duplicate: !!result.duplicate }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
