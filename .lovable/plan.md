@@ -1,60 +1,96 @@
+# Prelaunch Landing Redesign
 
-## Goal
+Restructure `/coming-soon` around two mutually exclusive states, refine the aesthetic, and add a scent preference picker + generic share row. The existing WhatsApp OTP send/verify flow (edge functions, 11za integration, resend backoff, error parsing) stays byte-for-byte the same — only the surrounding UI and post-verify experience change.
 
-Prevent OTP spam on the `/coming-soon` waitlist and give visitors clear, actionable messages when a WhatsApp send fails.
+## 1. Data model additions
 
-## 1. Resend timer + limit (client)
+Migration on `prelaunch_signups`:
+- Add `scent_families text[]`, `intensity text`, `wear_time text` (all nullable — preferences are optional).
+- Add `UNIQUE (phone)` and `UNIQUE (email)` constraints so repeat submissions upsert instead of duplicating.
+- Update the existing insert path to `ON CONFLICT (phone) DO UPDATE SET first_name = EXCLUDED.first_name, email = EXCLUDED.email` (handled inside the current post-OTP insert).
+- Add a `SECURITY DEFINER` RPC `save_prelaunch_preferences(p_phone text, p_families text[], p_intensity text, p_wear_time text)` so State B can write preferences without exposing broad table update rights. RLS on `prelaunch_signups` stays locked; RPC is granted to `anon, authenticated`.
+- Add a lightweight public RPC `prelaunch_spots_left()` returning `CAP - count(*)` (CAP = 100 constant in the function) so the scarcity line doesn't require table-wide select.
 
-In `src/pages/ComingSoon.tsx`:
+## 2. Two-state page structure
 
-- Extend the current `resendIn` cooldown from 30s to a stepped backoff: 30s → 60s → 120s → 300s based on a new `resendCount` state.
-- Track `resendCount` per session; after **5 resends**, disable the Resend button entirely and show: "Resend limit reached. Check your WhatsApp inbox or try a different number."
-- Rendering:
-  - Resend button shows `Resend in 0:29` while `resendIn > 0` and is `disabled`.
-  - Once `resendIn === 0` and under the cap → `Resend code`.
-  - At the cap → disabled + helper text.
-- The initial `SEND WHATSAPP OTP` action on the details step is also disabled while `status === "loading"` to prevent double-taps.
-- "Change number" link resets `resendCount`, `resendIn`, `otp`, `errorMsg` and returns to `details`.
+Refactor `src/pages/ComingSoon.tsx` around a single `view` derived from persistence, never both at once:
 
-## 2. Server-side rate limits (edge)
+```
+view = "subscribe" | "welcome"
+```
 
-`supabase/functions/whatsapp-send-otp/index.ts` already limits per phone (3/10min) and per IP (10/hr). Tighten and surface:
+- On mount: check `localStorage.bazuki_prelaunch` for `{phone, firstName}`. If present, call an RPC `get_prelaunch_signup(p_phone)` to hydrate `firstName` + saved preferences and switch to `welcome`. Otherwise `subscribe`.
+- After successful OTP verify (existing flow) → write localStorage → `setView("welcome")`. No reload.
 
-- Return `retryAfterSec` in the 429 JSON body (compute from the oldest timestamp in the window).
-- Add `Retry-After` header on 429 responses.
-- Keep existing limits; they align with the client cap.
+### State A — Subscribe
 
-## 3. Clearer WhatsApp error messages
+Layout (mobile-first, single column, max-w ~ 520px):
+1. Eyebrow `FORMULA IN PROGRESS` — cream `#F5EFE6`, 13px, tracking `0.18em`.
+2. Headline (Cormorant Garamond): "Your scent is being **_calibrated_**." — "calibrated" in gold italic.
+3. Subhead (Inter): "India's first AI-algorithmic perfume house, finishing its first batch. One bottle built for you."
+4. Animated line-art bottle (see §3).
+5. Countdown D / H / M / S to 29 Aug 2026 00:00 IST (reuse existing tick loop).
+6. Scarcity line: `Only {spotsLeft} founding spots left` — fetched via `prelaunch_spots_left()` on mount, refetched after successful signup.
+7. Form (reordered, lowest commitment first):
+   - First name (text)
+   - Mobile (tel) with fixed `+91` prefix rendered inside the field; user types 10 digits; existing `phoneSchema` regex unchanged.
+   - Email (email)
+   - Single primary button: **Reserve my 50% spot** (gold fill, cream label).
+8. On submit → existing `whatsapp-send-otp` call → existing verify step (unchanged UI subtree, just re-skinned to match new type scale). On verify success → upsert row with E.164 phone (`+91` prepended server-side in the verify function's insert path) → transition to State B.
 
-Map provider/network failures to specific, human copy. Both edge and client change.
+### State B — Welcome
 
-Edge (`whatsapp-send-otp`): classify errors before responding with 502/429/400 and return a stable `code` plus `error` message. Codes:
+1. Confirmation headline: `You're in, {FirstName}. Your 50% off early bird price is locked.` (gold italic on the name).
+2. Sub-line: "Now tell us what you love — we'll calibrate your first formula around it."
+3. Countdown stays visible (compact strip).
+4. **Scent Preference Picker** (the core of State B, mobile chip UI):
+   - Q1 "Which family pulls you in?" — multi-select 1–3 chips: Woody, Fresh/Citrus, Floral, Oriental/Spicy, Aquatic, Gourmand.
+   - Q2 "How loud should it be?" — single choice: Subtle / Balanced / Bold.
+   - Q3 "When will you wear it most?" — single choice: Daytime / Evening / Office / Party.
+   - Autosave on each tap via `save_prelaunch_preferences` RPC (debounced 400ms). Micro-confirm toast/inline "Noted. Your formula's already taking shape." after first save.
+   - Pre-select saved chips on return. Never gate confirmation on completing them.
+5. **Share row** (visually subordinate, gold outline buttons):
+   - Shared message constant:
+     `Bazuki is launching India's first AI-algorithmic perfume house — your own formula, blended to you. Early subscribers get 50% off the first batch. Reserve your spot: https://bazukifragrance.com/prelaunch`
+   - WhatsApp → `https://wa.me/?text={encoded}`.
+   - Instagram → `navigator.clipboard.writeText(msg)` + toast "Message copied — paste it into your Instagram story or DM", then open `https://www.instagram.com/bazukiperfume/` in a new tab.
+   - Optional "Follow @bazukiperfumes" outline button as final step.
+6. Footer: `BAZUKI — discover your formula · @bazukiperfumes`.
 
-- `invalid_phone` (400) — "That doesn't look like a valid Indian mobile. Check the 10 digits and try again."
-- `rate_limited_phone` (429) — "You've requested too many codes for this number. Try again in Xm Ys."
-- `rate_limited_ip` (429) — "Too many requests from your network. Try again in a bit."
-- `provider_origin_unapproved` (503) — "WhatsApp OTP is temporarily unavailable. Please contact Bazuki support."
-- `provider_unreachable` (502) — "We couldn't reach WhatsApp right now. Check your connection and retry."
-- `provider_rejected` (502) — "WhatsApp couldn't deliver to this number. Double-check it's on WhatsApp, or try another."
-- `internal` (500) — generic retry copy.
+## 3. Bottle animation
 
-Client (`ComingSoon.tsx`):
+Replace the current static/elapsed-fill SVG with a continuous 4s calibration loop:
+- SVG `<rect>` clipped to bottle silhouette, `y` and `height` animated via CSS keyframes from 85% → 20% → 85% over 4s ease-in-out, infinite. Gold fill at 60% opacity.
+- Overlay 6 tiny gold dots drifting upward at randomized delays (pure CSS `@keyframes` translateY + opacity) to read as particles.
+- `@media (prefers-reduced-motion: reduce)` → static half-fill, no drift.
 
-- Parse `{ code, error, retryAfterSec }` from the function response body (already reading `error.context.text()`).
-- On `rate_limited_phone`, set `resendIn = retryAfterSec` and jump straight to the `verify` step if we haven't already, so the user can still enter a previously received code.
-- Replace the small red text with a dedicated error banner above the CTA: icon + message + optional secondary action ("Change number" for phone errors, "Retry" for provider errors).
-- Success toast unchanged.
+## 4. Aesthetic refinements
 
-## 4. Verify-OTP UX polish (small)
+- Backgrounds unify on `#0A0A0A`; remove any secondary panels.
+- All eyebrow/label text: cream `#F5EFE6`, min 13px, tracking `0.16–0.2em` — retire the tiny gold-on-black labels for contrast.
+- Body/UI font: Inter (already loaded via Tailwind stack) — enforce on inputs, buttons, chips, countdown numerals. Cormorant Garamond stays for the H1 only.
+- Focus ring: `outline: 2px solid #C9A84C; outline-offset: 2px` on all interactive elements.
+- Chips: unselected = 1px cream/20 border; selected = 1.5px gold border + inline check icon (so state is distinguishable without color).
 
-`whatsapp-verify-waitlist-otp` errors are already surfaced. Add explicit copy for:
+## 5. Preserved (do NOT touch)
 
-- Wrong code → "That code doesn't match. Check WhatsApp and try again."
-- Expired → "This code expired. Tap Resend for a new one." + auto-enable resend by setting `resendIn = 0`.
+- `supabase/functions/whatsapp-send-otp/index.ts`
+- `supabase/functions/whatsapp-verify-waitlist-otp/index.ts`
+- 11za origin/template config, `WHATSAPP_11ZA_*` secrets
+- Resend backoff schedule, error-code parsing, verify step UI logic
+- SEO/`useSEO` noindex settings
 
-## Technical notes
+## 6. Files touched
 
-- No DB migrations needed — rate limiting stays in-memory (matches existing pattern) and cooldown state is client-side.
-- No changes to `waitlist_signups`, RLS, or Shopify.
-- Files touched: `src/pages/ComingSoon.tsx`, `supabase/functions/whatsapp-send-otp/index.ts`, `supabase/functions/whatsapp-verify-waitlist-otp/index.ts`.
-- Verify by triggering 4 rapid sends in preview to see the stepped cooldown and the "limit reached" state.
+- `supabase/migrations/<new>.sql` — columns, unique constraints, two RPCs + grants.
+- `src/pages/ComingSoon.tsx` — restructured into `SubscribeState` + `WelcomeState` subcomponents; existing OTP handlers moved verbatim into `SubscribeState`.
+- `src/components/prelaunch/CalibratingBottle.tsx` — new, animated SVG.
+- `src/components/prelaunch/ScentPreferencePicker.tsx` — new, chip UI + autosave.
+- `src/components/prelaunch/ShareRow.tsx` — new, WhatsApp + Instagram buttons.
+- `src/index.css` — small keyframe additions for bottle fill + particle drift.
+
+## 7. Out of scope
+
+- No changes to referral system (already removed).
+- No changes to OG image or `index.html` meta (already set for prelaunch).
+- No analytics changes beyond keeping the existing `trackCta` calls on the primary CTA.
