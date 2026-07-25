@@ -69,8 +69,8 @@ export default function ComingSoon() {
   const [prefIntensity, setPrefIntensity] = useState<string | null>(null);
   const [prefWearTime, setPrefWearTime] = useState<string | null>(null);
   const [prefSaving, setPrefSaving] = useState(false);
-  const [prefSaved, setPrefSaved] = useState(false);
-  const prefSaveTimerRef = useRef<number | null>(null);
+  const [stage, setStage] = useState<"picker" | "result">("picker");
+  const [fading, setFading] = useState(false);
 
   const RESEND_MAX = 5;
   const RESEND_BACKOFF = [30, 60, 120, 180, 300];
