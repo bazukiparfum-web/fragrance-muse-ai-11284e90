@@ -76,14 +76,14 @@ Deno.serve(async (req: Request) => {
     }
     if (!otpRow) {
       return new Response(
-        JSON.stringify({ error: "OTP expired or not found. Please request a new one." }),
+        JSON.stringify({ code: "otp_expired", error: "This code expired. Tap Resend for a new one." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
     if (otpRow.attempts >= MAX_ATTEMPTS) {
       await supabase.from("phone_otps").update({ consumed_at: new Date().toISOString() }).eq("id", otpRow.id);
       return new Response(
-        JSON.stringify({ error: "Too many wrong attempts. Please request a new OTP." }),
+        JSON.stringify({ code: "otp_attempts_exceeded", error: "Too many wrong attempts. Please request a new code." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
     const candidateHash = await sha256Hex(`${otp}:${otpRow.salt}`);
     if (candidateHash !== otpRow.otp_hash) {
       await supabase.from("phone_otps").update({ attempts: otpRow.attempts + 1 }).eq("id", otpRow.id);
-      return new Response(JSON.stringify({ error: "Incorrect OTP." }), {
+      return new Response(JSON.stringify({ code: "otp_mismatch", error: "That code doesn't match. Check WhatsApp and try again." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

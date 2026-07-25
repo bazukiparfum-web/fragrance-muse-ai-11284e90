@@ -16,16 +16,25 @@ const PHONE_MAX = 3;
 const IP_WINDOW_MS = 60 * 60 * 1000;
 const IP_MAX = 10;
 
-function pruneAndCheck(map: Map<string, number[]>, key: string, windowMs: number, max: number) {
+type LimitCheck = { ok: true } | { ok: false; retryAfterSec: number };
+
+function pruneAndCheck(
+  map: Map<string, number[]>,
+  key: string,
+  windowMs: number,
+  max: number,
+): LimitCheck {
   const now = Date.now();
   const arr = (map.get(key) ?? []).filter((t) => now - t < windowMs);
   if (arr.length >= max) {
     map.set(key, arr);
-    return false;
+    const oldest = arr[0];
+    const retryAfterSec = Math.max(1, Math.ceil((windowMs - (now - oldest)) / 1000));
+    return { ok: false, retryAfterSec };
   }
   arr.push(now);
   map.set(key, arr);
-  return true;
+  return { ok: true };
 }
 
 async function sha256Hex(input: string): Promise<string> {
@@ -48,7 +57,6 @@ function generateOtp(): string {
 }
 
 function normalizeOriginWebsite(configuredOrigin: string | undefined): string {
-  // 11za requires the exact registered originWebsite format (including https:// and trailing /).
   return (configuredOrigin ?? "https://www.bazukifragrance.com/").trim();
 }
 
@@ -56,13 +64,20 @@ function isOriginWebsiteError(message: string): boolean {
   return /originWebsites?/i.test(message);
 }
 
+type SendFailure =
+  | { kind: "origin_unapproved"; detail: string }
+  | { kind: "rejected"; detail: string }
+  | { kind: "unreachable"; detail: string };
+
 async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
   const authToken = Deno.env.get("WHATSAPP_11ZA_AUTH_TOKEN");
   const templateName = Deno.env.get("WHATSAPP_11ZA_TEMPLATE_NAME") ?? "otp_login";
   const originWebsite = normalizeOriginWebsite(Deno.env.get("WHATSAPP_11ZA_ORIGIN_WEBSITE"));
 
   if (!authToken) {
-    throw new Error("WHATSAPP_11ZA_AUTH_TOKEN is not configured");
+    const err = new Error("WHATSAPP_11ZA_AUTH_TOKEN is not configured");
+    (err as any).failure = { kind: "origin_unapproved", detail: err.message } satisfies SendFailure;
+    throw err;
   }
 
   const urls = [
@@ -76,81 +91,73 @@ async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
     sendto: phoneDigits,
     templateName,
     language: "en",
-    data: [otp],          // template body variable {{1}}
-    buttonValue: otp,     // OTP for copy-code / URL button
+    data: [otp],
+    buttonValue: otp,
   };
 
-  let lastFailure = "";
+  let lastFailure: SendFailure = { kind: "unreachable", detail: "No response from provider" };
+
   for (const url of urls) {
     const payload = { ...baseBody, originWebsite };
-    const jsonRes = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const jsonRes = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const jsonText = await jsonRes.text();
+      let parsed: any = null;
+      try { parsed = JSON.parse(jsonText); } catch { /* not JSON */ }
 
-    const jsonText = await jsonRes.text();
-    let parsed: any = null;
-    try { parsed = JSON.parse(jsonText); } catch { /* not JSON */ }
+      if (jsonRes.ok && (!parsed || parsed.IsSuccess !== false)) {
+        console.log("11za send ok", jsonText.slice(0, 200));
+        return;
+      }
 
-    // 11za returns 200 with { Status, IsSuccess, Message } even on logical failures
-    if (jsonRes.ok && (!parsed || parsed.IsSuccess !== false)) {
-      console.log("11za send ok", jsonText.slice(0, 200));
-      return;
-    }
+      const message = typeof parsed?.Message === "string" ? parsed.Message : jsonText;
+      lastFailure = isOriginWebsiteError(message)
+        ? { kind: "origin_unapproved", detail: message.slice(0, 300) }
+        : { kind: "rejected", detail: message.slice(0, 300) };
 
-    lastFailure = `WhatsApp send failed [${jsonRes.status}]: ${jsonText.slice(0, 300)}`;
-    let message = typeof parsed?.Message === "string" ? parsed.Message : jsonText;
-    if (!isOriginWebsiteError(message)) {
-      console.error("11za send failed", jsonRes.status, jsonText);
-      throw new Error(lastFailure);
-    }
-
-    const formData = new FormData();
-    Object.entries(payload).forEach(([key, value]) => {
-      formData.append(key, Array.isArray(value) ? value.join(",") : String(value));
-    });
-    const formRes = await fetch(url, { method: "POST", body: formData });
-    const formText = await formRes.text();
-    parsed = null;
-    try { parsed = JSON.parse(formText); } catch { /* not JSON */ }
-
-    if (formRes.ok && (!parsed || parsed.IsSuccess !== false)) {
-      console.log("11za send ok", formText.slice(0, 200));
-      return;
-    }
-
-    lastFailure = `WhatsApp send failed [${formRes.status}]: ${formText.slice(0, 300)}`;
-    message = typeof parsed?.Message === "string" ? parsed.Message : formText;
-    if (!isOriginWebsiteError(message)) {
-      console.error("11za send failed", formRes.status, formText);
-      throw new Error(lastFailure);
+      if (lastFailure.kind !== "origin_unapproved") {
+        console.error("11za send failed", jsonRes.status, jsonText);
+        const err = new Error(lastFailure.detail);
+        (err as any).failure = lastFailure;
+        throw err;
+      }
+    } catch (e) {
+      if ((e as any)?.failure) throw e;
+      lastFailure = { kind: "unreachable", detail: (e as Error)?.message ?? "network error" };
     }
   }
 
   console.error("11za rejected configured originWebsite", { originWebsite, lastFailure });
-  throw new Error("WhatsApp provider rejected the configured website. Please check the 11za originWebsite setting.");
+  const err = new Error(lastFailure.detail);
+  (err as any).failure = lastFailure;
+  throw err;
+}
+
+function jsonResponse(status: number, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json", ...extraHeaders },
+  });
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(405, { code: "method_not_allowed", error: "Method not allowed" });
     }
 
     const { phone } = await req.json().catch(() => ({}));
     if (typeof phone !== "string" || !/^[6-9]\d{9}$/.test(phone)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid Indian mobile number. Enter 10 digits." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return jsonResponse(400, {
+        code: "invalid_phone",
+        error: "That doesn't look like a valid Indian mobile. Check the 10 digits and try again.",
+      });
     }
 
     const phoneE164 = `+91${phone}`;
@@ -159,16 +166,32 @@ Deno.serve(async (req: Request) => {
       req.headers.get("cf-connecting-ip") ??
       "unknown";
 
-    if (!pruneAndCheck(sendsByPhone, phoneE164, PHONE_WINDOW_MS, PHONE_MAX)) {
-      return new Response(
-        JSON.stringify({ error: "Too many OTP requests for this number. Try again in a few minutes." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    const phoneCheck = pruneAndCheck(sendsByPhone, phoneE164, PHONE_WINDOW_MS, PHONE_MAX);
+    if (!phoneCheck.ok) {
+      const secs = phoneCheck.retryAfterSec;
+      const mins = Math.floor(secs / 60);
+      const rem = secs % 60;
+      const human = mins > 0 ? `${mins}m ${rem}s` : `${rem}s`;
+      return jsonResponse(
+        429,
+        {
+          code: "rate_limited_phone",
+          error: `You've requested too many codes for this number. Try again in ${human}.`,
+          retryAfterSec: secs,
+        },
+        { "Retry-After": String(secs) },
       );
     }
-    if (!pruneAndCheck(sendsByIp, ip, IP_WINDOW_MS, IP_MAX)) {
-      return new Response(
-        JSON.stringify({ error: "Too many requests. Try again later." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    const ipCheck = pruneAndCheck(sendsByIp, ip, IP_WINDOW_MS, IP_MAX);
+    if (!ipCheck.ok) {
+      return jsonResponse(
+        429,
+        {
+          code: "rate_limited_ip",
+          error: "Too many requests from your network. Try again in a bit.",
+          retryAfterSec: ipCheck.retryAfterSec,
+        },
+        { "Retry-After": String(ipCheck.retryAfterSec) },
       );
     }
 
@@ -190,34 +213,35 @@ Deno.serve(async (req: Request) => {
     });
     if (insertErr) {
       console.error("Failed to store OTP", insertErr);
-      return new Response(JSON.stringify({ error: "Could not generate OTP. Try again." }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(500, { code: "internal", error: "Could not generate OTP. Try again." });
     }
 
     try {
       await sendVia11za(phoneE164, otp);
     } catch (err) {
-      console.error("WhatsApp send error", err);
-      const message = err instanceof Error && /originWebsite/i.test(err.message)
-        ? "WhatsApp OTP is temporarily unavailable because the 11za website setting is not approved. Please contact Bazuki or try again later."
-        : "Could not send WhatsApp message. Please try again.";
-      return new Response(
-        JSON.stringify({ error: message }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      const failure = (err as any)?.failure as SendFailure | undefined;
+      console.error("WhatsApp send error", failure ?? err);
+      if (failure?.kind === "origin_unapproved") {
+        return jsonResponse(503, {
+          code: "provider_origin_unapproved",
+          error: "WhatsApp OTP is temporarily unavailable. Please contact Bazuki support.",
+        });
+      }
+      if (failure?.kind === "rejected") {
+        return jsonResponse(502, {
+          code: "provider_rejected",
+          error: "WhatsApp couldn't deliver to this number. Double-check it's on WhatsApp, or try another.",
+        });
+      }
+      return jsonResponse(502, {
+        code: "provider_unreachable",
+        error: "We couldn't reach WhatsApp right now. Check your connection and retry.",
+      });
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(200, { success: true });
   } catch (err) {
     console.error("send-otp unhandled", err);
-    return new Response(JSON.stringify({ error: "Unexpected error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(500, { code: "internal", error: "Unexpected error. Try again in a moment." });
   }
 });

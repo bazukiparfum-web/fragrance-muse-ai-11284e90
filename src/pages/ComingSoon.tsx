@@ -41,9 +41,31 @@ export default function ComingSoon() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [resendIn, setResendIn] = useState(0);
+  const [resendCount, setResendCount] = useState(0);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+
+  const RESEND_MAX = 5;
+  const RESEND_BACKOFF = [30, 60, 120, 180, 300]; // seconds per attempt
+  const nextCooldown = (count: number) => RESEND_BACKOFF[Math.min(count, RESEND_BACKOFF.length - 1)];
+  const resendCapReached = resendCount >= RESEND_MAX;
+
+  const parseFnError = async (error: any): Promise<{ code: string | null; message: string; retryAfterSec?: number }> => {
+    try {
+      const detail = error?.context ? await error.context.text() : null;
+      if (detail) {
+        const parsed = JSON.parse(detail);
+        return {
+          code: typeof parsed?.code === "string" ? parsed.code : null,
+          message: typeof parsed?.error === "string" ? parsed.error : "Something went wrong. Try again.",
+          retryAfterSec: typeof parsed?.retryAfterSec === "number" ? parsed.retryAfterSec : undefined,
+        };
+      }
+    } catch { /* ignore */ }
+    return { code: null, message: error?.message ?? "Something went wrong. Try again." };
+  };
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
@@ -127,15 +149,20 @@ export default function ComingSoon() {
 
   const requestOtp = async (opts: { resend?: boolean } = {}) => {
     setErrorMsg(null);
+    setErrorCode(null);
+
+    if (opts.resend && (resendIn > 0 || resendCapReached)) return;
 
     const phoneOk = phoneSchema.safeParse(phone);
     if (!phoneOk.success) {
       setStatus("error");
+      setErrorCode("invalid_phone");
       setErrorMsg(phoneOk.error.issues[0]?.message ?? "Enter a valid mobile number.");
       return;
     }
     if (email.trim() && !emailSchema.safeParse(email).success) {
       setStatus("error");
+      setErrorCode("invalid_email");
       setErrorMsg("Please enter a valid email address or leave it blank.");
       return;
     }
@@ -145,24 +172,23 @@ export default function ComingSoon() {
       body: { phone },
     });
     if (error) {
-      let msg = "Could not send WhatsApp OTP. Try again in a moment.";
-      try {
-        // @ts-ignore FunctionsHttpError context
-        const detail = error.context ? await error.context.text() : null;
-        if (detail) {
-          const parsed = JSON.parse(detail);
-          if (parsed?.error) msg = parsed.error;
-        }
-      } catch { /* ignore */ }
+      const { code, message, retryAfterSec } = await parseFnError(error);
       setStatus("error");
-      setErrorMsg(msg);
+      setErrorCode(code);
+      setErrorMsg(message);
+      if (code === "rate_limited_phone" && retryAfterSec) {
+        setStep("verify");
+        setResendIn(retryAfterSec);
+      }
       return;
     }
 
     setStep("verify");
     setStatus("idle");
     setOtp("");
-    setResendIn(30);
+    const nextCount = opts.resend ? resendCount + 1 : 1;
+    setResendCount(nextCount);
+    setResendIn(nextCooldown(nextCount - 1));
     if (!opts.resend) {
       trackCta("waitlist_phone_otp_sent");
     }
@@ -176,8 +202,10 @@ export default function ComingSoon() {
   const submitOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setErrorCode(null);
     if (!/^\d{6}$/.test(otp)) {
       setStatus("error");
+      setErrorCode("otp_format");
       setErrorMsg("Enter the 6-digit code from WhatsApp.");
       return;
     }
@@ -199,17 +227,13 @@ export default function ComingSoon() {
     });
 
     if (error) {
-      let msg = "Could not verify OTP. Try again.";
-      try {
-        // @ts-ignore
-        const detail = error.context ? await error.context.text() : null;
-        if (detail) {
-          const parsed = JSON.parse(detail);
-          if (parsed?.error) msg = parsed.error;
-        }
-      } catch { /* ignore */ }
+      const { code, message } = await parseFnError(error);
       setStatus("error");
-      setErrorMsg(msg);
+      setErrorCode(code);
+      setErrorMsg(message);
+      if (code === "otp_expired" || code === "otp_attempts_exceeded") {
+        setResendIn(0); // allow immediate resend
+      }
       return;
     }
 
@@ -700,25 +724,48 @@ export default function ComingSoon() {
                 <button
                   type="button"
                   className="cs-link"
-                  onClick={() => { setStep("details"); setOtp(""); setStatus("idle"); setErrorMsg(null); }}
+                  onClick={() => {
+                    setStep("details");
+                    setOtp("");
+                    setStatus("idle");
+                    setErrorMsg(null);
+                    setErrorCode(null);
+                    setResendIn(0);
+                    setResendCount(0);
+                  }}
                 >
-                  ← Edit number
+                  ← Change number
                 </button>
                 <button
                   type="button"
                   className="cs-link"
-                  disabled={resendIn > 0 || status === "loading"}
+                  disabled={resendIn > 0 || status === "loading" || resendCapReached}
                   onClick={() => requestOtp({ resend: true })}
+                  aria-label={
+                    resendCapReached
+                      ? "Resend limit reached"
+                      : resendIn > 0
+                        ? `Resend available in ${resendIn} seconds`
+                        : "Resend code"
+                  }
                 >
-                  {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
+                  {resendCapReached
+                    ? "Resend limit reached"
+                    : resendIn > 0
+                      ? `Resend in ${Math.floor(resendIn / 60)}:${String(resendIn % 60).padStart(2, "0")}`
+                      : "Resend code"}
                 </button>
               </div>
             </form>
-            <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
-              {status === "error" && errorMsg
-                ? errorMsg
-                : "Check WhatsApp for a 6-digit code from Bazuki."}
-            </p>
+            {status === "error" && errorMsg ? (
+              <p className="cs-micro cs-error" role="alert">{errorMsg}</p>
+            ) : resendCapReached ? (
+              <p className="cs-micro cs-error" role="status">
+                Resend limit reached. Check your WhatsApp inbox or change the number.
+              </p>
+            ) : (
+              <p className="cs-micro">Check WhatsApp for a 6-digit code from Bazuki.</p>
+            )}
           </>
         )}
 
