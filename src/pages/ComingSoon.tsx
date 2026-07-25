@@ -249,26 +249,33 @@ export default function ComingSoon() {
   };
 
   const shareUrl = "https://www.bazukifragrance.com/coming-soon";
-  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(
-    "I just joined Bazuki early access for 50% off my first AI-crafted fragrance. Join too: " + shareUrl,
-  )}`;
+  const shareMessage =
+    "I just joined Bazuki early access for 50% off my first AI-crafted fragrance. Join too: " +
+    shareUrl;
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
 
   const nativeShare = async () => {
     try {
       if (navigator.share) {
         await navigator.share({
           title: "Bazuki Early Access",
-          text: "I just joined Bazuki early access for 50% off my first AI-crafted fragrance.",
+          text: shareMessage,
           url: shareUrl,
         });
         trackCta("waitlist_share_native");
       } else {
-        await navigator.clipboard.writeText(shareUrl);
+        await navigator.clipboard.writeText(shareMessage);
         setShareCopied(true);
         window.setTimeout(() => setShareCopied(false), 2000);
         trackCta("waitlist_share_copy");
       }
-    } catch { /* noop */ }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(shareMessage);
+        setShareCopied(true);
+        window.setTimeout(() => setShareCopied(false), 2000);
+      } catch { /* noop */ }
+    }
   };
 
   const generateStoryImage = async (): Promise<string> => {
@@ -601,9 +608,9 @@ export default function ComingSoon() {
                   type="button"
                   className="cs-share-btn"
                   onClick={nativeShare}
-                  aria-label="Copy link or share"
+                  aria-label="Copy share message"
                 >
-                  {shareCopied ? "Copied ✓" : "Copy link"}
+                  {shareCopied ? "Copied ✓" : "Copy message"}
                 </button>
               </div>
               <p className="cs-share-hint">
