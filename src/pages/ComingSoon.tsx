@@ -380,7 +380,7 @@ export default function ComingSoon() {
     window.open("https://www.instagram.com/bazukiperfume/", "_blank", "noopener,noreferrer");
   };
 
-  const spotsLine = spotsLeft === null ? "Loading founding spots…" : `Only ${spotsLeft} of ${SPOTS_CAP} founding spots left`;
+  const spotsLine = "LAST 10% SPOTS LEFT";
   const greetingName = (firstName || "").trim().split(/\s+/)[0];
 
   return (
