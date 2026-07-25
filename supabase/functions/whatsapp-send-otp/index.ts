@@ -47,6 +47,22 @@ function generateOtp(): string {
   return n.toString().padStart(6, "0");
 }
 
+function getOriginCandidates(configuredOrigin: string | undefined): string[] {
+  const candidates = [
+    configuredOrigin,
+    configuredOrigin?.replace(/^https?:\/\//, ""),
+    configuredOrigin && !configuredOrigin.startsWith("http") ? `https://${configuredOrigin}` : undefined,
+    "https://www.bazukifragrance.com",
+    "https://bazukifragrance.com",
+    "www.bazukifragrance.com",
+    "bazukifragrance.com",
+  ]
+    .map((origin) => origin?.trim())
+    .filter((origin): origin is string => Boolean(origin));
+
+  return Array.from(new Set(candidates));
+}
+
 async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
   const authToken = Deno.env.get("WHATSAPP_11ZA_AUTH_TOKEN");
   const templateName = Deno.env.get("WHATSAPP_11ZA_TEMPLATE_NAME") ?? "otp_login";
@@ -59,32 +75,43 @@ async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
   // Official 11za endpoint per their Postman docs
   const url = "https://api.11za.in/apis/template/sendTemplate";
   const phoneDigits = phoneE164.replace(/^\+/, "");
-  const body = {
+  const baseBody = {
     authToken,
     sendto: phoneDigits,
-    originWebsite,
     templateName,
     language: "en",
     data: [otp],          // template body variable {{1}}
     buttonValue: otp,     // OTP for copy-code / URL button
   };
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  let lastFailure = "";
+  for (const candidateOrigin of getOriginCandidates(originWebsite)) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...baseBody, originWebsite: candidateOrigin }),
+    });
 
-  const text = await res.text();
-  let parsed: any = null;
-  try { parsed = JSON.parse(text); } catch { /* not JSON */ }
+    const text = await res.text();
+    let parsed: any = null;
+    try { parsed = JSON.parse(text); } catch { /* not JSON */ }
 
-  // 11za returns 200 with { Status, IsSuccess, Message } even on logical failures
-  if (!res.ok || (parsed && parsed.IsSuccess === false)) {
-    console.error("11za send failed", res.status, text);
-    throw new Error(`WhatsApp send failed [${res.status}]: ${text.slice(0, 300)}`);
+    // 11za returns 200 with { Status, IsSuccess, Message } even on logical failures
+    if (res.ok && (!parsed || parsed.IsSuccess !== false)) {
+      console.log("11za send ok", text.slice(0, 200));
+      return;
+    }
+
+    lastFailure = `WhatsApp send failed [${res.status}]: ${text.slice(0, 300)}`;
+    const message = typeof parsed?.Message === "string" ? parsed.Message : text;
+    if (!/originWebsites?/i.test(message)) {
+      console.error("11za send failed", res.status, text);
+      throw new Error(lastFailure);
+    }
   }
-  console.log("11za send ok", text.slice(0, 200));
+
+  console.error("11za send failed for all configured Bazuki origins", lastFailure);
+  throw new Error(lastFailure || "WhatsApp send failed");
 }
 
 Deno.serve(async (req: Request) => {
