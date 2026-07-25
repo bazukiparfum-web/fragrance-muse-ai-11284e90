@@ -48,10 +48,8 @@ function generateOtp(): string {
 }
 
 function normalizeOriginWebsite(configuredOrigin: string | undefined): string {
-  return (configuredOrigin ?? "bazukifragrance.com")
-    .trim()
-    .replace(/^https?:\/\//i, "")
-    .replace(/\/+$/, "");
+  // 11za requires the exact registered originWebsite format (including https:// and trailing /).
+  return (configuredOrigin ?? "https://www.bazukifragrance.com/").trim();
 }
 
 function isOriginWebsiteError(message: string): boolean {
