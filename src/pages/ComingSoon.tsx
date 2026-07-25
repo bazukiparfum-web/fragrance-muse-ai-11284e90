@@ -6,6 +6,7 @@ import { useSEO } from "@/hooks/useSEO";
 import CollectionAmbience from "@/components/library/CollectionAmbience";
 import { trackCta } from "@/lib/trackCta";
 import { resolveDirection } from "@/lib/scentDirections";
+import { generateDirectionCard, downloadBlob } from "@/lib/generateDirectionCard";
 
 const LAUNCH_MS = new Date("2026-08-29T00:00:00+05:30").getTime();
 const SPOTS_CAP = 100;
@@ -381,16 +382,71 @@ export default function ComingSoon() {
     () => resolveDirection(prefFamilies, prefIntensity, prefWearTime),
     [prefFamilies, prefIntensity, prefWearTime],
   );
+  const greetingName = (firstName || "").trim().split(/\s+/)[0];
 
+  // ---- Branded share card (client-side PNG) ----
+  const [cardUrl, setCardUrl] = useState<string | null>(null);
+  const [cardFile, setCardFile] = useState<File | null>(null);
+  const cardBlobRef = useRef<Blob | null>(null);
+  const cardKeyRef = useRef<string>("");
+
+  useEffect(() => {
+    if (stage !== "result") return;
+    const key = `${direction.name}|${greetingName || ""}`;
+    if (cardKeyRef.current === key && cardBlobRef.current) return;
+    let cancelled = false;
+    const id = window.setTimeout(async () => {
+      try {
+        const blob = await generateDirectionCard(direction, greetingName);
+        if (cancelled) return;
+        cardBlobRef.current = blob;
+        cardKeyRef.current = key;
+        const file = new File([blob], "bazuki-direction.png", { type: "image/png" });
+        setCardFile(file);
+        setCardUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(blob);
+        });
+      } catch (e) {
+        console.warn("card generation failed", e);
+      }
+    }, 60);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, direction.name, greetingName]);
+
+  useEffect(() => {
+    return () => {
+      if (cardUrl) URL.revokeObjectURL(cardUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const shareUrl = "https://www.bazukifragrance.com/coming-soon";
   const shareMessage = useMemo(
     () =>
-      "Bazuki is launching India's first AI-algorithmic perfume house — your own formula, blended to you. Early subscribers get 50% off the first batch. Reserve your spot: " +
-      shareUrl,
-    [],
+      `My Bazuki scent direction: ${direction.name.replace(/^The\s+/, "").replace(/\s+direction$/i, "")}. India's first AI-algorithmic perfume house launches 29 August — early subscribers get 50% off. Reserve yours: ${shareUrl}`,
+    [direction.name],
   );
-  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+  const whatsappTextHref = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+
+  const shareWhatsApp = async () => {
+    trackCta("waitlist_share_whatsapp");
+    if (cardFile && typeof navigator !== "undefined" && (navigator as any).canShare?.({ files: [cardFile] })) {
+      try {
+        await (navigator as any).share({ text: shareMessage, files: [cardFile], url: shareUrl });
+        return;
+      } catch { /* user cancelled or unsupported — fall through */ }
+    }
+    if (cardBlobRef.current) {
+      downloadBlob(cardBlobRef.current, "bazuki-direction.png");
+      trackCta("waitlist_share_download");
+    }
+    window.open(whatsappTextHref, "_blank", "noopener,noreferrer");
+  };
 
   const copyShare = async () => {
     try {
@@ -408,11 +464,21 @@ export default function ComingSoon() {
       setShareCopied(true);
       window.setTimeout(() => setShareCopied(false), 2400);
     } catch { /* ignore */ }
+    if (cardBlobRef.current) {
+      downloadBlob(cardBlobRef.current, "bazuki-direction.png");
+      trackCta("waitlist_share_download");
+    }
     window.open("https://www.instagram.com/bazukiperfume/", "_blank", "noopener,noreferrer");
   };
 
+  const downloadCard = () => {
+    if (!cardBlobRef.current) return;
+    downloadBlob(cardBlobRef.current, "bazuki-direction.png");
+    trackCta("waitlist_share_download");
+  };
+
   const spotsLine = "LAST 10% SPOTS LEFT";
-  const greetingName = (firstName || "").trim().split(/\s+/)[0];
+
 
   return (
     <div className="cs-root">
@@ -519,6 +585,10 @@ export default function ComingSoon() {
         .cs-share-btn:hover { background: var(--gold); color: var(--ink); }
         .cs-share-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
         .cs-share-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 12px 0 0; text-align: center; }
+        .cs-share-preview { max-width: 220px; margin: 0 auto 14px; border: 1px solid var(--hair); border-radius: 3px; overflow: hidden; background: #000; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+        .cs-share-preview img { display: block; width: 100%; height: auto; }
+        .cs-share-download { background: none; border: none; padding: 0; color: var(--gold); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+        .cs-share-download:hover { color: var(--ivory); }
 
         /* Stage transitions */
         .cs-stage { opacity: 1; transition: opacity 180ms ease; }
@@ -856,18 +926,22 @@ export default function ComingSoon() {
                 </p>
 
                 <div className="cs-share-card">
-                  <div className="cs-share-label">Spread the word</div>
+                  <div className="cs-share-label">Share your direction</div>
+                  {cardUrl && (
+                    <div className="cs-share-preview">
+                      <img src={cardUrl} alt={`${direction.name} — share card`} />
+                    </div>
+                  )}
                   <div className="cs-share-actions">
-                    <a
+                    <button
+                      type="button"
                       className="cs-share-btn"
-                      href={whatsappHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => trackCta("waitlist_share_whatsapp")}
+                      onClick={shareWhatsApp}
+                      aria-label="Share on WhatsApp"
                     >
                       WhatsApp →
-                    </a>
-                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message and open Instagram">
+                    </button>
+                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message, save image and open Instagram">
                       <Instagram size={14} strokeWidth={1.5} aria-hidden />
                       Instagram
                     </button>
@@ -875,8 +949,19 @@ export default function ComingSoon() {
                       {shareCopied ? "Copied ✓" : "Copy message"}
                     </button>
                   </div>
-                  <p className="cs-share-hint">Anyone who subscribes gets 50% off their first formula.</p>
+                  <p className="cs-share-hint">
+                    Anyone who subscribes gets 50% off their first formula.
+                    {cardBlobRef.current && (
+                      <>
+                        {" · "}
+                        <button type="button" className="cs-share-download" onClick={downloadCard}>
+                          Download image
+                        </button>
+                      </>
+                    )}
+                  </p>
                 </div>
+
 
                 <button type="button" className="cs-adjust-link" onClick={adjustPreferences}>
                   Adjust my preferences
