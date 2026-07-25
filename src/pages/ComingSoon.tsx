@@ -626,7 +626,7 @@ export default function ComingSoon() {
                     }}
                   />
                   <button className="cs-btn" type="submit" disabled={status === "loading"}>
-                    {status === "loading" ? "Sending…" : "Reserve my 50% spot"}
+                    {status === "loading" ? "Sending…" : "RESERVE MY SPOT"}
                   </button>
                 </form>
                 <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
