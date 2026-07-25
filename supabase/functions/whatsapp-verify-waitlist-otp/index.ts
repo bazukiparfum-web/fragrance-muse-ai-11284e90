@@ -17,6 +17,22 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+function getOriginCandidates(configuredOrigin: string | undefined): string[] {
+  const candidates = [
+    configuredOrigin,
+    configuredOrigin?.replace(/^https?:\/\//, ""),
+    configuredOrigin && !configuredOrigin.startsWith("http") ? `https://${configuredOrigin}` : undefined,
+    "https://www.bazukifragrance.com",
+    "https://bazukifragrance.com",
+    "www.bazukifragrance.com",
+    "bazukifragrance.com",
+  ]
+    .map((origin) => origin?.trim())
+    .filter((origin): origin is string => Boolean(origin));
+
+  return Array.from(new Set(candidates));
+}
+
 async function sendReferralWhatsApp(
   phoneE164: string,
   referralCode: string,
@@ -33,24 +49,35 @@ async function sendReferralWhatsApp(
   // Template base URL registered in 11za: https://www.bazukifragrance.com/coming-soon
   // buttonValue is appended to that base, so send only the query suffix.
   const buttonValue = `?ref=${referralCode}`;
-  const body = {
+  const baseBody = {
     authToken,
     sendto: phoneE164.replace(/^\+/, ""),
-    originWebsite,
     templateName,
     language: "en",
     data: [cleanName, referralCode],
     buttonValue,
   };
   try {
-    const res = await fetch("https://api.11za.in/apis/template/sendTemplate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const text = await res.text();
-    if (!res.ok) console.error("11za referral send failed", res.status, text.slice(0, 300));
-    else console.log("11za referral send ok", text.slice(0, 200));
+    for (const candidateOrigin of getOriginCandidates(originWebsite)) {
+      const res = await fetch("https://api.11za.in/apis/template/sendTemplate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...baseBody, originWebsite: candidateOrigin }),
+      });
+      const text = await res.text();
+      let parsed: any = null;
+      try { parsed = JSON.parse(text); } catch { /* not JSON */ }
+      if (res.ok && (!parsed || parsed.IsSuccess !== false)) {
+        console.log("11za referral send ok", text.slice(0, 200));
+        return;
+      }
+      const message = typeof parsed?.Message === "string" ? parsed.Message : text;
+      if (!/originWebsites?/i.test(message)) {
+        console.error("11za referral send failed", res.status, text.slice(0, 300));
+        return;
+      }
+    }
+    console.error("11za referral send failed for all configured Bazuki origins");
   } catch (err) {
     console.error("11za referral send error", err);
   }
