@@ -585,6 +585,10 @@ export default function ComingSoon() {
         .cs-share-btn:hover { background: var(--gold); color: var(--ink); }
         .cs-share-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
         .cs-share-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 12px 0 0; text-align: center; }
+        .cs-share-preview { max-width: 220px; margin: 0 auto 14px; border: 1px solid var(--hair); border-radius: 3px; overflow: hidden; background: #000; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+        .cs-share-preview img { display: block; width: 100%; height: auto; }
+        .cs-share-download { background: none; border: none; padding: 0; color: var(--gold); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+        .cs-share-download:hover { color: var(--ivory); }
 
         /* Stage transitions */
         .cs-stage { opacity: 1; transition: opacity 180ms ease; }
