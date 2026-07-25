@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { Instagram } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,13 +7,26 @@ import CollectionAmbience from "@/components/library/CollectionAmbience";
 import { trackCta } from "@/lib/trackCta";
 
 const LAUNCH_MS = new Date("2026-08-29T00:00:00+05:30").getTime();
-const START_MS = new Date("2026-07-21T00:00:00+05:30").getTime();
-const TOTAL_MS = LAUNCH_MS - START_MS;
+const SPOTS_CAP = 100;
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
 const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number.");
 
 const pad = (n: number) => String(n).padStart(2, "0");
+
+const SCENT_FAMILIES = ["Woody", "Fresh/Citrus", "Floral", "Oriental/Spicy", "Aquatic", "Gourmand"] as const;
+const INTENSITY_OPTS = ["Subtle", "Balanced", "Bold"] as const;
+const WEAR_TIME_OPTS = ["Daytime", "Evening", "Office", "Party"] as const;
+
+const LS_KEY = "bazuki_waitlist_signup_v2";
+
+type Persisted = {
+  phone: string;         // E.164 with +91
+  first_name: string | null;
+  scent_families: string[];
+  intensity: string | null;
+  wear_time: string | null;
+};
 
 export default function ComingSoon() {
   useSEO({
@@ -25,16 +38,16 @@ export default function ComingSoon() {
     canonical: "https://www.bazukifragrance.com/home",
   });
 
-
+  // Countdown
   const [d, setD] = useState("00");
   const [h, setH] = useState("00");
   const [m, setM] = useState("00");
   const [s, setS] = useState("00");
   const [announcement, setAnnouncement] = useState("");
-  const [progressLabel, setProgressLabel] = useState("Formula 0% ready");
-  const liquidRectRef = useRef<SVGRectElement | null>(null);
   const lastAnnounceRef = useRef<string>("");
 
+  // State machine: "capture" (name+phone+email+otp) | "welcome" (preferences+share)
+  const [view, setView] = useState<"capture" | "welcome">("capture");
   const [step, setStep] = useState<"details" | "verify">("details");
   const [firstName, setFirstName] = useState("");
   const [phone, setPhone] = useState("");
@@ -47,8 +60,19 @@ export default function ComingSoon() {
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
 
+  // Founding spots
+  const [spotsLeft, setSpotsLeft] = useState<number | null>(null);
+
+  // Preferences (welcome state)
+  const [prefFamilies, setPrefFamilies] = useState<string[]>([]);
+  const [prefIntensity, setPrefIntensity] = useState<string | null>(null);
+  const [prefWearTime, setPrefWearTime] = useState<string | null>(null);
+  const [prefSaving, setPrefSaving] = useState(false);
+  const [prefSaved, setPrefSaved] = useState(false);
+  const prefSaveTimerRef = useRef<number | null>(null);
+
   const RESEND_MAX = 5;
-  const RESEND_BACKOFF = [30, 60, 120, 180, 300]; // seconds per attempt
+  const RESEND_BACKOFF = [30, 60, 120, 180, 300];
   const nextCooldown = (count: number) => RESEND_BACKOFF[Math.min(count, RESEND_BACKOFF.length - 1)];
   const resendCapReached = resendCount >= RESEND_MAX;
 
@@ -71,27 +95,57 @@ export default function ComingSoon() {
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+  // ---- Hydrate from localStorage + DB on mount ----
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let saved: Persisted | null = null;
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) saved = JSON.parse(raw) as Persisted;
+      } catch { /* ignore */ }
+
+      if (saved?.phone) {
+        // Try to enrich from DB (server is source of truth for preferences)
+        const { data } = await supabase.rpc("get_waitlist_signup", { _phone: saved.phone });
+        if (cancelled) return;
+        if (data) {
+          const row = data as {
+            first_name: string | null;
+            scent_families: string[] | null;
+            intensity: string | null;
+            wear_time: string | null;
+          };
+          setFirstName(row.first_name ?? saved.first_name ?? "");
+          setPrefFamilies(Array.isArray(row.scent_families) ? row.scent_families : []);
+          setPrefIntensity(row.intensity);
+          setPrefWearTime(row.wear_time);
+          setPhone(saved.phone.replace(/^\+91/, ""));
+          setView("welcome");
+          return;
+        }
+        // DB row not found (e.g. wiped); fall back to LS values
+        setFirstName(saved.first_name ?? "");
+        setPrefFamilies(saved.scent_families ?? []);
+        setPrefIntensity(saved.intensity);
+        setPrefWearTime(saved.wear_time);
+        setPhone(saved.phone.replace(/^\+91/, ""));
+        setView("welcome");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ---- Countdown tick ----
   useEffect(() => {
     const applyState = () => {
       const now = Date.now();
       const remain = Math.max(0, LAUNCH_MS - now);
-      const elapsed = Math.min(TOTAL_MS, Math.max(0, now - START_MS));
-      const pct = TOTAL_MS > 0 ? elapsed / TOTAL_MS : 1;
-
       const days = Math.floor(remain / 86400000);
       const hours = Math.floor((remain % 86400000) / 3600000);
       const mins = Math.floor((remain % 3600000) / 60000);
       const secs = Math.floor((remain % 60000) / 1000);
-
-      setD(pad(days));
-      setH(pad(hours));
-      setM(pad(mins));
-      setS(pad(secs));
-
-      const pctInt = Math.round(pct * 100);
-      setProgressLabel(`Formula ${pctInt}% ready`);
-
-      // Announce at minute granularity only, so SR isn't spammed each second.
+      setD(pad(days)); setH(pad(hours)); setM(pad(mins)); setS(pad(secs));
       const minuteKey = `${days}d${hours}h${mins}m`;
       if (minuteKey !== lastAnnounceRef.current) {
         lastAnnounceRef.current = minuteKey;
@@ -99,32 +153,22 @@ export default function ComingSoon() {
           `${days} day${days !== 1 ? "s" : ""}, ${hours} hour${hours !== 1 ? "s" : ""}, ${mins} minute${mins !== 1 ? "s" : ""} until launch on 29 August 2026.`,
         );
       }
-
-      const rect = liquidRectRef.current;
-      if (rect) {
-        const maxHeight = 156;
-        const fillHeight = maxHeight * pct;
-        rect.setAttribute("height", String(fillHeight));
-        rect.setAttribute("y", String(202 - fillHeight));
-      }
     };
-
     applyState();
-
-    if (prefersReducedMotion) {
-      // Static snapshot — no per-second ticking, no animation churn.
-      return;
-    }
-
-    const tick = () => {
-      if (document.visibilityState === "hidden") return;
-      applyState();
-    };
+    if (prefersReducedMotion) return;
+    const tick = () => { if (document.visibilityState !== "hidden") applyState(); };
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
   }, [prefersReducedMotion]);
 
-  // Resend countdown
+  // ---- Spots left ----
+  useEffect(() => {
+    supabase.rpc("prelaunch_spots_left").then(({ data }) => {
+      if (typeof data === "number") setSpotsLeft(Math.max(0, Math.min(SPOTS_CAP, data)));
+    });
+  }, []);
+
+  // ---- Resend countdown ----
   useEffect(() => {
     if (resendIn <= 0) return;
     const id = window.setInterval(() => setResendIn((v) => Math.max(0, v - 1)), 1000);
@@ -139,59 +183,43 @@ export default function ComingSoon() {
 
   const emailVariant = (addr: string | null): "A" | "B" | null => {
     if (!addr) return null;
-    let h = 0x811c9dc5;
+    let hv = 0x811c9dc5;
     for (let i = 0; i < addr.length; i++) {
-      h ^= addr.charCodeAt(i);
-      h = Math.imul(h, 0x01000193);
+      hv ^= addr.charCodeAt(i);
+      hv = Math.imul(hv, 0x01000193);
     }
-    return ((h >>> 0) & 1) === 0 ? "A" : "B";
+    return ((hv >>> 0) & 1) === 0 ? "A" : "B";
   };
 
   const requestOtp = async (opts: { resend?: boolean } = {}) => {
-    setErrorMsg(null);
-    setErrorCode(null);
-
+    setErrorMsg(null); setErrorCode(null);
     if (opts.resend && (resendIn > 0 || resendCapReached)) return;
-
     const phoneOk = phoneSchema.safeParse(phone);
     if (!phoneOk.success) {
-      setStatus("error");
-      setErrorCode("invalid_phone");
+      setStatus("error"); setErrorCode("invalid_phone");
       setErrorMsg(phoneOk.error.issues[0]?.message ?? "Enter a valid mobile number.");
       return;
     }
     if (email.trim() && !emailSchema.safeParse(email).success) {
-      setStatus("error");
-      setErrorCode("invalid_email");
+      setStatus("error"); setErrorCode("invalid_email");
       setErrorMsg("Please enter a valid email address or leave it blank.");
       return;
     }
-
     setStatus("loading");
-    const { error } = await supabase.functions.invoke("whatsapp-send-otp", {
-      body: { phone },
-    });
+    const { error } = await supabase.functions.invoke("whatsapp-send-otp", { body: { phone } });
     if (error) {
       const { code, message, retryAfterSec } = await parseFnError(error);
-      setStatus("error");
-      setErrorCode(code);
-      setErrorMsg(message);
+      setStatus("error"); setErrorCode(code); setErrorMsg(message);
       if (code === "rate_limited_phone" && retryAfterSec) {
-        setStep("verify");
-        setResendIn(retryAfterSec);
+        setStep("verify"); setResendIn(retryAfterSec);
       }
       return;
     }
-
-    setStep("verify");
-    setStatus("idle");
-    setOtp("");
+    setStep("verify"); setStatus("idle"); setOtp("");
     const nextCount = opts.resend ? resendCount + 1 : 1;
     setResendCount(nextCount);
     setResendIn(nextCooldown(nextCount - 1));
-    if (!opts.resend) {
-      trackCta("waitlist_phone_otp_sent");
-    }
+    if (!opts.resend) trackCta("waitlist_phone_otp_sent");
   };
 
   const submitDetails = async (e: React.FormEvent) => {
@@ -201,235 +229,171 @@ export default function ComingSoon() {
 
   const submitOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
-    setErrorCode(null);
+    setErrorMsg(null); setErrorCode(null);
     if (!/^\d{6}$/.test(otp)) {
-      setStatus("error");
-      setErrorCode("otp_format");
+      setStatus("error"); setErrorCode("otp_format");
       setErrorMsg("Enter the 6-digit code from WhatsApp.");
       return;
     }
     setStatus("loading");
-
     const { utm_source } = utmParams();
     const cleanEmail = email.trim() ? email.trim().toLowerCase() : null;
     const variant = emailVariant(cleanEmail);
-
     const { data, error } = await supabase.functions.invoke("whatsapp-verify-waitlist-otp", {
-      body: {
-        phone,
-        otp,
-        email: cleanEmail,
-        first_name: firstName.trim() || null,
-        utm_source,
-        email_variant: variant,
-      },
+      body: { phone, otp, email: cleanEmail, first_name: firstName.trim() || null, utm_source, email_variant: variant },
     });
-
     if (error) {
       const { code, message } = await parseFnError(error);
-      setStatus("error");
-      setErrorCode(code);
-      setErrorMsg(message);
-      if (code === "otp_expired" || code === "otp_attempts_exceeded") {
-        setResendIn(0); // allow immediate resend
-      }
+      setStatus("error"); setErrorCode(code); setErrorMsg(message);
+      if (code === "otp_expired" || code === "otp_attempts_exceeded") setResendIn(0);
       return;
     }
 
     const result = (data ?? {}) as { duplicate?: boolean };
     const isDuplicate = !!result.duplicate;
+    trackCta("waitlist_phone_signup", { utm_source, duplicate: isDuplicate, has_email: !!cleanEmail });
 
-    trackCta("waitlist_phone_signup", {
-      utm_source,
-      duplicate: isDuplicate,
-      has_email: !!cleanEmail,
-    });
-
-    // Optional welcome email if email provided and this is a fresh signup
     if (!isDuplicate && cleanEmail && variant) {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const trackingBase = `${supabaseUrl}/functions/v1/email-track`;
       const messageId = `waitlist-confirm-${cleanEmail}`;
-      supabase.functions
-        .invoke("send-transactional-email", {
-          body: {
-            templateName: "waitlist-confirmation",
-            recipientEmail: cleanEmail,
-            idempotencyKey: messageId,
-            templateData: {
-              email: cleanEmail,
-              ctaUrl: "https://www.bazukifragrance.com/home",
-              variant,
-              trackingBase,
-              messageId,
-            },
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "waitlist-confirmation",
+          recipientEmail: cleanEmail,
+          idempotencyKey: messageId,
+          templateData: {
+            email: cleanEmail,
+            ctaUrl: "https://www.bazukifragrance.com/home",
+            variant, trackingBase, messageId,
           },
-        })
-        .catch(() => { /* non-blocking */ });
+        },
+      }).catch(() => { /* non-blocking */ });
     }
 
-    setStatus("success");
+    // Hydrate preferences from DB in case this is a returning phone
+    const { data: existing } = await supabase.rpc("get_waitlist_signup", { _phone: `+91${phone}` });
+    if (existing) {
+      const row = existing as { first_name: string | null; scent_families: string[] | null; intensity: string | null; wear_time: string | null };
+      if (!firstName && row.first_name) setFirstName(row.first_name);
+      setPrefFamilies(Array.isArray(row.scent_families) ? row.scent_families : []);
+      setPrefIntensity(row.intensity);
+      setPrefWearTime(row.wear_time);
+    }
+
+    // Persist to LS so returning visitors land straight in welcome
+    try {
+      const record: Persisted = {
+        phone: `+91${phone}`,
+        first_name: firstName.trim() || null,
+        scent_families: [],
+        intensity: null,
+        wear_time: null,
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(record));
+    } catch { /* ignore */ }
+
+    setStatus("idle");
+    setView("welcome");
+    // Refresh spots counter
+    supabase.rpc("prelaunch_spots_left").then(({ data: n }) => {
+      if (typeof n === "number") setSpotsLeft(Math.max(0, Math.min(SPOTS_CAP, n)));
+    });
+  };
+
+  // ---- Preferences persistence ----
+  const persistPrefs = useCallback(
+    async (families: string[], intensity: string | null, wear_time: string | null) => {
+      const phoneE164 = `+91${phone}`;
+      if (!/^\+91[6-9]\d{9}$/.test(phoneE164)) return;
+      setPrefSaving(true);
+      const { data, error } = await supabase.rpc("save_waitlist_preferences", {
+        _phone: phoneE164,
+        _scent_families: families,
+        _intensity: intensity,
+        _wear_time: wear_time,
+      });
+      setPrefSaving(false);
+      if (!error && data) {
+        setPrefSaved(true);
+        try {
+          const raw = localStorage.getItem(LS_KEY);
+          const rec: Persisted = raw ? JSON.parse(raw) : { phone: phoneE164, first_name: firstName || null, scent_families: [], intensity: null, wear_time: null };
+          rec.scent_families = families;
+          rec.intensity = intensity;
+          rec.wear_time = wear_time;
+          rec.first_name = firstName || rec.first_name;
+          localStorage.setItem(LS_KEY, JSON.stringify(rec));
+        } catch { /* ignore */ }
+        if (prefSaveTimerRef.current) window.clearTimeout(prefSaveTimerRef.current);
+        prefSaveTimerRef.current = window.setTimeout(() => setPrefSaved(false), 2400);
+      }
+    },
+    [phone, firstName],
+  );
+
+  const toggleFamily = (fam: string) => {
+    setPrefFamilies((prev) => {
+      const has = prev.includes(fam);
+      let next: string[];
+      if (has) next = prev.filter((f) => f !== fam);
+      else if (prev.length >= 3) return prev; // cap at 3
+      else next = [...prev, fam];
+      void persistPrefs(next, prefIntensity, prefWearTime);
+      return next;
+    });
+  };
+  const pickIntensity = (val: string) => {
+    setPrefIntensity(val);
+    void persistPrefs(prefFamilies, val, prefWearTime);
+  };
+  const pickWearTime = (val: string) => {
+    setPrefWearTime(val);
+    void persistPrefs(prefFamilies, prefIntensity, val);
   };
 
   const shareUrl = "https://www.bazukifragrance.com/coming-soon";
-  const shareMessage =
-    "I just joined Bazuki early access for 50% off my first AI-crafted fragrance. Join too: " +
-    shareUrl;
+  const shareMessage = useMemo(
+    () =>
+      "Bazuki is launching India's first AI-algorithmic perfume house — your own formula, blended to you. Early subscribers get 50% off the first batch. Reserve your spot: " +
+      shareUrl,
+    [],
+  );
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
 
-  const nativeShare = async () => {
+  const copyShare = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "Bazuki Early Access",
-          text: shareMessage,
-          url: shareUrl,
-        });
-        trackCta("waitlist_share_native");
-      } else {
-        await navigator.clipboard.writeText(shareMessage);
-        setShareCopied(true);
-        window.setTimeout(() => setShareCopied(false), 2000);
-        trackCta("waitlist_share_copy");
-      }
-    } catch {
-      try {
-        await navigator.clipboard.writeText(shareMessage);
-        setShareCopied(true);
-        window.setTimeout(() => setShareCopied(false), 2000);
-      } catch { /* noop */ }
-    }
-  };
-
-  const generateStoryImage = async (): Promise<string> => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1080;
-    canvas.height = 1920;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return "";
-
-    // Wait for the imported web fonts to load so the canvas renders them correctly.
-    if (document.fonts) {
-      try { await document.fonts.ready; } catch { /* ignore */ }
-    }
-
-    // Background
-    ctx.fillStyle = "#0A0908";
-    ctx.fillRect(0, 0, 1080, 1920);
-
-    // Subtle gold border
-    ctx.strokeStyle = "rgba(201,164,92,0.45)";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(40, 40, 1000, 1840);
-
-    // Decorative corner ticks
-    ctx.strokeStyle = "rgba(201,164,92,0.25)";
-    ctx.lineWidth = 2;
-    const tick = 24;
-    // Top-left
-    ctx.beginPath(); ctx.moveTo(40, 40 + tick); ctx.lineTo(40, 40); ctx.lineTo(40 + tick, 40); ctx.stroke();
-    // Top-right
-    ctx.beginPath(); ctx.moveTo(1040 - tick, 40); ctx.lineTo(1040, 40); ctx.lineTo(1040, 40 + tick); ctx.stroke();
-    // Bottom-left
-    ctx.beginPath(); ctx.moveTo(40, 1840 - tick); ctx.lineTo(40, 1840); ctx.lineTo(40 + tick, 1840); ctx.stroke();
-    // Bottom-right
-    ctx.beginPath(); ctx.moveTo(1040 - tick, 1840); ctx.lineTo(1040, 1840); ctx.lineTo(1040, 1840 - tick); ctx.stroke();
-
-    // Brand wordmark
-    ctx.fillStyle = "rgba(201,164,92,0.85)";
-    ctx.font = "300 28px 'JetBrains Mono', ui-monospace, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("BAZUKI", 540, 160);
-
-    // Headline
-    ctx.fillStyle = "#EDE7D9";
-    ctx.font = "italic 400 84px 'Cormorant Garamond', 'Cormorant', serif";
-    ctx.textAlign = "center";
-    ctx.fillText("I joined", 540, 560);
-    ctx.fillText("Bazuki early access", 540, 660);
-
-    // Offer badge
-    ctx.fillStyle = "rgba(201,164,92,0.12)";
-    ctx.strokeStyle = "rgba(201,164,92,0.55)";
-    ctx.lineWidth = 2;
-    if (typeof ctx.roundRect === "function") {
-      ctx.beginPath();
-      ctx.roundRect(240, 780, 600, 160, 4);
-      ctx.fill();
-      ctx.stroke();
-    } else {
-      ctx.fillRect(240, 780, 600, 160);
-      ctx.strokeRect(240, 780, 600, 160);
-    }
-
-    ctx.fillStyle = "#C9A45C";
-    ctx.font = "500 92px 'JetBrains Mono', ui-monospace, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("50% OFF", 540, 880);
-
-    // Subtext
-    ctx.fillStyle = "#A6A092";
-    ctx.font = "300 38px 'JetBrains Mono', ui-monospace, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("my first AI-crafted fragrance", 540, 1020);
-
-    // CTA line
-    ctx.fillStyle = "#EDE7D9";
-    ctx.font = "300 34px 'JetBrains Mono', ui-monospace, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("Join the waitlist", 540, 1340);
-
-    // URL
-    ctx.fillStyle = "#C9A45C";
-    ctx.font = "400 30px 'JetBrains Mono', ui-monospace, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("bazukifragrance.com/coming-soon", 540, 1410);
-
-    // Bottom lockup
-    ctx.fillStyle = "rgba(201,164,92,0.6)";
-    ctx.font = "300 24px 'JetBrains Mono', ui-monospace, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("INDIA'S FIRST AI-PERFUME HOUSE", 540, 1760);
-
-    return canvas.toDataURL("image/png");
-  };
-
-  const shareInstagramStory = async () => {
-    try {
-      trackCta("waitlist_share_instagram");
-      const dataUrl = await generateStoryImage();
-      if (!dataUrl) return;
-
-      // Try to open Instagram app on mobile first
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (isMobile) {
-        // Instagram deep link for stories camera; fallback handled below
-        window.location.href = "instagram://story";
-      }
-
-      // Download the story image so the user can upload it manually
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = "bazuki-early-access-story.png";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await navigator.clipboard.writeText(shareMessage);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2000);
+      trackCta("waitlist_share_copy");
     } catch { /* noop */ }
   };
 
+  const shareInstagram = async () => {
+    trackCta("waitlist_share_instagram");
+    try {
+      await navigator.clipboard.writeText(shareMessage);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2400);
+    } catch { /* ignore */ }
+    window.open("https://www.instagram.com/bazukiperfume/", "_blank", "noopener,noreferrer");
+  };
+
+  const spotsLine = spotsLeft === null ? "Loading founding spots…" : `Only ${spotsLeft} of ${SPOTS_CAP} founding spots left`;
+  const greetingName = (firstName || "").trim().split(/\s+/)[0];
 
   return (
     <div className="cs-root">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
         .cs-root {
-          --gold: #C9A45C;
+          --gold: #C9A84C;
           --gold-dim: #8E7845;
-          --ivory: #EDE7D9;
-          --ivory-dim: #A6A092;
-          --ink: #0A0908;
-          --hair: rgba(201,164,92,0.18);
+          --ivory: #F5EFE6;
+          --ivory-dim: #B7B0A2;
+          --ink: #0A0A0A;
+          --hair: rgba(201,168,76,0.22);
           --amber: #D68A3C;
           --teal: #2F6E68;
           --violet: #6E5AA8;
@@ -440,41 +404,51 @@ export default function ComingSoon() {
           overflow-x: hidden;
           isolation: isolate;
         }
-        .cs-glow { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.35; pointer-events: none; z-index: 0; }
+        .cs-glow { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.28; pointer-events: none; z-index: 0; }
         .cs-glow-amber { width: 420px; height: 420px; background: var(--amber); top: -120px; left: -140px; }
         .cs-glow-teal { width: 460px; height: 460px; background: var(--teal); bottom: -160px; right: -160px; }
-        .cs-glow-violet { width: 380px; height: 380px; background: var(--violet); top: 40%; left: 50%; transform: translate(-50%,-50%); opacity: 0.18; }
-        .cs-wrap { position: relative; z-index: 2; max-width: 640px; margin: 0 auto; padding: 5.5rem 1.5rem 4rem; text-align: center; }
-        .cs-eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 1.6rem; }
-        .cs-eyebrow::before { content: "— "; color: var(--gold-dim); }
-        .cs-eyebrow::after { content: " —"; color: var(--gold-dim); }
-        .cs-h1 { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-weight: 400; font-size: clamp(2.4rem, 6vw, 3.6rem); line-height: 1.15; letter-spacing: 0.01em; color: var(--ivory); margin-bottom: 1.1rem; }
+        .cs-glow-violet { width: 380px; height: 380px; background: var(--violet); top: 40%; left: 50%; transform: translate(-50%,-50%); opacity: 0.14; }
+        .cs-wrap { position: relative; z-index: 2; max-width: 640px; margin: 0 auto; padding: 5rem 1.5rem 4rem; text-align: center; }
+        .cs-eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ivory); margin-bottom: 1.4rem; }
+        .cs-eyebrow::before { content: "— "; color: var(--gold); }
+        .cs-eyebrow::after { content: " —"; color: var(--gold); }
+        .cs-h1 { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-weight: 400; font-size: clamp(2.4rem, 6.2vw, 3.8rem); line-height: 1.12; letter-spacing: 0.01em; color: var(--ivory); margin: 0 0 1.1rem; }
         .cs-h1 em { font-style: italic; color: var(--gold); }
-        .cs-sub { font-size: 15px; color: var(--ivory-dim); max-width: 420px; margin: 0 auto 3.2rem; line-height: 1.7; font-weight: 300; }
+        .cs-sub { font-size: 15px; color: var(--ivory-dim); max-width: 440px; margin: 0 auto 2.6rem; line-height: 1.65; font-weight: 300; }
+
         .cs-bottle { position: relative; width: 130px; height: 210px; margin: 0 auto 1.6rem; }
         .cs-bottle svg { width: 100%; height: 100%; display: block; }
+        .cs-liquid-rect { animation: cs-calibrate 4.2s ease-in-out infinite; transform-origin: bottom; transform-box: fill-box; }
+        .cs-particle { fill: var(--gold); opacity: 0; animation: cs-drift 4.2s ease-in-out infinite; }
+        @keyframes cs-calibrate {
+          0%   { transform: scaleY(0);   opacity: 0.65; }
+          60%  { transform: scaleY(1);   opacity: 0.9;  }
+          80%  { transform: scaleY(1);   opacity: 0.9;  }
+          100% { transform: scaleY(0);   opacity: 0.55; }
+        }
+        @keyframes cs-drift {
+          0%   { transform: translateY(0);      opacity: 0;   }
+          20%  { opacity: 0.9; }
+          100% { transform: translateY(-120px); opacity: 0;   }
+        }
+
         .cs-readout { display: flex; justify-content: center; gap: 1.6rem; margin-bottom: 0.9rem; }
         .cs-unit { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .cs-num { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: var(--gold); font-variant-numeric: tabular-nums; min-width: 2ch; }
-        .cs-lbl { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: 0.18em; color: var(--ivory-dim); text-transform: uppercase; }
+        .cs-lbl { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.18em; color: var(--ivory-dim); text-transform: uppercase; }
         .cs-colon { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 20px; color: var(--gold-dim); align-self: flex-start; margin-top: 2px; }
-        .cs-launch { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.1em; margin-bottom: 3rem; }
+        .cs-launch { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.1em; margin-bottom: 2.4rem; }
         .cs-launch span { color: var(--gold); }
-        .cs-capture { display: flex; max-width: 380px; margin: 0 auto 1rem; border: 1px solid var(--hair); border-radius: 2px; overflow: hidden; background: rgba(255,255,255,0.02); }
-        .cs-capture input { flex: 1; background: transparent; border: none; outline: none; padding: 14px 16px; color: var(--ivory); font-family: inherit; font-size: 13px; font-weight: 300; letter-spacing: 0.02em; }
-        .cs-capture input::placeholder { color: var(--ivory-dim); }
-        .cs-capture input:focus-visible { box-shadow: inset 0 0 0 1px var(--gold); }
-        .cs-capture button { background: var(--gold); color: var(--ink); border: none; padding: 0 22px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; cursor: pointer; transition: background 0.25s ease; white-space: nowrap; }
-        .cs-capture button:hover { background: #DDB876; }
-        .cs-capture button:disabled { opacity: 0.6; cursor: not-allowed; }
-        .cs-capture button:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
+
+        .cs-spots { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.14em; color: var(--gold); text-transform: uppercase; margin: 0 0 1rem; }
+
         .cs-stack { display: flex; flex-direction: column; gap: 10px; max-width: 380px; margin: 0 auto 1rem; }
-        .cs-field { background: rgba(255,255,255,0.02); border: 1px solid var(--hair); border-radius: 2px; padding: 14px 16px; color: var(--ivory); font-family: inherit; font-size: 13px; font-weight: 300; letter-spacing: 0.02em; outline: none; width: 100%; }
+        .cs-field { background: rgba(255,255,255,0.02); border: 1px solid var(--hair); border-radius: 2px; padding: 14px 16px; color: var(--ivory); font-family: inherit; font-size: 14px; font-weight: 300; letter-spacing: 0.02em; outline: none; width: 100%; }
         .cs-field::placeholder { color: var(--ivory-dim); }
         .cs-field:focus-visible { outline: 2px solid var(--gold); outline-offset: -1px; border-color: var(--gold); }
         .cs-phone { display: flex; align-items: stretch; background: rgba(255,255,255,0.02); border: 1px solid var(--hair); border-radius: 2px; overflow: hidden; }
-        .cs-phone:focus-within { border-color: var(--gold); }
-        .cs-phone-prefix { display: flex; align-items: center; padding: 0 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--ivory); border-right: 1px solid var(--hair); background: rgba(201,164,92,0.04); }
+        .cs-phone:focus-within { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+        .cs-phone-prefix { display: flex; align-items: center; padding: 0 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--ivory); border-right: 1px solid var(--hair); background: rgba(201,168,76,0.06); }
         .cs-phone-input { border: none; border-radius: 0; background: transparent; }
         .cs-phone-input:focus-visible { outline: none; }
         .cs-otp-input { text-align: center; letter-spacing: 0.55em; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 20px; font-weight: 500; color: var(--gold); }
@@ -489,30 +463,41 @@ export default function ComingSoon() {
         .cs-link:hover:not(:disabled) { color: var(--gold); }
         .cs-link:disabled { opacity: 0.5; cursor: not-allowed; }
         .cs-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-        .cs-micro { font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.02em; margin-bottom: 3.2rem; }
+        .cs-micro { font-size: 12px; color: var(--ivory-dim); letter-spacing: 0.02em; margin: 8px 0 2.4rem; }
         .cs-error { color: #E07A6B; }
-        .cs-confirm { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--teal); letter-spacing: 0.05em; margin-bottom: 3.2rem; }
-        .cs-success { margin-bottom: 3rem; }
-        .cs-success-head { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 20px; color: var(--ivory); margin: 0 0 1.2rem; letter-spacing: 0.01em; }
-        .cs-share-card { max-width: 400px; margin: 0 auto; padding: 20px 22px; border: 1px solid var(--gold); background: rgba(201,164,92,0.05); border-radius: 2px; }
-        .cs-share-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 14px; }
+
+        /* Welcome / preferences */
+        .cs-welcome-head { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: clamp(1.6rem, 4vw, 2rem); color: var(--ivory); margin: 0 0 0.5rem; letter-spacing: 0.01em; }
+        .cs-welcome-head em { font-style: italic; color: var(--gold); }
+        .cs-welcome-sub { font-size: 14px; color: var(--ivory-dim); margin: 0 auto 2rem; max-width: 440px; line-height: 1.6; }
+        .cs-pref-block { margin: 0 auto 1.8rem; max-width: 460px; text-align: left; }
+        .cs-pref-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.18em; color: var(--gold); text-transform: uppercase; margin: 0 0 10px; }
+        .cs-pref-help { font-size: 12px; color: var(--ivory-dim); margin: -6px 0 10px; }
+        .cs-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .cs-chip { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--hair); color: var(--ivory); padding: 10px 14px; font-family: inherit; font-size: 13px; letter-spacing: 0.02em; cursor: pointer; border-radius: 999px; transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease; min-height: 40px; }
+        .cs-chip:hover { border-color: var(--gold-dim); color: var(--gold); }
+        .cs-chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+        .cs-chip[aria-pressed="true"] { background: rgba(201,168,76,0.14); border-color: var(--gold); color: var(--gold); }
+        .cs-chip[aria-pressed="true"]::before { content: "✓"; font-size: 11px; }
+        .cs-pref-saved { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--gold); margin: 6px 0 2.4rem; min-height: 14px; }
+
+        .cs-share-card { max-width: 460px; margin: 0 auto 2.4rem; padding: 20px 22px; border: 1px solid var(--hair); background: rgba(201,168,76,0.03); border-radius: 4px; }
+        .cs-share-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 14px; text-align: center; }
         .cs-share-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        .cs-share-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); padding: 10px 16px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s ease, color 0.2s ease; }
+        .cs-share-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); padding: 10px 16px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s ease, color 0.2s ease; min-height: 40px; }
         .cs-share-btn:hover { background: var(--gold); color: var(--ink); }
         .cs-share-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-        .cs-share-btn-primary { background: var(--gold); color: var(--ink); border-color: var(--gold); }
-        .cs-share-btn-primary:hover { background: #DDB876; }
-        .cs-share-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 12px 0 0; }
-        .cs-footer { border-top: 1px solid var(--hair); padding-top: 1.6rem; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .cs-share-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 12px 0 0; text-align: center; }
+
+        .cs-footer { border-top: 1px solid var(--hair); padding-top: 1.6rem; margin-top: 2rem; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .cs-footer .brand { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 14px; letter-spacing: 0.28em; color: var(--gold-dim); text-transform: uppercase; }
         .cs-footer .ig { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.08em; }
         .cs-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-        .cs-spots { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.14em; color: var(--gold); text-transform: uppercase; margin-bottom: 2.4rem; }
-        .cs-capture input:focus-visible { outline: 2px solid var(--gold); outline-offset: -1px; }
-        .cs-footer .brand:focus-visible, .cs-footer .ig:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
         @media (prefers-reduced-motion: reduce) {
-          .cs-capture button { transition: none; }
+          .cs-btn { transition: none; }
           .cs-glow { display: none; }
+          .cs-liquid-rect { animation: none; transform: scaleY(0.72); opacity: 0.85; }
+          .cs-particle { animation: none; opacity: 0; }
         }
       `}</style>
 
@@ -524,64 +509,63 @@ export default function ComingSoon() {
 
       <div className="cs-wrap">
         <div className="cs-eyebrow">Formula in progress</div>
-        <h1 className="cs-h1">
-          Your scent is
-          <br />
-          <em>being calibrated.</em>
-        </h1>
-        <p className="cs-sub">
-          India's first AI-algorithmic perfume house is finishing its first batch of formulas.
-          50+ raw ingredients, one bottle built for you.
-        </p>
 
-        <div className="cs-bottle">
-          <svg
-            viewBox="0 0 130 210"
-            xmlns="http://www.w3.org/2000/svg"
-            role="img"
-            aria-label={progressLabel}
-          >
-            <title>{progressLabel}</title>
+        {view === "capture" ? (
+          <>
+            <h1 className="cs-h1">
+              Your scent is being <em>calibrated.</em>
+            </h1>
+            <p className="cs-sub">
+              India's first AI-algorithmic perfume house, finishing its first batch. One bottle built for you.
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="cs-welcome-head">
+              You're in{greetingName ? `, ${greetingName}` : ""}. Your <em>50% off</em> early bird price is locked.
+            </h1>
+            <p className="cs-welcome-sub">
+              Now tell us what you love — we'll calibrate your first formula around it.
+            </p>
+          </>
+        )}
+
+        <div className="cs-bottle" aria-hidden={view === "welcome"}>
+          <svg viewBox="0 0 130 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bazuki formula calibrating">
+            <title>Bazuki formula calibrating</title>
             <defs>
               <clipPath id="cs-liquidClip">
-                <rect ref={liquidRectRef} x="30" y="200" width="70" height="0" rx="2" />
+                <rect x="42" y="46" width="46" height="156" rx="2" />
               </clipPath>
               <linearGradient id="cs-liquidGrad" x1="0" y1="1" x2="0" y2="0">
                 <stop offset="0%" stopColor="#D68A3C" />
-                <stop offset="50%" stopColor="#2F6E68" />
-                <stop offset="100%" stopColor="#6E5AA8" />
+                <stop offset="50%" stopColor="#C9A84C" />
+                <stop offset="100%" stopColor="#8E7845" />
               </linearGradient>
             </defs>
             <rect x="55" y="8" width="20" height="16" rx="2" fill="none" stroke="#8E7845" strokeWidth="1.2" />
             <path
               d="M50 24 L80 24 L88 46 L88 196 Q88 202 82 202 L48 202 Q42 202 42 196 L42 46 Z"
-              fill="rgba(237,231,217,0.03)"
+              fill="rgba(245,239,230,0.02)"
               stroke="#8E7845"
               strokeWidth="1.2"
             />
-            <rect
-              fill="url(#cs-liquidGrad)"
-              clipPath="url(#cs-liquidClip)"
-              x="42"
-              y="46"
-              width="46"
-              height="156"
-              opacity="0.85"
-            />
+            <g clipPath="url(#cs-liquidClip)">
+              <rect className="cs-liquid-rect" x="42" y="46" width="46" height="156" fill="url(#cs-liquidGrad)" opacity="0.85" />
+              <circle className="cs-particle" cx="55" cy="195" r="1.4" style={{ animationDelay: "0s" }} />
+              <circle className="cs-particle" cx="65" cy="198" r="1.1" style={{ animationDelay: "1.2s" }} />
+              <circle className="cs-particle" cx="75" cy="196" r="1.3" style={{ animationDelay: "2.1s" }} />
+              <circle className="cs-particle" cx="60" cy="199" r="1"   style={{ animationDelay: "3.0s" }} />
+              <circle className="cs-particle" cx="72" cy="197" r="1.2" style={{ animationDelay: "0.6s" }} />
+            </g>
             <path
               d="M50 24 L80 24 L88 46 L88 196 Q88 202 82 202 L48 202 Q42 202 42 196 L42 46 Z"
-              fill="none"
-              stroke="#8E7845"
-              strokeWidth="1.2"
+              fill="none" stroke="#8E7845" strokeWidth="1.2"
             />
           </svg>
         </div>
 
-        <div
-          className="cs-readout"
-          role="timer"
-          aria-label="Time until launch on 29 August 2026"
-        >
+        <div className="cs-readout" role="timer" aria-label="Time until launch on 29 August 2026">
           <div className="cs-unit"><span className="cs-num" aria-label={`${d} days`}>{d}</span><span className="cs-lbl" aria-hidden>days</span></div>
           <span className="cs-colon" aria-hidden>:</span>
           <div className="cs-unit"><span className="cs-num" aria-label={`${h} hours`}>{h}</span><span className="cs-lbl" aria-hidden>hrs</span></div>
@@ -590,28 +574,197 @@ export default function ComingSoon() {
           <span className="cs-colon" aria-hidden>:</span>
           <div className="cs-unit"><span className="cs-num" aria-label={`${s} seconds`}>{s}</span><span className="cs-lbl" aria-hidden>sec</span></div>
         </div>
+        <div className="cs-sr-only" aria-live="polite" aria-atomic="true">{announcement}</div>
+        <div className="cs-launch">Launching <span>29 August, 12:00 AM IST</span></div>
 
-        <div className="cs-sr-only" aria-live="polite" aria-atomic="true">
-          {announcement}
-        </div>
+        {view === "capture" ? (
+          <>
+            <p className="cs-spots" role="status" aria-live="polite">{spotsLine}</p>
 
+            {step === "details" ? (
+              <>
+                <form className="cs-stack" onSubmit={submitDetails} noValidate>
+                  <input
+                    className="cs-field"
+                    type="text"
+                    autoComplete="given-name"
+                    aria-label="Your first name"
+                    placeholder="Your first name"
+                    value={firstName}
+                    maxLength={80}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                  <div className="cs-phone">
+                    <span className="cs-phone-prefix" aria-hidden>🇮🇳 +91</span>
+                    <input
+                      className="cs-field cs-phone-input"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel-national"
+                      aria-label="WhatsApp mobile number (10 digits)"
+                      placeholder="98765 43210"
+                      value={phone}
+                      maxLength={10}
+                      onChange={(e) => {
+                        setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                        if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                      }}
+                      required
+                    />
+                  </div>
+                  <input
+                    className="cs-field"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    aria-label="Email address"
+                    placeholder="you@email.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                    }}
+                  />
+                  <button className="cs-btn" type="submit" disabled={status === "loading"}>
+                    {status === "loading" ? "Sending…" : "Reserve my 50% spot"}
+                  </button>
+                </form>
+                <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
+                  {status === "error" && errorMsg
+                    ? errorMsg
+                    : "We'll send a 6-digit code to your WhatsApp to confirm."}
+                </p>
+              </>
+            ) : (
+              <>
+                <form className="cs-stack" onSubmit={submitOtp} noValidate>
+                  <p className="cs-otp-hint">Code sent on WhatsApp to <strong>+91 {phone}</strong></p>
+                  <input
+                    className="cs-field cs-otp-input"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    aria-label="6-digit verification code"
+                    placeholder="••••••"
+                    value={otp}
+                    maxLength={6}
+                    onChange={(e) => {
+                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                    }}
+                    required
+                  />
+                  <button className="cs-btn" type="submit" disabled={status === "loading"}>
+                    {status === "loading" ? "Verifying…" : "Verify & join"}
+                  </button>
+                  <div className="cs-otp-actions">
+                    <button
+                      type="button"
+                      className="cs-link"
+                      onClick={() => {
+                        setStep("details"); setOtp(""); setStatus("idle");
+                        setErrorMsg(null); setErrorCode(null);
+                        setResendIn(0); setResendCount(0);
+                      }}
+                    >
+                      ← Change number
+                    </button>
+                    <button
+                      type="button"
+                      className="cs-link"
+                      disabled={resendIn > 0 || status === "loading" || resendCapReached}
+                      onClick={() => requestOtp({ resend: true })}
+                    >
+                      {resendCapReached
+                        ? "Resend limit reached"
+                        : resendIn > 0
+                          ? `Resend in ${Math.floor(resendIn / 60)}:${String(resendIn % 60).padStart(2, "0")}`
+                          : "Resend code"}
+                    </button>
+                  </div>
+                </form>
+                {status === "error" && errorMsg ? (
+                  <p className="cs-micro cs-error" role="alert">{errorMsg}</p>
+                ) : resendCapReached ? (
+                  <p className="cs-micro cs-error" role="status">Resend limit reached. Check your WhatsApp inbox or change the number.</p>
+                ) : (
+                  <p className="cs-micro">Check WhatsApp for a 6-digit code from Bazuki.</p>
+                )}
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <section className="cs-pref-block" aria-labelledby="pref-family-label">
+              <h2 id="pref-family-label" className="cs-pref-label">Which family pulls you in?</h2>
+              <p className="cs-pref-help">Pick 1–3. Tap again to unselect.</p>
+              <div className="cs-chips" role="group" aria-label="Scent families">
+                {SCENT_FAMILIES.map((fam) => {
+                  const selected = prefFamilies.includes(fam);
+                  const atCap = prefFamilies.length >= 3 && !selected;
+                  return (
+                    <button
+                      key={fam}
+                      type="button"
+                      className="cs-chip"
+                      aria-pressed={selected}
+                      disabled={atCap}
+                      onClick={() => toggleFamily(fam)}
+                    >
+                      {fam}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
 
-        <div className="cs-launch">
-          Launching <span>29 August, 12:00 AM IST</span>
-        </div>
+            <section className="cs-pref-block" aria-labelledby="pref-intensity-label">
+              <h2 id="pref-intensity-label" className="cs-pref-label">How loud should it be?</h2>
+              <div className="cs-chips" role="radiogroup" aria-label="Intensity">
+                {INTENSITY_OPTS.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    role="radio"
+                    aria-checked={prefIntensity === opt}
+                    aria-pressed={prefIntensity === opt}
+                    className="cs-chip"
+                    onClick={() => pickIntensity(opt)}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </section>
 
-        <p className="cs-spots" role="status" aria-live="polite">
-          <span>Subscribe to get an early discount</span>
-        </p>
+            <section className="cs-pref-block" aria-labelledby="pref-wear-label">
+              <h2 id="pref-wear-label" className="cs-pref-label">When will you wear it most?</h2>
+              <div className="cs-chips" role="radiogroup" aria-label="Wear time">
+                {WEAR_TIME_OPTS.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    role="radio"
+                    aria-checked={prefWearTime === opt}
+                    aria-pressed={prefWearTime === opt}
+                    className="cs-chip"
+                    onClick={() => pickWearTime(opt)}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </section>
 
-        {status === "success" ? (
-          <div className="cs-success" role="status" aria-live="polite">
-            <p className="cs-success-head">You're in. Early access at 50% off is yours.</p>
+            <p className="cs-pref-saved" aria-live="polite">
+              {prefSaving ? "Saving…" : prefSaved ? "Noted. Your formula's already taking shape." : "\u00A0"}
+            </p>
+
             <div className="cs-share-card">
-              <div className="cs-share-label">Share with friends</div>
+              <div className="cs-share-label">Spread the word</div>
               <div className="cs-share-actions">
                 <a
-                  className="cs-share-btn cs-share-btn-primary"
+                  className="cs-share-btn"
                   href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -619,159 +772,22 @@ export default function ComingSoon() {
                 >
                   WhatsApp →
                 </a>
-                <button
-                  type="button"
-                  className="cs-share-btn"
-                  onClick={shareInstagramStory}
-                  aria-label="Share on Instagram Story"
-                >
+                <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message and open Instagram">
                   <Instagram size={14} strokeWidth={1.5} aria-hidden />
                   Instagram
                 </button>
-                <button
-                  type="button"
-                  className="cs-share-btn"
-                  onClick={nativeShare}
-                  aria-label="Copy share message"
-                >
+                <button type="button" className="cs-share-btn" onClick={copyShare} aria-label="Copy share message">
                   {shareCopied ? "Copied ✓" : "Copy message"}
                 </button>
               </div>
-              <p className="cs-share-hint">
-                Anyone who subscribes gets 50% off their first formula.
-              </p>
+              <p className="cs-share-hint">Anyone who subscribes gets 50% off their first formula.</p>
             </div>
-          </div>
-        ) : step === "details" ? (
-          <>
-            <form className="cs-stack" onSubmit={submitDetails} noValidate>
-              <input
-                className="cs-field"
-                type="text"
-                autoComplete="given-name"
-                aria-label="First name (optional)"
-                placeholder="First name (optional)"
-                value={firstName}
-                maxLength={80}
-                onChange={(e) => setFirstName(e.target.value)}
-              />
-              <div className="cs-phone">
-                <span className="cs-phone-prefix" aria-hidden>🇮🇳 +91</span>
-                <input
-                  className="cs-field cs-phone-input"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel-national"
-                  aria-label="WhatsApp mobile number"
-                  placeholder="98765 43210"
-                  value={phone}
-                  maxLength={10}
-                  onChange={(e) => {
-                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
-                    if (status === "error") { setStatus("idle"); setErrorMsg(null); }
-                  }}
-                  required
-                />
-              </div>
-              <input
-                className="cs-field"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                aria-label="Email address (optional)"
-                placeholder="Email (optional)"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (status === "error") { setStatus("idle"); setErrorMsg(null); }
-                }}
-              />
-              <button className="cs-btn" type="submit" disabled={status === "loading"}>
-                {status === "loading" ? "Sending…" : "SEND WHATSAPP OTP"}
-              </button>
-            </form>
-            <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
-              {status === "error" && errorMsg
-                ? errorMsg
-                : "We'll send a 6-digit code to your WhatsApp. Email is optional."}
-            </p>
-          </>
-        ) : (
-          <>
-            <form className="cs-stack" onSubmit={submitOtp} noValidate>
-              <p className="cs-otp-hint">
-                Code sent on WhatsApp to <strong>+91 {phone}</strong>
-              </p>
-              <input
-                className="cs-field cs-otp-input"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                aria-label="6-digit verification code"
-                placeholder="••••••"
-                value={otp}
-                maxLength={6}
-                onChange={(e) => {
-                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
-                  if (status === "error") { setStatus("idle"); setErrorMsg(null); }
-                }}
-                required
-              />
-              <button className="cs-btn" type="submit" disabled={status === "loading"}>
-                {status === "loading" ? "Verifying…" : "VERIFY & JOIN"}
-              </button>
-              <div className="cs-otp-actions">
-                <button
-                  type="button"
-                  className="cs-link"
-                  onClick={() => {
-                    setStep("details");
-                    setOtp("");
-                    setStatus("idle");
-                    setErrorMsg(null);
-                    setErrorCode(null);
-                    setResendIn(0);
-                    setResendCount(0);
-                  }}
-                >
-                  ← Change number
-                </button>
-                <button
-                  type="button"
-                  className="cs-link"
-                  disabled={resendIn > 0 || status === "loading" || resendCapReached}
-                  onClick={() => requestOtp({ resend: true })}
-                  aria-label={
-                    resendCapReached
-                      ? "Resend limit reached"
-                      : resendIn > 0
-                        ? `Resend available in ${resendIn} seconds`
-                        : "Resend code"
-                  }
-                >
-                  {resendCapReached
-                    ? "Resend limit reached"
-                    : resendIn > 0
-                      ? `Resend in ${Math.floor(resendIn / 60)}:${String(resendIn % 60).padStart(2, "0")}`
-                      : "Resend code"}
-                </button>
-              </div>
-            </form>
-            {status === "error" && errorMsg ? (
-              <p className="cs-micro cs-error" role="alert">{errorMsg}</p>
-            ) : resendCapReached ? (
-              <p className="cs-micro cs-error" role="status">
-                Resend limit reached. Check your WhatsApp inbox or change the number.
-              </p>
-            ) : (
-              <p className="cs-micro">Check WhatsApp for a 6-digit code from Bazuki.</p>
-            )}
           </>
         )}
 
         <div className="cs-footer">
           <div className="brand">Bazuki</div>
-          <div className="ig">discover your formula — @bazukiperfumes</div>
+          <div className="ig">discover your formula · @bazukiperfumes</div>
         </div>
       </div>
     </div>
