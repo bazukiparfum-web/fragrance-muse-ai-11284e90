@@ -149,15 +149,20 @@ export default function ComingSoon() {
 
   const requestOtp = async (opts: { resend?: boolean } = {}) => {
     setErrorMsg(null);
+    setErrorCode(null);
+
+    if (opts.resend && (resendIn > 0 || resendCapReached)) return;
 
     const phoneOk = phoneSchema.safeParse(phone);
     if (!phoneOk.success) {
       setStatus("error");
+      setErrorCode("invalid_phone");
       setErrorMsg(phoneOk.error.issues[0]?.message ?? "Enter a valid mobile number.");
       return;
     }
     if (email.trim() && !emailSchema.safeParse(email).success) {
       setStatus("error");
+      setErrorCode("invalid_email");
       setErrorMsg("Please enter a valid email address or leave it blank.");
       return;
     }
@@ -167,24 +172,23 @@ export default function ComingSoon() {
       body: { phone },
     });
     if (error) {
-      let msg = "Could not send WhatsApp OTP. Try again in a moment.";
-      try {
-        // @ts-ignore FunctionsHttpError context
-        const detail = error.context ? await error.context.text() : null;
-        if (detail) {
-          const parsed = JSON.parse(detail);
-          if (parsed?.error) msg = parsed.error;
-        }
-      } catch { /* ignore */ }
+      const { code, message, retryAfterSec } = await parseFnError(error);
       setStatus("error");
-      setErrorMsg(msg);
+      setErrorCode(code);
+      setErrorMsg(message);
+      if (code === "rate_limited_phone" && retryAfterSec) {
+        setStep("verify");
+        setResendIn(retryAfterSec);
+      }
       return;
     }
 
     setStep("verify");
     setStatus("idle");
     setOtp("");
-    setResendIn(30);
+    const nextCount = opts.resend ? resendCount + 1 : 1;
+    setResendCount(nextCount);
+    setResendIn(nextCooldown(nextCount - 1));
     if (!opts.resend) {
       trackCta("waitlist_phone_otp_sent");
     }
@@ -198,8 +202,10 @@ export default function ComingSoon() {
   const submitOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setErrorCode(null);
     if (!/^\d{6}$/.test(otp)) {
       setStatus("error");
+      setErrorCode("otp_format");
       setErrorMsg("Enter the 6-digit code from WhatsApp.");
       return;
     }
@@ -221,17 +227,13 @@ export default function ComingSoon() {
     });
 
     if (error) {
-      let msg = "Could not verify OTP. Try again.";
-      try {
-        // @ts-ignore
-        const detail = error.context ? await error.context.text() : null;
-        if (detail) {
-          const parsed = JSON.parse(detail);
-          if (parsed?.error) msg = parsed.error;
-        }
-      } catch { /* ignore */ }
+      const { code, message } = await parseFnError(error);
       setStatus("error");
-      setErrorMsg(msg);
+      setErrorCode(code);
+      setErrorMsg(message);
+      if (code === "otp_expired" || code === "otp_attempts_exceeded") {
+        setResendIn(0); // allow immediate resend
+      }
       return;
     }
 
