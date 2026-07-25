@@ -380,7 +380,7 @@ export default function ComingSoon() {
     window.open("https://www.instagram.com/bazukiperfume/", "_blank", "noopener,noreferrer");
   };
 
-  const spotsLine = spotsLeft === null ? "Loading founding spots…" : `Only ${spotsLeft} of ${SPOTS_CAP} founding spots left`;
+  const spotsLine = "LAST 10% SPOTS LEFT";
   const greetingName = (firstName || "").trim().split(/\s+/)[0];
 
   return (
@@ -626,7 +626,7 @@ export default function ComingSoon() {
                     }}
                   />
                   <button className="cs-btn" type="submit" disabled={status === "loading"}>
-                    {status === "loading" ? "Sending…" : "Reserve my 50% spot"}
+                    {status === "loading" ? "Sending…" : "RESERVE MY SPOT"}
                   </button>
                 </form>
                 <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
