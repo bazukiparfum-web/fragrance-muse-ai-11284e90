@@ -922,18 +922,22 @@ export default function ComingSoon() {
                 </p>
 
                 <div className="cs-share-card">
-                  <div className="cs-share-label">Spread the word</div>
+                  <div className="cs-share-label">Share your direction</div>
+                  {cardUrl && (
+                    <div className="cs-share-preview">
+                      <img src={cardUrl} alt={`${direction.name} — share card`} />
+                    </div>
+                  )}
                   <div className="cs-share-actions">
-                    <a
+                    <button
+                      type="button"
                       className="cs-share-btn"
-                      href={whatsappHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => trackCta("waitlist_share_whatsapp")}
+                      onClick={shareWhatsApp}
+                      aria-label="Share on WhatsApp"
                     >
                       WhatsApp →
-                    </a>
-                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message and open Instagram">
+                    </button>
+                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message, save image and open Instagram">
                       <Instagram size={14} strokeWidth={1.5} aria-hidden />
                       Instagram
                     </button>
@@ -941,8 +945,19 @@ export default function ComingSoon() {
                       {shareCopied ? "Copied ✓" : "Copy message"}
                     </button>
                   </div>
-                  <p className="cs-share-hint">Anyone who subscribes gets 50% off their first formula.</p>
+                  <p className="cs-share-hint">
+                    Anyone who subscribes gets 50% off their first formula.
+                    {cardBlobRef.current && (
+                      <>
+                        {" · "}
+                        <button type="button" className="cs-share-download" onClick={downloadCard}>
+                          Download image
+                        </button>
+                      </>
+                    )}
+                  </p>
                 </div>
+
 
                 <button type="button" className="cs-adjust-link" onClick={adjustPreferences}>
                   Adjust my preferences
