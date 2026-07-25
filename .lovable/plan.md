@@ -1,41 +1,24 @@
 ## Goal
 
-Make the post-OTP referral WhatsApp send match the approved `bazuki_referral_code` template so it actually delivers to new signups.
+Switch the referral WhatsApp send from `bazuki_referral_code` to the new approved template `bazuki_referral_code_share`, then verify a real signup delivers.
 
-## Mismatch found (verified in `supabase/functions/whatsapp-verify-waitlist-otp/index.ts`)
+## Context
 
-Template expects:
-
-- `{{1}}` = friend's first name (appears in HEADER and BODY)
+Template variables and button are unchanged from the previously fixed mapping in `supabase/functions/whatsapp-verify-waitlist-otp/index.ts`:
+- `{{1}}` = friend's first name (header + body)
 - `{{2}}` = referral code
-- Button (Visit Website, dynamic URL) = the referral link the recipient opens
+- Button dynamic URL suffix = `?ref=BZK-XXXX` (base `https://www.bazukifragrance.com/coming-soon`)
 
-Current code sends:
+The function already reads the template name from the `WHATSAPP_11ZA_REFERRAL_TEMPLATE` secret, so no code change is required — only the secret value.
 
-- `data: [referralCode, shareUrl]` → `{{1}}` = code (wrong), `{{2}}` = URL (wrong)
-- `buttonValue: referralCode` → button URL suffix = raw code (wrong)
-- `first_name` from the request body is never passed into `sendReferralWhatsApp`
+## Changes
 
-Result: 11za rejects the send (variable count/format mismatch) or delivers a garbled message, which is why nothing is arriving.
-
-## Fix
-
-1. In `whatsapp-verify-waitlist-otp/index.ts`:
-  - Change `sendReferralWhatsApp` signature to `(phoneE164, referralCode, firstName)`.
-  - Set `data: [firstName || "A friend", referralCode]`.
-  - Set `buttonValue` to the dynamic URL suffix 11za appends to the template's base "Visit Website" URL. For a base of `https://www.bazukifragrance.com/coming-soon` this should be `?ref=${referralCode}` (confirm against how the template's button URL is registered in 11za — if the base URL is the site root, use `coming-soon?ref=${referralCode}`).
-  - Pass `first_name` through from the request payload at the call site (line 167).
-2. Redeploy `whatsapp-verify-waitlist-otp`.
+1. Update secret `WHATSAPP_11ZA_REFERRAL_TEMPLATE` from `bazuki_referral_code` to `bazuki_referral_code_share`.
+2. Redeploy `whatsapp-verify-waitlist-otp` so the new secret is picked up.
 
 ## Verification
 
-1. Run a real signup on `/coming-soon` with a WhatsApp number you own (first name filled in).
-2. Pull `whatsapp-verify-waitlist-otp` logs and confirm `11za referral send ok` with a success body.
-3. Confirm the WhatsApp arrives with: correct first name in header/body, correct `BZK-XXXX` code, and the "Open my gift" button opens the referral URL.
+1. Run a live signup on `/coming-soon` with a real WhatsApp number and first name.
+2. Pull `whatsapp-verify-waitlist-otp` logs — expect `11za referral send ok`.
+3. Confirm the WhatsApp arrives with correct first name in header/body, correct `BZK-XXXX` code, and the "Open my gift" button opens `https://www.bazukifragrance.com/coming-soon?ref=BZK-XXXX`.
 4. If 11za returns a variable/URL error, adjust `data` order or `buttonValue` per the exact error, redeploy, retest.
-
-## One clarification I need
-
-In your 11za dashboard for `bazuki_referral_code`, what is the **base URL** configured on the "Open my gift" button? I need to know whether to send `?ref=BZK-XXXX` (base already ends at `/coming-soon`) or `coming-soon?ref=BZK-XXXX` (base is the site root) as `buttonValue`. Once you confirm, I'll apply the fix and redeploy in one pass.  
-  
-**base URL: [https://www.bazukifragrance.com/coming-soon](https://www.bazukifragrance.com/coming-soon)**
