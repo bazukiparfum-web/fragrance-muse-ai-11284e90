@@ -1,44 +1,49 @@
 ## Goal
-Strip the referral engine (personal codes, spots counter, referral landing overlay, and reward tracking) from the Bazuki pre-launch page. Visitors simply subscribe with WhatsApp OTP + optional email to claim the 50% early-access discount, then get a generic way to tell friends.
+Add an "Share on Instagram Story" option to the existing generic share block on `/coming-soon`, so waitlist subscribers can post the 50% discount to their Instagram Story without needing a personal referral code.
 
-## Changes
+## Current state
+- `/coming-soon` already shows a generic share card after WhatsApp OTP signup with WhatsApp message, Copy link, and native share.
+- The user wants an Instagram Story share option added to this card.
 
-### 1. Simplify `src/pages/ComingSoon.tsx`
-- Remove `spotsRemaining`, `personalCode`, `copied`, and `referralsOpen` state.
-- Remove the `spots_remaining` RPC poll and the conditional "closed / open" messaging.
-- Remove the success-state personal referral-code card and the "Anyone who uses your code" copy.
-- Replace with a clean success message: "You're in. Early access at 50% off is yours."
-- Add a generic "Share with friends" block using the Web Share API with a WhatsApp fallback, sharing the plain `/coming-soon` URL (no tracking code).
-- Stop reading `ref` / `referral_code` from URL params and stop sending `referred_by` to the verify function.
-- Update helper micro-copy and CTA button text to reflect the single open waitlist.
-- Keep the two-step WhatsApp OTP flow and optional email capture unchanged.
+## Proposed changes
 
-### 2. Remove the referral landing overlay from the pre-launch route
-- In `src/App.tsx`, stop rendering `<ReferralWelcomeOverlay />` on `/` and `/coming-soon`.
-- Since the overlay is only used by the waitlist referral flow, delete `src/components/referral/ReferralWelcomeOverlay.tsx` and `src/lib/referral.ts`.
+### 1. Frontend: generate a branded Instagram Story card
+- Add an "Instagram Story" button to the existing share card in `src/pages/ComingSoon.tsx`.
+- Use an HTML5 Canvas (created off-screen) to draw a 1080×1920 story image:
+  - Dark luxury background (`#0A0908` or existing `--ink`).
+  - Gold accent border / Bazuki wordmark.
+  - Headline: "I joined Bazuki early access".
+  - Offer: "50% OFF".
+  - CTA: "Join the waitlist".
+  - URL: `bazukifragrance.com/coming-soon`.
+- Convert canvas to a downloadable PNG blob.
 
-### 3. Clean up the waitlist verification Edge Function
-- In `supabase/functions/whatsapp-verify-waitlist-otp/index.ts`:
-  - Stop calling `create-referral-shopify-discount`.
-  - Stop calling `sendReferralWhatsApp`.
-  - Return `{ success: true }` without `referral_code` or `duplicate`.
-  - Remove the `referred_by` parameter from the `create_waitlist_signup` RPC call.
-- Delete the now-unused `supabase/functions/create-referral-shopify-discount/index.ts`.
+### 2. Share behavior
+- **Mobile**: attempt to open the Instagram camera/story flow via `instagram://story` or `instagram://camera`. If the app is not installed, fall back to downloading the generated image.
+- **Desktop**: download the generated image; the user can drag it into their Instagram story composer.
+- Add a `trackCta("waitlist_share_instagram")` event on button click.
 
-### 4. Update the waitlist confirmation email
-- In `supabase/functions/_shared/transactional-email-templates/waitlist-confirmation.tsx`:
-  - Remove the "Your referral code" block, the share URL, and the "5,000 blends remaining" counter line.
-  - Keep the 50% off early-access messaging and the A/B subject test.
+### 3. UI/UX details
+- Place the Instagram button alongside the existing WhatsApp / Copy link buttons in the share card.
+- Use an Instagram icon (Lucide `Instagram` or inline SVG).
+- Keep the same button styling as existing share buttons.
+- Ensure the canvas generation is lazy (only created when the Instagram button is clicked) to avoid blocking the success animation.
 
-### 5. Database (no destructive migration required)
-- Leave the existing `waitlist_signups.referral_code`, `referred_by`, and `referral_redemptions` tables/columns in place so historical data is preserved.
-- The auto-generated `referral_code` column will simply no longer be surfaced to users.
+### 4. Accessibility
+- Add `aria-label="Share on Instagram Story"` to the button.
+- Provide a visible focus ring consistent with existing share buttons.
+- Add `prefers-reduced-motion` safe fallback (no animation in the generated image).
 
-## Out of scope
-- The separate post-signup `referral_rewards` table and `claim_referral_reward()` security fix are unrelated to the pre-launch page and will not be touched.
-- The `/home` page and other app routes are unchanged.
+### 5. Files to modify
+- `src/pages/ComingSoon.tsx`: add Instagram share button and canvas generation logic.
 
-## Verification
-- Build the project and confirm no TypeScript errors after deleting the referral helper files.
-- Deploy the updated `whatsapp-verify-waitlist-otp` Edge Function.
-- Test the `/coming-soon` flow: subscribe with a phone number, verify OTP, and confirm the success screen shows only the generic share option and no personal code.
+### 6. Out of scope
+- No backend changes; this remains a generic share with no referral codes or tracking links.
+- No new routes or database tables.
+
+## Acceptance criteria
+- After successful waitlist signup, the share card shows an "Instagram Story" button.
+- Clicking it generates and downloads a 1080×1920 branded story image.
+- On mobile, it attempts to open the Instagram app before falling back to download.
+- The action is tracked with `trackCta("waitlist_share_instagram")`.
+- Existing WhatsApp / Copy link / native share behavior remains unchanged.
