@@ -382,6 +382,7 @@ export default function ComingSoon() {
     () => resolveDirection(prefFamilies, prefIntensity, prefWearTime),
     [prefFamilies, prefIntensity, prefWearTime],
   );
+  const greetingName = (firstName || "").trim().split(/\s+/)[0];
 
   // ---- Branded share card (client-side PNG) ----
   const [cardUrl, setCardUrl] = useState<string | null>(null);
