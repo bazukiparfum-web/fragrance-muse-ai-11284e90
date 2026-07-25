@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSEO } from "@/hooks/useSEO";
 import CollectionAmbience from "@/components/library/CollectionAmbience";
 import { trackCta } from "@/lib/trackCta";
+import { resolveDirection } from "@/lib/scentDirections";
 
 const LAUNCH_MS = new Date("2026-08-29T00:00:00+05:30").getTime();
 const SPOTS_CAP = 100;
@@ -68,8 +69,8 @@ export default function ComingSoon() {
   const [prefIntensity, setPrefIntensity] = useState<string | null>(null);
   const [prefWearTime, setPrefWearTime] = useState<string | null>(null);
   const [prefSaving, setPrefSaving] = useState(false);
-  const [prefSaved, setPrefSaved] = useState(false);
-  const prefSaveTimerRef = useRef<number | null>(null);
+  const [stage, setStage] = useState<"picker" | "result">("picker");
+  const [fading, setFading] = useState(false);
 
   const RESEND_MAX = 5;
   const RESEND_BACKOFF = [30, 60, 120, 180, 300];
@@ -109,6 +110,16 @@ export default function ComingSoon() {
         // Try to enrich from DB (server is source of truth for preferences)
         const { data } = await supabase.rpc("get_waitlist_signup", { _phone: saved.phone });
         if (cancelled) return;
+        const applyRow = (fam: string[], intensity: string | null, wear: string | null, first: string | null) => {
+          setFirstName(first ?? "");
+          setPrefFamilies(fam);
+          setPrefIntensity(intensity);
+          setPrefWearTime(wear);
+          setPhone(saved!.phone.replace(/^\+91/, ""));
+          setView("welcome");
+          if (fam.length > 0 && intensity && wear) setStage("result");
+          else setStage("picker");
+        };
         if (data) {
           const row = data as {
             first_name: string | null;
@@ -116,21 +127,16 @@ export default function ComingSoon() {
             intensity: string | null;
             wear_time: string | null;
           };
-          setFirstName(row.first_name ?? saved.first_name ?? "");
-          setPrefFamilies(Array.isArray(row.scent_families) ? row.scent_families : []);
-          setPrefIntensity(row.intensity);
-          setPrefWearTime(row.wear_time);
-          setPhone(saved.phone.replace(/^\+91/, ""));
-          setView("welcome");
+          applyRow(
+            Array.isArray(row.scent_families) ? row.scent_families : [],
+            row.intensity,
+            row.wear_time,
+            row.first_name ?? saved.first_name ?? "",
+          );
           return;
         }
         // DB row not found (e.g. wiped); fall back to LS values
-        setFirstName(saved.first_name ?? "");
-        setPrefFamilies(saved.scent_families ?? []);
-        setPrefIntensity(saved.intensity);
-        setPrefWearTime(saved.wear_time);
-        setPhone(saved.phone.replace(/^\+91/, ""));
-        setView("welcome");
+        applyRow(saved.scent_families ?? [], saved.intensity, saved.wear_time, saved.first_name ?? "");
       }
     })();
     return () => { cancelled = true; };
@@ -301,11 +307,11 @@ export default function ComingSoon() {
     });
   };
 
-  // ---- Preferences persistence ----
+  // ---- Preferences persistence (called on submit, not per-tap) ----
   const persistPrefs = useCallback(
-    async (families: string[], intensity: string | null, wear_time: string | null) => {
+    async (families: string[], intensity: string | null, wear_time: string | null): Promise<boolean> => {
       const phoneE164 = `+91${phone}`;
-      if (!/^\+91[6-9]\d{9}$/.test(phoneE164)) return;
+      if (!/^\+91[6-9]\d{9}$/.test(phoneE164)) return false;
       setPrefSaving(true);
       const { data, error } = await supabase.rpc("save_waitlist_preferences", {
         _phone: phoneE164,
@@ -314,20 +320,17 @@ export default function ComingSoon() {
         _wear_time: wear_time,
       });
       setPrefSaving(false);
-      if (!error && data) {
-        setPrefSaved(true);
-        try {
-          const raw = localStorage.getItem(LS_KEY);
-          const rec: Persisted = raw ? JSON.parse(raw) : { phone: phoneE164, first_name: firstName || null, scent_families: [], intensity: null, wear_time: null };
-          rec.scent_families = families;
-          rec.intensity = intensity;
-          rec.wear_time = wear_time;
-          rec.first_name = firstName || rec.first_name;
-          localStorage.setItem(LS_KEY, JSON.stringify(rec));
-        } catch { /* ignore */ }
-        if (prefSaveTimerRef.current) window.clearTimeout(prefSaveTimerRef.current);
-        prefSaveTimerRef.current = window.setTimeout(() => setPrefSaved(false), 2400);
-      }
+      if (error || !data) return false;
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        const rec: Persisted = raw ? JSON.parse(raw) : { phone: phoneE164, first_name: firstName || null, scent_families: [], intensity: null, wear_time: null };
+        rec.scent_families = families;
+        rec.intensity = intensity;
+        rec.wear_time = wear_time;
+        rec.first_name = firstName || rec.first_name;
+        localStorage.setItem(LS_KEY, JSON.stringify(rec));
+      } catch { /* ignore */ }
+      return true;
     },
     [phone, firstName],
   );
@@ -335,22 +338,50 @@ export default function ComingSoon() {
   const toggleFamily = (fam: string) => {
     setPrefFamilies((prev) => {
       const has = prev.includes(fam);
-      let next: string[];
-      if (has) next = prev.filter((f) => f !== fam);
-      else if (prev.length >= 3) return prev; // cap at 3
-      else next = [...prev, fam];
-      void persistPrefs(next, prefIntensity, prefWearTime);
-      return next;
+      if (has) return prev.filter((f) => f !== fam);
+      if (prev.length >= 3) return prev; // cap at 3
+      return [...prev, fam];
     });
   };
-  const pickIntensity = (val: string) => {
-    setPrefIntensity(val);
-    void persistPrefs(prefFamilies, val, prefWearTime);
+  const pickIntensity = (val: string) => setPrefIntensity(val);
+  const pickWearTime = (val: string) => setPrefWearTime(val);
+
+  const canReveal = prefFamilies.length >= 1;
+
+  const revealDirection = async () => {
+    if (!canReveal || prefSaving) return;
+    const ok = await persistPrefs(prefFamilies, prefIntensity, prefWearTime);
+    if (!ok) return;
+    trackCta("waitlist_reveal_direction");
+    if (prefersReducedMotion) {
+      setStage("result");
+      return;
+    }
+    setFading(true);
+    window.setTimeout(() => {
+      setStage("result");
+      setFading(false);
+    }, 180);
   };
-  const pickWearTime = (val: string) => {
-    setPrefWearTime(val);
-    void persistPrefs(prefFamilies, prefIntensity, val);
+
+  const adjustPreferences = () => {
+    trackCta("waitlist_adjust_preferences");
+    if (prefersReducedMotion) {
+      setStage("picker");
+      return;
+    }
+    setFading(true);
+    window.setTimeout(() => {
+      setStage("picker");
+      setFading(false);
+    }, 180);
   };
+
+  const direction = useMemo(
+    () => resolveDirection(prefFamilies, prefIntensity, prefWearTime),
+    [prefFamilies, prefIntensity, prefWearTime],
+  );
+
 
   const shareUrl = "https://www.bazukifragrance.com/coming-soon";
   const shareMessage = useMemo(
@@ -488,6 +519,32 @@ export default function ComingSoon() {
         .cs-share-btn:hover { background: var(--gold); color: var(--ink); }
         .cs-share-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
         .cs-share-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 12px 0 0; text-align: center; }
+
+        /* Stage transitions */
+        .cs-stage { opacity: 1; transition: opacity 180ms ease; }
+        .cs-stage-fading { opacity: 0; }
+
+        /* Reveal CTA */
+        .cs-reveal-wrap { max-width: 380px; margin: 0.4rem auto 2rem; display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+        .cs-reveal-btn { width: 100%; }
+        .cs-reveal-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.04em; color: var(--ivory-dim); margin: 0; text-align: center; }
+
+        /* Result view */
+        .cs-result { max-width: 460px; margin: 0 auto; }
+        .cs-result-eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ivory); margin: 0 0 0.9rem; }
+        .cs-result-name { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: clamp(1.9rem, 4.6vw, 2.4rem); font-weight: 400; color: var(--ivory); margin: 0 0 1.6rem; line-height: 1.2; }
+        .cs-result-name em { font-style: italic; color: var(--gold); }
+        .cs-note-sketch { display: flex; flex-direction: column; gap: 10px; margin: 0 0 1.6rem; padding: 0; text-align: left; max-width: 380px; margin-left: auto; margin-right: auto; }
+        .cs-note-row { display: grid; grid-template-columns: 70px 1fr; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--hair); padding-bottom: 8px; }
+        .cs-note-row:last-child { border-bottom: none; }
+        .cs-note-row dt { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; margin: 0; }
+        .cs-note-row dd { font-size: 15px; color: var(--ivory); margin: 0; font-weight: 300; letter-spacing: 0.01em; }
+        .cs-result-teaser { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-style: italic; font-size: clamp(15px, 2.4vw, 17px); color: var(--gold); line-height: 1.5; margin: 0 auto 2rem; max-width: 420px; }
+        .cs-result-teaser em { font-style: italic; color: var(--ivory); }
+        .cs-adjust-link { background: none; border: none; color: rgba(245,239,230,0.6); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; padding: 8px 4px; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(245,239,230,0.25); }
+        .cs-adjust-link:hover { color: var(--gold); text-decoration-color: var(--gold); }
+        .cs-adjust-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
 
         .cs-footer { border-top: 1px solid var(--hair); padding-top: 1.6rem; margin-top: 2rem; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .cs-footer .brand { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 14px; letter-spacing: 0.28em; color: var(--gold-dim); text-transform: uppercase; }
@@ -694,95 +751,139 @@ export default function ComingSoon() {
             )}
           </>
         ) : (
-          <>
-            <section className="cs-pref-block" aria-labelledby="pref-family-label">
-              <h2 id="pref-family-label" className="cs-pref-label">Which family pulls you in?</h2>
-              <p className="cs-pref-help">Pick 1–3. Tap again to unselect.</p>
-              <div className="cs-chips" role="group" aria-label="Scent families">
-                {SCENT_FAMILIES.map((fam) => {
-                  const selected = prefFamilies.includes(fam);
-                  const atCap = prefFamilies.length >= 3 && !selected;
-                  return (
-                    <button
-                      key={fam}
-                      type="button"
-                      className="cs-chip"
-                      aria-pressed={selected}
-                      disabled={atCap}
-                      onClick={() => toggleFamily(fam)}
+          <div className={`cs-stage${fading ? " cs-stage-fading" : ""}`}>
+            {stage === "picker" ? (
+              <>
+                <section className="cs-pref-block" aria-labelledby="pref-family-label">
+                  <h2 id="pref-family-label" className="cs-pref-label">Which family pulls you in?</h2>
+                  <p className="cs-pref-help">Pick 1–3. Tap again to unselect.</p>
+                  <div className="cs-chips" role="group" aria-label="Scent families">
+                    {SCENT_FAMILIES.map((fam) => {
+                      const selected = prefFamilies.includes(fam);
+                      const atCap = prefFamilies.length >= 3 && !selected;
+                      return (
+                        <button
+                          key={fam}
+                          type="button"
+                          className="cs-chip"
+                          aria-pressed={selected}
+                          disabled={atCap}
+                          onClick={() => toggleFamily(fam)}
+                        >
+                          {fam}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="cs-pref-block" aria-labelledby="pref-intensity-label">
+                  <h2 id="pref-intensity-label" className="cs-pref-label">How loud should it be?</h2>
+                  <div className="cs-chips" role="radiogroup" aria-label="Intensity">
+                    {INTENSITY_OPTS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        role="radio"
+                        aria-checked={prefIntensity === opt}
+                        aria-pressed={prefIntensity === opt}
+                        className="cs-chip"
+                        onClick={() => pickIntensity(opt)}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="cs-pref-block" aria-labelledby="pref-wear-label">
+                  <h2 id="pref-wear-label" className="cs-pref-label">When will you wear it most?</h2>
+                  <div className="cs-chips" role="radiogroup" aria-label="Wear time">
+                    {WEAR_TIME_OPTS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        role="radio"
+                        aria-checked={prefWearTime === opt}
+                        aria-pressed={prefWearTime === opt}
+                        className="cs-chip"
+                        onClick={() => pickWearTime(opt)}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <div className="cs-reveal-wrap">
+                  <button
+                    type="button"
+                    className="cs-btn cs-reveal-btn"
+                    onClick={revealDirection}
+                    disabled={!canReveal || prefSaving}
+                  >
+                    {prefSaving ? "Saving…" : "Reveal my scent direction"}
+                  </button>
+                  <p className="cs-reveal-hint" aria-live="polite">
+                    {canReveal
+                      ? "A preview — your exact formula unlocks on 29 August."
+                      : "Pick at least one family to reveal your direction."}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <section className="cs-result" aria-labelledby="cs-result-heading">
+                <div className="cs-result-eyebrow">Your direction</div>
+                <h2 id="cs-result-heading" className="cs-result-name">
+                  <em>{direction.name}</em>
+                </h2>
+                <dl className="cs-note-sketch">
+                  <div className="cs-note-row">
+                    <dt>Top</dt>
+                    <dd>{direction.top.join(" · ")}</dd>
+                  </div>
+                  <div className="cs-note-row">
+                    <dt>Heart</dt>
+                    <dd>{direction.heart.join(" · ")}</dd>
+                  </div>
+                  <div className="cs-note-row">
+                    <dt>Base</dt>
+                    <dd>{direction.base.join(" · ")}</dd>
+                  </div>
+                </dl>
+                <p className="cs-result-teaser">
+                  This is the preview. Your exact formula — <em>blended to you</em> — unlocks on 29 August.
+                </p>
+
+                <div className="cs-share-card">
+                  <div className="cs-share-label">Spread the word</div>
+                  <div className="cs-share-actions">
+                    <a
+                      className="cs-share-btn"
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => trackCta("waitlist_share_whatsapp")}
                     >
-                      {fam}
+                      WhatsApp →
+                    </a>
+                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message and open Instagram">
+                      <Instagram size={14} strokeWidth={1.5} aria-hidden />
+                      Instagram
                     </button>
-                  );
-                })}
-              </div>
-            </section>
+                    <button type="button" className="cs-share-btn" onClick={copyShare} aria-label="Copy share message">
+                      {shareCopied ? "Copied ✓" : "Copy message"}
+                    </button>
+                  </div>
+                  <p className="cs-share-hint">Anyone who subscribes gets 50% off their first formula.</p>
+                </div>
 
-            <section className="cs-pref-block" aria-labelledby="pref-intensity-label">
-              <h2 id="pref-intensity-label" className="cs-pref-label">How loud should it be?</h2>
-              <div className="cs-chips" role="radiogroup" aria-label="Intensity">
-                {INTENSITY_OPTS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    role="radio"
-                    aria-checked={prefIntensity === opt}
-                    aria-pressed={prefIntensity === opt}
-                    className="cs-chip"
-                    onClick={() => pickIntensity(opt)}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="cs-pref-block" aria-labelledby="pref-wear-label">
-              <h2 id="pref-wear-label" className="cs-pref-label">When will you wear it most?</h2>
-              <div className="cs-chips" role="radiogroup" aria-label="Wear time">
-                {WEAR_TIME_OPTS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    role="radio"
-                    aria-checked={prefWearTime === opt}
-                    aria-pressed={prefWearTime === opt}
-                    className="cs-chip"
-                    onClick={() => pickWearTime(opt)}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <p className="cs-pref-saved" aria-live="polite">
-              {prefSaving ? "Saving…" : prefSaved ? "Noted. Your formula's already taking shape." : "\u00A0"}
-            </p>
-
-            <div className="cs-share-card">
-              <div className="cs-share-label">Spread the word</div>
-              <div className="cs-share-actions">
-                <a
-                  className="cs-share-btn"
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackCta("waitlist_share_whatsapp")}
-                >
-                  WhatsApp →
-                </a>
-                <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message and open Instagram">
-                  <Instagram size={14} strokeWidth={1.5} aria-hidden />
-                  Instagram
+                <button type="button" className="cs-adjust-link" onClick={adjustPreferences}>
+                  Adjust my preferences
                 </button>
-                <button type="button" className="cs-share-btn" onClick={copyShare} aria-label="Copy share message">
-                  {shareCopied ? "Copied ✓" : "Copy message"}
-                </button>
-              </div>
-              <p className="cs-share-hint">Anyone who subscribes gets 50% off their first formula.</p>
-            </div>
-          </>
+              </section>
+            )}
+          </div>
         )}
 
         <div className="cs-footer">
