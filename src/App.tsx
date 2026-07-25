@@ -54,7 +54,7 @@ import FindYourSignatureScent from "./pages/guides/FindYourSignatureScent";
 import ShopifyDebugPanel from "./components/dev/ShopifyDebugPanel";
 import BazukiCartDrawer from "./components/cart/BazukiCartDrawer";
 import ZukiChat from "./components/zuki/ZukiChat";
-import ReferralWelcomeOverlay from "./components/referral/ReferralWelcomeOverlay";
+
 
 import CheckoutTestChecklist from "./components/dev/CheckoutTestChecklist";
 import OrderConfirmation from "./pages/OrderConfirmation";
