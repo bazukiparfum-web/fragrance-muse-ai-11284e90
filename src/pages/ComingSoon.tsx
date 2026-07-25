@@ -41,9 +41,31 @@ export default function ComingSoon() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [resendIn, setResendIn] = useState(0);
+  const [resendCount, setResendCount] = useState(0);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+
+  const RESEND_MAX = 5;
+  const RESEND_BACKOFF = [30, 60, 120, 180, 300]; // seconds per attempt
+  const nextCooldown = (count: number) => RESEND_BACKOFF[Math.min(count, RESEND_BACKOFF.length - 1)];
+  const resendCapReached = resendCount >= RESEND_MAX;
+
+  const parseFnError = async (error: any): Promise<{ code: string | null; message: string; retryAfterSec?: number }> => {
+    try {
+      const detail = error?.context ? await error.context.text() : null;
+      if (detail) {
+        const parsed = JSON.parse(detail);
+        return {
+          code: typeof parsed?.code === "string" ? parsed.code : null,
+          message: typeof parsed?.error === "string" ? parsed.error : "Something went wrong. Try again.",
+          retryAfterSec: typeof parsed?.retryAfterSec === "number" ? parsed.retryAfterSec : undefined,
+        };
+      }
+    } catch { /* ignore */ }
+    return { code: null, message: error?.message ?? "Something went wrong. Try again." };
+  };
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
