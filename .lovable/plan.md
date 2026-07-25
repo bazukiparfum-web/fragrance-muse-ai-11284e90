@@ -1,96 +1,81 @@
-# Prelaunch Landing Redesign
+## Scent Direction Reveal — State B payoff
 
-Restructure `/coming-soon` around two mutually exclusive states, refine the aesthetic, and add a scent preference picker + generic share row. The existing WhatsApp OTP send/verify flow (edge functions, 11za integration, resend backoff, error parsing) stays byte-for-byte the same — only the surrounding UI and post-verify experience change.
+Turn State B on `/coming-soon` from a chip picker into a picker → submit → personalized "direction" reveal, with share moved after the reveal. No changes to OTP, DB schema, or State A.
 
-## 1. Data model additions
+### 1. State B sub-views
 
-Migration on `prelaunch_signups`:
-- Add `scent_families text[]`, `intensity text`, `wear_time text` (all nullable — preferences are optional).
-- Add `UNIQUE (phone)` and `UNIQUE (email)` constraints so repeat submissions upsert instead of duplicating.
-- Update the existing insert path to `ON CONFLICT (phone) DO UPDATE SET first_name = EXCLUDED.first_name, email = EXCLUDED.email` (handled inside the current post-OTP insert).
-- Add a `SECURITY DEFINER` RPC `save_prelaunch_preferences(p_phone text, p_families text[], p_intensity text, p_wear_time text)` so State B can write preferences without exposing broad table update rights. RLS on `prelaunch_signups` stays locked; RPC is granted to `anon, authenticated`.
-- Add a lightweight public RPC `prelaunch_spots_left()` returning `CAP - count(*)` (CAP = 100 constant in the function) so the scarcity line doesn't require table-wide select.
+Add a local `stage: "picker" | "result"` in `ComingSoon.tsx`, defaulting from persistence:
+- If the stored row already has `scent_families.length > 0` AND both `intensity` and `wear_time` set → hydrate `stage = "result"` on mount so returning visitors land on their reveal.
+- Otherwise → `stage = "picker"`.
 
-## 2. Two-state page structure
+Transition is an in-place fade (150–200ms opacity/translate, `prefers-reduced-motion` disables it). No route change, no reload.
 
-Refactor `src/pages/ComingSoon.tsx` around a single `view` derived from persistence, never both at once:
+### 2. Picker view (existing chips, adjusted)
 
-```
-view = "subscribe" | "welcome"
-```
+Keep the three chip questions exactly as they are (family multi-select 1–3, intensity single, wear-time single). Change the interaction model:
+- Remove per-tap autosave. Selections stay in local state only until submit.
+- Add primary CTA button under the three blocks: **"Reveal my scent direction"**, gold-filled, same visual weight as State A's Reserve button.
+- Disabled state: enabled only when `families.length >= 1`. Intensity and wear-time remain optional (fall back to sensible defaults in the mapping if missing).
+- On submit: call existing `save_waitlist_preferences` RPC once with all three values, update `localStorage`, then fade to result. On RPC error, keep them on picker with the existing error toast pattern.
 
-- On mount: check `localStorage.bazuki_prelaunch` for `{phone, firstName}`. If present, call an RPC `get_prelaunch_signup(p_phone)` to hydrate `firstName` + saved preferences and switch to `welcome`. Otherwise `subscribe`.
-- After successful OTP verify (existing flow) → write localStorage → `setView("welcome")`. No reload.
+Hide the share row on the picker view.
 
-### State A — Subscribe
+### 3. Result view (the payoff)
 
-Layout (mobile-first, single column, max-w ~ 520px):
-1. Eyebrow `FORMULA IN PROGRESS` — cream `#F5EFE6`, 13px, tracking `0.18em`.
-2. Headline (Cormorant Garamond): "Your scent is being **_calibrated_**." — "calibrated" in gold italic.
-3. Subhead (Inter): "India's first AI-algorithmic perfume house, finishing its first batch. One bottle built for you."
-4. Animated line-art bottle (see §3).
-5. Countdown D / H / M / S to 29 Aug 2026 00:00 IST (reuse existing tick loop).
-6. Scarcity line: `Only {spotsLeft} founding spots left` — fetched via `prelaunch_spots_left()` on mount, refetched after successful signup.
-7. Form (reordered, lowest commitment first):
-   - First name (text)
-   - Mobile (tel) with fixed `+91` prefix rendered inside the field; user types 10 digits; existing `phoneSchema` regex unchanged.
-   - Email (email)
-   - Single primary button: **Reserve my 50% spot** (gold fill, cream label).
-8. On submit → existing `whatsapp-send-otp` call → existing verify step (unchanged UI subtree, just re-skinned to match new type scale). On verify success → upsert row with E.164 phone (`+91` prepended server-side in the verify function's insert path) → transition to State B.
+Layout, top to bottom, inside the same max-width container:
 
-### State B — Welcome
+1. Countdown strip stays pinned above (unchanged component, just kept visible).
+2. Eyebrow: `YOUR DIRECTION` — cream, 13px, tracking 0.18em.
+3. Direction name in Cormorant Garamond, gold italic on the noun (e.g. *The Midnight Oud direction*).
+4. Three-line note sketch, stacked:
+   ```text
+   TOP     Bergamot · Pink Pepper
+   HEART   Rose · Iris
+   BASE    Oud · Sandalwood · Amber
+   ```
+   Gold uppercase labels (11px, tracking 0.2em), cream note names (Inter, 15px).
+5. Teaser line, gold italic Cormorant, 15–17px:
+   *"This is the preview. Your exact formula — blended to you — unlocks on 29 August."*
+6. Share row (WhatsApp + Copy message + Instagram) — moved here verbatim from its current State B position.
+7. Subtle text link, cream/60 underline-on-hover: **"Adjust my preferences"** → fades back to picker with current selections pre-filled; re-submit re-runs the reveal transition and re-saves.
 
-1. Confirmation headline: `You're in, {FirstName}. Your 50% off early bird price is locked.` (gold italic on the name).
-2. Sub-line: "Now tell us what you love — we'll calibrate your first formula around it."
-3. Countdown stays visible (compact strip).
-4. **Scent Preference Picker** (the core of State B, mobile chip UI):
-   - Q1 "Which family pulls you in?" — multi-select 1–3 chips: Woody, Fresh/Citrus, Floral, Oriental/Spicy, Aquatic, Gourmand.
-   - Q2 "How loud should it be?" — single choice: Subtle / Balanced / Bold.
-   - Q3 "When will you wear it most?" — single choice: Daytime / Evening / Office / Party.
-   - Autosave on each tap via `save_prelaunch_preferences` RPC (debounced 400ms). Micro-confirm toast/inline "Noted. Your formula's already taking shape." after first save.
-   - Pre-select saved chips on return. Never gate confirmation on completing them.
-5. **Share row** (visually subordinate, gold outline buttons):
-   - Shared message constant:
-     `Bazuki is launching India's first AI-algorithmic perfume house — your own formula, blended to you. Early subscribers get 50% off the first batch. Reserve your spot: https://bazukifragrance.com/prelaunch`
-   - WhatsApp → `https://wa.me/?text={encoded}`.
-   - Instagram → `navigator.clipboard.writeText(msg)` + toast "Message copied — paste it into your Instagram story or DM", then open `https://www.instagram.com/bazukiperfume/` in a new tab.
-   - Optional "Follow @bazukiperfumes" outline button as final step.
-6. Footer: `BAZUKI — discover your formula · @bazukiperfumes`.
+### 4. Direction mapping (client-side)
 
-## 3. Bottle animation
+Add `src/lib/scentDirections.ts` exporting `resolveDirection(families, intensity, wearTime) → { name, top[], heart[], base[] }`.
 
-Replace the current static/elapsed-fill SVG with a continuous 4s calibration loop:
-- SVG `<rect>` clipped to bottle silhouette, `y` and `height` animated via CSS keyframes from 85% → 20% → 85% over 4s ease-in-out, infinite. Gold fill at 60% opacity.
-- Overlay 6 tiny gold dots drifting upward at randomized delays (pure CSS `@keyframes` translateY + opacity) to read as particles.
-- `@media (prefers-reduced-motion: reduce)` → static half-fill, no drift.
+Resolution strategy:
+- Primary family = `families[0]` (the first tapped chip; multi-select order preserved).
+- Lookup a small table keyed on `primaryFamily` × `intensity` × `wearTime`. Cover the common combinations explicitly:
+  - Woody + Bold + Evening → "The Midnight Oud direction"
+  - Woody + Balanced + Office → "The Quiet Cedar direction"
+  - Fresh/Citrus + Subtle + Daytime → "The First Light direction"
+  - Fresh/Citrus + Balanced + Office → "The Clean Slate direction"
+  - Floral + Balanced + any → "The Garden Hour direction"
+  - Floral + Bold + Evening → "The Velvet Bloom direction"
+  - Oriental/Spicy + Bold + Evening → "The Ember Trail direction"
+  - Aquatic + Subtle + Daytime → "The Open Sea direction"
+  - Gourmand + Balanced + Evening → "The Slow Honey direction"
+- Fallback: per-family default (one entry per family) used when intensity/wear-time are missing or the combo isn't in the table.
+- Note pools per family drawn from `src/lib/noteDescriptions.ts` names so the words match what the site already uses. Each entry ships fixed 2 top / 2 heart / 2–3 base notes — no randomness (same inputs → same result, matters for "Adjust my preferences").
 
-## 4. Aesthetic refinements
+### 5. Copy & framing guardrails
 
-- Backgrounds unify on `#0A0A0A`; remove any secondary panels.
-- All eyebrow/label text: cream `#F5EFE6`, min 13px, tracking `0.16–0.2em` — retire the tiny gold-on-black labels for contrast.
-- Body/UI font: Inter (already loaded via Tailwind stack) — enforce on inputs, buttons, chips, countdown numerals. Cormorant Garamond stays for the H1 only.
-- Focus ring: `outline: 2px solid #C9A84C; outline-offset: 2px` on all interactive elements.
-- Chips: unselected = 1px cream/20 border; selected = 1.5px gold border + inline check icon (so state is distinguishable without color).
+Never call this the final scent. Only these three framings appear on the reveal:
+- "direction" (in the name and eyebrow)
+- "preview" (in the teaser)
+- "unlocks 29 August" (in the teaser)
 
-## 5. Preserved (do NOT touch)
+No "your formula", no "your scent" as noun phrases on this view.
 
-- `supabase/functions/whatsapp-send-otp/index.ts`
-- `supabase/functions/whatsapp-verify-waitlist-otp/index.ts`
-- 11za origin/template config, `WHATSAPP_11ZA_*` secrets
-- Resend backoff schedule, error-code parsing, verify step UI logic
-- SEO/`useSEO` noindex settings
+### 6. Files touched
 
-## 6. Files touched
+- `src/pages/ComingSoon.tsx` — add `stage` state, split State B into picker + result subtrees, move submit-based save, move share row into result, add "Adjust my preferences" link, fade transition.
+- `src/lib/scentDirections.ts` — new; mapping table + `resolveDirection` helper.
+- No SQL, no edge function, no OTP changes.
 
-- `supabase/migrations/<new>.sql` — columns, unique constraints, two RPCs + grants.
-- `src/pages/ComingSoon.tsx` — restructured into `SubscribeState` + `WelcomeState` subcomponents; existing OTP handlers moved verbatim into `SubscribeState`.
-- `src/components/prelaunch/CalibratingBottle.tsx` — new, animated SVG.
-- `src/components/prelaunch/ScentPreferencePicker.tsx` — new, chip UI + autosave.
-- `src/components/prelaunch/ShareRow.tsx` — new, WhatsApp + Instagram buttons.
-- `src/index.css` — small keyframe additions for bottle fill + particle drift.
+### 7. Out of scope
 
-## 7. Out of scope
-
-- No changes to referral system (already removed).
-- No changes to OG image or `index.html` meta (already set for prelaunch).
-- No analytics changes beyond keeping the existing `trackCta` calls on the primary CTA.
+- OTP send/verify, 11za config, rate limiting, secrets — untouched.
+- Schema, RPCs, RLS — untouched (existing `save_waitlist_preferences` handles the write).
+- State A layout, countdown, animated bottle — untouched.
+- Analytics/tracking beyond what already fires.
