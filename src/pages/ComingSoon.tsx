@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
+import { Instagram } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSEO } from "@/hooks/useSEO";
 import CollectionAmbience from "@/components/library/CollectionAmbience";
@@ -270,6 +271,122 @@ export default function ComingSoon() {
     } catch { /* noop */ }
   };
 
+  const generateStoryImage = async (): Promise<string> => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+
+    // Wait for the imported web fonts to load so the canvas renders them correctly.
+    if (document.fonts) {
+      try { await document.fonts.ready; } catch { /* ignore */ }
+    }
+
+    // Background
+    ctx.fillStyle = "#0A0908";
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // Subtle gold border
+    ctx.strokeStyle = "rgba(201,164,92,0.45)";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(40, 40, 1000, 1840);
+
+    // Decorative corner ticks
+    ctx.strokeStyle = "rgba(201,164,92,0.25)";
+    ctx.lineWidth = 2;
+    const tick = 24;
+    // Top-left
+    ctx.beginPath(); ctx.moveTo(40, 40 + tick); ctx.lineTo(40, 40); ctx.lineTo(40 + tick, 40); ctx.stroke();
+    // Top-right
+    ctx.beginPath(); ctx.moveTo(1040 - tick, 40); ctx.lineTo(1040, 40); ctx.lineTo(1040, 40 + tick); ctx.stroke();
+    // Bottom-left
+    ctx.beginPath(); ctx.moveTo(40, 1840 - tick); ctx.lineTo(40, 1840); ctx.lineTo(40 + tick, 1840); ctx.stroke();
+    // Bottom-right
+    ctx.beginPath(); ctx.moveTo(1040 - tick, 1840); ctx.lineTo(1040, 1840); ctx.lineTo(1040, 1840 - tick); ctx.stroke();
+
+    // Brand wordmark
+    ctx.fillStyle = "rgba(201,164,92,0.85)";
+    ctx.font = "300 28px 'JetBrains Mono', ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("BAZUKI", 540, 160);
+
+    // Headline
+    ctx.fillStyle = "#EDE7D9";
+    ctx.font = "italic 400 84px 'Cormorant Garamond', 'Cormorant', serif";
+    ctx.textAlign = "center";
+    ctx.fillText("I joined", 540, 560);
+    ctx.fillText("Bazuki early access", 540, 660);
+
+    // Offer badge
+    ctx.fillStyle = "rgba(201,164,92,0.12)";
+    ctx.strokeStyle = "rgba(201,164,92,0.55)";
+    ctx.lineWidth = 2;
+    if (typeof ctx.roundRect === "function") {
+      ctx.beginPath();
+      ctx.roundRect(240, 780, 600, 160, 4);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.fillRect(240, 780, 600, 160);
+      ctx.strokeRect(240, 780, 600, 160);
+    }
+
+    ctx.fillStyle = "#C9A45C";
+    ctx.font = "500 92px 'JetBrains Mono', ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("50% OFF", 540, 880);
+
+    // Subtext
+    ctx.fillStyle = "#A6A092";
+    ctx.font = "300 38px 'JetBrains Mono', ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("my first AI-crafted fragrance", 540, 1020);
+
+    // CTA line
+    ctx.fillStyle = "#EDE7D9";
+    ctx.font = "300 34px 'JetBrains Mono', ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("Join the waitlist", 540, 1340);
+
+    // URL
+    ctx.fillStyle = "#C9A45C";
+    ctx.font = "400 30px 'JetBrains Mono', ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("bazukifragrance.com/coming-soon", 540, 1410);
+
+    // Bottom lockup
+    ctx.fillStyle = "rgba(201,164,92,0.6)";
+    ctx.font = "300 24px 'JetBrains Mono', ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("INDIA'S FIRST AI-PERFUME HOUSE", 540, 1760);
+
+    return canvas.toDataURL("image/png");
+  };
+
+  const shareInstagramStory = async () => {
+    try {
+      trackCta("waitlist_share_instagram");
+      const dataUrl = await generateStoryImage();
+      if (!dataUrl) return;
+
+      // Try to open Instagram app on mobile first
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        // Instagram deep link for stories camera; fallback handled below
+        window.location.href = "instagram://story";
+      }
+
+      // Download the story image so the user can upload it manually
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = "bazuki-early-access-story.png";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch { /* noop */ }
+  };
+
 
   return (
     <div className="cs-root">
@@ -359,6 +476,7 @@ export default function ComingSoon() {
         .cs-footer .brand { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 14px; letter-spacing: 0.28em; color: var(--gold-dim); text-transform: uppercase; }
         .cs-footer .ig { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.08em; }
         .cs-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        .cs-spots { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.14em; color: var(--gold); text-transform: uppercase; margin-bottom: 2.4rem; }
         .cs-capture input:focus-visible { outline: 2px solid var(--gold); outline-offset: -1px; }
         .cs-footer .brand:focus-visible, .cs-footer .ig:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
         @media (prefers-reduced-motion: reduce) {
@@ -470,6 +588,15 @@ export default function ComingSoon() {
                 >
                   WhatsApp →
                 </a>
+                <button
+                  type="button"
+                  className="cs-share-btn"
+                  onClick={shareInstagramStory}
+                  aria-label="Share on Instagram Story"
+                >
+                  <Instagram size={14} strokeWidth={1.5} aria-hidden />
+                  Instagram
+                </button>
                 <button
                   type="button"
                   className="cs-share-btn"
