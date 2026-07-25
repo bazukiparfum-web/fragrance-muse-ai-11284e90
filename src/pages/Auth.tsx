@@ -103,30 +103,13 @@ const Auth = () => {
 
       if (error) throw error;
 
-      // Handle referral code after successful signup
+      // Handle referral code after successful signup (server validates via SECURITY DEFINER RPC)
       const storedReferralCode = localStorage.getItem('pendingReferralCode');
-      if (storedReferralCode && data.user) {
+      if (storedReferralCode && data.session) {
         try {
-          // Find the referral
-          const { data: referral } = await supabase
-            .from('referrals')
-            .select('*')
-            .eq('referral_code', storedReferralCode)
-            .maybeSingle();
-
-          if (referral && referral.uses_count < referral.max_uses) {
-            // Create pending referral reward for the new user
-            await supabase
-              .from('referral_rewards')
-              .insert({
-                referral_id: referral.id,
-                referrer_id: referral.referrer_id,
-                referee_id: data.user.id,
-                referee_email: email,
-                status: 'pending',
-              });
-          }
-
+          await supabase.rpc('claim_referral_reward', {
+            _referral_code: storedReferralCode,
+          });
           localStorage.removeItem('pendingReferralCode');
         } catch (error) {
           console.error('Error processing referral:', error);
