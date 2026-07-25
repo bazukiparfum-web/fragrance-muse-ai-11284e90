@@ -582,6 +582,15 @@ export default function ComingSoon() {
                 <button
                   type="button"
                   className="cs-share-btn"
+                  onClick={shareInstagramStory}
+                  aria-label="Share on Instagram Story"
+                >
+                  <Instagram size={14} strokeWidth={1.5} aria-hidden />
+                  Instagram
+                </button>
+                <button
+                  type="button"
+                  className="cs-share-btn"
                   onClick={nativeShare}
                   aria-label="Copy link or share"
                 >
