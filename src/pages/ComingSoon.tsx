@@ -725,95 +725,139 @@ export default function ComingSoon() {
             )}
           </>
         ) : (
-          <>
-            <section className="cs-pref-block" aria-labelledby="pref-family-label">
-              <h2 id="pref-family-label" className="cs-pref-label">Which family pulls you in?</h2>
-              <p className="cs-pref-help">Pick 1–3. Tap again to unselect.</p>
-              <div className="cs-chips" role="group" aria-label="Scent families">
-                {SCENT_FAMILIES.map((fam) => {
-                  const selected = prefFamilies.includes(fam);
-                  const atCap = prefFamilies.length >= 3 && !selected;
-                  return (
-                    <button
-                      key={fam}
-                      type="button"
-                      className="cs-chip"
-                      aria-pressed={selected}
-                      disabled={atCap}
-                      onClick={() => toggleFamily(fam)}
+          <div className={`cs-stage${fading ? " cs-stage-fading" : ""}`}>
+            {stage === "picker" ? (
+              <>
+                <section className="cs-pref-block" aria-labelledby="pref-family-label">
+                  <h2 id="pref-family-label" className="cs-pref-label">Which family pulls you in?</h2>
+                  <p className="cs-pref-help">Pick 1–3. Tap again to unselect.</p>
+                  <div className="cs-chips" role="group" aria-label="Scent families">
+                    {SCENT_FAMILIES.map((fam) => {
+                      const selected = prefFamilies.includes(fam);
+                      const atCap = prefFamilies.length >= 3 && !selected;
+                      return (
+                        <button
+                          key={fam}
+                          type="button"
+                          className="cs-chip"
+                          aria-pressed={selected}
+                          disabled={atCap}
+                          onClick={() => toggleFamily(fam)}
+                        >
+                          {fam}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="cs-pref-block" aria-labelledby="pref-intensity-label">
+                  <h2 id="pref-intensity-label" className="cs-pref-label">How loud should it be?</h2>
+                  <div className="cs-chips" role="radiogroup" aria-label="Intensity">
+                    {INTENSITY_OPTS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        role="radio"
+                        aria-checked={prefIntensity === opt}
+                        aria-pressed={prefIntensity === opt}
+                        className="cs-chip"
+                        onClick={() => pickIntensity(opt)}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="cs-pref-block" aria-labelledby="pref-wear-label">
+                  <h2 id="pref-wear-label" className="cs-pref-label">When will you wear it most?</h2>
+                  <div className="cs-chips" role="radiogroup" aria-label="Wear time">
+                    {WEAR_TIME_OPTS.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        role="radio"
+                        aria-checked={prefWearTime === opt}
+                        aria-pressed={prefWearTime === opt}
+                        className="cs-chip"
+                        onClick={() => pickWearTime(opt)}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <div className="cs-reveal-wrap">
+                  <button
+                    type="button"
+                    className="cs-btn cs-reveal-btn"
+                    onClick={revealDirection}
+                    disabled={!canReveal || prefSaving}
+                  >
+                    {prefSaving ? "Saving…" : "Reveal my scent direction"}
+                  </button>
+                  <p className="cs-reveal-hint" aria-live="polite">
+                    {canReveal
+                      ? "A preview — your exact formula unlocks on 29 August."
+                      : "Pick at least one family to reveal your direction."}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <section className="cs-result" aria-labelledby="cs-result-heading">
+                <div className="cs-result-eyebrow">Your direction</div>
+                <h2 id="cs-result-heading" className="cs-result-name">
+                  <em>{direction.name}</em>
+                </h2>
+                <dl className="cs-note-sketch">
+                  <div className="cs-note-row">
+                    <dt>Top</dt>
+                    <dd>{direction.top.join(" · ")}</dd>
+                  </div>
+                  <div className="cs-note-row">
+                    <dt>Heart</dt>
+                    <dd>{direction.heart.join(" · ")}</dd>
+                  </div>
+                  <div className="cs-note-row">
+                    <dt>Base</dt>
+                    <dd>{direction.base.join(" · ")}</dd>
+                  </div>
+                </dl>
+                <p className="cs-result-teaser">
+                  This is the preview. Your exact formula — <em>blended to you</em> — unlocks on 29 August.
+                </p>
+
+                <div className="cs-share-card">
+                  <div className="cs-share-label">Spread the word</div>
+                  <div className="cs-share-actions">
+                    <a
+                      className="cs-share-btn"
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => trackCta("waitlist_share_whatsapp")}
                     >
-                      {fam}
+                      WhatsApp →
+                    </a>
+                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message and open Instagram">
+                      <Instagram size={14} strokeWidth={1.5} aria-hidden />
+                      Instagram
                     </button>
-                  );
-                })}
-              </div>
-            </section>
+                    <button type="button" className="cs-share-btn" onClick={copyShare} aria-label="Copy share message">
+                      {shareCopied ? "Copied ✓" : "Copy message"}
+                    </button>
+                  </div>
+                  <p className="cs-share-hint">Anyone who subscribes gets 50% off their first formula.</p>
+                </div>
 
-            <section className="cs-pref-block" aria-labelledby="pref-intensity-label">
-              <h2 id="pref-intensity-label" className="cs-pref-label">How loud should it be?</h2>
-              <div className="cs-chips" role="radiogroup" aria-label="Intensity">
-                {INTENSITY_OPTS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    role="radio"
-                    aria-checked={prefIntensity === opt}
-                    aria-pressed={prefIntensity === opt}
-                    className="cs-chip"
-                    onClick={() => pickIntensity(opt)}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="cs-pref-block" aria-labelledby="pref-wear-label">
-              <h2 id="pref-wear-label" className="cs-pref-label">When will you wear it most?</h2>
-              <div className="cs-chips" role="radiogroup" aria-label="Wear time">
-                {WEAR_TIME_OPTS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    role="radio"
-                    aria-checked={prefWearTime === opt}
-                    aria-pressed={prefWearTime === opt}
-                    className="cs-chip"
-                    onClick={() => pickWearTime(opt)}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <p className="cs-pref-saved" aria-live="polite">
-              {prefSaving ? "Saving…" : prefSaved ? "Noted. Your formula's already taking shape." : "\u00A0"}
-            </p>
-
-            <div className="cs-share-card">
-              <div className="cs-share-label">Spread the word</div>
-              <div className="cs-share-actions">
-                <a
-                  className="cs-share-btn"
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackCta("waitlist_share_whatsapp")}
-                >
-                  WhatsApp →
-                </a>
-                <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message and open Instagram">
-                  <Instagram size={14} strokeWidth={1.5} aria-hidden />
-                  Instagram
+                <button type="button" className="cs-adjust-link" onClick={adjustPreferences}>
+                  Adjust my preferences
                 </button>
-                <button type="button" className="cs-share-btn" onClick={copyShare} aria-label="Copy share message">
-                  {shareCopied ? "Copied ✓" : "Copy message"}
-                </button>
-              </div>
-              <p className="cs-share-hint">Anyone who subscribes gets 50% off their first formula.</p>
-            </div>
-          </>
+              </section>
+            )}
+          </div>
         )}
 
         <div className="cs-footer">
