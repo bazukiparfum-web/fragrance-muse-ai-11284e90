@@ -1489,11 +1489,14 @@ export type Database = {
           email_variant: string | null
           first_name: string | null
           id: string
+          intensity: string | null
           phone: string | null
           phone_verified_at: string | null
           referral_code: string
           referred_by: string | null
+          scent_families: string[] | null
           utm_source: string | null
+          wear_time: string | null
         }
         Insert: {
           created_at?: string
@@ -1501,11 +1504,14 @@ export type Database = {
           email_variant?: string | null
           first_name?: string | null
           id?: string
+          intensity?: string | null
           phone?: string | null
           phone_verified_at?: string | null
           referral_code: string
           referred_by?: string | null
+          scent_families?: string[] | null
           utm_source?: string | null
+          wear_time?: string | null
         }
         Update: {
           created_at?: string
@@ -1513,11 +1519,14 @@ export type Database = {
           email_variant?: string | null
           first_name?: string | null
           id?: string
+          intensity?: string | null
           phone?: string | null
           phone_verified_at?: string | null
           referral_code?: string
           referred_by?: string | null
+          scent_families?: string[] | null
           utm_source?: string | null
+          wear_time?: string | null
         }
         Relationships: []
       }
@@ -1635,6 +1644,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_waitlist_signup: { Args: { _phone: string }; Returns: Json }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -1644,6 +1654,7 @@ export type Database = {
         }
         Returns: number
       }
+      prelaunch_spots_left: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -1657,6 +1668,15 @@ export type Database = {
         Returns: undefined
       }
       referrals_open: { Args: never; Returns: boolean }
+      save_waitlist_preferences: {
+        Args: {
+          _intensity?: string
+          _phone: string
+          _scent_families?: string[]
+          _wear_time?: string
+        }
+        Returns: boolean
+      }
       spots_remaining: { Args: never; Returns: number }
       total_redemptions: { Args: never; Returns: number }
       validate_referral_code: { Args: { _code: string }; Returns: Json }
