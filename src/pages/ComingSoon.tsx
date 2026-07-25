@@ -271,12 +271,17 @@ export default function ComingSoon() {
     } catch { /* noop */ }
   };
 
-  const generateStoryImage = (): string => {
+  const generateStoryImage = async (): Promise<string> => {
     const canvas = document.createElement("canvas");
     canvas.width = 1080;
     canvas.height = 1920;
     const ctx = canvas.getContext("2d");
     if (!ctx) return "";
+
+    // Wait for the imported web fonts to load so the canvas renders them correctly.
+    if (document.fonts) {
+      try { await document.fonts.ready; } catch { /* ignore */ }
+    }
 
     // Background
     ctx.fillStyle = "#0A0908";
@@ -304,9 +309,7 @@ export default function ComingSoon() {
     ctx.fillStyle = "rgba(201,164,92,0.85)";
     ctx.font = "300 28px 'JetBrains Mono', ui-monospace, monospace";
     ctx.textAlign = "center";
-    ctx.letterSpacing = "0.34em";
     ctx.fillText("BAZUKI", 540, 160);
-    ctx.letterSpacing = "0";
 
     // Headline
     ctx.fillStyle = "#EDE7D9";
@@ -319,10 +322,15 @@ export default function ComingSoon() {
     ctx.fillStyle = "rgba(201,164,92,0.12)";
     ctx.strokeStyle = "rgba(201,164,92,0.55)";
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(240, 780, 600, 160, 4);
-    ctx.fill();
-    ctx.stroke();
+    if (typeof ctx.roundRect === "function") {
+      ctx.beginPath();
+      ctx.roundRect(240, 780, 600, 160, 4);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.fillRect(240, 780, 600, 160);
+      ctx.strokeRect(240, 780, 600, 160);
+    }
 
     ctx.fillStyle = "#C9A45C";
     ctx.font = "500 92px 'JetBrains Mono', ui-monospace, monospace";
@@ -359,7 +367,7 @@ export default function ComingSoon() {
   const shareInstagramStory = async () => {
     try {
       trackCta("waitlist_share_instagram");
-      const dataUrl = generateStoryImage();
+      const dataUrl = await generateStoryImage();
       if (!dataUrl) return;
 
       // Try to open Instagram app on mobile first
