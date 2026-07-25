@@ -1,60 +1,64 @@
-
 ## Goal
 
-Prevent OTP spam on the `/coming-soon` waitlist and give visitors clear, actionable messages when a WhatsApp send fails.
+Replace the current WhatsApp-OTP prelaunch flow at `/coming-soon` with a minimal, dark-luxury email-capture page in two mutually exclusive states, reusing the existing `waitlist_signups` table.
 
-## 1. Resend timer + limit (client)
+## Design tokens (locked)
 
-In `src/pages/ComingSoon.tsx`:
+- Bg `#0A0A0A`, gold `#C9A84C`, cream `#F5EFE6`
+- Cormorant Garamond headings, Inter (existing sans) body/UI
+- Eyebrows / small labels: cream, ≥13px, modest letter-spacing (~0.15em)
+- Gold focus ring on every interactive element
 
-- Extend the current `resendIn` cooldown from 30s to a stepped backoff: 30s → 60s → 120s → 300s based on a new `resendCount` state.
-- Track `resendCount` per session; after **5 resends**, disable the Resend button entirely and show: "Resend limit reached. Check your WhatsApp inbox or try a different number."
-- Rendering:
-  - Resend button shows `Resend in 0:29` while `resendIn > 0` and is `disabled`.
-  - Once `resendIn === 0` and under the cap → `Resend code`.
-  - At the cap → disabled + helper text.
-- The initial `SEND WHATSAPP OTP` action on the details step is also disabled while `status === "loading"` to prevent double-taps.
-- "Change number" link resets `resendCount`, `resendIn`, `otp`, `errorMsg` and returns to `details`.
+## State A — not subscribed
 
-## 2. Server-side rate limits (edge)
+Layout, top → bottom, centered single column:
 
-`supabase/functions/whatsapp-send-otp/index.ts` already limits per phone (3/10min) and per IP (10/hr). Tighten and surface:
+1. Eyebrow: `FORMULA IN PROGRESS` (cream)
+2. Headline: `Your scent is being calibrated.` — "calibrated" in gold italic Cormorant
+3. Subhead: `India's first AI-algorithmic perfume house, finishing its first batch. One bottle built for you.`
+4. Animated line-art bottle (SVG): existing stroke bottle motif; ~4s loop of a gold liquid rising from base to ~60% and easing back down (single `<rect>` inside a clipPath, animated via CSS keyframes). Respect `prefers-reduced-motion` → static half-fill.
+5. Countdown to **2026-08-29 00:00 IST** — DD / HH / MM / SS, monospace tabular numerals, gold dividers.
+6. Scarcity line: `Only {spotsLeft} founding spots left` — cream, gold number. `spotsLeft = CAP - count(waitlist_signups)`, `CAP = 100`, fetched once on mount via `supabase.from('waitlist_signups').select('*', { count: 'exact', head: true })`. Hide line if count query fails.
+7. Form: single email input + button `Reserve my 50% spot`. On submit → `create_waitlist_signup` RPC (email only, no phone), then set localStorage flag and swap to State B without reload. Inline error on failure.
 
-- Return `retryAfterSec` in the 429 JSON body (compute from the oldest timestamp in the window).
-- Add `Retry-After` header on 429 responses.
-- Keep existing limits; they align with the client cap.
+## State B — subscribed
 
-## 3. Clearer WhatsApp error messages
+1. Headline: `You're in. Your 50% founding price is locked.` ("locked" gold italic)
+2. Same countdown component (reused)
+3. Single ghost-gold button: `Follow us for the drop` → `https://instagram.com/bazukiperfumes`
+4. No email field, no share block, no referral copy
 
-Map provider/network failures to specific, human copy. Both edge and client change.
+## Persistence
 
-Edge (`whatsapp-send-otp`): classify errors before responding with 502/429/400 and return a stable `code` plus `error` message. Codes:
+- On mount: if `localStorage.getItem('bz_waitlist_email')` exists → State B.
+- Else if URL has `?email=` (from email links) → check `waitlist_signups` for that email; if found, set localStorage + State B.
+- Otherwise State A.
 
-- `invalid_phone` (400) — "That doesn't look like a valid Indian mobile. Check the 10 digits and try again."
-- `rate_limited_phone` (429) — "You've requested too many codes for this number. Try again in Xm Ys."
-- `rate_limited_ip` (429) — "Too many requests from your network. Try again in a bit."
-- `provider_origin_unapproved` (503) — "WhatsApp OTP is temporarily unavailable. Please contact Bazuki support."
-- `provider_unreachable` (502) — "We couldn't reach WhatsApp right now. Check your connection and retry."
-- `provider_rejected` (502) — "WhatsApp couldn't deliver to this number. Double-check it's on WhatsApp, or try another."
-- `internal` (500) — generic retry copy.
+## Footer
 
-Client (`ComingSoon.tsx`):
+Single centered line, cream muted:
+`BAZUKI — discover your formula · @bazukiperfumes`
 
-- Parse `{ code, error, retryAfterSec }` from the function response body (already reading `error.context.text()`).
-- On `rate_limited_phone`, set `resendIn = retryAfterSec` and jump straight to the `verify` step if we haven't already, so the user can still enter a previously received code.
-- Replace the small red text with a dedicated error banner above the CTA: icon + message + optional secondary action ("Change number" for phone errors, "Retry" for provider errors).
-- Success toast unchanged.
+## Files
 
-## 4. Verify-OTP UX polish (small)
+- **Rewrite** `src/pages/ComingSoon.tsx` — remove phone step, OTP UI, resend cooldown, share block, Instagram-story canvas, WhatsApp share. Keep SEO/meta noindex. Two-state render.
+- **Keep** existing route wiring in `src/App.tsx` (already `/` and `/coming-soon`).
+- **Leave untouched** (dead but harmless, per user's "reuse table, keep OTP code"): `whatsapp-send-otp`, `whatsapp-verify-waitlist-otp` edge functions and their secrets.
 
-`whatsapp-verify-waitlist-otp` errors are already surfaced. Add explicit copy for:
+## Data / backend
 
-- Wrong code → "That code doesn't match. Check WhatsApp and try again."
-- Expired → "This code expired. Tap Resend for a new one." + auto-enable resend by setting `resendIn = 0`.
+- No schema migration. Reuse `waitlist_signups` and existing `create_waitlist_signup` RPC (already supports email-only, phone null).
+- No new edge functions.
+- Admin `/admin/waitlist` continues to work unchanged.
 
-## Technical notes
+## Accessibility
 
-- No DB migrations needed — rate limiting stays in-memory (matches existing pattern) and cooldown state is client-side.
-- No changes to `waitlist_signups`, RLS, or Shopify.
-- Files touched: `src/pages/ComingSoon.tsx`, `supabase/functions/whatsapp-send-otp/index.ts`, `supabase/functions/whatsapp-verify-waitlist-otp/index.ts`.
-- Verify by triggering 4 rapid sends in preview to see the stepped cooldown and the "limit reached" state.
+- Eyebrow/labels ≥13px cream
+- Form: `<label htmlFor>` (visually hidden), `aria-invalid`, inline error text with `role="alert"`
+- Countdown wrapped in `aria-live="off"` container with an `aria-label` summary updated every minute
+- Bottle animation `aria-hidden`; reduced-motion static fallback
+- Focus ring: `focus-visible:ring-2 ring-[#C9A84C] ring-offset-2 ring-offset-[#0A0A0A]`
+
+## Out of scope
+
+- No referral codes, no WhatsApp, no share cards, no OG image changes, no email A/B (existing confirmation email still fires via current RPC path if wired; not changed here).
