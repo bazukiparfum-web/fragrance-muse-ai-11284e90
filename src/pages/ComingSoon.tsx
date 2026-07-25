@@ -42,27 +42,11 @@ export default function ComingSoon() {
   const [resendIn, setResendIn] = useState(0);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [personalCode, setPersonalCode] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null);
-
-  const referralsOpen = spotsRemaining === null ? true : spotsRemaining > 0;
+  const [shareCopied, setShareCopied] = useState(false);
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-  // Poll spots remaining
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      const { data } = await supabase.rpc("spots_remaining");
-      if (!cancelled && typeof data === "number") setSpotsRemaining(data);
-    };
-    load();
-    const id = window.setInterval(load, 30000);
-    return () => { cancelled = true; window.clearInterval(id); };
-  }, []);
 
   useEffect(() => {
     const applyState = () => {
@@ -127,12 +111,7 @@ export default function ComingSoon() {
   const utmParams = () => {
     const params = new URLSearchParams(window.location.search);
     const utm_source = (params.get("utm_source") || "").slice(0, 64) || null;
-    const referred_by =
-      (params.get("ref") || params.get("referral_code") || "")
-        .trim()
-        .toUpperCase()
-        .slice(0, 32) || null;
-    return { utm_source, referred_by };
+    return { utm_source };
   };
 
   const emailVariant = (addr: string | null): "A" | "B" | null => {
@@ -184,7 +163,7 @@ export default function ComingSoon() {
     setOtp("");
     setResendIn(30);
     if (!opts.resend) {
-      trackCta("waitlist_phone_otp_sent", { spots_remaining: spotsRemaining });
+      trackCta("waitlist_phone_otp_sent");
     }
   };
 
@@ -203,7 +182,7 @@ export default function ComingSoon() {
     }
     setStatus("loading");
 
-    const { utm_source, referred_by } = utmParams();
+    const { utm_source } = utmParams();
     const cleanEmail = email.trim() ? email.trim().toLowerCase() : null;
     const variant = emailVariant(cleanEmail);
 
@@ -214,7 +193,6 @@ export default function ComingSoon() {
         email: cleanEmail,
         first_name: firstName.trim() || null,
         utm_source,
-        referred_by,
         email_variant: variant,
       },
     });
@@ -234,23 +212,17 @@ export default function ComingSoon() {
       return;
     }
 
-    const result = (data ?? {}) as { referral_code?: string; duplicate?: boolean };
-    const code = result.referral_code ?? null;
+    const result = (data ?? {}) as { duplicate?: boolean };
     const isDuplicate = !!result.duplicate;
-    setPersonalCode(code);
 
     trackCta("waitlist_phone_signup", {
       utm_source,
-      referred_by,
-      referral_code: code,
       duplicate: isDuplicate,
       has_email: !!cleanEmail,
-      spots_remaining: spotsRemaining,
     });
 
     // Optional welcome email if email provided and this is a fresh signup
-    if (!isDuplicate && code && cleanEmail && variant) {
-      const shareUrl = `https://www.bazukifragrance.com/coming-soon?ref=${code}`;
+    if (!isDuplicate && cleanEmail && variant) {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const trackingBase = `${supabaseUrl}/functions/v1/email-track`;
       const messageId = `waitlist-confirm-${cleanEmail}`;
@@ -262,10 +234,7 @@ export default function ComingSoon() {
             idempotencyKey: messageId,
             templateData: {
               email: cleanEmail,
-              referralCode: code,
-              spotsRemaining: spotsRemaining ?? 5000,
               ctaUrl: "https://www.bazukifragrance.com/home",
-              shareUrl,
               variant,
               trackingBase,
               messageId,
@@ -278,37 +247,26 @@ export default function ComingSoon() {
     setStatus("success");
   };
 
-  const shareUrl = personalCode
-    ? `https://www.bazukifragrance.com/coming-soon?ref=${personalCode}`
-    : "";
-  const whatsappHref = personalCode
-    ? `https://wa.me/?text=${encodeURIComponent(
-        `I got early access to Bazuki — India's first AI-crafted fragrance. Use my code ${personalCode} for 50% off your first formula: ${shareUrl}`,
-      )}`
-    : "#";
+  const shareUrl = "https://www.bazukifragrance.com/coming-soon";
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(
+    "I just joined Bazuki early access for 50% off my first AI-crafted fragrance. Join too: " + shareUrl,
+  )}`;
 
-  const logShareConversion = (kind: "copy" | "whatsapp") => {
-    if (!email) return;
-    supabase.functions
-      .invoke("email-track", {
-        body: {
-          template_name: "waitlist-confirmation",
-          recipient_email: email,
-          conversion_kind: "share",
-          message_id: `waitlist-confirm-${email.trim().toLowerCase()}`,
-          metadata: { source: kind },
-        },
-      })
-      .catch(() => { /* non-blocking */ });
-  };
-
-  const copyCode = async () => {
-    if (!personalCode) return;
+  const nativeShare = async () => {
     try {
-      await navigator.clipboard.writeText(personalCode);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-      logShareConversion("copy");
+      if (navigator.share) {
+        await navigator.share({
+          title: "Bazuki Early Access",
+          text: "I just joined Bazuki early access for 50% off my first AI-crafted fragrance.",
+          url: shareUrl,
+        });
+        trackCta("waitlist_share_native");
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareCopied(true);
+        window.setTimeout(() => setShareCopied(false), 2000);
+        trackCta("waitlist_share_copy");
+      }
     } catch { /* noop */ }
   };
 
@@ -386,21 +344,17 @@ export default function ComingSoon() {
         .cs-micro { font-size: 11px; color: var(--ivory-dim); letter-spacing: 0.02em; margin-bottom: 3.2rem; }
         .cs-error { color: #E07A6B; }
         .cs-confirm { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--teal); letter-spacing: 0.05em; margin-bottom: 3.2rem; }
-        .cs-spots { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--gold); letter-spacing: 0.06em; margin: 0 0 1.8rem; }
-        .cs-spots span { color: var(--gold); font-weight: 500; }
         .cs-success { margin-bottom: 3rem; }
         .cs-success-head { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 20px; color: var(--ivory); margin: 0 0 1.2rem; letter-spacing: 0.01em; }
-        .cs-code-card { max-width: 400px; margin: 0 auto; padding: 20px 22px; border: 1px solid var(--gold); background: rgba(201,164,92,0.05); border-radius: 2px; }
-        .cs-code-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 8px; }
-        .cs-code-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px; }
-        .cs-code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: var(--gold); letter-spacing: 0.12em; }
-        .cs-code-copy { background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); padding: 6px 12px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s ease, color 0.2s ease; }
-        .cs-code-copy:hover { background: var(--gold); color: var(--ink); }
-        .cs-code-copy:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-        .cs-share { display: inline-block; background: #25D366; color: #0A0908; padding: 10px 18px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; text-decoration: none; border-radius: 2px; margin-bottom: 10px; }
-        .cs-share:hover { filter: brightness(1.1); }
-        .cs-share:focus-visible { outline: 2px solid var(--ivory); outline-offset: 2px; }
-        .cs-share-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 4px 0 0; }
+        .cs-share-card { max-width: 400px; margin: 0 auto; padding: 20px 22px; border: 1px solid var(--gold); background: rgba(201,164,92,0.05); border-radius: 2px; }
+        .cs-share-label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.22em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 14px; }
+        .cs-share-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .cs-share-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); padding: 10px 16px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: background 0.2s ease, color 0.2s ease; }
+        .cs-share-btn:hover { background: var(--gold); color: var(--ink); }
+        .cs-share-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+        .cs-share-btn-primary { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+        .cs-share-btn-primary:hover { background: #DDB876; }
+        .cs-share-hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.04em; margin: 12px 0 0; }
         .cs-footer { border-top: 1px solid var(--hair); padding-top: 1.6rem; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .cs-footer .brand { font-family: 'Cormorant Garamond', 'Cormorant', serif; font-size: 14px; letter-spacing: 0.28em; color: var(--gold-dim); text-transform: uppercase; }
         .cs-footer .ig { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; color: var(--ivory-dim); letter-spacing: 0.08em; }
@@ -497,48 +451,38 @@ export default function ComingSoon() {
           Launching <span>29 August, 12:00 AM IST</span>
         </div>
 
-        {spotsRemaining !== null && (
-          <p className="cs-spots" role="status" aria-live="polite">
-            <span>
-              {referralsOpen
-                ? "Subscribe to get an early discount"
-                : "Early access closed — join the waitlist for launch."}
-            </span>
-          </p>
-        )}
+        <p className="cs-spots" role="status" aria-live="polite">
+          <span>Subscribe to get an early discount</span>
+        </p>
 
         {status === "success" ? (
           <div className="cs-success" role="status" aria-live="polite">
-            {referralsOpen && personalCode ? (
-              <>
-                <p className="cs-success-head">You're in. Early access at 50% off is yours.</p>
-                <div className="cs-code-card">
-                  <div className="cs-code-label">Your personal code</div>
-                  <div className="cs-code-row">
-                    <span className="cs-code" aria-label={`Referral code ${personalCode}`}>{personalCode}</span>
-                    <button type="button" className="cs-code-copy" onClick={copyCode} aria-label="Copy code">
-                      {copied ? "Copied ✓" : "Copy"}
-                    </button>
-                  </div>
-                  <a
-                    className="cs-share"
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => { trackCta("waitlist_share_whatsapp", { referral_code: personalCode }); logShareConversion("whatsapp"); }}
-                  >
-                    Share on WhatsApp →
-                  </a>
-                  <p className="cs-share-hint">
-                    Anyone who uses your code gets 50% off their first formula.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <p className="cs-confirm">
-                You're on the list. We'll write when the machine is ready.
+            <p className="cs-success-head">You're in. Early access at 50% off is yours.</p>
+            <div className="cs-share-card">
+              <div className="cs-share-label">Share with friends</div>
+              <div className="cs-share-actions">
+                <a
+                  className="cs-share-btn cs-share-btn-primary"
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackCta("waitlist_share_whatsapp")}
+                >
+                  WhatsApp →
+                </a>
+                <button
+                  type="button"
+                  className="cs-share-btn"
+                  onClick={nativeShare}
+                  aria-label="Copy link or share"
+                >
+                  {shareCopied ? "Copied ✓" : "Copy link"}
+                </button>
+              </div>
+              <p className="cs-share-hint">
+                Anyone who subscribes gets 50% off their first formula.
               </p>
-            )}
+            </div>
           </div>
         ) : step === "details" ? (
           <>
@@ -585,15 +529,13 @@ export default function ComingSoon() {
                 }}
               />
               <button className="cs-btn" type="submit" disabled={status === "loading"}>
-                {status === "loading" ? "Sending…" : referralsOpen ? "SEND WHATSAPP OTP" : "JOIN LAUNCH WAITLIST"}
+                {status === "loading" ? "Sending…" : "SEND WHATSAPP OTP"}
               </button>
             </form>
             <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
               {status === "error" && errorMsg
                 ? errorMsg
-                : referralsOpen
-                  ? "We'll send a 6-digit code to your WhatsApp. Email is optional."
-                  : "Early access is fully claimed — we'll message you when we open to everyone."}
+                : "We'll send a 6-digit code to your WhatsApp. Email is optional."}
             </p>
           </>
         ) : (

@@ -54,7 +54,7 @@ import FindYourSignatureScent from "./pages/guides/FindYourSignatureScent";
 import ShopifyDebugPanel from "./components/dev/ShopifyDebugPanel";
 import BazukiCartDrawer from "./components/cart/BazukiCartDrawer";
 import ZukiChat from "./components/zuki/ZukiChat";
-import ReferralWelcomeOverlay from "./components/referral/ReferralWelcomeOverlay";
+
 
 import CheckoutTestChecklist from "./components/dev/CheckoutTestChecklist";
 import OrderConfirmation from "./pages/OrderConfirmation";
@@ -143,7 +143,6 @@ const AppInner = () => {
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        <ReferralWelcomeOverlay />
       </BrowserRouter>
       <BazukiCartDrawer />
       <ZukiChat />
