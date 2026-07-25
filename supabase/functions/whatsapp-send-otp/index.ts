@@ -81,11 +81,14 @@ async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
     throw new Error("WHATSAPP_11ZA_AUTH_TOKEN is not configured");
   }
 
-  // Official 11za endpoint per their Postman docs
-  const url = "https://api.11za.in/apis/template/sendTemplate";
+  const urls = [
+    "https://api.11za.in/apis/template/sendTemplate",
+    "https://app.11za.in/apis/template/sendTemplate",
+  ];
   const phoneDigits = phoneE164.replace(/^\+/, "");
   const baseBody = {
     authToken,
+    name: "Bazuki visitor",
     sendto: phoneDigits,
     templateName,
     language: "en",
@@ -94,28 +97,51 @@ async function sendVia11za(phoneE164: string, otp: string): Promise<void> {
   };
 
   let lastFailure = "";
-  for (const candidateOrigin of getOriginCandidates(originWebsite)) {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...baseBody, originWebsite: candidateOrigin }),
-    });
+  for (const url of urls) {
+    for (const candidateOrigin of getOriginCandidates(originWebsite)) {
+      const jsonRes = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...baseBody, originWebsite: candidateOrigin }),
+      });
 
-    const text = await res.text();
-    let parsed: any = null;
-    try { parsed = JSON.parse(text); } catch { /* not JSON */ }
+      const jsonText = await jsonRes.text();
+      let parsed: any = null;
+      try { parsed = JSON.parse(jsonText); } catch { /* not JSON */ }
 
-    // 11za returns 200 with { Status, IsSuccess, Message } even on logical failures
-    if (res.ok && (!parsed || parsed.IsSuccess !== false)) {
-      console.log("11za send ok", text.slice(0, 200));
-      return;
-    }
+      // 11za returns 200 with { Status, IsSuccess, Message } even on logical failures
+      if (jsonRes.ok && (!parsed || parsed.IsSuccess !== false)) {
+        console.log("11za send ok", jsonText.slice(0, 200));
+        return;
+      }
 
-    lastFailure = `WhatsApp send failed [${res.status}]: ${text.slice(0, 300)}`;
-    const message = typeof parsed?.Message === "string" ? parsed.Message : text;
-    if (!/originWebsites?/i.test(message)) {
-      console.error("11za send failed", res.status, text);
-      throw new Error(lastFailure);
+      lastFailure = `WhatsApp send failed [${jsonRes.status}]: ${jsonText.slice(0, 300)}`;
+      let message = typeof parsed?.Message === "string" ? parsed.Message : jsonText;
+      if (!/originWebsites?/i.test(message)) {
+        console.error("11za send failed", jsonRes.status, jsonText);
+        throw new Error(lastFailure);
+      }
+
+      const formData = new FormData();
+      Object.entries({ ...baseBody, originWebsite: candidateOrigin }).forEach(([key, value]) => {
+        formData.append(key, Array.isArray(value) ? value.join(",") : String(value));
+      });
+      const formRes = await fetch(url, { method: "POST", body: formData });
+      const formText = await formRes.text();
+      parsed = null;
+      try { parsed = JSON.parse(formText); } catch { /* not JSON */ }
+
+      if (formRes.ok && (!parsed || parsed.IsSuccess !== false)) {
+        console.log("11za send ok", formText.slice(0, 200));
+        return;
+      }
+
+      lastFailure = `WhatsApp send failed [${formRes.status}]: ${formText.slice(0, 300)}`;
+      message = typeof parsed?.Message === "string" ? parsed.Message : formText;
+      if (!/originWebsites?/i.test(message)) {
+        console.error("11za send failed", formRes.status, formText);
+        throw new Error(lastFailure);
+      }
     }
   }
 
