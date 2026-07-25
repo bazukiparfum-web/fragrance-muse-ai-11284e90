@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSEO } from "@/hooks/useSEO";
 import CollectionAmbience from "@/components/library/CollectionAmbience";
 import { trackCta } from "@/lib/trackCta";
+import { resolveDirection } from "@/lib/scentDirections";
 
 const LAUNCH_MS = new Date("2026-08-29T00:00:00+05:30").getTime();
 const SPOTS_CAP = 100;
