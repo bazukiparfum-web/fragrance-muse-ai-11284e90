@@ -307,11 +307,11 @@ export default function ComingSoon() {
     });
   };
 
-  // ---- Preferences persistence ----
+  // ---- Preferences persistence (called on submit, not per-tap) ----
   const persistPrefs = useCallback(
-    async (families: string[], intensity: string | null, wear_time: string | null) => {
+    async (families: string[], intensity: string | null, wear_time: string | null): Promise<boolean> => {
       const phoneE164 = `+91${phone}`;
-      if (!/^\+91[6-9]\d{9}$/.test(phoneE164)) return;
+      if (!/^\+91[6-9]\d{9}$/.test(phoneE164)) return false;
       setPrefSaving(true);
       const { data, error } = await supabase.rpc("save_waitlist_preferences", {
         _phone: phoneE164,
@@ -320,20 +320,17 @@ export default function ComingSoon() {
         _wear_time: wear_time,
       });
       setPrefSaving(false);
-      if (!error && data) {
-        setPrefSaved(true);
-        try {
-          const raw = localStorage.getItem(LS_KEY);
-          const rec: Persisted = raw ? JSON.parse(raw) : { phone: phoneE164, first_name: firstName || null, scent_families: [], intensity: null, wear_time: null };
-          rec.scent_families = families;
-          rec.intensity = intensity;
-          rec.wear_time = wear_time;
-          rec.first_name = firstName || rec.first_name;
-          localStorage.setItem(LS_KEY, JSON.stringify(rec));
-        } catch { /* ignore */ }
-        if (prefSaveTimerRef.current) window.clearTimeout(prefSaveTimerRef.current);
-        prefSaveTimerRef.current = window.setTimeout(() => setPrefSaved(false), 2400);
-      }
+      if (error || !data) return false;
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        const rec: Persisted = raw ? JSON.parse(raw) : { phone: phoneE164, first_name: firstName || null, scent_families: [], intensity: null, wear_time: null };
+        rec.scent_families = families;
+        rec.intensity = intensity;
+        rec.wear_time = wear_time;
+        rec.first_name = firstName || rec.first_name;
+        localStorage.setItem(LS_KEY, JSON.stringify(rec));
+      } catch { /* ignore */ }
+      return true;
     },
     [phone, firstName],
   );
@@ -341,22 +338,50 @@ export default function ComingSoon() {
   const toggleFamily = (fam: string) => {
     setPrefFamilies((prev) => {
       const has = prev.includes(fam);
-      let next: string[];
-      if (has) next = prev.filter((f) => f !== fam);
-      else if (prev.length >= 3) return prev; // cap at 3
-      else next = [...prev, fam];
-      void persistPrefs(next, prefIntensity, prefWearTime);
-      return next;
+      if (has) return prev.filter((f) => f !== fam);
+      if (prev.length >= 3) return prev; // cap at 3
+      return [...prev, fam];
     });
   };
-  const pickIntensity = (val: string) => {
-    setPrefIntensity(val);
-    void persistPrefs(prefFamilies, val, prefWearTime);
+  const pickIntensity = (val: string) => setPrefIntensity(val);
+  const pickWearTime = (val: string) => setPrefWearTime(val);
+
+  const canReveal = prefFamilies.length >= 1;
+
+  const revealDirection = async () => {
+    if (!canReveal || prefSaving) return;
+    const ok = await persistPrefs(prefFamilies, prefIntensity, prefWearTime);
+    if (!ok) return;
+    trackCta("waitlist_reveal_direction");
+    if (prefersReducedMotion) {
+      setStage("result");
+      return;
+    }
+    setFading(true);
+    window.setTimeout(() => {
+      setStage("result");
+      setFading(false);
+    }, 180);
   };
-  const pickWearTime = (val: string) => {
-    setPrefWearTime(val);
-    void persistPrefs(prefFamilies, prefIntensity, val);
+
+  const adjustPreferences = () => {
+    trackCta("waitlist_adjust_preferences");
+    if (prefersReducedMotion) {
+      setStage("picker");
+      return;
+    }
+    setFading(true);
+    window.setTimeout(() => {
+      setStage("picker");
+      setFading(false);
+    }, 180);
   };
+
+  const direction = useMemo(
+    () => resolveDirection(prefFamilies, prefIntensity, prefWearTime),
+    [prefFamilies, prefIntensity, prefWearTime],
+  );
+
 
   const shareUrl = "https://www.bazukifragrance.com/coming-soon";
   const shareMessage = useMemo(
