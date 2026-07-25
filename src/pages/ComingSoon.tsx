@@ -724,25 +724,48 @@ export default function ComingSoon() {
                 <button
                   type="button"
                   className="cs-link"
-                  onClick={() => { setStep("details"); setOtp(""); setStatus("idle"); setErrorMsg(null); }}
+                  onClick={() => {
+                    setStep("details");
+                    setOtp("");
+                    setStatus("idle");
+                    setErrorMsg(null);
+                    setErrorCode(null);
+                    setResendIn(0);
+                    setResendCount(0);
+                  }}
                 >
-                  ← Edit number
+                  ← Change number
                 </button>
                 <button
                   type="button"
                   className="cs-link"
-                  disabled={resendIn > 0 || status === "loading"}
+                  disabled={resendIn > 0 || status === "loading" || resendCapReached}
                   onClick={() => requestOtp({ resend: true })}
+                  aria-label={
+                    resendCapReached
+                      ? "Resend limit reached"
+                      : resendIn > 0
+                        ? `Resend available in ${resendIn} seconds`
+                        : "Resend code"
+                  }
                 >
-                  {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
+                  {resendCapReached
+                    ? "Resend limit reached"
+                    : resendIn > 0
+                      ? `Resend in ${Math.floor(resendIn / 60)}:${String(resendIn % 60).padStart(2, "0")}`
+                      : "Resend code"}
                 </button>
               </div>
             </form>
-            <p className={`cs-micro${status === "error" ? " cs-error" : ""}`} role={status === "error" ? "alert" : undefined}>
-              {status === "error" && errorMsg
-                ? errorMsg
-                : "Check WhatsApp for a 6-digit code from Bazuki."}
-            </p>
+            {status === "error" && errorMsg ? (
+              <p className="cs-micro cs-error" role="alert">{errorMsg}</p>
+            ) : resendCapReached ? (
+              <p className="cs-micro cs-error" role="status">
+                Resend limit reached. Check your WhatsApp inbox or change the number.
+              </p>
+            ) : (
+              <p className="cs-micro">Check WhatsApp for a 6-digit code from Bazuki.</p>
+            )}
           </>
         )}
 
