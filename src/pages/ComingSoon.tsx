@@ -110,6 +110,16 @@ export default function ComingSoon() {
         // Try to enrich from DB (server is source of truth for preferences)
         const { data } = await supabase.rpc("get_waitlist_signup", { _phone: saved.phone });
         if (cancelled) return;
+        const applyRow = (fam: string[], intensity: string | null, wear: string | null, first: string | null) => {
+          setFirstName(first ?? "");
+          setPrefFamilies(fam);
+          setPrefIntensity(intensity);
+          setPrefWearTime(wear);
+          setPhone(saved!.phone.replace(/^\+91/, ""));
+          setView("welcome");
+          if (fam.length > 0 && intensity && wear) setStage("result");
+          else setStage("picker");
+        };
         if (data) {
           const row = data as {
             first_name: string | null;
@@ -117,21 +127,16 @@ export default function ComingSoon() {
             intensity: string | null;
             wear_time: string | null;
           };
-          setFirstName(row.first_name ?? saved.first_name ?? "");
-          setPrefFamilies(Array.isArray(row.scent_families) ? row.scent_families : []);
-          setPrefIntensity(row.intensity);
-          setPrefWearTime(row.wear_time);
-          setPhone(saved.phone.replace(/^\+91/, ""));
-          setView("welcome");
+          applyRow(
+            Array.isArray(row.scent_families) ? row.scent_families : [],
+            row.intensity,
+            row.wear_time,
+            row.first_name ?? saved.first_name ?? "",
+          );
           return;
         }
         // DB row not found (e.g. wiped); fall back to LS values
-        setFirstName(saved.first_name ?? "");
-        setPrefFamilies(saved.scent_families ?? []);
-        setPrefIntensity(saved.intensity);
-        setPrefWearTime(saved.wear_time);
-        setPhone(saved.phone.replace(/^\+91/, ""));
-        setView("welcome");
+        applyRow(saved.scent_families ?? [], saved.intensity, saved.wear_time, saved.first_name ?? "");
       }
     })();
     return () => { cancelled = true; };
