@@ -983,7 +983,7 @@ export default function ComingSoon() {
                     >
                       WhatsApp →
                     </button>
-                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message, save image and open Instagram">
+                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Share your scent direction to Instagram">
                       <Instagram size={14} strokeWidth={1.5} aria-hidden />
                       Instagram
                     </button>
@@ -991,8 +991,9 @@ export default function ComingSoon() {
                       {shareCopied ? "Copied ✓" : "Copy message"}
                     </button>
                   </div>
-                  <p className="cs-share-hint">
-                    Anyone who subscribes gets 50% off their first formula.
+                  <p className="cs-share-hint" aria-live="polite">
+                    <span>{instaHint ?? "Anyone who subscribes gets 50% off their first formula."}</span>
+
                     {cardBlobRef.current && (
                       <>
                         {" · "}
