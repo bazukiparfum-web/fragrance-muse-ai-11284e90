@@ -61,6 +61,8 @@ export default function ComingSoon() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [instaHint, setInstaHint] = useState<string | null>(null);
+
 
   // Founding spots
   const [spotsLeft, setSpotsLeft] = useState<number | null>(null);
