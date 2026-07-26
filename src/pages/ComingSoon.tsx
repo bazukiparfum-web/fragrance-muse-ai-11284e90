@@ -61,6 +61,8 @@ export default function ComingSoon() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [instaHint, setInstaHint] = useState<string | null>(null);
+
 
   // Founding spots
   const [spotsLeft, setSpotsLeft] = useState<number | null>(null);
@@ -433,13 +435,22 @@ export default function ComingSoon() {
   );
   const whatsappTextHref = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
 
+  const canShareFiles = (file: File | null): boolean => {
+    if (!file) return false;
+    if (typeof navigator === "undefined") return false;
+    const nav = navigator as any;
+    return typeof nav.share === "function" && nav.canShare?.({ files: [file] }) === true;
+  };
+
   const shareWhatsApp = async () => {
     trackCta("waitlist_share_whatsapp");
-    if (cardFile && typeof navigator !== "undefined" && (navigator as any).canShare?.({ files: [cardFile] })) {
+    if (canShareFiles(cardFile)) {
       try {
         await (navigator as any).share({ text: shareMessage, files: [cardFile], url: shareUrl });
         return;
-      } catch { /* user cancelled or unsupported — fall through */ }
+      } catch (err: any) {
+        if (err?.name === "AbortError") return;
+      }
     }
     if (cardBlobRef.current) {
       downloadBlob(cardBlobRef.current, "bazuki-direction.png");
@@ -457,19 +468,50 @@ export default function ComingSoon() {
     } catch { /* noop */ }
   };
 
-  const shareInstagram = async () => {
-    trackCta("waitlist_share_instagram");
+  const showInstaHint = (msg: string) => {
+    setInstaHint(msg);
+    window.setTimeout(() => setInstaHint(null), 3200);
+  };
+
+  const copyCaption = async () => {
     try {
       await navigator.clipboard.writeText(shareMessage);
-      setShareCopied(true);
-      window.setTimeout(() => setShareCopied(false), 2400);
     } catch { /* ignore */ }
-    if (cardBlobRef.current) {
+  };
+
+  const instagramDesktopFlow = async (hasCard: boolean) => {
+    await copyCaption();
+    if (hasCard && cardBlobRef.current) {
       downloadBlob(cardBlobRef.current, "bazuki-direction.png");
       trackCta("waitlist_share_download");
+      trackCta("waitlist_share_instagram_path", { path: "download" });
+      showInstaHint("Message copied + image saved. Upload it from your Story.");
+    } else {
+      trackCta("waitlist_share_instagram_path", { path: "text_only" });
+      showInstaHint("Caption copied.");
     }
     window.open("https://www.instagram.com/bazukiperfume/", "_blank", "noopener,noreferrer");
   };
+
+  const shareInstagram = async () => {
+    trackCta("waitlist_share_instagram");
+    const hasCard = !!cardBlobRef.current;
+
+    if (canShareFiles(cardFile)) {
+      await copyCaption();
+      try {
+        await (navigator as any).share({ files: [cardFile], text: shareMessage });
+        trackCta("waitlist_share_instagram_path", { path: "native" });
+        showInstaHint("Caption copied — pick Instagram in the share sheet.");
+        return;
+      } catch (err: any) {
+        if (err?.name === "AbortError") return;
+      }
+    }
+
+    await instagramDesktopFlow(hasCard);
+  };
+
 
   const downloadCard = () => {
     if (!cardBlobRef.current) return;
@@ -941,7 +983,7 @@ export default function ComingSoon() {
                     >
                       WhatsApp →
                     </button>
-                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Copy message, save image and open Instagram">
+                    <button type="button" className="cs-share-btn" onClick={shareInstagram} aria-label="Share your scent direction to Instagram">
                       <Instagram size={14} strokeWidth={1.5} aria-hidden />
                       Instagram
                     </button>
@@ -949,8 +991,9 @@ export default function ComingSoon() {
                       {shareCopied ? "Copied ✓" : "Copy message"}
                     </button>
                   </div>
-                  <p className="cs-share-hint">
-                    Anyone who subscribes gets 50% off their first formula.
+                  <p className="cs-share-hint" aria-live="polite">
+                    <span>{instaHint ?? "Anyone who subscribes gets 50% off their first formula."}</span>
+
                     {cardBlobRef.current && (
                       <>
                         {" · "}

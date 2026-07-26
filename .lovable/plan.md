@@ -1,63 +1,43 @@
-## Branded share image for scent direction
+## Instagram-specific share behavior (mobile vs desktop)
 
-Add a client-side generated PNG of the user's personalized scent direction (name + Top/Heart/Base sketch) and attach it to the existing share actions on the `/coming-soon` result view. Scope: result-view share row only. No changes to OTP, DB, backend, State A, or the scent direction mapping.
+Scope: the Instagram button in the result view of `/coming-soon` only. No changes to OTP, DB, preferences, WhatsApp share, or the card generator's drawing code.
 
-### 1. Card generator — `src/lib/generateDirectionCard.ts` (new)
+Currently `shareInstagram` always does the same thing regardless of device: copy message → download PNG → open the Instagram profile in a new tab. On mobile that download is mostly useless (Chrome/Safari drop it into Downloads, no Story handoff) and the profile tab replaces the app context. Instagram has no public "post to Story" web intent, so the correct mobile path is the OS share sheet with the image file attached — the user picks Instagram there and lands in the Story/post composer with the card already loaded.
 
-Pure client Canvas renderer. Signature:
+### Behavior after the change
 
-```ts
-generateDirectionCard(direction: ScentDirection, firstName?: string): Promise<Blob>
-```
+**Mobile / any browser where `navigator.canShare({ files: [cardFile] })` is true**
+1. Copy the caption to the clipboard first (so the user can paste it as a Story sticker or caption) — best-effort, ignore failure.
+2. Call `navigator.share({ files: [cardFile], text: shareMessage })`.
+3. On success: toast/hint "Caption copied — pick Instagram in the share sheet."
+4. If the user cancels (`AbortError`): do nothing further — no download, no new tab. Cancel is not a failure.
+5. If share throws any other error: fall through to the desktop path.
 
-- 1080×1350 PNG (4:5 — renders well in WhatsApp preview, Instagram feed, and Story crops).
-- Background: `#0A0A0A` ink with a soft radial gold vignette (`#C9A84C` at ~4% opacity, top-center).
-- Hairline gold frame inset 40px.
-- Top block:
-  - Small monogram/wordmark "BAZUKI" (JetBrains Mono, 18px, tracking 0.32em, gold).
-  - Eyebrow "YOUR DIRECTION" (11px, tracking 0.28em, cream/60).
-- Center block:
-  - Direction name in Cormorant Garamond italic (72–96px, auto-fit to width), gold. The noun ("Midnight Oud", "Quiet Cedar", …) parsed out and italicized in gold; leading "The" and trailing "direction" in cream at the same size.
-- Note sketch block, three rows (labels JetBrains Mono 13px gold uppercase, values Inter 22px cream):
-  ```
-  TOP     Bergamot · Pink Pepper
-  HEART   Rose · Iris
-  BASE    Oud · Sandalwood · Amber
-  ```
-- Footer:
-  - Teaser: "Unlocks 29 August" (Cormorant italic, 22px, gold).
-  - URL: "bazukifragrance.com" (JetBrains Mono, 12px, cream/60).
-- Fonts loaded via `document.fonts.load()` (Cormorant Garamond, Inter, JetBrains Mono are already used on the page) before draw; fall back to system serif/sans if the load promise rejects so we never block share.
-- Cache the generated Blob + object URL in a `useRef` keyed by `direction.name + firstName` so repeated share taps reuse it.
+**Desktop / no file-share support**
+1. Copy the caption to the clipboard.
+2. Download `bazuki-direction.png`.
+3. Open `https://www.instagram.com/bazukiperfume/` in a new tab.
+4. Hint text: "Message copied + image saved. Upload it from your Story."
 
-### 2. Wire into `src/pages/ComingSoon.tsx` result view
+**No card generated yet** (generation still running or failed)
+- Skip the image entirely: copy caption, open Instagram, hint "Caption copied." Never call `navigator.share` with an empty `files` array.
 
-Add a `useMemo`/`useEffect` that generates the card whenever `stage === "result"` and `direction` is resolved, storing `{ blob, url, file }` in state.
+### Implementation detail
 
-Show a small preview above the share buttons (max-width 240px, gold hairline border, `alt` = direction name) so users see what they're sharing.
+In `src/pages/ComingSoon.tsx`:
 
-Update the three share actions:
+- Add a small `canShareFiles(file)` helper (guards `typeof navigator`, `navigator.share`, `navigator.canShare`) and reuse it in both `shareWhatsApp` and `shareInstagram` so the two buttons agree on capability detection.
+- Rewrite `shareInstagram` per the branches above; distinguish cancel from failure by checking `err?.name === "AbortError"`.
+- Add an `instaHint` state string (null | copy-only | sheet | desktop) rendered inside the existing `.cs-share-hint` paragraph, auto-cleared after ~3s, so feedback doesn't rely on the shared `shareCopied` flag that the "Copy message" button also drives.
+- Update the button's `aria-label` to reflect the branch: "Share your scent direction to Instagram".
+- Analytics: keep `trackCta("waitlist_share_instagram")` on tap; add `meta: { path: "native" | "download" | "text_only" }` and only fire `waitlist_share_download` when a download actually happens.
 
-- **WhatsApp button** — becomes a `<button>` (not `<a href>`) that:
-  1. If `navigator.canShare?.({ files: [file] })` → `navigator.share({ text: shareMessage, files: [file], url: shareUrl })`. On mobile this posts the card + caption straight into the WhatsApp chooser.
-  2. Otherwise (desktop) → open the existing `wa.me/?text=...` in a new tab AND trigger a download of `bazuki-direction.png` so the user can attach it manually. Toast: "Image downloaded — attach it in WhatsApp."
-- **Instagram button** — keep clipboard copy of `shareMessage`, but also trigger a PNG download (`bazuki-direction.png`) before opening `instagram.com`. Toast copy updates to: "Message copied + image saved. Paste in your Story."
-- **Copy message button** — unchanged text behavior, but add a secondary "Download image" text link below the row (small, cream/60, underline-on-hover) so users can grab the card without sharing.
+### Files touched
 
-Keep existing `trackCta` calls; add `waitlist_share_download` when the download path fires.
+- `src/pages/ComingSoon.tsx` — `shareInstagram`, new capability helper, hint state, button label/hint markup.
 
-### 3. Reduced motion / perf
+### Out of scope
 
-Card generation is one-shot per render and off the main paint (runs in a microtask after the fade-in). Skip preview rendering if `prefers-reduced-motion` is set only for the fade — the still image itself always renders.
-
-### 4. Files touched
-
-- `src/lib/generateDirectionCard.ts` — new.
-- `src/pages/ComingSoon.tsx` — add card generation effect, preview `<img>`, updated WhatsApp/Instagram/Copy handlers, download fallback.
-
-### 5. Out of scope
-
-- OTP, 11za, rate limiting, secrets.
-- DB schema, RPCs, RLS.
-- State A, countdown, animated bottle.
-- Backend/edge OG image generation (this is fully client-side; the existing static `/coming-soon-og.jpg` stays as the link-preview image for crawlers).
+- WhatsApp button behavior (it already branches correctly).
+- Card artwork, dimensions, or a separate 1080×1920 Story crop.
+- Server-side OG image generation; the static `/coming-soon-og.jpg` stays as the crawler preview.
