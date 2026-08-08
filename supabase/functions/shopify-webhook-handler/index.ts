@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
     console.log('Received webhook:', topic);
 
-    if (!verifyWebhook(body, hmacHeader)) {
+    if (!(await verifyWebhook(body, hmacHeader))) {
       console.error('Invalid webhook signature');
       return new Response(
         JSON.stringify({ error: 'Invalid signature' }),
