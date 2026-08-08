@@ -32,20 +32,48 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { referralRewardId, discountAmount } = await req.json();
+    const { referralRewardId } = await req.json();
     console.log('Creating Shopify discount for referral reward:', referralRewardId);
 
+    // Service-role client for trusted lookups
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     // Get the referral reward
-    const { data: reward, error: rewardError } = await supabaseClient
+    const { data: reward, error: rewardError } = await adminClient
       .from('referral_rewards')
       .select('*, referrals(*)')
       .eq('id', referralRewardId)
-      .single();
+      .maybeSingle();
 
     if (rewardError || !reward) {
       return new Response(
         JSON.stringify({ error: 'Referral reward not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Caller must own this reward, either as referrer or referee
+    const isReferrer = reward.referrer_id === user.id;
+    const isReferee = reward.referee_id === user.id;
+    if (!isReferrer && !isReferee) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Never trust a client-supplied amount — read it from the database
+    const storedAmount = isReferrer
+      ? reward.referrer_discount_amount
+      : reward.referee_discount_amount;
+    const discountAmount = Number(storedAmount);
+    if (!Number.isFinite(discountAmount) || discountAmount <= 0) {
+      return new Response(
+        JSON.stringify({ error: 'No discount available for this reward' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
