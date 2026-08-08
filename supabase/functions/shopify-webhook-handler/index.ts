@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
     console.log('Received webhook:', topic);
 
-    if (!verifyWebhook(body, hmacHeader)) {
+    if (!(await verifyWebhook(body, hmacHeader))) {
       console.error('Invalid webhook signature');
       return new Response(
         JSON.stringify({ error: 'Invalid signature' }),
@@ -52,18 +52,32 @@ Deno.serve(async (req) => {
   }
 });
 
-function verifyWebhook(body: string, hmacHeader: string | null): boolean {
+async function verifyWebhook(body: string, hmacHeader: string | null): Promise<boolean> {
   if (!hmacHeader) return false;
   const secret = Deno.env.get('SHOPIFY_WEBHOOK_SECRET');
   if (!secret) {
-    console.warn('⚠️ SHOPIFY_WEBHOOK_SECRET not configured, skipping verification');
-    return true;
+    console.error('SHOPIFY_WEBHOOK_SECRET not configured — rejecting webhook');
+    return false;
   }
   try {
-    console.log('🔐 Webhook HMAC verification (development mode)');
-    return true;
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
+    const digest = btoa(String.fromCharCode(...new Uint8Array(signature)));
+
+    const a = new TextEncoder().encode(digest);
+    const b = new TextEncoder().encode(hmacHeader);
+    if (a.length !== b.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+    return diff === 0;
   } catch (error) {
-    console.error('❌ Error verifying webhook:', error);
+    console.error('Error verifying webhook:', error);
     return false;
   }
 }
