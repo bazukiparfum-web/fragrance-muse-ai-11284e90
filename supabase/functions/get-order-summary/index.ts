@@ -22,6 +22,30 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Require an authenticated caller
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const userClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } },
+    )
+    const { data: claims, error: claimsError } = await userClient.auth.getClaims(
+      authHeader.replace('Bearer ', ''),
+    )
+    const callerId = claims?.claims?.sub
+    if (claimsError || !callerId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -35,6 +59,7 @@ Deno.serve(async (req) => {
     const { data: order } = await supabase
       .from('orders')
       .select('id, order_number, total, shopify_order_number, payment_method, payment_gateway')
+      .eq('user_id', callerId)
       .or(candidates.map((c) => `order_number.eq.${c}`).join(','))
       .maybeSingle()
 
