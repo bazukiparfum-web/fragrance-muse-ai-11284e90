@@ -56,6 +56,27 @@ serve(async (req) => {
       throw new Error('Referral reward not found');
     }
 
+    // The caller must be the referee of this reward
+    if (reward.referee_id !== callerId) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // The order must belong to the caller
+    const { data: ownedOrder } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('id', orderId)
+      .eq('user_id', callerId)
+      .maybeSingle();
+
+    if (!ownedOrder) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Check if this is the referee's first order
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
