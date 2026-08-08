@@ -1654,6 +1654,7 @@ export type Database = {
         }
         Returns: number
       }
+      prelaunch_signups_count: { Args: never; Returns: number }
       prelaunch_spots_left: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
