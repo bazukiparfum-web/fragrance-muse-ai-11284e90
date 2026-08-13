@@ -28,7 +28,7 @@ export default function BazukiCartDrawer() {
   const getCheckoutUrl = useCartStore((s) => s.getCheckoutUrl);
   const cartId = useCartStore((s) => s.cartId);
 
-  const { launchCheckout, isLaunching, isError, error, retry, reset } = useCheckoutRedirect();
+  const { launchCheckout, isLaunching, isError, error, fallbackUrl, retry, reset } = useCheckoutRedirect();
 
   const [wa, setWa] = useState<WhatsAppValue>(() => {
     try {
