@@ -49,15 +49,16 @@ export default function TravelThroughSenses() {
           <Reveal variant="headline" as="p" className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-4">
             Pick a world
           </Reveal>
-          <Reveal
-            variant="headline"
-            delay={80}
-            as="h2"
-            id="travel-senses-heading"
-            className="font-display text-cream text-3xl md:text-[44px] uppercase tracking-[0.06em]"
-          >
-            Travel Through the Senses
-          </Reveal>
+          <h2 id="travel-senses-heading">
+            <Reveal
+              variant="headline"
+              delay={80}
+              as="span"
+              className="block font-display text-cream text-3xl md:text-[44px] uppercase tracking-[0.06em]"
+            >
+              Travel Through the Senses
+            </Reveal>
+          </h2>
           <Reveal
             variant="headline"
             delay={140}
