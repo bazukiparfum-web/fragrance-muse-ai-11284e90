@@ -168,6 +168,8 @@ const Hero = () => {
           object-fit: cover;
           object-position: 50% 18%;
           display: block;
+          position: relative;
+          z-index: 2;
           opacity: 0;
           transition: opacity 400ms ease-out;
         }
@@ -615,8 +617,13 @@ const Hero = () => {
           .bottle-card.center .label-wrap::after,
           .best-match-badge,
           .scroll-arrow,
-          .hero-cta-primary {
+          .hero-cta-primary,
+          .bottle-skeleton::after {
             animation: none !important;
+          }
+          .bottle-photo,
+          .bottle-skeleton {
+            transition: none !important;
           }
         }
       `}</style>
@@ -664,7 +671,6 @@ const Hero = () => {
                     fetchpriority={isCenter ? "high" : "auto"}
                     decoding="async"
                     onLoad={() => setLoaded(true)}
-                    onError={() => setLoaded(true)}
                   />
 
                   <div className="label-wrap">
