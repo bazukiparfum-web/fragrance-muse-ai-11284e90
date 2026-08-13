@@ -670,6 +670,7 @@ const Hero = () => {
                     // @ts-expect-error fetchpriority is a valid DOM attribute
                     fetchpriority={isCenter ? "high" : "auto"}
                     decoding="async"
+                    ref={(el) => { if (el?.complete && el.naturalWidth > 0) setLoaded(true); }}
                     onLoad={() => setLoaded(true)}
                   />
 
