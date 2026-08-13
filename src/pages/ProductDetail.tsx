@@ -693,8 +693,12 @@ export default function ProductDetail() {
 
         <ReviewsSection productHandle={product.handle} productName={product.title} />
 
+        {/* Similar mood carousel */}
+        <SimilarMoodCarousel product={product} />
+
         {/* Related products */}
         <RelatedProducts excludeHandle={product.handle} />
+
       </main>
       <Footer />
       <CheckoutLoadingOverlay
