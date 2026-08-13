@@ -36,26 +36,50 @@ function getCreatedAt(item: LibraryItem): number {
 }
 
 export default function Collection() {
-  useSEO({
-    title: "Scent Library — Bazuki Fragrance",
-    description:
-      "Explore Bazuki's Scent Library: AI-crafted signature and community fragrances. Filter by mood and find your next signature.",
-  });
-
-  const [items, setItems] = useState<LibraryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialMood = useMemo<Mood | "All">(() => {
     const raw = searchParams.get("mood");
     const found = MOODS.find((m) => m.toLowerCase() === raw?.toLowerCase());
     return found ?? "All";
   }, [searchParams]);
+  const journeySlug = searchParams.get("journey");
+  const journey = useMemo(
+    () => SENSE_JOURNEYS.find((j) => j.slug === journeySlug),
+    [journeySlug],
+  );
+
+  useSEO({
+    title:
+      initialMood === "All"
+        ? "Scent Library — Bazuki Fragrance"
+        : `${initialMood} Fragrances — Bazuki Scent Library`,
+    description:
+      initialMood === "All"
+        ? "Explore Bazuki's Scent Library: AI-crafted signature and community fragrances. Filter by mood and find your next signature."
+        : `Browse ${initialMood} fragrances from Bazuki — AI-crafted, made-to-order in India.`,
+  });
+
+  const [items, setItems] = useState<LibraryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [mood, setMood] = useState<Mood | "All">(initialMood);
 
   useEffect(() => {
     setMood(initialMood);
   }, [initialMood]);
+
+  const changeMood = useCallback(
+    (m: Mood | "All") => {
+      setMood(m);
+      const next = new URLSearchParams(searchParams);
+      if (m === "All") next.delete("mood");
+      else next.set("mood", m);
+      next.delete("journey");
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
+
 
   const [sort, setSort] = useState<SortKey>("featured");
   const [active, setActive] = useState<LibraryItem | null>(null);
