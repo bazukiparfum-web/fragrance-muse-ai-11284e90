@@ -26,7 +26,7 @@ export default function SenseCard({ journey, onSelect }: Props) {
         loading="lazy"
         width={1024}
         height={768}
-        className="aspect-[4/3] sm:aspect-[3/4] md:aspect-[4/3] w-full object-cover opacity-85 transition-opacity duration-300 group-hover:opacity-100 group-active:opacity-100"
+        className="aspect-[4/3] sm:aspect-[3/4] md:aspect-[4/3] w-full object-cover opacity-85 transition-opacity duration-300 group-hover:opacity-100"
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent sm:from-black/85 sm:via-black/25" />
       <div className="absolute inset-x-0 bottom-0 p-3.5 md:p-3">
