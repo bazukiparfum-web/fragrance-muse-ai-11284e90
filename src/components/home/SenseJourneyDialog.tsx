@@ -31,7 +31,7 @@ function NoteRow({ label, items }: { label: string; items: string[] }) {
   );
 }
 
-export default function SenseJourneyDialog({ journey, products, open, onOpenChange }: Props) {
+export default function SenseJourneyDialog({ journey, products, loading = false, open, onOpenChange }: Props) {
   if (!journey) return null;
   const recommended = matchProductsForJourney(journey, products, 3);
   const collectionHref = `/collection?mood=${journey.mood}&journey=${journey.slug}`;
