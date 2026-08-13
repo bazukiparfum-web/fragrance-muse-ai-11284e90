@@ -50,10 +50,7 @@ export default function TravelThroughSenses() {
     };
   }, []);
 
-  const links = useMemo(
-    () => SENSE_JOURNEYS.map((j) => resolveLink(j, products)),
-    [products],
-  );
+  const links = useMemo(() => resolveLinks(products), [products]);
 
   return (
     <section
