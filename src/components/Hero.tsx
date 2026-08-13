@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import bottleAsset from "@/assets/bazuki-bottle-clean.png.asset.json";
+import bottleAsset from "@/assets/hero-signature-essence.png.asset.json";
 import BazukiLabel from "@/components/hero/BazukiLabel";
 import { trackCta } from "@/lib/trackCta";
 
@@ -180,9 +180,9 @@ const Hero = () => {
 
         .label-wrap {
           position: absolute;
-          top: 68%;
+          top: 55.5%;
           left: 50%;
-          width: 42%;
+          width: 34%;
           transform: translate(-50%, -50%) perspective(600px) rotateY(-4deg);
           z-index: 3;
           pointer-events: none;
@@ -516,6 +516,7 @@ const Hero = () => {
             aspect-ratio: 3 / 4;
           }
           .bottle-card.center .bottle-photo { object-position: 50% 15%; }
+          .bottle-card.center .label-wrap { top: 60.5%; width: 36%; }
           .bottles-row { margin-top: 20px; }
           .hero-headline { line-height: 1.15; letter-spacing: -0.005em; }
           .hero-subtext {
