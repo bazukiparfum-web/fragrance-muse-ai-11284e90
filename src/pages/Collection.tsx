@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useInView } from "@/hooks/useInView";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
