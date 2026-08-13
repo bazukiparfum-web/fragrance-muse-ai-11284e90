@@ -1,42 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Reveal } from "@/components/anim/Reveal";
 import SenseCard from "@/components/home/SenseCard";
+import SenseJourneyDialog from "@/components/home/SenseJourneyDialog";
 import { SENSE_JOURNEYS, type SenseJourney } from "@/data/senseJourneys";
 import { fetchShopifyProducts, type ShopifyProduct } from "@/lib/shopify";
 
-function findMatch(
-  journey: SenseJourney,
-  products: ShopifyProduct[],
-  skipUsed: Set<string>,
-): ShopifyProduct | undefined {
-  for (const keyword of journey.keywords) {
-    const k = keyword.toLowerCase();
-    const hit = products.find((p) => {
-      if (skipUsed.has(p.node.handle)) return false;
-      const haystack = `${p.node.title} ${p.node.handle} ${p.node.description ?? ""}`.toLowerCase();
-      return haystack.includes(k);
-    });
-    if (hit) return hit;
-  }
-  return undefined;
-}
-
-/** Resolve every journey to a product page, preferring a distinct product per card. */
-function resolveLinks(products: ShopifyProduct[]): string[] {
-  const used = new Set<string>();
-  return SENSE_JOURNEYS.map((journey) => {
-    const match =
-      findMatch(journey, products, used) ?? findMatch(journey, products, new Set());
-    if (match) {
-      used.add(match.node.handle);
-      return `/products/${match.node.handle}`;
-    }
-    return `/collection?mood=${journey.mood}`;
-  });
-}
-
 export default function TravelThroughSenses() {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
+  const [selected, setSelected] = useState<SenseJourney | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +22,10 @@ export default function TravelThroughSenses() {
     };
   }, []);
 
-  const links = useMemo(() => resolveLinks(products), [products]);
+  const handleSelect = (journey: SenseJourney) => {
+    setSelected(journey);
+    setOpen(true);
+  };
 
   return (
     <section
@@ -84,11 +59,18 @@ export default function TravelThroughSenses() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-          {SENSE_JOURNEYS.map((journey, i) => (
-            <SenseCard key={journey.slug} journey={journey} to={links[i]} />
+          {SENSE_JOURNEYS.map((journey) => (
+            <SenseCard key={journey.slug} journey={journey} onSelect={handleSelect} />
           ))}
         </div>
       </div>
+
+      <SenseJourneyDialog
+        journey={selected}
+        products={products}
+        open={open}
+        onOpenChange={setOpen}
+      />
     </section>
   );
 }

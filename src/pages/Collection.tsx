@@ -14,6 +14,8 @@ import ScentDetailDrawer from "@/components/library/ScentDetailDrawer";
 import { fetchShopifyProducts } from "@/lib/shopify";
 import { supabase } from "@/integrations/supabase/client";
 import { buildLibrary, MOODS, type LibraryItem, type Mood, type PublicScent } from "@/lib/libraryMapper";
+import { SENSE_JOURNEYS } from "@/data/senseJourneys";
+
 import { useSEO } from "@/hooks/useSEO";
 import type { SortKey } from "@/components/library/SortDropdown";
 
@@ -36,26 +38,50 @@ function getCreatedAt(item: LibraryItem): number {
 }
 
 export default function Collection() {
-  useSEO({
-    title: "Scent Library — Bazuki Fragrance",
-    description:
-      "Explore Bazuki's Scent Library: AI-crafted signature and community fragrances. Filter by mood and find your next signature.",
-  });
-
-  const [items, setItems] = useState<LibraryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialMood = useMemo<Mood | "All">(() => {
     const raw = searchParams.get("mood");
     const found = MOODS.find((m) => m.toLowerCase() === raw?.toLowerCase());
     return found ?? "All";
   }, [searchParams]);
+  const journeySlug = searchParams.get("journey");
+  const journey = useMemo(
+    () => SENSE_JOURNEYS.find((j) => j.slug === journeySlug),
+    [journeySlug],
+  );
+
+  useSEO({
+    title:
+      initialMood === "All"
+        ? "Scent Library — Bazuki Fragrance"
+        : `${initialMood} Fragrances — Bazuki Scent Library`,
+    description:
+      initialMood === "All"
+        ? "Explore Bazuki's Scent Library: AI-crafted signature and community fragrances. Filter by mood and find your next signature."
+        : `Browse ${initialMood} fragrances from Bazuki — AI-crafted, made-to-order in India.`,
+  });
+
+  const [items, setItems] = useState<LibraryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [mood, setMood] = useState<Mood | "All">(initialMood);
 
   useEffect(() => {
     setMood(initialMood);
   }, [initialMood]);
+
+  const changeMood = useCallback(
+    (m: Mood | "All") => {
+      setMood(m);
+      const next = new URLSearchParams(searchParams);
+      if (m === "All") next.delete("mood");
+      else next.set("mood", m);
+      next.delete("journey");
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
+
 
   const [sort, setSort] = useState<SortKey>("featured");
   const [active, setActive] = useState<LibraryItem | null>(null);
@@ -168,7 +194,7 @@ export default function Collection() {
           <HeroLibrary />
           <MoodFilterBar
             active={mood}
-            onChange={setMood}
+            onChange={changeMood}
             counts={counts}
             sort={sort}
             onSortChange={setSort}
@@ -176,6 +202,20 @@ export default function Collection() {
           />
 
           <section className="container mx-auto px-6 py-10 md:py-14 max-w-[1200px]">
+            {journey && (
+              <p className="mb-6 font-body text-sm text-cream/70">
+                Coming from{" "}
+                <span className="text-gold">{journey.title}</span> — {journey.blurb}.{" "}
+                <button
+                  type="button"
+                  onClick={() => changeMood("All")}
+                  className="text-gold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded"
+                >
+                  View the full library
+                </button>
+              </p>
+            )}
+
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -185,7 +225,7 @@ export default function Collection() {
             ) : error ? (
               <CollectionError onRetry={loadLibrary} />
             ) : sorted.length === 0 ? (
-              <CollectionEmpty filtered onReset={() => setMood("All")} />
+              <CollectionEmpty filtered onReset={() => changeMood("All")} />
             ) : (
               <>
                 <div

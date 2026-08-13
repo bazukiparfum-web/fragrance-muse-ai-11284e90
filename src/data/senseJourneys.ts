@@ -22,6 +22,8 @@ export interface SenseJourney {
   keywords: string[];
   /** Scent family used for the /collection fallback link. */
   mood: Mood;
+  /** Indicative note sketch shown in the mood preview modal. */
+  notes: { top: string[]; heart: string[]; base: string[] };
 }
 
 export const SENSE_JOURNEYS: SenseJourney[] = [
@@ -32,6 +34,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: midnightLibrary,
     keywords: ["midnight", "velvet", "leather", "tobacco"],
     mood: "Woody",
+    notes: { top: ["Bergamot", "Pink pepper"], heart: ["Leather", "Tobacco leaf"], base: ["Amber", "Vanilla"] },
   },
   {
     slug: "monsoon-forest",
@@ -40,6 +43,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: monsoonForest,
     keywords: ["monsoon", "rain", "green", "forest", "petrichor"],
     mood: "Fresh",
+    notes: { top: ["Petrichor", "Green leaf"], heart: ["Vetiver", "Fig leaf"], base: ["Wet moss", "Cedar"] },
   },
   {
     slug: "kyoto-blossom",
@@ -48,6 +52,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: kyotoBlossom,
     keywords: ["blossom", "cherry", "sakura", "bloom", "floral"],
     mood: "Floral",
+    notes: { top: ["Cherry blossom", "Pear"], heart: ["Peony", "Jasmine"], base: ["White musk", "Soft woods"] },
   },
   {
     slug: "desert-oud",
@@ -56,6 +61,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: desertOud,
     keywords: ["oud", "agarwood", "incense", "desert"],
     mood: "Oriental",
+    notes: { top: ["Saffron", "Bitter orange"], heart: ["Oud", "Rose"], base: ["Incense", "Amberwood"] },
   },
   {
     slug: "citrus-harbour",
@@ -64,6 +70,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: citrusHarbour,
     keywords: ["citrus", "bergamot", "lemon", "neroli"],
     mood: "Citrus",
+    notes: { top: ["Bergamot", "Lemon"], heart: ["Neroli", "Sea salt"], base: ["Driftwood", "White musk"] },
   },
   {
     slug: "velvet-rose",
@@ -72,6 +79,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: velvetRose,
     keywords: ["rose", "garden", "damask", "peony"],
     mood: "Floral",
+    notes: { top: ["Raspberry", "Lychee"], heart: ["Damask rose", "Peony"], base: ["Patchouli", "Musk"] },
   },
   {
     slug: "smoke-amber",
@@ -80,6 +88,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: smokeAmber,
     keywords: ["amber", "smoke", "resin", "ember"],
     mood: "Oriental",
+    notes: { top: ["Elemi", "Black pepper"], heart: ["Labdanum", "Resin"], base: ["Amber", "Benzoin"] },
   },
   {
     slug: "alpine-frost",
@@ -88,6 +97,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: alpineFrost,
     keywords: ["frost", "pine", "fir", "cool", "aqua"],
     mood: "Fresh",
+    notes: { top: ["Mint", "Juniper"], heart: ["Pine", "Fir balsam"], base: ["Mineral musk", "Cedar"] },
   },
   {
     slug: "spice-bazaar",
@@ -96,6 +106,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: spiceBazaar,
     keywords: ["spice", "saffron", "cardamom", "cinnamon", "bazaar"],
     mood: "Oriental",
+    notes: { top: ["Saffron", "Cardamom"], heart: ["Cinnamon", "Nutmeg"], base: ["Tonka", "Sandalwood"] },
   },
   {
     slug: "coastal-salt",
@@ -104,6 +115,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: coastalSalt,
     keywords: ["ocean", "breeze", "marine", "salt", "aquatic"],
     mood: "Fresh",
+    notes: { top: ["Sea spray", "Grapefruit"], heart: ["Marine accord", "Salt skin"], base: ["Driftwood", "Ambergris"] },
   },
   {
     slug: "vetiver-fields",
@@ -112,6 +124,7 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: vetiverFields,
     keywords: ["vetiver", "grass", "earth", "cedar"],
     mood: "Woody",
+    notes: { top: ["Grapefruit", "Dry grass"], heart: ["Vetiver", "Geranium"], base: ["Cedar", "Damp earth"] },
   },
   {
     slug: "vanilla-dusk",
@@ -120,5 +133,6 @@ export const SENSE_JOURNEYS: SenseJourney[] = [
     image: vanillaDusk,
     keywords: ["vanilla", "tonka", "musk", "caramel"],
     mood: "Musky",
+    notes: { top: ["Almond", "Bergamot"], heart: ["Tonka bean", "Heliotrope"], base: ["Vanilla", "Skin musk"] },
   },
 ];

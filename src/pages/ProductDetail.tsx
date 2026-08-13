@@ -25,6 +25,8 @@ import AIFormulaCallout from '@/components/product/AIFormulaCallout';
 import TrustBadges from '@/components/product/TrustBadges';
 import QuizCTABanner from '@/components/product/QuizCTABanner';
 import RelatedProducts from '@/components/product/RelatedProducts';
+import SimilarMoodCarousel from '@/components/product/SimilarMoodCarousel';
+
 import customAiFragranceImage from '@/assets/custom-ai-fragrance.jpg';
 
 const CUSTOM_SCENT_HANDLE_PATTERN = /^custom-(ai-fragrance|scent)/i;
@@ -693,8 +695,12 @@ export default function ProductDetail() {
 
         <ReviewsSection productHandle={product.handle} productName={product.title} />
 
+        {/* Similar mood carousel */}
+        <SimilarMoodCarousel product={product} />
+
         {/* Related products */}
         <RelatedProducts excludeHandle={product.handle} />
+
       </main>
       <Footer />
       <CheckoutLoadingOverlay
