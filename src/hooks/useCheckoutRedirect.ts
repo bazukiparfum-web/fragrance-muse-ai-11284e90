@@ -31,22 +31,36 @@ export function useCheckoutRedirect() {
       setError(undefined);
       setStatus("launching");
 
-      const t1 = window.setTimeout(() => {
-        let opened: Window | null = null;
+      // Must run synchronously in the click gesture, otherwise the browser
+      // blocks the popup and the checkout ends up loading inside the iframe.
+      let opened: Window | null = null;
+      try {
+        opened = window.open(url, "_blank", "noopener,noreferrer");
+      } catch (e) {
+        console.error("Failed to open checkout URL", e);
+      }
+
+      if (!opened || opened.closed) {
+        // Fallback: escape the preview/embed iframe with a top-level navigation.
         try {
-          opened = window.open(url, "_blank");
+          if (window.top && window.top !== window.self) {
+            window.top.location.href = url;
+          } else {
+            window.location.href = url;
+          }
+          const t0 = window.setTimeout(() => setStatus("idle"), 300);
+          timers.current.push(t0);
+          return;
         } catch (e) {
-          console.error("Failed to open checkout URL", e);
-        }
-        if (!opened) {
+          console.error("Top-level checkout navigation failed", e);
           setStatus("error");
           setError("Checkout was blocked. Please allow pop-ups and retry.");
           return;
         }
-        const t2 = window.setTimeout(() => setStatus("idle"), 300);
-        timers.current.push(t2);
-      }, 1000);
-      timers.current.push(t1);
+      }
+
+      const t2 = window.setTimeout(() => setStatus("idle"), 300);
+      timers.current.push(t2);
     },
     [],
   );
