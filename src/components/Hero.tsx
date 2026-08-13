@@ -1,8 +1,16 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { ArrowRight } from "lucide-react";
-import bottleAsset from "@/assets/hero-signature-essence.png.asset.json";
+import bottle480 from "@/assets/hero-signature-essence-480.webp.asset.json";
+import bottle720 from "@/assets/hero-signature-essence-720.webp.asset.json";
+import bottle1080 from "@/assets/hero-signature-essence-1080.webp.asset.json";
+import bottleJpg from "@/assets/hero-signature-essence-1024.jpg.asset.json";
 import BazukiLabel from "@/components/hero/BazukiLabel";
 import { trackCta } from "@/lib/trackCta";
+
+// Tiny inline blurred preview (LQIP) — renders instantly, zero extra request
+const LQIP =
+  "data:image/jpeg;base64,/9j//gAQTGF2YzYyLjExLjEwMAD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xAB7AAADAQEBAQAAAAAAAAAAAAAEAwEGAgUHAQADAQEAAAAAAAAAAAAAAAADAAIBBBAAAAUCBQIEBwEAAAAAAAAAAQIRAAMEEhMFIVEiMRQywZHCcXIHBlJh0WIRAAICAgIDAAMBAAAAAAAAAAEAERIDAgQTUTEhgWFBFP/AABEIACQAGAMBEgACEgADEgD/2gAMAwEAAhEDEQA/APgcQDJKQn5GKX1FGXklEWrnATJwOUddP29ktYtLl2Sh5Wc4dZDoan6d4GTlrrg1lw/H/i7dmT/cEk1EFCI8AlXxaKlu7lN06eQlsXh/3Z4mp9eHDHUpzF2EQ9BZec0RaObinIxumrDJay6UL3yUPFzHNrJWZDNhSG+Yvm0ZbIUhhUUUQe4TEuYjBZ5mtqtcrUnX5+31ZquMZARFv9z57ODt8fEItypcO7yd+z+xKemOsyFpi6PQmrx92e9I2iI9IWeTYpyfE3k0ZicpzBaKoIsOYzC5SCXq4etRt+GuMCNfqMBjB0FxjkqlIBVZ3dRbbiCm2n8a3t9vLjPVjmahpomEeouNkqoACv8A/9k=";
 
 const BOTTLES = [
   { line1: "Timeless", line2: "Harmony", name: "Timeless Harmony", variant: "left" as const },
@@ -10,8 +18,18 @@ const BOTTLES = [
   { line1: "Modern", line2: "Classic", name: "Modern Classic", variant: "right" as const },
 ];
 
+const BOTTLE_SRCSET = [
+  `${bottle480.url} 480w`,
+  `${bottle720.url} 720w`,
+  `${bottle1080.url} 1080w`,
+].join(", ");
+
+const BOTTLE_SIZES = "(max-width: 768px) min(70vw, 260px), (max-width: 1024px) 230px, 280px";
+
 const Hero = () => {
-  const bottleUrl = bottleAsset.url;
+  const bottleUrl = bottle480.url;
+  const [loaded, setLoaded] = useState(false);
+
 
   return (
     <section className="hero-section" aria-label="Bazuki signature fragrance campaign">
