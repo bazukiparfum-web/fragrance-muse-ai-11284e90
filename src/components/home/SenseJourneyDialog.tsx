@@ -8,6 +8,7 @@ import { matchProductsForJourney } from "@/lib/moodMatch";
 interface Props {
   journey: SenseJourney | null;
   products: ShopifyProduct[];
+  loading?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
