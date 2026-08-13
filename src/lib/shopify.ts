@@ -7,7 +7,7 @@ export const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}
 export const SHOPIFY_STOREFRONT_TOKEN = '95b86894e26ad7e37bd04e955084497e';
 
 // Customer-facing checkout domain. API calls stay on the myshopify domain above.
-export const SHOPIFY_CHECKOUT_DOMAIN = 'shop.bazukifrance.com';
+export const SHOPIFY_CHECKOUT_DOMAIN = 'shop.bazukifragrance.com';
 
 export interface ShopifyProduct {
   node: {
