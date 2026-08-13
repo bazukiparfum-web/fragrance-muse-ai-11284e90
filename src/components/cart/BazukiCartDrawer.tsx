@@ -75,8 +75,8 @@ export default function BazukiCartDrawer() {
         })
         .catch((e) => console.error("whatsapp-optin save failed", e));
     }
-    launchCheckout(url, doCheckoutLaunch);
-    if (url) closeDrawer();
+    const launched = launchCheckout(url, doCheckoutLaunch);
+    if (launched) closeDrawer();
   };
 
   const handleCheckout = () => {

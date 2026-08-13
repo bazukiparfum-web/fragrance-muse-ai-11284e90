@@ -22,13 +22,13 @@ export function useCheckoutRedirect() {
   }, []);
 
   const launchCheckout = useCallback(
-    (url: string | null | undefined, retry?: () => void) => {
+    (url: string | null | undefined, retry?: () => void): boolean => {
       lastRetry.current = retry;
       if (!url) {
         setStatus("error");
         setFallbackUrl(undefined);
         setError("Checkout link is unavailable. Please try again.");
-        return;
+        return false;
       }
       clearTimers();
       setError(undefined);
@@ -66,11 +66,12 @@ export function useCheckoutRedirect() {
         setStatus("error");
         setFallbackUrl(url);
         setError("Your browser blocked the checkout tab.");
-        return;
+        return false;
       }
 
       const t = window.setTimeout(() => setStatus("idle"), 300);
       timers.current.push(t);
+      return true;
     },
     [],
   );
