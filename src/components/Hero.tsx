@@ -680,8 +680,7 @@ const Hero = () => {
                     alt={`${b.name} Bazuki fragrance bottle`}
                     className={`bottle-photo ${loaded ? "is-loaded" : ""}`}
                     loading={isCenter ? "eager" : "lazy"}
-                    // @ts-expect-error fetchpriority is a valid DOM attribute
-                    fetchpriority={isCenter ? "high" : "auto"}
+                    fetchPriority={isCenter ? "high" : "auto"}
                     decoding="async"
                     ref={isCenter ? imgRef : undefined}
                     onLoad={() => setLoaded(true)}
