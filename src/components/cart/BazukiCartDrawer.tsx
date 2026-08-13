@@ -311,7 +311,7 @@ export default function BazukiCartDrawer() {
         )}
       </SheetContent>
       <CheckoutLoadingOverlay
-        open={isLaunching || isError}
+        open={isLaunching || (isError && !fallbackUrl)}
         error={isError ? error : undefined}
         onRetry={isError ? retry : undefined}
         onClose={isError ? reset : undefined}
