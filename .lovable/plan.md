@@ -1,43 +1,32 @@
-## Instagram-specific share behavior (mobile vs desktop)
+# Fix "myshopify.com is blocked" at checkout
 
-Scope: the Instagram button in the result view of `/coming-soon` only. No changes to OTP, DB, preferences, WhatsApp share, or the card generator's drawing code.
+## What the current flow does
 
-Currently `shareInstagram` always does the same thing regardless of device: copy message → download PNG → open the Instagram profile in a new tab. On mobile that download is mostly useless (Chrome/Safari drop it into Downloads, no Story handoff) and the profile tab replaces the app context. Instagram has no public "post to Story" web intent, so the correct mobile path is the OS share sheet with the image file attached — the user picks Instagram there and lands in the Story/post composer with the card already loaded.
+Cart drawer "Checkout" button → `doCheckoutLaunch()` → `launchCheckout(url)` in `useCheckoutRedirect.ts`, which calls `window.open(url, "_blank")`. If that returns nothing (popup blocked), it falls back to `window.top.location.href = url`.
 
-### Behavior after the change
+## What the console actually shows
 
-**Mobile / any browser where `navigator.canShare({ files: [cardFile] })` is true**
-1. Copy the caption to the clipboard first (so the user can paste it as a Story sticker or caption) — best-effort, ignore failure.
-2. Call `navigator.share({ files: [cardFile], text: shareMessage })`.
-3. On success: toast/hint "Caption copied — pick Instagram in the share sheet."
-4. If the user cancels (`AbortError`): do nothing further — no download, no new tab. Cancel is not a failure.
-5. If share throws any other error: fall through to the desktop path.
+- The Shopify cart API calls all succeed (cart id, lines, totalQuantity are correct), so the cart itself is healthy.
+- `window.open` was blocked, then the fallback threw:
+  `SecurityError: Failed to set a named property 'href' on 'Location': The current window does not have permission to navigate the target frame`.
 
-**Desktop / no file-share support**
-1. Copy the caption to the clipboard.
-2. Download `bazuki-direction.png`.
-3. Open `https://www.instagram.com/bazukiperfume/` in a new tab.
-4. Hint text: "Message copied + image saved. Upload it from your Story."
+That is the Lovable preview iframe refusing top-level navigation. The browser then tried to render Shopify inside the iframe, and Shopify's `X-Frame-Options` produced `ERR_BLOCKED_BY_RESPONSE`. Shopify checkout can never render inside an iframe by design.
 
-**No card generated yet** (generation still running or failed)
-- Skip the image entirely: copy caption, open Instagram, hint "Caption copied." Never call `navigator.share` with an empty `files` array.
+So the checkout URL is valid — only the way it is being opened from inside the preview frame fails.
 
-### Implementation detail
+## Fix
 
-In `src/pages/ComingSoon.tsx`:
+1. **Open checkout with a real anchor click, not `window.open`.** In `useCheckoutRedirect.ts`, build a temporary `<a href={url} target="_blank" rel="noopener noreferrer">` and click it inside the user gesture. Anchor clicks with `target="_blank"` are permitted in sandboxed preview iframes where scripted `window.open` and top-navigation are not.
+2. **Remove the `window.top.location` fallback** — it can only throw inside the preview and is what produced the SecurityError.
+3. **Add a visible manual fallback.** If neither path opens a tab, show a gold "Continue to secure checkout" link in the cart drawer pointing at the checkout URL (a plain anchor the user taps directly), instead of the current generic error message.
+4. **Keep everything else unchanged**: WhatsApp opt-in stays fire-and-forget, `channel=online_store` stays on the URL, cart state and sync logic untouched.
 
-- Add a small `canShareFiles(file)` helper (guards `typeof navigator`, `navigator.share`, `navigator.canShare`) and reuse it in both `shareWhatsApp` and `shareInstagram` so the two buttons agree on capability detection.
-- Rewrite `shareInstagram` per the branches above; distinguish cancel from failure by checking `err?.name === "AbortError"`.
-- Add an `instaHint` state string (null | copy-only | sheet | desktop) rendered inside the existing `.cs-share-hint` paragraph, auto-cleared after ~3s, so feedback doesn't rely on the shared `shareCopied` flag that the "Copy message" button also drives.
-- Update the button's `aria-label` to reflect the branch: "Share your scent direction to Instagram".
-- Analytics: keep `trackCta("waitlist_share_instagram")` on tap; add `meta: { path: "native" | "download" | "text_only" }` and only fire `waitlist_share_download` when a download actually happens.
+## Verify
 
-### Files touched
+- Confirm the checkout opens in a new tab from the published domain `bazukifragrance.com` (the preview iframe will always be the harsher environment).
+- Confirm from the preview that the manual link appears and works when the tab is blocked.
 
-- `src/pages/ComingSoon.tsx` — `shareInstagram`, new capability helper, hint state, button label/hint markup.
+## Files touched
 
-### Out of scope
-
-- WhatsApp button behavior (it already branches correctly).
-- Card artwork, dimensions, or a separate 1080×1920 Story crop.
-- Server-side OG image generation; the static `/coming-soon-og.jpg` stays as the crawler preview.
+- `src/hooks/useCheckoutRedirect.ts`
+- `src/components/cart/BazukiCartDrawer.tsx`
