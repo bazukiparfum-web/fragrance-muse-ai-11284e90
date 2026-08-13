@@ -1,17 +1,18 @@
-import { Link } from "react-router-dom";
 import type { SenseJourney } from "@/data/senseJourneys";
 
 interface Props {
   journey: SenseJourney;
-  to: string;
+  onSelect: (journey: SenseJourney) => void;
 }
 
-export default function SenseCard({ journey, to }: Props) {
+export default function SenseCard({ journey, onSelect }: Props) {
   return (
-    <Link
-      to={to}
-      aria-label={`${journey.title} — ${journey.blurb}`}
-      className="group relative block overflow-hidden rounded-lg border border-gold/15 bg-bz-card
+    <button
+      type="button"
+      onClick={() => onSelect(journey)}
+      aria-label={`${journey.title} — ${journey.blurb}. Preview this scent world`}
+      aria-haspopup="dialog"
+      className="group relative block w-full overflow-hidden rounded-lg border border-gold/15 bg-bz-card text-left
                  transition-colors duration-300 hover:border-gold/60
                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2
                  focus-visible:ring-offset-transparent motion-safe:transition-transform motion-safe:hover:-translate-y-1"
@@ -31,6 +32,6 @@ export default function SenseCard({ journey, to }: Props) {
           {journey.blurb}
         </p>
       </div>
-    </Link>
+    </button>
   );
 }
