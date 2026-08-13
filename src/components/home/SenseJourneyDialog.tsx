@@ -8,6 +8,7 @@ import { matchProductsForJourney } from "@/lib/moodMatch";
 interface Props {
   journey: SenseJourney | null;
   products: ShopifyProduct[];
+  loading?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -30,7 +31,7 @@ function NoteRow({ label, items }: { label: string; items: string[] }) {
   );
 }
 
-export default function SenseJourneyDialog({ journey, products, open, onOpenChange }: Props) {
+export default function SenseJourneyDialog({ journey, products, loading = false, open, onOpenChange }: Props) {
   if (!journey) return null;
   const recommended = matchProductsForJourney(journey, products, 3);
   const collectionHref = `/collection?mood=${journey.mood}&journey=${journey.slug}`;
@@ -55,7 +56,35 @@ export default function SenseJourneyDialog({ journey, products, open, onOpenChan
             <NoteRow label="Base" items={journey.notes.base} />
           </div>
 
-          {recommended.length > 0 && (
+          {loading && (
+            <div className="mt-6" aria-busy>
+              <p className="font-body text-[10px] uppercase tracking-[0.18em] text-gold/80 mb-3">
+                Fragrances in this world
+              </p>
+              <ul className="space-y-2" aria-hidden>
+                {[0, 1, 2].map((i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-3 rounded-md border border-gold/15 p-2"
+                  >
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-bz-secondary/60">
+                      <div className="shimmer-gold absolute inset-0 motion-reduce:hidden" />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="relative h-3.5 w-2/3 overflow-hidden rounded bg-cream/10">
+                        <div className="shimmer-gold absolute inset-0 motion-reduce:hidden" />
+                      </div>
+                      <div className="relative h-3 w-1/4 overflow-hidden rounded bg-cream/10">
+                        <div className="shimmer-gold absolute inset-0 motion-reduce:hidden" />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {!loading && recommended.length > 0 && (
             <div className="mt-6">
               <p className="font-body text-[10px] uppercase tracking-[0.18em] text-gold/80 mb-3">
                 Fragrances in this world

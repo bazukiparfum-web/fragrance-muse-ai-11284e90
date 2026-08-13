@@ -7,6 +7,7 @@ import { fetchShopifyProducts, type ShopifyProduct } from "@/lib/shopify";
 
 export default function TravelThroughSenses() {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const [selected, setSelected] = useState<SenseJourney | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -16,7 +17,10 @@ export default function TravelThroughSenses() {
       .then((p) => {
         if (!cancelled) setProducts(p);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingProducts(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -26,6 +30,7 @@ export default function TravelThroughSenses() {
     setSelected(journey);
     setOpen(true);
   };
+
 
   return (
     <section
@@ -58,8 +63,8 @@ export default function TravelThroughSenses() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-4">
-          {SENSE_JOURNEYS.map((journey) => (
-            <SenseCard key={journey.slug} journey={journey} onSelect={handleSelect} />
+          {SENSE_JOURNEYS.map((journey, i) => (
+            <SenseCard key={journey.slug} journey={journey} onSelect={handleSelect} eager={i < 2} />
           ))}
         </div>
       </div>
@@ -67,9 +72,11 @@ export default function TravelThroughSenses() {
       <SenseJourneyDialog
         journey={selected}
         products={products}
+        loading={loadingProducts}
         open={open}
         onOpenChange={setOpen}
       />
+
     </section>
   );
 }
