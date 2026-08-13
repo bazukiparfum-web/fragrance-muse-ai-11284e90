@@ -180,9 +180,9 @@ const Hero = () => {
 
         .label-wrap {
           position: absolute;
-          top: 68%;
+          top: 55.5%;
           left: 50%;
-          width: 42%;
+          width: 34%;
           transform: translate(-50%, -50%) perspective(600px) rotateY(-4deg);
           z-index: 3;
           pointer-events: none;
