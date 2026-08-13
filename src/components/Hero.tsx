@@ -168,10 +168,48 @@ const Hero = () => {
           object-fit: cover;
           object-position: 50% 18%;
           display: block;
+          opacity: 0;
+          transition: opacity 400ms ease-out;
         }
-        .bottle-card.side .bottle-photo {
+        .bottle-card .bottle-photo.is-loaded { opacity: 1; }
+        .bottle-card.side .bottle-photo.is-loaded {
           opacity: 0.80;
         }
+
+        /* Loading placeholder — occupies the exact same box, so no layout shift */
+        .bottle-skeleton {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          border-radius: 8px;
+          overflow: hidden;
+          background-color: #12100C;
+          background-image: url('${LQIP}');
+          background-size: cover;
+          background-position: 50% 18%;
+          filter: blur(14px) saturate(0.9) brightness(0.85);
+          transform: scale(1.06);
+          transition: opacity 400ms ease-out;
+          pointer-events: none;
+        }
+        .bottle-skeleton.is-hidden { opacity: 0; }
+        .bottle-skeleton::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            100deg,
+            transparent 20%,
+            rgba(201,168,76,0.14) 50%,
+            transparent 80%
+          );
+          transform: translateX(-100%);
+          animation: bottleShimmer 1.8s ease-in-out infinite;
+        }
+        @keyframes bottleShimmer {
+          to { transform: translateX(100%); }
+        }
+
         .bottle-card.left .bottle-photo {
           filter:
             hue-rotate(-110deg)
