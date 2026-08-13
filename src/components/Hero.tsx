@@ -650,12 +650,23 @@ const Hero = () => {
               <div key={b.name} className={`bottle-card ${sideClass}`}>
                 {isCenter && <div className="best-match-badge">✦ AI Crafted · Unique Formula</div>}
                 <div className="bottle-img-wrap">
+                  <div className={`bottle-skeleton ${loaded ? "is-hidden" : ""}`} aria-hidden />
                   <img
-                    src={bottleUrl}
+                    src={bottleJpg.url}
+                    srcSet={BOTTLE_SRCSET}
+                    sizes={BOTTLE_SIZES}
+                    width={1024}
+                    height={1536}
                     alt={`${b.name} Bazuki fragrance bottle`}
-                    className="bottle-photo"
+                    className={`bottle-photo ${loaded ? "is-loaded" : ""}`}
                     loading={isCenter ? "eager" : "lazy"}
+                    // @ts-expect-error fetchpriority is a valid DOM attribute
+                    fetchpriority={isCenter ? "high" : "auto"}
+                    decoding="async"
+                    onLoad={() => setLoaded(true)}
+                    onError={() => setLoaded(true)}
                   />
+
                   <div className="label-wrap">
                     <BazukiLabel line1={b.line1} line2={b.line2} />
                   </div>
