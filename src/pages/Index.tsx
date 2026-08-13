@@ -4,6 +4,7 @@ import Hero from "@/components/Hero";
 import TrustedByStrip from "@/components/home/TrustedByStrip";
 import HowItWorks from "@/components/home/HowItWorks";
 import MeetTheMachine from "@/components/home/MeetTheMachine";
+import TravelThroughSenses from "@/components/home/TravelThroughSenses";
 import FeaturedScents from "@/components/home/FeaturedScents";
 import QuizCTABanner from "@/components/home/QuizCTABanner";
 import TrustProof from "@/components/home/TrustProof";
@@ -195,6 +196,9 @@ const Index = () => {
       </div>
       <div id="meet-the-machine" style={{ scrollMarginTop: "80px" }}>
         <MeetTheMachine />
+      </div>
+      <div id="travel-through-the-senses" style={{ scrollMarginTop: "80px" }}>
+        <TravelThroughSenses />
       </div>
 
       <div id="signature-collection" style={{ scrollMarginTop: "80px" }}>
