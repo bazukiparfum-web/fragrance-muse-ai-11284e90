@@ -197,12 +197,12 @@ const Index = () => {
       <div id="meet-the-machine" style={{ scrollMarginTop: "80px" }}>
         <MeetTheMachine />
       </div>
-      <div id="travel-through-the-senses" style={{ scrollMarginTop: "80px" }}>
-        <TravelThroughSenses />
-      </div>
 
       <div id="signature-collection" style={{ scrollMarginTop: "80px" }}>
         <FeaturedScents />
+      </div>
+      <div id="travel-through-the-senses" style={{ scrollMarginTop: "80px" }}>
+        <TravelThroughSenses />
       </div>
       <QuizCTABanner />
       <TrustProof />
