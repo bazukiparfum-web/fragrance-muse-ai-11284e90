@@ -6,6 +6,9 @@ export const SHOPIFY_STORE_PERMANENT_DOMAIN = 'jg651i-6z.myshopify.com';
 export const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
 export const SHOPIFY_STOREFRONT_TOKEN = '95b86894e26ad7e37bd04e955084497e';
 
+// Customer-facing checkout domain. API calls stay on the myshopify domain above.
+export const SHOPIFY_CHECKOUT_DOMAIN = 'shop.bazukifragrance.com';
+
 export interface ShopifyProduct {
   node: {
     id: string;
@@ -237,6 +240,12 @@ export async function fetchShopifyProductByHandle(handle: string): Promise<Shopi
 function formatCheckoutUrl(checkoutUrl: string): string {
   try {
     const url = new URL(checkoutUrl);
+    // Rewrite the customer-facing checkout hostname to the custom domain,
+    // while keeping all API traffic on the myshopify.com domain.
+    if (SHOPIFY_CHECKOUT_DOMAIN) {
+      url.hostname = SHOPIFY_CHECKOUT_DOMAIN;
+      url.protocol = 'https:';
+    }
     url.searchParams.set('channel', 'online_store');
     return url.toString();
   } catch {
