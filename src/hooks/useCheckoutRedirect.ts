@@ -5,6 +5,7 @@ export type CheckoutStatus = "idle" | "launching" | "error";
 export function useCheckoutRedirect() {
   const [status, setStatus] = useState<CheckoutStatus>("idle");
   const [error, setError] = useState<string | undefined>(undefined);
+  const [fallbackUrl, setFallbackUrl] = useState<string | undefined>(undefined);
   const timers = useRef<number[]>([]);
   const lastRetry = useRef<(() => void) | undefined>(undefined);
 
@@ -17,6 +18,7 @@ export function useCheckoutRedirect() {
     clearTimers();
     setStatus("idle");
     setError(undefined);
+    setFallbackUrl(undefined);
   }, []);
 
   const launchCheckout = useCallback(
@@ -24,43 +26,51 @@ export function useCheckoutRedirect() {
       lastRetry.current = retry;
       if (!url) {
         setStatus("error");
+        setFallbackUrl(undefined);
         setError("Checkout link is unavailable. Please try again.");
         return;
       }
       clearTimers();
       setError(undefined);
+      setFallbackUrl(undefined);
       setStatus("launching");
 
-      // Must run synchronously in the click gesture, otherwise the browser
-      // blocks the popup and the checkout ends up loading inside the iframe.
-      let opened: Window | null = null;
+      // A real anchor click stays inside the user gesture and is allowed in
+      // sandboxed preview iframes, where scripted window.open and top-level
+      // navigation are blocked. Shopify checkout can never render in an iframe.
+      let launched = false;
       try {
-        opened = window.open(url, "_blank", "noopener,noreferrer");
+        const a = document.createElement("a");
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        launched = true;
       } catch (e) {
-        console.error("Failed to open checkout URL", e);
+        console.error("Anchor checkout launch failed", e);
       }
 
-      if (!opened || opened.closed) {
-        // Fallback: escape the preview/embed iframe with a top-level navigation.
+      if (!launched) {
         try {
-          if (window.top && window.top !== window.self) {
-            window.top.location.href = url;
-          } else {
-            window.location.href = url;
-          }
-          const t0 = window.setTimeout(() => setStatus("idle"), 300);
-          timers.current.push(t0);
-          return;
+          const opened = window.open(url, "_blank", "noopener,noreferrer");
+          launched = !!opened && !opened.closed;
         } catch (e) {
-          console.error("Top-level checkout navigation failed", e);
-          setStatus("error");
-          setError("Checkout was blocked. Please allow pop-ups and retry.");
-          return;
+          console.error("Failed to open checkout URL", e);
         }
       }
 
-      const t2 = window.setTimeout(() => setStatus("idle"), 300);
-      timers.current.push(t2);
+      if (!launched) {
+        setStatus("error");
+        setFallbackUrl(url);
+        setError("Your browser blocked the checkout tab.");
+        return;
+      }
+
+      const t = window.setTimeout(() => setStatus("idle"), 300);
+      timers.current.push(t);
     },
     [],
   );
@@ -77,6 +87,7 @@ export function useCheckoutRedirect() {
     retry,
     status,
     error,
+    fallbackUrl,
     isLaunching: status === "launching",
     isError: status === "error",
   };
