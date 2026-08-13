@@ -30,8 +30,7 @@ export default function TravelThroughSenses() {
   return (
     <section
       aria-labelledby="travel-senses-heading"
-      className="w-full py-16 md:py-24"
-      style={{ backgroundColor: "#0A0805" }}
+      className="w-full bg-bz-primary py-16 md:py-24"
     >
       <div className="container mx-auto px-6">
         <div className="text-center mb-10 md:mb-14">
@@ -58,7 +57,7 @@ export default function TravelThroughSenses() {
           </Reveal>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-4">
           {SENSE_JOURNEYS.map((journey) => (
             <SenseCard key={journey.slug} journey={journey} onSelect={handleSelect} />
           ))}
