@@ -14,6 +14,8 @@ import ScentDetailDrawer from "@/components/library/ScentDetailDrawer";
 import { fetchShopifyProducts } from "@/lib/shopify";
 import { supabase } from "@/integrations/supabase/client";
 import { buildLibrary, MOODS, type LibraryItem, type Mood, type PublicScent } from "@/lib/libraryMapper";
+import { SENSE_JOURNEYS } from "@/data/senseJourneys";
+
 import { useSEO } from "@/hooks/useSEO";
 import type { SortKey } from "@/components/library/SortDropdown";
 
