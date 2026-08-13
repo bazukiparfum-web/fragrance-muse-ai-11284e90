@@ -1,8 +1,16 @@
 import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
-import bottleAsset from "@/assets/hero-signature-essence.png.asset.json";
+import bottle480 from "@/assets/hero-signature-essence-480.webp.asset.json";
+import bottle720 from "@/assets/hero-signature-essence-720.webp.asset.json";
+import bottle1080 from "@/assets/hero-signature-essence-1080.webp.asset.json";
+import bottleJpg from "@/assets/hero-signature-essence-1024.jpg.asset.json";
 import BazukiLabel from "@/components/hero/BazukiLabel";
 import { trackCta } from "@/lib/trackCta";
+
+// Tiny inline blurred preview (LQIP) — renders instantly, zero extra request
+const LQIP =
+  "data:image/jpeg;base64,/9j//gAQTGF2YzYyLjExLjEwMAD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xAB7AAADAQEBAQAAAAAAAAAAAAAEAwEGAgUHAQADAQEAAAAAAAAAAAAAAAADAAIBBBAAAAUCBQIEBwEAAAAAAAAAAQIRAAMEEhMFIVEiMRQywZHCcXIHBlJh0WIRAAICAgIDAAMBAAAAAAAAAAEAERIDAgQTUTEhgWFBFP/AABEIACQAGAMBEgACEgADEgD/2gAMAwEAAhEDEQA/APgcQDJKQn5GKX1FGXklEWrnATJwOUddP29ktYtLl2Sh5Wc4dZDoan6d4GTlrrg1lw/H/i7dmT/cEk1EFCI8AlXxaKlu7lN06eQlsXh/3Z4mp9eHDHUpzF2EQ9BZec0RaObinIxumrDJay6UL3yUPFzHNrJWZDNhSG+Yvm0ZbIUhhUUUQe4TEuYjBZ5mtqtcrUnX5+31ZquMZARFv9z57ODt8fEItypcO7yd+z+xKemOsyFpi6PQmrx92e9I2iI9IWeTYpyfE3k0ZicpzBaKoIsOYzC5SCXq4etRt+GuMCNfqMBjB0FxjkqlIBVZ3dRbbiCm2n8a3t9vLjPVjmahpomEeouNkqoACv8A/9k=";
 
 const BOTTLES = [
   { line1: "Timeless", line2: "Harmony", name: "Timeless Harmony", variant: "left" as const },
@@ -10,8 +18,31 @@ const BOTTLES = [
   { line1: "Modern", line2: "Classic", name: "Modern Classic", variant: "right" as const },
 ];
 
+const BOTTLE_SRCSET = [
+  `${bottle480.url} 480w`,
+  `${bottle720.url} 720w`,
+  `${bottle1080.url} 1080w`,
+].join(", ");
+
+const BOTTLE_SIZES = "(max-width: 768px) min(70vw, 260px), (max-width: 1024px) 230px, 280px";
+
 const Hero = () => {
-  const bottleUrl = bottleAsset.url;
+  const bottleUrl = bottle480.url;
+  const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    const el = imgRef.current;
+    if (!el) return;
+    if (el.complete && el.naturalWidth > 0) {
+      setLoaded(true);
+      return;
+    }
+    const onLoad = () => setLoaded(true);
+    el.addEventListener("load", onLoad);
+    return () => el.removeEventListener("load", onLoad);
+  }, []);
+
 
   return (
     <section className="hero-section" aria-label="Bazuki signature fragrance campaign">
@@ -150,10 +181,50 @@ const Hero = () => {
           object-fit: cover;
           object-position: 50% 18%;
           display: block;
+          position: relative;
+          z-index: 2;
+          opacity: 0;
+          transition: opacity 400ms ease-out;
         }
-        .bottle-card.side .bottle-photo {
+        .bottle-card .bottle-photo.is-loaded { opacity: 1; }
+        .bottle-card.side .bottle-photo.is-loaded {
           opacity: 0.80;
         }
+
+        /* Loading placeholder — occupies the exact same box, so no layout shift */
+        .bottle-skeleton {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          border-radius: 8px;
+          overflow: hidden;
+          background-color: #12100C;
+          background-image: url('${LQIP}');
+          background-size: cover;
+          background-position: 50% 18%;
+          filter: blur(14px) saturate(0.9) brightness(0.85);
+          transform: scale(1.06);
+          transition: opacity 400ms ease-out;
+          pointer-events: none;
+        }
+        .bottle-skeleton.is-hidden { opacity: 0; }
+        .bottle-skeleton::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            100deg,
+            transparent 20%,
+            rgba(201,168,76,0.14) 50%,
+            transparent 80%
+          );
+          transform: translateX(-100%);
+          animation: bottleShimmer 1.8s ease-in-out infinite;
+        }
+        @keyframes bottleShimmer {
+          to { transform: translateX(100%); }
+        }
+
         .bottle-card.left .bottle-photo {
           filter:
             hue-rotate(-110deg)
@@ -559,8 +630,13 @@ const Hero = () => {
           .bottle-card.center .label-wrap::after,
           .best-match-badge,
           .scroll-arrow,
-          .hero-cta-primary {
+          .hero-cta-primary,
+          .bottle-skeleton::after {
             animation: none !important;
+          }
+          .bottle-photo,
+          .bottle-skeleton {
+            transition: none !important;
           }
         }
       `}</style>
@@ -594,12 +670,22 @@ const Hero = () => {
               <div key={b.name} className={`bottle-card ${sideClass}`}>
                 {isCenter && <div className="best-match-badge">✦ AI Crafted · Unique Formula</div>}
                 <div className="bottle-img-wrap">
+                  <div className={`bottle-skeleton ${loaded ? "is-hidden" : ""}`} aria-hidden />
                   <img
-                    src={bottleUrl}
+                    src={bottleJpg.url}
+                    srcSet={BOTTLE_SRCSET}
+                    sizes={BOTTLE_SIZES}
+                    width={1024}
+                    height={1536}
                     alt={`${b.name} Bazuki fragrance bottle`}
-                    className="bottle-photo"
+                    className={`bottle-photo ${loaded ? "is-loaded" : ""}`}
                     loading={isCenter ? "eager" : "lazy"}
+                    fetchPriority={isCenter ? "high" : "auto"}
+                    decoding="async"
+                    ref={isCenter ? imgRef : undefined}
+                    onLoad={() => setLoaded(true)}
                   />
+
                   <div className="label-wrap">
                     <BazukiLabel line1={b.line1} line2={b.line2} />
                   </div>
