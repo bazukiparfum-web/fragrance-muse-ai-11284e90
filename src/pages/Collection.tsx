@@ -194,7 +194,7 @@ export default function Collection() {
           <HeroLibrary />
           <MoodFilterBar
             active={mood}
-            onChange={setMood}
+            onChange={changeMood}
             counts={counts}
             sort={sort}
             onSortChange={setSort}
@@ -202,6 +202,20 @@ export default function Collection() {
           />
 
           <section className="container mx-auto px-6 py-10 md:py-14 max-w-[1200px]">
+            {journey && (
+              <p className="mb-6 font-body text-sm text-cream/70">
+                Coming from{" "}
+                <span className="text-gold">{journey.title}</span> — {journey.blurb}.{" "}
+                <button
+                  type="button"
+                  onClick={() => changeMood("All")}
+                  className="text-gold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded"
+                >
+                  View the full library
+                </button>
+              </p>
+            )}
+
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
