@@ -8,7 +8,7 @@ Cart drawer "Checkout" button → `doCheckoutLaunch()` → `launchCheckout(url)`
 
 - The Shopify cart API calls all succeed (cart id, lines, totalQuantity are correct), so the cart itself is healthy.
 - `window.open` was blocked, then the fallback threw:
-  `SecurityError: Failed to set a named property 'href' on 'Location': The current window does not have permission to navigate the target frame`.
+`SecurityError: Failed to set a named property 'href' on 'Location': The current window does not have permission to navigate the target frame`.
 
 That is the Lovable preview iframe refusing top-level navigation. The browser then tried to render Shopify inside the iframe, and Shopify's `X-Frame-Options` produced `ERR_BLOCKED_BY_RESPONSE`. Shopify checkout can never render inside an iframe by design.
 
@@ -23,7 +23,8 @@ So the checkout URL is valid — only the way it is being opened from inside the
 
 ## Verify
 
-- Confirm the checkout opens in a new tab from the published domain `bazukifragrance.com` (the preview iframe will always be the harsher environment).
+- Confirm the checkout opens in a new tab from the published domain `bazukifragrance.com` (the preview iframe will always be the harsher environment).  
+Answer: Yes checkout opens in new tab with the link 
 - Confirm from the preview that the manual link appears and works when the tab is blocked.
 
 ## Files touched
