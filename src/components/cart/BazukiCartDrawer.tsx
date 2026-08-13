@@ -260,16 +260,30 @@ export default function BazukiCartDrawer() {
                   <AlertCircle size={14} className="mt-0.5 flex-shrink-0" style={{ color: "#e87a7a" }} />
                   <div className="flex-1 text-[12px]" style={{ color: "#e87a7a" }}>
                     {error || "Checkout failed."}
-                    <button
-                      onClick={() => { reset(); void doCheckoutLaunch(); }}
-                      className="ml-2 underline hover:no-underline"
-                      style={{ color: GOLD }}
-                    >
-                      Retry
-                    </button>
+                    {fallbackUrl ? (
+                      <a
+                        href={fallbackUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => reset()}
+                        className="mt-2 block underline hover:no-underline"
+                        style={{ color: GOLD }}
+                      >
+                        Continue to secure checkout
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => { reset(); void doCheckoutLaunch(); }}
+                        className="ml-2 underline hover:no-underline"
+                        style={{ color: GOLD }}
+                      >
+                        Retry
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
+
 
               <button
                 onClick={handleCheckout}
