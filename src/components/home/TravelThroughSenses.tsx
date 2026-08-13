@@ -4,18 +4,35 @@ import SenseCard from "@/components/home/SenseCard";
 import { SENSE_JOURNEYS, type SenseJourney } from "@/data/senseJourneys";
 import { fetchShopifyProducts, type ShopifyProduct } from "@/lib/shopify";
 
-function resolveLink(journey: SenseJourney, products: ShopifyProduct[]): string {
-  const match = journey.keywords.reduce<ShopifyProduct | undefined>((found, keyword) => {
-    if (found) return found;
+function findMatch(
+  journey: SenseJourney,
+  products: ShopifyProduct[],
+  skipUsed: Set<string>,
+): ShopifyProduct | undefined {
+  for (const keyword of journey.keywords) {
     const k = keyword.toLowerCase();
-    return products.find((p) => {
+    const hit = products.find((p) => {
+      if (skipUsed.has(p.node.handle)) return false;
       const haystack = `${p.node.title} ${p.node.handle} ${p.node.description ?? ""}`.toLowerCase();
       return haystack.includes(k);
     });
-  }, undefined);
+    if (hit) return hit;
+  }
+  return undefined;
+}
 
-  if (match) return `/products/${match.node.handle}`;
-  return `/collection?mood=${journey.mood}`;
+/** Resolve every journey to a product page, preferring a distinct product per card. */
+function resolveLinks(products: ShopifyProduct[]): string[] {
+  const used = new Set<string>();
+  return SENSE_JOURNEYS.map((journey) => {
+    const match =
+      findMatch(journey, products, used) ?? findMatch(journey, products, new Set());
+    if (match) {
+      used.add(match.node.handle);
+      return `/products/${match.node.handle}`;
+    }
+    return `/collection?mood=${journey.mood}`;
+  });
 }
 
 export default function TravelThroughSenses() {
