@@ -7,6 +7,7 @@ import { fetchShopifyProducts, type ShopifyProduct } from "@/lib/shopify";
 
 export default function TravelThroughSenses() {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const [selected, setSelected] = useState<SenseJourney | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -16,7 +17,10 @@ export default function TravelThroughSenses() {
       .then((p) => {
         if (!cancelled) setProducts(p);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingProducts(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -26,6 +30,7 @@ export default function TravelThroughSenses() {
     setSelected(journey);
     setOpen(true);
   };
+
 
   return (
     <section
