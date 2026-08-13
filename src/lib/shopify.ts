@@ -240,6 +240,12 @@ export async function fetchShopifyProductByHandle(handle: string): Promise<Shopi
 function formatCheckoutUrl(checkoutUrl: string): string {
   try {
     const url = new URL(checkoutUrl);
+    // Rewrite the customer-facing checkout hostname to the custom domain,
+    // while keeping all API traffic on the myshopify.com domain.
+    if (SHOPIFY_CHECKOUT_DOMAIN) {
+      url.hostname = SHOPIFY_CHECKOUT_DOMAIN;
+      url.protocol = 'https:';
+    }
     url.searchParams.set('channel', 'online_store');
     return url.toString();
   } catch {
