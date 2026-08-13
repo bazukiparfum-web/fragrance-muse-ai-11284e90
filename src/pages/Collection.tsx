@@ -45,7 +45,18 @@ export default function Collection() {
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [mood, setMood] = useState<Mood | "All">("All");
+  const [searchParams] = useSearchParams();
+  const initialMood = useMemo<Mood | "All">(() => {
+    const raw = searchParams.get("mood");
+    const found = MOODS.find((m) => m.toLowerCase() === raw?.toLowerCase());
+    return found ?? "All";
+  }, [searchParams]);
+  const [mood, setMood] = useState<Mood | "All">(initialMood);
+
+  useEffect(() => {
+    setMood(initialMood);
+  }, [initialMood]);
+
   const [sort, setSort] = useState<SortKey>("featured");
   const [active, setActive] = useState<LibraryItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
