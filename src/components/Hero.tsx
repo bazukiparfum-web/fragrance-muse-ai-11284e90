@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import bottleAsset from "@/assets/bazuki-bottle-clean.png.asset.json";
+import bottleAsset from "@/assets/hero-signature-essence.png.asset.json";
 import BazukiLabel from "@/components/hero/BazukiLabel";
 import { trackCta } from "@/lib/trackCta";
 
