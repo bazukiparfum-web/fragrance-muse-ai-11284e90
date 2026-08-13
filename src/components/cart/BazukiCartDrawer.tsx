@@ -59,22 +59,21 @@ export default function BazukiCartDrawer() {
 
   const waValid = isValidWhatsApp(wa);
 
-  const doCheckoutLaunch = async () => {
+  const doCheckoutLaunch = () => {
     const url = getCheckoutUrl();
-    // Fire-and-forget opt-in save (don't block checkout on it)
+    // Fire-and-forget opt-in save — must NOT be awaited, or the browser drops
+    // the user gesture and blocks the checkout window.
     if (waValid) {
-      try {
-        await supabase.functions.invoke("whatsapp-optin", {
+      supabase.functions
+        .invoke("whatsapp-optin", {
           body: {
             phone: fullE164(wa.phone),
             consent: wa.consent,
             cartId: cartId ?? null,
             source: "cart_drawer",
           },
-        });
-      } catch (e) {
-        console.error("whatsapp-optin save failed", e);
-      }
+        })
+        .catch((e) => console.error("whatsapp-optin save failed", e));
     }
     launchCheckout(url, doCheckoutLaunch);
     if (url) closeDrawer();
@@ -82,7 +81,7 @@ export default function BazukiCartDrawer() {
 
   const handleCheckout = () => {
     if (!waValid) return;
-    void doCheckoutLaunch();
+    doCheckoutLaunch();
   };
 
 
