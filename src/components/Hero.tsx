@@ -516,6 +516,7 @@ const Hero = () => {
             aspect-ratio: 3 / 4;
           }
           .bottle-card.center .bottle-photo { object-position: 50% 15%; }
+          .bottle-card.center .label-wrap { top: 60.5%; width: 36%; }
           .bottles-row { margin-top: 20px; }
           .hero-headline { line-height: 1.15; letter-spacing: -0.005em; }
           .hero-subtext {
