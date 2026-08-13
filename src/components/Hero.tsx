@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import bottle480 from "@/assets/hero-signature-essence-480.webp.asset.json";
 import bottle720 from "@/assets/hero-signature-essence-720.webp.asset.json";
@@ -29,6 +29,19 @@ const BOTTLE_SIZES = "(max-width: 768px) min(70vw, 260px), (max-width: 1024px) 2
 const Hero = () => {
   const bottleUrl = bottle480.url;
   const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    const el = imgRef.current;
+    if (!el) return;
+    if (el.complete && el.naturalWidth > 0) {
+      setLoaded(true);
+      return;
+    }
+    const onLoad = () => setLoaded(true);
+    el.addEventListener("load", onLoad);
+    return () => el.removeEventListener("load", onLoad);
+  }, []);
 
 
   return (
@@ -670,7 +683,7 @@ const Hero = () => {
                     // @ts-expect-error fetchpriority is a valid DOM attribute
                     fetchpriority={isCenter ? "high" : "auto"}
                     decoding="async"
-                    ref={(el) => { if (el?.complete && el.naturalWidth > 0) setLoaded(true); }}
+                    ref={isCenter ? imgRef : undefined}
                     onLoad={() => setLoaded(true)}
                   />
 
