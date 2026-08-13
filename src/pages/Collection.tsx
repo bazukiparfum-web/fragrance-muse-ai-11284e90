@@ -225,7 +225,7 @@ export default function Collection() {
             ) : error ? (
               <CollectionError onRetry={loadLibrary} />
             ) : sorted.length === 0 ? (
-              <CollectionEmpty filtered onReset={() => setMood("All")} />
+              <CollectionEmpty filtered onReset={() => changeMood("All")} />
             ) : (
               <>
                 <div
