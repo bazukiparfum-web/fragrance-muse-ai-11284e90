@@ -63,8 +63,9 @@ export default function TravelThroughSenses() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-4">
-          {SENSE_JOURNEYS.map((journey, i) => (
-            <SenseCard key={journey.slug} journey={journey} onSelect={handleSelect} eager={i < 2} />
+          {SENSE_JOURNEYS.map((journey) => (
+            <SenseCard key={journey.slug} journey={journey} onSelect={handleSelect} />
+
           ))}
         </div>
       </div>

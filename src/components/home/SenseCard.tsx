@@ -40,7 +40,7 @@ export default function SenseCard({ journey, onSelect, eager = false }: Props) {
             alt={`${journey.title} scent world illustration`}
             loading={eager ? "eager" : "lazy"}
             decoding="async"
-            fetchPriority={eager ? "high" : "low"}
+            fetchpriority={eager ? "high" : "low"}
             width={1024}
             height={768}
             onLoad={() => setLoaded(true)}

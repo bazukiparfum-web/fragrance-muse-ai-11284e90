@@ -64,7 +64,7 @@ export default function ProductImage({
           alt={alt}
           loading={eager ? "eager" : "lazy"}
           decoding="async"
-          fetchPriority={eager ? "high" : "low"}
+          fetchpriority={eager ? "high" : "low"}
           onLoad={() => setLoaded(true)}
           onError={() => setErrored(true)}
           className={cn(
@@ -80,7 +80,7 @@ export default function ProductImage({
           alt={alt}
           loading={eager ? "eager" : "lazy"}
           decoding="async"
-          fetchPriority={eager ? "high" : "low"}
+          fetchpriority={eager ? "high" : "low"}
           onLoad={() => setLoaded(true)}
           onError={() => setErrored(true)}
           className={cn(
