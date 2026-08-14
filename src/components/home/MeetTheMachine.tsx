@@ -48,7 +48,7 @@ const MeetTheMachine = () => {
                 alt="Bazuki's AI-powered fragrance filling machine with 52 raw ingredient dispensers"
                 loading="lazy"
                 decoding="async"
-                fetchPriority="low"
+                fetchpriority="low"
                 className="block w-full h-auto"
 
               />
