@@ -181,7 +181,7 @@ const LeadCaptureForm = () => {
                 Thank you, {success.name}! Our scent consultant will WhatsApp you within 24 hours.
               </h3>
               <Link
-                to="/library"
+                to="/collection"
                 className="mt-6 inline-flex items-center gap-1 text-[13px] uppercase tracking-[0.2em] text-gold hover:text-gold/80"
               >
                 While you wait, explore our Scent Library →
