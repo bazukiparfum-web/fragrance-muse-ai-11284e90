@@ -44,11 +44,13 @@ Deno.serve(async (req) => {
       })
     } catch (error) {
       stats.errors++
-      const retryAfter =
-        error && typeof error === 'object' && 'retryAfterSeconds' in error
-          ? ((error as { retryAfterSeconds: number | null }).retryAfterSeconds ?? 60)
-          : null
+      const isRateLimited =
+        !!error && typeof error === 'object' && (error as { status?: number }).status === 429
+      const retryAfter = isRateLimited
+        ? ((error as { retryAfterSeconds?: number | null }).retryAfterSeconds ?? 60)
+        : null
       if (retryAfter !== null) {
+
         // Rate limited — wait out the window, then retry this send once.
         await new Promise((r) => setTimeout(r, retryAfter * 1000))
         try {
