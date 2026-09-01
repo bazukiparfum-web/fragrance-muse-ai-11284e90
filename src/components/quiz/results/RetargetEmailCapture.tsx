@@ -50,17 +50,13 @@ export function RetargetEmailCapture({ sessionId, bestMatchName }: Props) {
 
       // Fire the immediate retargeting email (non-blocking)
       supabase.functions
-        .invoke('send-transactional-email', {
-          body: {
-            templateName: 'quiz-formula-immediate',
-            recipientEmail: parsed.data,
-            idempotencyKey: `quiz-formula-immediate-${sessionId}`,
-            templateData: { sessionId, bestMatchName: bestMatchName || null },
-          },
+        .invoke('send-quiz-formula-email', {
+          body: { sessionId },
         })
         .catch(() => {
           /* non-blocking */
         });
+
 
       setSuccess(true);
     } catch {
