@@ -65,7 +65,6 @@ const NichePerfumeIndia = lazy(() => import("./pages/seo/NichePerfumeIndia"));
 const CarFresheners = lazy(() => import("./pages/CarFresheners"));
 const CarFreshenerDetail = lazy(() => import("./pages/CarFreshenerDetail"));
 const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
-const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 
 const BazukiCartDrawer = lazy(() => import("./components/cart/BazukiCartDrawer"));
 const ZukiChat = lazy(() => import("./components/zuki/ZukiChat"));
@@ -124,7 +123,6 @@ const AppInner = () => {
             <Route path="/unique-perfume" element={<UniquePerfume />} />
             <Route path="/niche-perfume-india" element={<NichePerfumeIndia />} />
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
-            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/coming-soon" element={<Navigate to="/" replace />} />
 
             <Route path="/scent-library" element={<Navigate to="/collection" replace />} />

@@ -6,6 +6,8 @@
 
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0'
+import { sendTemplateEmailLogged } from '../_shared/transactional-email-templates/send-and-log.ts'
+
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -73,16 +75,13 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const resp = await supabase.functions.invoke('send-transactional-email', {
-          body: {
-            templateName: step.template,
-            recipientEmail: row.email,
-            idempotencyKey: `${step.template}-${row.session_id}`,
-            templateData,
-          },
+        const result = await sendTemplateEmailLogged(supabase, step.template, row.email, {
+          idempotencyKey: `${step.template}-${row.session_id}`,
+          templateData,
         })
-        const ok = !resp.error
-        dispatched.push({ session_id: row.session_id, template: step.template, status: ok ? 'sent' : 'failed' })
+        const ok = result.sent
+        dispatched.push({ session_id: row.session_id, template: step.template, status: ok ? 'sent' : 'suppressed' })
+
         if (ok) {
           await supabase
             .from('quiz_sessions')
