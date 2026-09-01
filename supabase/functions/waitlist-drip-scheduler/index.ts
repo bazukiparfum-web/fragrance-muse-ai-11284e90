@@ -3,6 +3,8 @@
 // waitlist signups. Idempotency keys prevent duplicate sends.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { sendTemplateEmailLogged } from '../_shared/transactional-email-templates/send-and-log.ts'
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,14 +37,36 @@ Deno.serve(async (req) => {
     idempotencyKey: string,
     templateData: Record<string, unknown>,
   ) => {
-    const { error } = await supabase.functions.invoke('send-transactional-email', {
-      body: { templateName, recipientEmail: email, idempotencyKey, templateData },
-    })
-    if (error) {
+    try {
+      await sendTemplateEmailLogged(supabase, templateName, email, {
+        idempotencyKey,
+        templateData,
+      })
+    } catch (error) {
       stats.errors++
-      console.error('send failed', templateName, email, error.message)
+      const retryAfter =
+        error && typeof error === 'object' && 'retryAfterSeconds' in error
+          ? ((error as { retryAfterSeconds: number | null }).retryAfterSeconds ?? 60)
+          : null
+      if (retryAfter !== null) {
+        // Rate limited — wait out the window, then retry this send once.
+        await new Promise((r) => setTimeout(r, retryAfter * 1000))
+        try {
+          await sendTemplateEmailLogged(supabase, templateName, email, {
+            idempotencyKey,
+            templateData,
+          })
+          stats.errors--
+          return
+        } catch (retryError) {
+          console.error('send failed after retry', templateName, retryError)
+          return
+        }
+      }
+      console.error('send failed', templateName, error instanceof Error ? error.message : error)
     }
   }
+
 
   // --- Day 3 window: signups aged 3-4 days
   {
