@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { sendTemplateEmailLogged } from '../_shared/transactional-email-templates/send-and-log.ts';
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
