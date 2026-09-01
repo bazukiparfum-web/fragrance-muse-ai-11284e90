@@ -30,7 +30,7 @@ export default function QuizCTABanner() {
           </p>
         </div>
         <Link
-          to="/quiz"
+          to="/shop/quiz"
           className="pdp-cta-gold inline-flex items-center justify-center px-7 h-[52px] rounded-lg text-[13px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap"
           style={{ background: "var(--anim-gold)", color: "var(--anim-bg)" }}
         >
