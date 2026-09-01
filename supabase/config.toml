@@ -42,9 +42,6 @@ verify_jwt = false
 [functions.machine-production-api]
 verify_jwt = false
 
-[functions.process-email-queue]
-verify_jwt = true
-
 [functions.share-quiz-result]
 verify_jwt = false
 
@@ -84,16 +81,7 @@ verify_jwt = false
 [functions.admin-list-order-events]
 verify_jwt = false
 
-[functions.send-transactional-email]
-verify_jwt = true
-
 [functions.preview-transactional-email]
-verify_jwt = false
-
-[functions.handle-email-unsubscribe]
-verify_jwt = false
-
-[functions.handle-email-suppression]
 verify_jwt = false
 
 [functions.get-order-summary]
@@ -111,7 +99,8 @@ verify_jwt = false
 [functions.admin-list-waitlist]
 verify_jwt = false
 
+[functions.send-quiz-formula-email]
+verify_jwt = false
 
-
-
-
+[functions.handle-email-events]
+verify_jwt = false
