@@ -28,7 +28,7 @@ const Index = () => {
       "Take a 2-minute quiz and our AI filling machine blends 3 custom fragrances from 52 ingredients. Free delivery across India. From ₹700.",
     image: `${SITE_URL}/home-og.jpg`,
     noindex: false,
-    canonical: "https://www.bazukifragrance.com/home",
+    canonical: "https://www.bazukifragrance.com/",
   });
 
 
