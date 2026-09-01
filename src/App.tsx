@@ -11,7 +11,7 @@ import ScrollToTop from "./components/ScrollToTop";
 
 // Entry routes stay eager so first paint never waits on a second request.
 import Index from "./pages/Index";
-import ComingSoon from "./pages/ComingSoon";
+
 
 // Everything else is split out of the initial bundle.
 const Auth = lazy(() => import("./pages/Auth"));
