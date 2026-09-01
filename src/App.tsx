@@ -11,7 +11,7 @@ import ScrollToTop from "./components/ScrollToTop";
 
 // Entry routes stay eager so first paint never waits on a second request.
 import Index from "./pages/Index";
-import ComingSoon from "./pages/ComingSoon";
+
 
 // Everything else is split out of the initial bundle.
 const Auth = lazy(() => import("./pages/Auth"));
@@ -88,8 +88,9 @@ const AppInner = () => {
         <ScrollToTop />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
-            <Route path="/" element={<ComingSoon />} />
-            <Route path="/home" element={<Index />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/home" element={<Navigate to="/" replace />} />
+
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/shop/cart" element={<Cart />} />
@@ -124,7 +125,7 @@ const AppInner = () => {
             <Route path="/niche-perfume-india" element={<NichePerfumeIndia />} />
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
-            <Route path="/coming-soon" element={<ComingSoon />} />
+            <Route path="/coming-soon" element={<Navigate to="/" replace />} />
 
             <Route path="/scent-library" element={<Navigate to="/collection" replace />} />
             <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>

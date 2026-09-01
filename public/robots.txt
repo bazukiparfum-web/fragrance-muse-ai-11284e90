@@ -62,7 +62,7 @@ Allow: /
 
 User-agent: *
 Allow: /
-Disallow: /coming-soon
+
 Disallow: /shop/cart
 Disallow: /shop/checkout
 Disallow: /shop/account
