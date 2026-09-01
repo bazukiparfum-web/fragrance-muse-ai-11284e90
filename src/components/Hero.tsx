@@ -680,7 +680,7 @@ const Hero = () => {
                     alt={`${b.name} Bazuki fragrance bottle`}
                     className={`bottle-photo ${loaded ? "is-loaded" : ""}`}
                     loading={isCenter ? "eager" : "lazy"}
-                    fetchpriority={isCenter ? "high" : "auto"}
+                    fetchPriority={isCenter ? "high" : "auto"}
                     decoding="async"
                     ref={isCenter ? imgRef : undefined}
                     onLoad={() => setLoaded(true)}
