@@ -262,19 +262,16 @@ async function handleOrderCreated(supabaseClient: any, orderData: any) {
     const fullName = [orderData.customer?.first_name, orderData.customer?.last_name]
       .filter(Boolean)
       .join(' ');
-    await supabaseClient.functions.invoke('send-transactional-email', {
-      body: {
-        templateName: 'order-confirmation',
-        recipientEmail: customerEmail,
-        idempotencyKey: `order-confirm-${orderData.id}`,
-        templateData: {
-          orderNumber: orderData.order_number?.toString() || newOrder.id,
-          customerName: fullName || undefined,
-          items: itemsForEmail,
-          total: `₹${total.toLocaleString('en-IN')}`,
-        },
+    await sendTemplateEmailLogged(supabaseClient, 'order-confirmation', customerEmail, {
+      idempotencyKey: `order-confirm-${orderData.id}`,
+      templateData: {
+        orderNumber: orderData.order_number?.toString() || newOrder.id,
+        customerName: fullName || undefined,
+        items: itemsForEmail,
+        total: `₹${total.toLocaleString('en-IN')}`,
       },
     });
+
   } catch (emailErr) {
     console.error('⚠️ Failed to send order confirmation email:', emailErr);
   }

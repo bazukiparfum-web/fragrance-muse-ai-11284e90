@@ -254,19 +254,15 @@ Deno.serve(async (req) => {
           (linkData as any)?.action_link;
         if (!setPasswordUrl) throw new Error('Failed to generate password link');
 
-        const { error: sendErr } = await admin.functions.invoke('send-transactional-email', {
-          body: {
-            templateName: 'admin-user-invite',
-            recipientEmail: email,
-            idempotencyKey: `invite-${newUserId}`,
-            templateData: {
-              fullName: full_name || null,
-              setPasswordUrl,
-              siteName: 'Bazuki',
-            },
+        await sendTemplateEmailLogged(admin, 'admin-user-invite', email, {
+          idempotencyKey: `invite-${newUserId}`,
+          templateData: {
+            fullName: full_name || null,
+            setPasswordUrl,
+            siteName: 'Bazuki',
           },
         });
-        if (sendErr) throw sendErr;
+
       } catch (e) {
         // best-effort rollback so we don't leave an orphan account
         try { await admin.auth.admin.deleteUser(newUserId); } catch { /* ignore */ }
