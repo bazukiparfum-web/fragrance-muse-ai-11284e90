@@ -80,6 +80,21 @@ const Footer = () => {
             </ul>
           </div>
 
+          {/* Explore scents */}
+          <div>
+            <h4 className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">Explore Scents</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link to="/perfume" className="text-cream-muted hover:text-gold transition-colors">Scent Families</Link></li>
+              <li><Link to="/scent" className="text-cream-muted hover:text-gold transition-colors">Scent Directions</Link></li>
+              <li><Link to="/guides" className="text-cream-muted hover:text-gold transition-colors">Fragrance Guides</Link></li>
+              <li><Link to="/perfume/woody" className="text-cream-muted hover:text-gold transition-colors">Woody Perfumes</Link></li>
+              <li><Link to="/perfume/floral" className="text-cream-muted hover:text-gold transition-colors">Floral Perfumes</Link></li>
+              <li><Link to="/perfume/oriental" className="text-cream-muted hover:text-gold transition-colors">Amber &amp; Oud</Link></li>
+            </ul>
+          </div>
+
+
+
           {/* Contact */}
           <div className="col-span-2 md:col-span-3 lg:col-span-1">
             <h4 className="font-body text-gold text-[10px] uppercase tracking-[0.3em] mb-5">Contact</h4>
