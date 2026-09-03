@@ -16,18 +16,7 @@ Each page: keyword-targeted H1 and intro, "who it suits", note breakdown, how Ba
 
 Twelve pages generated from the existing Travel Through the Senses journeys (Midnight Library, Monsoon Forest, Desert Oud, Coastal Salt, …). Each mood already has a title, blurb, image, and top/heart/base notes, so the page is copy plus the existing note data, product matches for that mood, and links to the matching category page and `/collection?journey=<slug>`.
 
-## 3. How-to guides — `/guide/:slug`
-
-Four new guides alongside the three existing ones:
-
-- How to choose a perfume that suits you
-- How to make perfume last longer (India heat and humidity edition)
-- Perfume concentrations explained: EDP vs EDT vs parfum
-- Day vs night fragrance: when to wear what
-
-Written as scannable sections with a takeaway block and internal links to relevant category/mood pages.
-
-## 4. Hubs, linking, and discovery
+## 3. Hubs, linking, and discovery
 
 - `/perfume` index listing all category pages; `/scent` index listing all mood pages; `/guides` index listing all guides.
 - Footer gets a "Explore scents" column linking the three hubs.
