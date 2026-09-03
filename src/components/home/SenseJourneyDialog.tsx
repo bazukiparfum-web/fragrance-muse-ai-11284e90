@@ -121,6 +121,15 @@ export default function SenseJourneyDialog({ journey, products, loading = false,
               Explore all {journey.mood}
             </Link>
           </Button>
+
+          <Link
+            to={`/scent/${journey.slug}`}
+            onClick={() => onOpenChange(false)}
+            className="mt-3 block text-center text-sm text-gold underline-offset-4 hover:underline"
+          >
+            Read the {journey.title} scent story →
+          </Link>
+
         </div>
       </DialogContent>
     </Dialog>
