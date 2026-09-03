@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+
 import { Reveal } from "@/components/anim/Reveal";
 import SenseCard from "@/components/home/SenseCard";
 import SenseJourneyDialog from "@/components/home/SenseJourneyDialog";
