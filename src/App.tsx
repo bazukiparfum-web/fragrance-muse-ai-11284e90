@@ -128,6 +128,12 @@ const AppInner = () => {
             <Route path="/custom-perfume-india" element={<CustomPerfumeIndia />} />
             <Route path="/unique-perfume" element={<UniquePerfume />} />
             <Route path="/niche-perfume-india" element={<NichePerfumeIndia />} />
+            <Route path="/perfume" element={<PerfumeCategoriesHub />} />
+            <Route path="/perfume/:family" element={<ScentCategoryPage />} />
+            <Route path="/scent" element={<ScentMoodsHub />} />
+            <Route path="/scent/:slug" element={<MoodScentPage />} />
+            <Route path="/guides" element={<GuidesHub />} />
+
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/coming-soon" element={<Navigate to="/" replace />} />
 
