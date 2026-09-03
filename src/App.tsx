@@ -62,6 +62,12 @@ const AIPerfumeVsTraditional = lazy(() => import("./pages/guides/AIPerfumeVsTrad
 const CustomPerfumeIndia = lazy(() => import("./pages/seo/CustomPerfumeIndia"));
 const UniquePerfume = lazy(() => import("./pages/seo/UniquePerfume"));
 const NichePerfumeIndia = lazy(() => import("./pages/seo/NichePerfumeIndia"));
+const ScentCategoryPage = lazy(() => import("./pages/seo/ScentCategoryPage"));
+const MoodScentPage = lazy(() => import("./pages/seo/MoodScentPage"));
+const PerfumeCategoriesHub = lazy(() => import("./pages/seo/PerfumeCategoriesHub"));
+const ScentMoodsHub = lazy(() => import("./pages/seo/ScentMoodsHub"));
+const GuidesHub = lazy(() => import("./pages/seo/GuidesHub"));
+
 const CarFresheners = lazy(() => import("./pages/CarFresheners"));
 const CarFreshenerDetail = lazy(() => import("./pages/CarFreshenerDetail"));
 const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
