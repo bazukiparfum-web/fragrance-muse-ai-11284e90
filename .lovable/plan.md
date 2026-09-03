@@ -1,45 +1,43 @@
-# Fragrance blog
+# SEO pages: fragrance categories, moods, and how-to guides
 
-A blog hub at `/blog` with individual article pages, matching the existing guide pages' dark/gold styling, and linked from the homepage and footer.
+Goal: give Bazuki dedicated, indexable pages for the searches people actually type — "woody perfume for men india", "best perfume for monsoon", "how to make perfume last longer" — instead of funnelling everything through the homepage and quiz.
 
-## Blog hub (`/blog`)
+Reuses the existing `SeoLandingPage` template (same layout, breadcrumbs, JSON-LD, CTA style as `/custom-perfume-india`), so nothing new visually.
 
-- Heading "The Bazuki Journal" with a one-line intro.
-- Card grid (1 col mobile, 2 tablet, 3 desktop): cover image, category tag, title, 1-line excerpt, read time.
-- Category filter chips: Notes, Mood, Choosing a Fragrance.
-- Bottom CTA banner: "Take the Quiz" with the standard reassurance line.
+## 1. Fragrance category pages — `/perfume/:family`
 
-## Launch articles (6)
+Eight data-driven pages, one per scent family already used by the quiz and collection filters:
 
-Notes
-1. Top, Heart and Base Notes: How a Fragrance Unfolds on Skin
-2. The 10 Notes in Bazuki's Launch Library (and Who Each Suits)
+woody, floral, citrus, oriental/amber, fresh-aquatic, spicy, gourmand, musk.
 
-Mood pairing
-3. Scent and Mood: Which Fragrance Family Fits How You Want to Feel
-4. Day to Night: Pairing Fragrance with Occasion, Weather and Season in India
+Each page: keyword-targeted H1 and intro, "who it suits", note breakdown, how Bazuki composes it, links into `/collection?mood=<family>`, related families, and one quiz CTA.
 
-Choosing a fragrance
-5. How to Choose a Fragrance You Won't Get Bored Of
-6. EDP vs EDT, Sillage and Longevity: What Actually Matters When You Buy
+## 2. Mood keyword pages — `/scent/:slug`
 
-Each article page: hero image, intro, scannable H2 sections, a summary/takeaway block, internal links to `/ingredients`, `/collection`, `/guide/perfume-notes-explained`, and a closing quiz CTA. Content is grounded in the existing note library and site facts — no invented statistics, testimonials or claims.
+Twelve pages generated from the existing Travel Through the Senses journeys (Midnight Library, Monsoon Forest, Desert Oud, Coastal Salt, …). Each mood already has a title, blurb, image, and top/heart/base notes, so the page is copy plus the existing note data, product matches for that mood, and links to the matching category page and `/collection?journey=<slug>`.
 
-## Homepage link
+## 3. How-to guides — `/guide/:slug`
 
-A "From the Journal" strip below Travel Through the Senses: three latest article cards plus a "Read the journal" link to `/blog`. Also added to the footer nav.
+Four new guides alongside the three existing ones:
 
-## SEO
+- How to choose a perfume that suits you
+- How to make perfume last longer (India heat and humidity edition)
+- Perfume concentrations explained: EDP vs EDT vs parfum
+- Day vs night fragrance: when to wear what
 
-- Per-page title/description via the existing `useSEO` hook, plus `Article` and `BreadcrumbList` JSON-LD (same pattern as `src/pages/guides/PerfumeNotesExplained.tsx`).
-- `Blog` + `ItemList` JSON-LD on the hub.
-- New routes added to `public/sitemap.xml`.
+Written as scannable sections with a takeaway block and internal links to relevant category/mood pages.
+
+## 4. Hubs, linking, and discovery
+
+- `/perfume` index listing all category pages; `/scent` index listing all mood pages; `/guides` index listing all guides.
+- Footer gets a "Explore scents" column linking the three hubs.
+- Homepage: the existing Travel Through the Senses cards link through to the new mood pages.
+- `public/sitemap.xml` extended with all new URLs.
 
 ## Technical notes
 
-- `src/data/blogPosts.ts` — typed post metadata (slug, title, excerpt, category, date, read time, cover image import, related links). Article bodies live as React components so they can use existing UI primitives.
-- `src/pages/blog/BlogIndex.tsx` and `src/pages/blog/BlogPost.tsx` (renders the body component matched by `:slug`, 404s on unknown slug).
-- `src/components/blog/BlogCard.tsx`, `src/components/home/JournalStrip.tsx`.
-- Routes `/blog` and `/blog/:slug` added lazily in `src/App.tsx`; existing `/guide/*` pages stay where they are and get cross-linked from the hub.
-- 6 cover images generated in the Bazuki palette, lazy-loaded below the fold, with alt text.
-- Colors from existing tokens only; no hardcoded hex.
+- New data files `src/data/scentCategories.ts` and `src/data/guides.ts`; mood pages read from the existing `src/data/senseJourneys.ts`.
+- Routes are dynamic (`/perfume/:family`, `/scent/:slug`, `/guide/:slug`) rendered through `SeoLandingPage`, with unknown slugs falling through to the 404 page. Existing three guide routes keep their current components and URLs.
+- Per-page `<title>`, meta description, canonical, og tags, plus `BreadcrumbList` and `Article`/`ItemList` JSON-LD, using the same helpers the current SEO pages use.
+- Metadata is applied client-side (this stack has no SSR), which Google handles; social-preview crawlers still read the static head. SSR is available via a template upgrade if per-page social previews matter later — [what the upgrade gives you](https://lovable.dev/blog/building-apps-using-tanstack-start).
+- Total: 24 new indexable pages + 3 hubs, no backend changes.
