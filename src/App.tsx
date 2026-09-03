@@ -62,6 +62,12 @@ const AIPerfumeVsTraditional = lazy(() => import("./pages/guides/AIPerfumeVsTrad
 const CustomPerfumeIndia = lazy(() => import("./pages/seo/CustomPerfumeIndia"));
 const UniquePerfume = lazy(() => import("./pages/seo/UniquePerfume"));
 const NichePerfumeIndia = lazy(() => import("./pages/seo/NichePerfumeIndia"));
+const ScentCategoryPage = lazy(() => import("./pages/seo/ScentCategoryPage"));
+const MoodScentPage = lazy(() => import("./pages/seo/MoodScentPage"));
+const PerfumeCategoriesHub = lazy(() => import("./pages/seo/PerfumeCategoriesHub"));
+const ScentMoodsHub = lazy(() => import("./pages/seo/ScentMoodsHub"));
+const GuidesHub = lazy(() => import("./pages/seo/GuidesHub"));
+
 const CarFresheners = lazy(() => import("./pages/CarFresheners"));
 const CarFreshenerDetail = lazy(() => import("./pages/CarFreshenerDetail"));
 const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
@@ -122,6 +128,12 @@ const AppInner = () => {
             <Route path="/custom-perfume-india" element={<CustomPerfumeIndia />} />
             <Route path="/unique-perfume" element={<UniquePerfume />} />
             <Route path="/niche-perfume-india" element={<NichePerfumeIndia />} />
+            <Route path="/perfume" element={<PerfumeCategoriesHub />} />
+            <Route path="/perfume/:family" element={<ScentCategoryPage />} />
+            <Route path="/scent" element={<ScentMoodsHub />} />
+            <Route path="/scent/:slug" element={<MoodScentPage />} />
+            <Route path="/guides" element={<GuidesHub />} />
+
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/coming-soon" element={<Navigate to="/" replace />} />
 
