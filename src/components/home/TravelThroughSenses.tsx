@@ -68,7 +68,17 @@ export default function TravelThroughSenses() {
 
           ))}
         </div>
+
+        <div className="mt-8 text-center">
+          <Link
+            to="/scent"
+            className="font-body text-sm text-gold underline-offset-4 hover:underline"
+          >
+            Explore all scent directions →
+          </Link>
+        </div>
       </div>
+
 
       <SenseJourneyDialog
         journey={selected}
