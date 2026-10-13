@@ -8,12 +8,14 @@ const MQTT_TOPIC = 'OrderQueue';
 type MqttResult = { id: string; ok: boolean; error?: string };
 
 function connectBroker(): Promise<any> {
-  const host = Deno.env.get('HIVEMQ_HOST')?.replace(/^\w+:\/\//, '').replace(/[:/].*$/, '');
-  const username = Deno.env.get('HIVEMQ_USERNAME');
-  const password = Deno.env.get('HIVEMQ_PASSWORD');
+  const host = (Deno.env.get('MQTT_HOST') ?? Deno.env.get('HIVEMQ_HOST'))
+    ?.replace(/^\w+:\/\//, '').replace(/[:/].*$/, '');
+  const username = Deno.env.get('MQTT_USERNAME') ?? Deno.env.get('HIVEMQ_USERNAME');
+  const password = Deno.env.get('MQTT_PASSWORD') ?? Deno.env.get('HIVEMQ_PASSWORD');
+  const port = Number(Deno.env.get('MQTT_PORT') ?? '8884') || 8884;
   if (!host || !username || !password) throw new Error('MQTT credentials not configured');
   return new Promise((resolve, reject) => {
-    const client = mqtt.connect(`wss://${host}:8884/mqtt`, {
+    const client = mqtt.connect(`wss://${host}:${port}/mqtt`, {
       protocolVersion: 4,
       username, password, connectTimeout: 10000, reconnectPeriod: 0,
       clientId: `bazuki-admin-${crypto.randomUUID().slice(0, 8)}`,
