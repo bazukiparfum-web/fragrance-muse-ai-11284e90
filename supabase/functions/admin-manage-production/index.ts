@@ -13,7 +13,8 @@ function connectBroker(): Promise<any> {
   const password = Deno.env.get('HIVEMQ_PASSWORD');
   if (!host || !username || !password) throw new Error('MQTT credentials not configured');
   return new Promise((resolve, reject) => {
-    const client = mqtt.connect(`mqtts://${host}:8883`, {
+    const client = mqtt.connect(`wss://${host}:8884/mqtt`, {
+      protocolVersion: 4,
       username, password, connectTimeout: 10000, reconnectPeriod: 0,
       clientId: `bazuki-admin-${crypto.randomUUID().slice(0, 8)}`,
     });
