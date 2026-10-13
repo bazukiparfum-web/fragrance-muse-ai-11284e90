@@ -71,26 +71,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    const targetIds: string[] = Array.isArray(ids) && ids.length ? ids : id ? [id] : [];
+
+    // Resend to machine without changing status
+    if (action === 'resend_mqtt') {
+      if (!targetIds.length) throw new Error('Missing id');
+      const mqtt = await publishJobs(admin, targetIds);
+      return new Response(JSON.stringify({ ok: true, mqtt }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (!allowed.includes(status)) throw new Error('Invalid status');
+    if (!targetIds.length) throw new Error('Missing id');
 
     const update: any = { status };
     if (status === 'in_progress') update.started_at = new Date().toISOString();
     if (status === 'completed' || status === 'failed') update.completed_at = new Date().toISOString();
 
-    // Bulk status update
-    if (Array.isArray(ids) && ids.length) {
-      const { error } = await admin.from('production_queue').update(update).in('id', ids);
-      if (error) throw error;
-      return new Response(JSON.stringify({ ok: true, updated: ids.length }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!id) throw new Error('Missing id');
-    const { error } = await admin.from('production_queue').update(update).eq('id', id);
+    const { error } = await admin.from('production_queue').update(update).in('id', targetIds);
     if (error) throw error;
 
-    return new Response(JSON.stringify({ ok: true }), {
+    const mqtt = status === 'in_progress' ? await publishJobs(admin, targetIds) : undefined;
+
+    return new Response(JSON.stringify({ ok: true, updated: targetIds.length, mqtt }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {
