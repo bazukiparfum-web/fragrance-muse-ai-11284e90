@@ -102,7 +102,9 @@ const AdminProductionQueue = () => {
     if (!mqtt?.length) return;
     const failed = mqtt.filter((r) => !r.ok);
     if (!failed.length) toast.success(`Sent to machine (${mqtt.length})`);
-    else toast.error(`Machine send failed for ${failed.length} job(s): ${failed[0].error}`);
+    else if (failed.length === mqtt.length)
+      toast.error(`Machine send failed for ${failed.length} job(s): ${failed[0].error}`);
+    else toast.warning(`Sent ${mqtt.length - failed.length}, failed ${failed.length}: ${failed[0].error}`);
   };
 
   const resendMqtt = async (id: string) => {
@@ -113,6 +115,7 @@ const AdminProductionQueue = () => {
       });
       if (error) throw error;
       reportMqtt(data?.mqtt);
+      await load();
     } catch (e: any) {
       toast.error(e.message ?? 'Resend failed');
     } finally {
