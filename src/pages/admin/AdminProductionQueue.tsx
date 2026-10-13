@@ -130,8 +130,16 @@ const AdminProductionQueue = () => {
         body: { id, status },
       });
       if (error) throw error;
-      toast.success(`Marked ${status}`);
-      reportMqtt(data?.mqtt);
+      const mqttResults = data?.mqtt as { id: string; ok: boolean; error?: string }[] | undefined;
+      if (status === 'in_progress' && mqttResults?.length) {
+        const started = mqttResults.filter((r) => r.ok).length;
+        if (started) toast.success(`Started ${started} job(s) — sent to machine`);
+        if (!started) toast.error('Machine send failed — job stays pending');
+      } else {
+        toast.success(`Marked ${status}`);
+      }
+      reportMqtt(mqttResults);
+      await load();
     } catch (e: any) {
       toast.error(e.message ?? 'Failed to update');
     } finally {
