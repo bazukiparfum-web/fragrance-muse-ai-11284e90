@@ -243,9 +243,19 @@ const AdminProductionQueue = () => {
         body: { ids, status },
       });
       if (error) throw error;
-      toast.success(`Updated ${ids.length} job(s) → ${status}`);
-      reportMqtt(data?.mqtt);
+      const mqttResults = data?.mqtt as { id: string; ok: boolean; error?: string }[] | undefined;
+      if (status === 'in_progress' && mqttResults?.length) {
+        const started = mqttResults.filter((r) => r.ok).length;
+        const failed = mqttResults.length - started;
+        if (started && !failed) toast.success(`Started ${started} job(s) — sent to machine`);
+        else if (started && failed) toast.warning(`Started ${started}, ${failed} failed to send — still pending`);
+        else toast.error('Machine send failed — jobs stay pending');
+      } else {
+        toast.success(`Updated ${ids.length} job(s) → ${status}`);
+      }
+      reportMqtt(mqttResults);
       setSelectedIds(new Set());
+      await load();
     } catch (e: any) {
       toast.error(e.message ?? 'Bulk update failed');
     } finally {
