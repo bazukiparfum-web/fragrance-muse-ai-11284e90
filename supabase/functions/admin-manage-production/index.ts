@@ -160,12 +160,22 @@ Deno.serve(async (req) => {
     if (status === 'in_progress') update.started_at = new Date().toISOString();
     if (status === 'completed' || status === 'failed') update.completed_at = new Date().toISOString();
 
-    const { error } = await admin.from('production_queue').update(update).in('id', targetIds);
-    if (error) throw error;
+    let mqtt: MqttResult[] | undefined;
+    let updateIds = targetIds;
 
-    const mqtt = status === 'in_progress' ? await publishJobs(admin, targetIds) : undefined;
+    // For "start job": send to the machine first; only jobs that send
+    // successfully move to in_progress. Failed jobs stay pending.
+    if (status === 'in_progress') {
+      mqtt = await publishJobs(admin, targetIds);
+      updateIds = mqtt.filter((r) => r.ok).map((r) => r.id);
+    }
 
-    return new Response(JSON.stringify({ ok: true, updated: targetIds.length, mqtt }), {
+    if (updateIds.length) {
+      const { error } = await admin.from('production_queue').update(update).in('id', updateIds);
+      if (error) throw error;
+    }
+
+    return new Response(JSON.stringify({ ok: true, updated: updateIds.length, mqtt }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {
