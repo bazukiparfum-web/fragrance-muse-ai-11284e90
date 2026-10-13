@@ -98,14 +98,37 @@ const AdminProductionQueue = () => {
     return map;
   }, [items, pumps]);
 
+  const reportMqtt = (mqtt?: { id: string; ok: boolean; error?: string }[]) => {
+    if (!mqtt?.length) return;
+    const failed = mqtt.filter((r) => !r.ok);
+    if (!failed.length) toast.success(`Sent to machine (${mqtt.length})`);
+    else toast.error(`Machine send failed for ${failed.length} job(s): ${failed[0].error}`);
+  };
+
+  const resendMqtt = async (id: string) => {
+    setBusy(id);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-manage-production', {
+        body: { id, action: 'resend_mqtt' },
+      });
+      if (error) throw error;
+      reportMqtt(data?.mqtt);
+    } catch (e: any) {
+      toast.error(e.message ?? 'Resend failed');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const advance = async (id: string, status: string) => {
     setBusy(id);
     try {
-      const { error } = await supabase.functions.invoke('admin-manage-production', {
+      const { data, error } = await supabase.functions.invoke('admin-manage-production', {
         body: { id, status },
       });
       if (error) throw error;
       toast.success(`Marked ${status}`);
+      reportMqtt(data?.mqtt);
     } catch (e: any) {
       toast.error(e.message ?? 'Failed to update');
     } finally {
@@ -205,11 +228,12 @@ const AdminProductionQueue = () => {
     if (!ids.length) return;
     setBusy('bulk');
     try {
-      const { error } = await supabase.functions.invoke('admin-manage-production', {
+      const { data, error } = await supabase.functions.invoke('admin-manage-production', {
         body: { ids, status },
       });
       if (error) throw error;
       toast.success(`Updated ${ids.length} job(s) → ${status}`);
+      reportMqtt(data?.mqtt);
       setSelectedIds(new Set());
     } catch (e: any) {
       toast.error(e.message ?? 'Bulk update failed');
@@ -498,6 +522,9 @@ const AdminProductionQueue = () => {
                       )}
                       {it.status === 'in_progress' && (
                         <>
+                          <Button size="sm" variant="outline" disabled={busy === it.id} onClick={() => resendMqtt(it.id)}>
+                            Resend to machine
+                          </Button>
                           <Button
                             size="sm"
                             disabled={busy === it.id}
