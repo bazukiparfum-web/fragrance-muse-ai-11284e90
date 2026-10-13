@@ -48,7 +48,12 @@ async function publishJobs(admin: any, ids: string[]): Promise<MqttResult[]> {
       size: j.size,
       quantity: j.quantity,
       total_ml: plan.totalVolumeMl,
-      pumps: plan.perPump.map((p) => ({ pump: p.pump_id, note: p.is_solvent ? 'Solvent' : p.note, ml: p.ml })),
+      pumps: plan.perPump.map((p) => ({
+        pump: p.pump_id,
+        note: p.is_solvent ? 'Solvent' : p.note,
+        ml: p.ml,
+        percentage: +((p.ml / plan.totalVolumeMl) * 100).toFixed(2),
+      })),
       sent_at: new Date().toISOString(),
     };
     try {
