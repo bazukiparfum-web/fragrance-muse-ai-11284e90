@@ -16,6 +16,7 @@ import {
   Droplets,
   BookOpen,
   Mail,
+  Cpu,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -50,6 +51,7 @@ const groups = [
       { title: 'Orders', url: '/admin/orders', icon: ShoppingBag },
       { title: 'Pumps', url: '/admin/pumps', icon: Droplets },
       { title: 'Production Queue', url: '/admin/production-queue', icon: Factory },
+      { title: 'Machine', url: '/admin/machine', icon: Cpu },
       { title: 'Formula Library', url: '/admin/formulas', icon: BookOpen },
       { title: 'Consultations', url: '/admin/consultations', icon: MessageSquare },
       { title: 'Reviews', url: '/admin/reviews', icon: Star },
