@@ -484,6 +484,39 @@ export type Database = {
           },
         ]
       }
+      machine_messages: {
+        Row: {
+          created_at: string
+          error: string | null
+          fragrance_code: string | null
+          id: string
+          job_id: string | null
+          ok: boolean
+          payload: Json
+          topic: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          fragrance_code?: string | null
+          id?: string
+          job_id?: string | null
+          ok?: boolean
+          payload?: Json
+          topic?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          fragrance_code?: string | null
+          id?: string
+          job_id?: string | null
+          ok?: boolean
+          payload?: Json
+          topic?: string
+        }
+        Relationships: []
+      }
       order_events: {
         Row: {
           created_at: string
