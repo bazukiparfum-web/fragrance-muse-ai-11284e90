@@ -33,6 +33,7 @@ async function publishJobs(admin: any, ids: string[]): Promise<MqttResult[]> {
   ]);
   let client: any;
   const results: MqttResult[] = [];
+  const payloads = new Map<string, any>();
   try {
     client = await connectBroker();
   } catch (e) {
@@ -42,20 +43,28 @@ async function publishJobs(admin: any, ids: string[]): Promise<MqttResult[]> {
   for (const j of jobs ?? []) {
     if (!client) break;
     const plan = computePumpDispense({ formula: j.formula, size: j.size, pumps: pumps ?? [] });
+    const rate = new Map((pumps ?? []).map((p: any) => [p.pump_id, Number(p.ml_per_second) || 0]));
+    const pumpLines = plan.perPump.map((p) => {
+      const r = rate.get(p.pump_id) ?? 0;
+      return {
+        pump: p.pump_id,
+        note: p.is_solvent ? 'Solvent' : p.note,
+        ml: p.ml,
+        percentage: +((p.ml / plan.totalVolumeMl) * 100).toFixed(2),
+        seconds: r > 0 ? +(p.ml / r).toFixed(1) : null,
+      };
+    });
     const payload = {
       job_id: j.id,
       fragrance_code: j.fragrance_code,
       size: j.size,
       quantity: j.quantity,
       total_ml: plan.totalVolumeMl,
-      pumps: plan.perPump.map((p) => ({
-        pump: p.pump_id,
-        note: p.is_solvent ? 'Solvent' : p.note,
-        ml: p.ml,
-        percentage: +((p.ml / plan.totalVolumeMl) * 100).toFixed(2),
-      })),
+      total_seconds: +pumpLines.reduce((s, p) => s + (p.seconds ?? 0), 0).toFixed(1),
+      pumps: pumpLines,
       sent_at: new Date().toISOString(),
     };
+    payloads.set(j.id, payload);
     try {
       await new Promise<void>((res, rej) =>
         client.publish(MQTT_TOPIC, JSON.stringify(payload), { qos: 1 }, (err?: Error) => (err ? rej(err) : res())),
@@ -73,6 +82,15 @@ async function publishJobs(admin: any, ids: string[]): Promise<MqttResult[]> {
     await admin.from('production_queue')
       .update({ machine_notes: j?.machine_notes ? `${j.machine_notes}\n${line}` : line })
       .eq('id', r.id);
+  }
+  if (results.length) {
+    await admin.from('machine_messages').insert(results.map((r) => {
+      const j = (jobs ?? []).find((x: any) => x.id === r.id);
+      return {
+        job_id: r.id, fragrance_code: j?.fragrance_code ?? null, topic: MQTT_TOPIC,
+        payload: payloads.get(r.id) ?? {}, ok: r.ok, error: r.error ?? null,
+      };
+    }));
   }
   return results;
 }
