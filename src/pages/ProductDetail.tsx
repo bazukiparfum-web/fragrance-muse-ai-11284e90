@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, Check, Minus, Plus, ArrowLeft } from 'lucide-react';
-import { fetchShopifyProductByHandle, ShopifyProduct } from '@/lib/shopify';
+import { fetchShopifyProductByHandle, isDiffuserProduct, ShopifyProduct } from '@/lib/shopify';
 import { useCartStore } from '@/stores/cartStore';
 import { FragrancePyramid, Note } from '@/components/FragrancePyramid';
 import { ReviewsSection } from '@/components/ReviewsSection';
@@ -696,10 +696,10 @@ export default function ProductDetail() {
         <ReviewsSection productHandle={product.handle} productName={product.title} />
 
         {/* Similar mood carousel */}
-        <SimilarMoodCarousel product={product} />
+        <SimilarMoodCarousel product={product} family={isDiffuserProduct(product) ? "diffuser" : "default"} />
 
         {/* Related products */}
-        <RelatedProducts excludeHandle={product.handle} />
+        <RelatedProducts excludeHandle={product.handle} family={isDiffuserProduct(product) ? "diffuser" : "default"} />
 
       </main>
       <Footer />

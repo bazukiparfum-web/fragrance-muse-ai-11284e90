@@ -1,20 +1,31 @@
 import { useEffect, useState } from "react";
-import { fetchShopifyProducts } from "@/lib/shopify";
+import { fetchShopifyProducts, isDiffuserFamily, isDiffuserProduct, DIFFUSER_FAMILY_QUERY } from "@/lib/shopify";
 import { buildLibrary, type LibraryItem } from "@/lib/libraryMapper";
 import ShopifyProductCard from "@/components/library/ShopifyProductCard";
 
 interface Props {
   excludeHandle?: string;
+  family?: "diffuser" | "default";
 }
 
-export default function RelatedProducts({ excludeHandle }: Props) {
+export default function RelatedProducts({ excludeHandle, family = "default" }: Props) {
   const [items, setItems] = useState<LibraryItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    fetchShopifyProducts(8, "NOT tag:diffuser")
-      .then((products) => {
+    const diff = family === "diffuser";
+    fetchShopifyProducts(diff ? 30 : 8, diff ? DIFFUSER_FAMILY_QUERY : "NOT tag:diffuser")
+      .then((all) => {
         if (cancelled) return;
+        let products = all.filter((p) => p.node.handle !== excludeHandle);
+        if (diff) {
+          products = products.filter((p) => isDiffuserFamily(p.node));
+          // Aim for at least one oil and one diffuser among the first 3.
+          const oils = products.filter((p) => !isDiffuserProduct(p.node));
+          const diffusers = products.filter((p) => isDiffuserProduct(p.node));
+          const picked = [oils[0], diffusers[0]].filter(Boolean);
+          products = [...picked, ...products.filter((p) => !picked.includes(p))];
+        }
         const lib = buildLibrary(products, []).filter(
           (i) => i.shopify?.raw.node.handle !== excludeHandle,
         );
@@ -24,7 +35,7 @@ export default function RelatedProducts({ excludeHandle }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [excludeHandle]);
+  }, [excludeHandle, family]);
 
   if (items.length === 0) return null;
 

@@ -15,6 +15,8 @@ export interface ShopifyProduct {
     title: string;
     description: string;
     handle: string;
+    tags?: string[];
+    productType?: string;
     priceRange: {
       minVariantPrice: {
         amount: string;
@@ -63,6 +65,8 @@ export const STOREFRONT_QUERY = `
           title
           description
           handle
+          tags
+          productType
           priceRange {
             minVariantPrice {
               amount
@@ -208,6 +212,8 @@ export const PRODUCT_BY_HANDLE_QUERY = `
       description
       descriptionHtml
       handle
+      tags
+      productType
       priceRange {
         minVariantPrice { amount currencyCode }
       }
@@ -345,3 +351,14 @@ export async function removeLineFromShopifyCart(cartId: string, lineId: string):
   }
   return { success: true };
 }
+
+/** Diffusers and diffuser fragrance oils belong together in suggestions. */
+export function isDiffuserProduct(p: { tags?: string[] }): boolean {
+  return (p.tags ?? []).some((t) => t.toLowerCase() === "diffuser");
+}
+export function isDiffuserFamily(p: { title?: string; tags?: string[]; productType?: string }): boolean {
+  const tags = (p.tags ?? []).map((t) => t.toLowerCase());
+  if (tags.includes("diffuser") || tags.includes("diffuser-oil")) return true;
+  return /\boil\b/i.test(`${p.title ?? ""} ${p.productType ?? ""}`);
+}
+export const DIFFUSER_FAMILY_QUERY = "tag:diffuser OR tag:diffuser-oil OR title:*oil* OR product_type:*oil*";

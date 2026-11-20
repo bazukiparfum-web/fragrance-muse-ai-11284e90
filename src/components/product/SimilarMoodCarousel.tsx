@@ -1,28 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchShopifyProducts, type ShopifyProduct } from "@/lib/shopify";
+import { fetchShopifyProducts, isDiffuserFamily, DIFFUSER_FAMILY_QUERY, type ShopifyProduct } from "@/lib/shopify";
 import { buildLibrary } from "@/lib/libraryMapper";
 import { matchProductsByMood, productMood } from "@/lib/moodMatch";
 import ShopifyProductCard from "@/components/library/ShopifyProductCard";
 
 interface Props {
   product: ShopifyProduct["node"];
+  family?: "diffuser" | "default";
 }
 
-export default function SimilarMoodCarousel({ product }: Props) {
+export default function SimilarMoodCarousel({ product, family = "default" }: Props) {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    fetchShopifyProducts(50, "NOT tag:diffuser")
+    const diff = family === "diffuser";
+    fetchShopifyProducts(50, diff ? DIFFUSER_FAMILY_QUERY : "NOT tag:diffuser")
       .then((p) => {
-        if (!cancelled) setProducts(p);
+        if (!cancelled) setProducts(diff ? p.filter((x) => isDiffuserFamily(x.node)) : p);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [family]);
 
   const mood = useMemo(
     () => productMood({ node: product } as ShopifyProduct),
@@ -30,7 +32,13 @@ export default function SimilarMoodCarousel({ product }: Props) {
   );
 
   const items = useMemo(() => {
-    const matches = matchProductsByMood(products, mood, product.handle, 8);
+    let matches = matchProductsByMood(products, mood, product.handle, 8);
+    if (family === "diffuser") {
+      // Mood matches first, then fill with remaining diffusers/oils.
+      const seen = new Set(matches.map((m) => m.node.handle));
+      const rest = products.filter((p) => p.node.handle !== product.handle && !seen.has(p.node.handle));
+      matches = [...matches, ...rest].slice(0, 8);
+    }
     return buildLibrary(matches, []);
   }, [products, mood, product.handle]);
 
