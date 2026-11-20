@@ -690,6 +690,14 @@ export default function ProductDetail() {
           </Tabs>
         </div>
 
+        {isDiffuserProduct(product) && (
+          <div className="container mx-auto px-4 py-8 text-center">
+            <Link to={`/shop/diffusers?diffuser=${product.handle}`} className="inline-flex items-center rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground hover:opacity-90">
+              Build your set with matching oils
+            </Link>
+          </div>
+        )}
+
         {/* Quiz CTA banner */}
         <QuizCTABanner />
 

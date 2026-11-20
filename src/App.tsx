@@ -70,6 +70,7 @@ const ScentMoodsHub = lazy(() => import("./pages/seo/ScentMoodsHub"));
 const GuidesHub = lazy(() => import("./pages/seo/GuidesHub"));
 
 const CarFresheners = lazy(() => import("./pages/CarFresheners"));
+const DiffuserSets = lazy(() => import("./pages/DiffuserSets"));
 const CarFreshenerDetail = lazy(() => import("./pages/CarFreshenerDetail"));
 const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
 
@@ -101,6 +102,7 @@ const AppInner = () => {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/shop/cart" element={<Cart />} />
             <Route path="/shop/car-fresheners" element={<CarFresheners />} />
+            <Route path="/shop/diffusers" element={<DiffuserSets />} />
             <Route path="/shop/car-fresheners/:handle" element={<CarFreshenerDetail />} />
             <Route path="/shop/checkout" element={<Checkout />} />
             <Route path="/shop/account" element={<Account />} />

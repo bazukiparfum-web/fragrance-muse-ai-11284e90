@@ -48,6 +48,7 @@ const Footer = () => {
             <ul className="space-y-3 text-sm">
               <li><Link to="/collection" className="text-cream-muted hover:text-gold transition-colors">Signature Collection</Link></li>
               <li><Link to="/shop/car-fresheners" className="text-cream-muted hover:text-gold transition-colors">Hanging Car Fresheners</Link></li>
+              <li><Link to="/shop/diffusers" className="text-cream-muted hover:text-gold transition-colors">Diffusers &amp; Oils</Link></li>
               <li><Link to="/shop/quiz" className="text-cream-muted hover:text-gold transition-colors">AI Scent Quiz</Link></li>
               <li><Link to="/gift-cards" className="text-cream-muted hover:text-gold transition-colors">Gift Cards</Link></li>
               <li><Link to="/collection" className="text-cream-muted hover:text-gold transition-colors">Discovery Sets</Link></li>

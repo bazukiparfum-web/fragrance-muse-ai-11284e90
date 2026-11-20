@@ -362,3 +362,14 @@ export function isDiffuserFamily(p: { title?: string; tags?: string[]; productTy
   return /\boil\b/i.test(`${p.title ?? ""} ${p.productType ?? ""}`);
 }
 export const DIFFUSER_FAMILY_QUERY = "tag:diffuser OR tag:diffuser-oil OR title:*oil* OR product_type:*oil*";
+
+/** Oils matching a diffuser: tagged `for-<handle>`; if none are tagged that way, all oils. */
+export function matchingOils<T extends { handle?: string; title?: string; tags?: string[]; productType?: string }>(
+  diffuser: { handle: string },
+  products: T[],
+): T[] {
+  const oils = products.filter((p) => isDiffuserFamily(p) && !isDiffuserProduct(p));
+  const tag = `for-${diffuser.handle}`.toLowerCase();
+  const tagged = oils.filter((o) => (o.tags ?? []).some((t) => t.toLowerCase() === tag));
+  return tagged.length ? tagged : oils;
+}
