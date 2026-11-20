@@ -188,17 +188,26 @@ Deno.serve(async (req) => {
 
     // For "start job": send to the machine first; only jobs that send
     // successfully move to in_progress. Failed jobs stay pending.
+    // Only pending jobs may be started; others are skipped so the machine never re-dispenses them.
+    let skipped: string[] = [];
     if (status === 'in_progress') {
-      mqtt = await publishJobs(admin, targetIds);
+      const { data: rows, error: stErr } = await admin
+        .from('production_queue').select('id, status').in('id', targetIds);
+      if (stErr) throw stErr;
+      const pendingIds = (rows ?? []).filter((r: any) => r.status === 'pending').map((r: any) => r.id);
+      skipped = targetIds.filter((x) => !pendingIds.includes(x));
+      mqtt = pendingIds.length ? await publishJobs(admin, pendingIds) : [];
       updateIds = mqtt.filter((r) => r.ok).map((r) => r.id);
     }
 
     if (updateIds.length) {
-      const { error } = await admin.from('production_queue').update(update).in('id', updateIds);
+      let q = admin.from('production_queue').update(update).in('id', updateIds);
+      if (status === 'in_progress') q = q.eq('status', 'pending');
+      const { error } = await q;
       if (error) throw error;
     }
 
-    return new Response(JSON.stringify({ ok: true, updated: updateIds.length, mqtt }), {
+    return new Response(JSON.stringify({ ok: true, updated: updateIds.length, mqtt, skipped }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {

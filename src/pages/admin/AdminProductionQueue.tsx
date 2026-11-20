@@ -235,7 +235,18 @@ const AdminProductionQueue = () => {
   };
 
   const bulkUpdate = async (status: string) => {
-    const ids = Array.from(selectedIds);
+    let ids = Array.from(selectedIds);
+    if (status === 'in_progress') {
+      // Only pending jobs can be started — never re-send in-progress or finished jobs.
+      const pending = new Set(items.filter((it) => it.status === 'pending').map((it) => it.id));
+      const skippedCount = ids.filter((x) => !pending.has(x)).length;
+      ids = ids.filter((x) => pending.has(x));
+      if (!ids.length) {
+        toast.info('No pending jobs selected — only pending jobs can be started');
+        return;
+      }
+      if (skippedCount) toast.info(`Skipped ${skippedCount} job(s) that aren't pending`);
+    }
     if (!ids.length) return;
     setBusy('bulk');
     try {
