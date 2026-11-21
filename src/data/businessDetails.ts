@@ -1,9 +1,7 @@
 // PLACEHOLDER values — replace with Bazuki's confirmed figures.
 export const RUNNING_COSTS = [
-  { label: "Refill oil", value: "₹1,499 / 500ml bottle*" },
-  { label: "One bottle lasts", value: "about 30–45 days*" },
-  { label: "Contract length", value: "3 months minimum" },
-  { label: "Pause or cancel", value: "Anytime after 3 months, with 15 days' notice*" },
+  { label: "Refill oil", value: "₹1,800 / 500ml bottle onwards" },
+  { label: "One bottle lasts", value: "approximately 30–45 days" },
 ];
 export const SERVICE_PROMISES = [
   { title: "Installation included", body: "Our team sets up and calibrates every diffuser." },
