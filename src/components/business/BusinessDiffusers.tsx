@@ -6,6 +6,7 @@ import { fetchShopifyProducts, type ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { COVERAGE_LABEL, DIFFUSER_COVERAGE, type CoverageBand } from "@/data/diffuserCoverage";
 
 function DiffuserCard({ product }: { product: ShopifyProduct }) {
   const addItem = useCartStore((s) => s.addItem);
@@ -52,6 +53,9 @@ function DiffuserCard({ product }: { product: ShopifyProduct }) {
       </div>
       <div className="p-4">
         <h3 className="font-serif text-lg font-bold line-clamp-1">{node.title}</h3>
+        {DIFFUSER_COVERAGE[node.handle] && (
+          <p className="mt-1 text-xs font-medium uppercase tracking-wider text-primary">Best for: {COVERAGE_LABEL[DIFFUSER_COVERAGE[node.handle]]}</p>
+        )}
         <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{node.description}</p>
         <div className="flex items-center justify-between mt-3">
           <span className="font-semibold text-lg">₹{parseFloat(price.amount).toLocaleString()}</span>
@@ -67,6 +71,7 @@ function DiffuserCard({ product }: { product: ShopifyProduct }) {
 const BusinessDiffusers = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [band, setBand] = useState<CoverageBand | "all">("all");
 
   useEffect(() => {
     fetchShopifyProducts(50, "tag:diffuser")
@@ -97,8 +102,16 @@ const BusinessDiffusers = () => {
             IoT-ready diffusers engineered for hotels, retail, offices and spas — pair with any Bazuki signature scent.
           </p>
         </div>
+        <div className="mb-8 flex flex-wrap justify-center gap-2" role="group" aria-label="Filter by space size">
+          {(["all", ...Object.keys(COVERAGE_LABEL)] as Array<CoverageBand | "all">).map((b) => (
+            <button key={b} type="button" aria-pressed={band === b} onClick={() => setBand(b)}
+              className={`rounded-full border px-4 py-1.5 text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${band === b ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:border-primary/60"}`}>
+              {b === "all" ? "All spaces" : COVERAGE_LABEL[b]}
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map((p) => (
+          {products.filter((p) => band === "all" || DIFFUSER_COVERAGE[p.node.handle] === band).map((p) => (
             <DiffuserCard key={p.node.id} product={p} />
           ))}
         </div>

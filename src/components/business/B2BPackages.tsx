@@ -1,3 +1,4 @@
+import RunningCosts from "./RunningCosts";
 import { Check } from "lucide-react";
 
 type Tier = {
@@ -156,6 +157,8 @@ const B2BPackages = () => {
         <p className="mt-8 text-center text-[11px] text-dim">
           * All prices exclusive of GST. Minimum 3-month commitment for Starter and Business plans. Enterprise pricing on request.
         </p>
+
+        <RunningCosts />
 
       </div>
     </section>

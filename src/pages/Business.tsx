@@ -1,4 +1,7 @@
 import Header from "@/components/Header";
+import ServicePromises from "@/components/business/ServicePromises";
+import InstagramReels from "@/components/business/InstagramReels";
+import DemoBanner from "@/components/business/DemoBanner";
 import Footer from "@/components/Footer";
 import HeroB2B from "@/components/business/HeroB2B";
 import ScentScience from "@/components/business/ScentScience";
@@ -51,10 +54,10 @@ const Business = () => {
       <Header />
       <main className="pt-16">
         <HeroB2B />
+        <ServicePromises />
         <ScentScience />
         <UseCasesGrid />
         <BrandArchetypes />
-        <B2BPackages />
         <TrustedByCarousel
           logos={CLIENT_LOGOS}
           eyebrow="Trusted By"
@@ -62,10 +65,13 @@ const Business = () => {
           headingVisible={false}
         />
         <ClientStories />
+        <InstagramReels />
         <HowItWorks />
         <ServicesOffered />
         <BusinessDiffusers />
+        <B2BPackages />
         <B2BTestimonials />
+        <DemoBanner />
         <LeadCaptureForm />
         <BusinessFAQ />
         <FinalCtaStrip />

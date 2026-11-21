@@ -19,7 +19,7 @@ In the Diffusers section, add a "Best for" line on each card (e.g. "Up to 500 sq
 
 ## 4. Clear running costs
 
-- Packages: say "per month" (or the real billing period) next to ₹5,999 / ₹9,999. 
+- Packages: say "per month" (or the real billing period) next to ₹5,999 / ₹9,999. (Remove)
 - Add a short "What it costs to run" strip: refill price per bottle, how long a bottle lasts, contract length, and pause/cancel terms. This are not monthly costs but the cost of the diffusers.
 
 ## 5. Free demo for commercial spaces

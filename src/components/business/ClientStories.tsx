@@ -6,6 +6,7 @@ type Story = {
   results: string[];
   quote: string;
   attribution: string;
+  period: string;
 };
 
 const stories: Story[] = [
@@ -24,6 +25,7 @@ const stories: Story[] = [
     quote:
       "Our guests now say they can smell our hotel the moment they step off the elevator.",
     attribution: "— General Manager, Narayani Heights",
+    period: "Measured over 3 months vs. the 3 months before scenting",
   },
   {
     industry: "Retail",
@@ -40,6 +42,7 @@ const stories: Story[] = [
     quote:
       "We didn't change our products or layout. Just the scent. The difference was immediate.",
     attribution: "— Owner, ADANI Menswear",
+    period: "Measured over 3 months vs. the 3 months before scenting",
   },
 ];
 
@@ -95,6 +98,7 @@ const ClientStories = () => {
                     </span>
                   ))}
                 </div>
+                <p className="mt-2 text-[11px] text-dim">{s.period}</p>
               </div>
 
               <blockquote className="border-l-2 border-gold pl-4 font-serif italic text-[20px] leading-snug text-cream">

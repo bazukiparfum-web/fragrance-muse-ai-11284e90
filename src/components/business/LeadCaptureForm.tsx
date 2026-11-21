@@ -80,11 +80,12 @@ const LeadCaptureForm = () => {
       tone: string;
       notes: string[];
       useCases: string[];
+      message?: string;
     };
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<PrefillDetail>).detail;
       if (!detail?.name) return;
-      const msg =
+      const msg = detail.message ??
         `I'm interested in a fragrance formula aligned with the "${detail.name}" archetype (${detail.tone}).\n` +
         `Signature notes we're drawn to: ${detail.notes.join(", ")}.\n` +
         `Ideal use cases: ${detail.useCases.join(", ")}.\n` +
@@ -195,7 +196,7 @@ const LeadCaptureForm = () => {
                     <span
                       className="inline-flex items-center gap-2 rounded-full border border-gold-strong/40 bg-gold/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-gold"
                     >
-                      ✦ For archetype: {prefillArchetype}
+                      ✦ {prefillArchetype === "Free demo" ? "Free demo request" : `For archetype: ${prefillArchetype}`}
                       <button
                         type="button"
                         onClick={clearPrefill}

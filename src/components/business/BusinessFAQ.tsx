@@ -32,8 +32,8 @@ const faqs = [
     a: "Monthly refills are shipped to your door automatically. You'll receive a WhatsApp notification 3 days before dispatch. No phone calls, no paperwork.",
   },
   {
-    q: "Is there a free trial or sample?",
-    a: "We offer a free scent consultation call and, for Business and Enterprise prospects, we can send a curated sample kit (3 scent strips) before you commit.",
+    q: "Can I see it working in my space first?",
+    a: "Yes. We offer a free demo for commercial spaces: our team visits, sets up a diffuser and lets you experience the scent in your own space before you commit. Book it through the enquiry form.",
   },
 ];
 

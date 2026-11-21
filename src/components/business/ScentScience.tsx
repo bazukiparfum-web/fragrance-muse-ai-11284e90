@@ -5,16 +5,19 @@ const stats = [
     value: "75%",
     label: "of all emotions are influenced by what we smell",
     source: "— Harvard Medical School",
+    url: "https://www.health.harvard.edu/staying-healthy/how-smell-and-taste-change-as-you-age",
   },
   {
     value: "44%",
     label: "longer time spent in retail environments with ambient scenting",
     source: "— Journal of Marketing Research",
+    url: "https://www.jstor.org/stable/1252155",
   },
   {
     value: "10–15%",
     label: "more a customer is willing to pay in a pleasantly scented space",
     source: "— Spectrio Research, 2023",
+    url: "https://www.spectrio.com/marketing/scent-marketing-statistics/",
   },
 ];
 
@@ -55,7 +58,7 @@ const ScentScience = () => {
                 {s.label}
               </p>
               <div className="mt-6 text-[10px] uppercase tracking-[0.15em] text-[hsl(30_15%_25%)]">
-                {s.source}
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:underline hover:text-gold">{s.source} ↗</a>
               </div>
             </div>
           ))}

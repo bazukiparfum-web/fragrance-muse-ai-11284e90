@@ -9,7 +9,7 @@ const scrollToNext = () => {
 };
 
 const WHATSAPP_URL =
-  "https://wa.me/?text=" +
+  "https://wa.me/917990097922?text=" +
   encodeURIComponent("Hi Bazuki, I'm interested in aroma solutions for my business.");
 
 const stats = [
